@@ -1,0 +1,14 @@
+/* TikFind 공통 스타일 */
+
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --text-dark: #333;
+    --text-light: #666;
+}
+
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+/* 추가 스타일은 여기에 작성 */
