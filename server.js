@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const express = require('express');
 const session = require('express-session');
+const MongoStore = require('connect-mongo');
 const passport = require('./config/passport');
 const connectDB = require('./config/db');
 const path = require('path');
@@ -125,13 +126,19 @@ const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
     secret: process.env.SESSION_SECRET || 'tikfind-secret-key',
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGO_URL,
+        touchAfter: 24 * 3600, // 24시간 동안 세션 업데이트 안 함
+        crypto: {
+            secret: process.env.SESSION_SECRET || 'tikfind-secret-key'
+        }
+    }),
     cookie: { 
         secure: isProduction,
         httpOnly: true,
-        sameSite: 'lax', // lax로 변경하여 같은 도메인 내 쿠키 유지
-        maxAge: 24 * 60 * 60 * 1000,
-        domain: undefined // domain 설정 제거
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
     }
 }));
 
