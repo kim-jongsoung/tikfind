@@ -127,9 +127,9 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'tikfind-secret-key',
     resave: false,
     saveUninitialized: false,
-    store: MongoStore.create({
+    store: new MongoStore({
         mongoUrl: process.env.MONGO_URL,
-        touchAfter: 24 * 3600, // 24시간 동안 세션 업데이트 안 함
+        touchAfter: 24 * 3600,
         crypto: {
             secret: process.env.SESSION_SECRET || 'tikfind-secret-key'
         }
@@ -138,7 +138,7 @@ app.use(session({
         secure: isProduction,
         httpOnly: true,
         sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7일
+        maxAge: 7 * 24 * 60 * 60 * 1000
     }
 }));
 

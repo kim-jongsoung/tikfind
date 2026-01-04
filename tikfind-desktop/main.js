@@ -221,13 +221,52 @@ ipcMain.on('open-youtube', (event, url) => {
             autoHideMenuBar: true
         });
         
+        // YouTube 광고 차단
+        const session = youtubeBrowserWindow.webContents.session;
+        
+        // 광고 도메인 차단
+        const adBlockFilters = [
+            '*://*.doubleclick.net/*',
+            '*://*.googlesyndication.com/*',
+            '*://*.googleadservices.com/*',
+            '*://googleads.g.doubleclick.net/*',
+            '*://*.youtube.com/api/stats/ads*',
+            '*://*.youtube.com/pagead/*',
+            '*://*.youtube.com/ptracking*',
+            '*://*.youtube.com/get_video_info*ad*'
+        ];
+        
+        session.webRequest.onBeforeRequest({ urls: adBlockFilters }, (details, callback) => {
+            callback({ cancel: true });
+        });
+        
+        // 광고 스킵 스크립트 주입
+        youtubeBrowserWindow.webContents.on('did-finish-load', () => {
+            youtubeBrowserWindow.webContents.executeJavaScript(`
+                // 광고 스킵 버튼 자동 클릭
+                setInterval(() => {
+                    const skipButton = document.querySelector('.ytp-ad-skip-button, .ytp-skip-ad-button');
+                    if (skipButton) {
+                        skipButton.click();
+                        console.log('✅ 광고 스킵됨');
+                    }
+                    
+                    // 광고 오버레이 숨기기
+                    const adOverlay = document.querySelector('.ytp-ad-overlay-container');
+                    if (adOverlay) {
+                        adOverlay.style.display = 'none';
+                    }
+                }, 500);
+            `);
+        });
+        
         // 창이 닫히면 참조 제거
         youtubeBrowserWindow.on('closed', () => {
             console.log('🎵 YouTube 창 닫힘');
             youtubeBrowserWindow = null;
         });
         
-        console.log('🎵 YouTube 창 생성:', url);
+        console.log('🎵 YouTube 창 생성 (광고 차단 활성화):', url);
     } else {
         console.log('🎵 YouTube URL 변경:', url);
     }
