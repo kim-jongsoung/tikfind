@@ -1,0 +1,7 @@
+version: 1.0.3
+files:
+  - url: TikFind-Setup.exe
+    sha512: placeholder
+    size: 0
+path: TikFind-Setup.exe
+releaseDate: '2026-01-04T13:45:00.000Z'
