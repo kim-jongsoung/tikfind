@@ -1,6 +1,6 @@
 {
   "name": "tikfind-desktop",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "TikFind Desktop Collector - TikTok Live 데이터 수집 앱",
   "main": "main.js",
   "scripts": {

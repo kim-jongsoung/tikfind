@@ -13,35 +13,28 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-// Desktop App 다운로드
+// Desktop App 다운로드 - GitHub Releases로 리디렉션
 router.get('/download-app', requireAuth, async (req, res) => {
     try {
-        const exePath = path.join(__dirname, '../public/downloads/TikFind-Setup.exe');
-
-        // 파일 존재 확인
-        if (!fs.existsSync(exePath)) {
-            return res.status(404).json({ 
-                success: false, 
-                message: '설치 파일을 찾을 수 없습니다. 관리자에게 문의하세요.' 
-            });
+        // latest.yml에서 최신 버전 정보 가져오기
+        const latestYmlPath = path.join(__dirname, '../public/updates/latest.yml');
+        
+        if (fs.existsSync(latestYmlPath)) {
+            const yaml = require('js-yaml');
+            const latestYml = yaml.load(fs.readFileSync(latestYmlPath, 'utf8'));
+            const downloadUrl = latestYml.files[0].url;
+            
+            // GitHub Releases로 리디렉션
+            return res.redirect(downloadUrl);
         }
-
-        // 파일 다운로드
-        res.download(exePath, 'TikFind-Setup.exe', (err) => {
-            if (err) {
-                console.error('Desktop App 다운로드 오류:', err);
-                if (!res.headersSent) {
-                    res.status(500).json({ 
-                        success: false, 
-                        message: '다운로드 중 오류가 발생했습니다.' 
-                    });
-                }
-            }
-        });
+        
+        // latest.yml이 없으면 기본 URL로 리디렉션
+        return res.redirect('https://github.com/kim-jongsoung/tikfind/releases/latest');
 
     } catch (error) {
         console.error('Desktop App 다운로드 오류:', error);
-        res.status(500).json({ success: false, message: '다운로드 중 오류가 발생했습니다.' });
+        // 오류 발생 시에도 GitHub Releases로 리디렉션
+        res.redirect('https://github.com/kim-jongsoung/tikfind/releases/latest');
     }
 });
 
