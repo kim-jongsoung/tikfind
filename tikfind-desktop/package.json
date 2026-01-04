@@ -1,6 +1,6 @@
 {
   "name": "tikfind-desktop",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "TikFind Desktop Collector - TikTok Live 데이터 수집 앱",
   "main": "main.js",
   "scripts": {
@@ -18,6 +18,7 @@
   "author": "TikFind",
   "license": "MIT",
   "dependencies": {
+    "electron-log": "^5.4.3",
     "electron-updater": "^6.6.2",
     "say": "^0.16.0",
     "tiktok-live-connector": "^1.1.8",
