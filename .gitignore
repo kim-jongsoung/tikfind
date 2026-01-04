@@ -7,3 +7,7 @@ npm-debug.log*
 .idea/
 uploads/
 temp/
+
+# Desktop App 빌드 파일 (용량이 커서 GitHub에 업로드하지 않음)
+tikfind-desktop/dist/
+public/downloads/*.exe

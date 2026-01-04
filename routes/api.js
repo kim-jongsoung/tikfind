@@ -13,107 +13,31 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
-// Desktop App 다운로드 (User ID 포함)
+// Desktop App 다운로드
 router.get('/download-app', requireAuth, async (req, res) => {
     try {
-        const userId = req.user._id.toString();
-        const userEmail = req.user.email;
-        const tiktokId = req.user.tiktokId || '';
+        const exePath = path.join(__dirname, '../public/downloads/TikFind-Setup.exe');
 
-        // 임시 폴더 생성
-        const tempDir = path.join(__dirname, '../temp', userId);
-        if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir, { recursive: true });
-        }
-
-        // User 설정 파일 생성 (JSON)
-        const userConfig = {
-            userId: userId,
-            email: userEmail,
-            tiktokId: tiktokId,
-            serverUrl: process.env.SERVER_URL || 'http://localhost:3001',
-            generatedAt: new Date().toISOString()
-        };
-
-        const configPath = path.join(tempDir, 'user-config.json');
-        fs.writeFileSync(configPath, JSON.stringify(userConfig, null, 2));
-
-        // Desktop App 실행 파일 경로
-        const desktopAppPath = path.join(__dirname, '../tikfind-desktop');
-        
-        // ZIP 파일 생성
-        const zipFileName = `TikFind-Setup-${userId}.zip`;
-        const zipPath = path.join(tempDir, zipFileName);
-
-        const output = fs.createWriteStream(zipPath);
-        const archive = archiver('zip', {
-            zlib: { level: 9 }
-        });
-
-        output.on('close', () => {
-            console.log(`✅ Desktop App ZIP 생성 완료: ${archive.pointer()} bytes`);
-            
-            // ZIP 파일 다운로드
-            res.download(zipPath, zipFileName, (err) => {
-                if (err) {
-                    console.error('다운로드 오류:', err);
-                }
-                
-                // 임시 파일 삭제
-                setTimeout(() => {
-                    try {
-                        fs.unlinkSync(zipPath);
-                        fs.unlinkSync(configPath);
-                        fs.rmdirSync(tempDir);
-                    } catch (e) {
-                        console.error('임시 파일 삭제 오류:', e);
-                    }
-                }, 5000);
+        // 파일 존재 확인
+        if (!fs.existsSync(exePath)) {
+            return res.status(404).json({ 
+                success: false, 
+                message: '설치 파일을 찾을 수 없습니다. 관리자에게 문의하세요.' 
             });
-        });
-
-        archive.on('error', (err) => {
-            throw err;
-        });
-
-        archive.pipe(output);
-
-        // Desktop App 파일들 추가
-        if (fs.existsSync(desktopAppPath)) {
-            archive.directory(desktopAppPath, 'TikFind-Desktop');
         }
 
-        // User 설정 파일 추가
-        archive.file(configPath, { name: 'TikFind-Desktop/user-config.json' });
-
-        // README 파일 생성
-        const readmeContent = `
-# TikFind Desktop App
-
-## 설치 방법
-
-1. 이 폴더를 원하는 위치에 압축 해제하세요
-2. 'start-app.bat' (Windows) 또는 'start-app.sh' (Mac) 파일을 실행하세요
-3. 자동으로 로그인되어 바로 사용할 수 있습니다
-
-## 사용자 정보
-
-- User ID: ${userId}
-- Email: ${userEmail}
-- TikTok ID: ${tiktokId || '미설정'}
-
-## 문제 해결
-
-- Desktop App이 실행되지 않으면 Node.js가 설치되어 있는지 확인하세요
-- 문의사항: support@tikfind.com
-
----
-© 2025 TikFind. All rights reserved.
-        `;
-
-        archive.append(readmeContent, { name: 'TikFind-Desktop/README.txt' });
-
-        archive.finalize();
+        // 파일 다운로드
+        res.download(exePath, 'TikFind-Setup.exe', (err) => {
+            if (err) {
+                console.error('Desktop App 다운로드 오류:', err);
+                if (!res.headersSent) {
+                    res.status(500).json({ 
+                        success: false, 
+                        message: '다운로드 중 오류가 발생했습니다.' 
+                    });
+                }
+            }
+        });
 
     } catch (error) {
         console.error('Desktop App 다운로드 오류:', error);

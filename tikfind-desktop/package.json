@@ -18,34 +18,36 @@
   "author": "TikFind",
   "license": "MIT",
   "dependencies": {
-    "electron": "^28.3.3",
     "say": "^0.16.0",
     "tiktok-live-connector": "^1.1.8",
     "ws": "^8.16.0"
   },
   "devDependencies": {
+    "electron": "^28.3.3",
     "electron-builder": "^24.9.1"
   },
   "build": {
     "appId": "com.tikfind.desktop",
-    "productName": "TikFind Collector",
-    "protocols": {
-      "name": "TikFind Protocol",
-      "schemes": [
-        "tikfind"
-      ]
-    },
+    "productName": "TikFind",
     "directories": {
       "output": "dist"
     },
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "build/icon.ico"
     },
-    "mac": {
-      "target": "dmg",
-      "icon": "build/icon.icns",
-      "category": "public.app-category.utilities"
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TikFind"
     }
   }
 }
