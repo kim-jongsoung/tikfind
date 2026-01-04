@@ -51,8 +51,10 @@ function createWindow() {
     
     mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
     
-    // 개발자 도구 자동 열기
-    mainWindow.webContents.openDevTools();
+    // 개발 모드에서만 개발자 도구 열기
+    if (process.env.NODE_ENV === 'development') {
+        mainWindow.webContents.openDevTools();
+    }
     
     console.log('✅ TikFind Desktop App started');
 }
