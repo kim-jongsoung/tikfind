@@ -125,13 +125,13 @@ const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
     secret: process.env.SESSION_SECRET || 'tikfind-secret-key',
     resave: false,
-    saveUninitialized: true, // OAuth 리다이렉트를 위해 true로 변경
+    saveUninitialized: true,
     cookie: { 
-        secure: isProduction, // 프로덕션에서는 HTTPS 필수
+        secure: isProduction,
         httpOnly: true,
-        sameSite: isProduction ? 'none' : 'lax', // 프로덕션에서는 cross-site 허용
-        maxAge: 24 * 60 * 60 * 1000, // 24시간
-        domain: isProduction && process.env.COOKIE_DOMAIN ? process.env.COOKIE_DOMAIN : undefined
+        sameSite: 'lax', // lax로 변경하여 같은 도메인 내 쿠키 유지
+        maxAge: 24 * 60 * 60 * 1000,
+        domain: undefined // domain 설정 제거
     }
 }));
 
