@@ -111,7 +111,9 @@ echo.
 
 :: 9단계: latest.yml 업데이트
 echo [9/9] latest.yml 파일 업데이트...
-set RELEASE_URL=https://github.com/kim-jongsoung/tikfind/releases/download/v%VERSION%/%BUILD_FILE: =.%
+set "BUILD_FILE_URL=%BUILD_FILE: =.%"
+set RELEASE_URL=https://github.com/kim-jongsoung/tikfind/releases/download/v%VERSION%/%BUILD_FILE_URL%
+echo Release URL: %RELEASE_URL%
 powershell -Command "(Get-Content 'public\updates\latest.yml') -replace 'version:.*', 'version: %VERSION%' -replace 'url:.*', 'url: %RELEASE_URL%' | Set-Content 'public\updates\latest.yml'"
 echo ✅ latest.yml 업데이트 완료
 echo.
