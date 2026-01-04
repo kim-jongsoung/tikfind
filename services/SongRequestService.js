@@ -1,0 +1,266 @@
+/**
+ * 신청곡 관리 서비스
+ * #노래제목#가수이름 형식 파싱 및 YouTube 검색
+ */
+
+const axios = require('axios');
+
+class SongRequestService {
+    constructor() {
+        this.youtubeApiKey = process.env.YOUTUBE_API_KEY;
+        this.songQueue = new Map(); // userId -> 신청곡 배열
+    }
+
+    /**
+     * 채팅 메시지에서 신청곡 파싱
+     * @param {string} message - 채팅 메시지
+     * @returns {object|null} - { title, artist } 또는 null
+     */
+    parseSongRequest(message) {
+        // #노래제목#가수이름 패턴
+        const pattern = /#([^#]+)#([^#]+)/;
+        const match = message.match(pattern);
+
+        if (match) {
+            return {
+                title: match[1].trim(),
+                artist: match[2].trim()
+            };
+        }
+
+        return null;
+    }
+
+    /**
+     * YouTube에서 노래 검색
+     * @param {string} title - 노래 제목
+     * @param {string} artist - 가수 이름
+     */
+    async searchYouTube(title, artist) {
+        try {
+            if (!this.youtubeApiKey) {
+                console.error('❌ YouTube API 키가 설정되지 않았습니다. .env 파일을 확인해주세요.');
+                return null;
+            }
+
+            const query = `${title} ${artist} official music video`;
+            const url = 'https://www.googleapis.com/youtube/v3/search';
+
+            console.log('🔍 YouTube 검색 시작:', query);
+            console.log('🔑 API 키:', this.youtubeApiKey ? '설정됨' : '없음');
+
+            const response = await axios.get(url, {
+                params: {
+                    key: this.youtubeApiKey,
+                    q: query,
+                    part: 'snippet',
+                    type: 'video',
+                    maxResults: 1,
+                    videoCategoryId: '10' // Music category
+                }
+            });
+
+            console.log('✅ YouTube API 응답:', response.data.items?.length || 0, '개 결과');
+
+            if (response.data.items && response.data.items.length > 0) {
+                const video = response.data.items[0];
+                const result = {
+                    videoId: video.id.videoId,
+                    url: `https://www.youtube.com/watch?v=${video.id.videoId}`,
+                    thumbnail: video.snippet.thumbnails.high.url,
+                    channelTitle: video.snippet.channelTitle
+                };
+                console.log('✅ YouTube 검색 성공:', result.videoId, '-', video.snippet.title);
+                return result;
+            }
+
+            console.log('❌ YouTube 검색 결과 없음:', query);
+            return null;
+        } catch (error) {
+            console.error('❌ YouTube 검색 오류:', error.message);
+            if (error.response) {
+                console.error('❌ YouTube API 응답 에러:', error.response.status, error.response.data);
+            }
+            return null;
+        }
+    }
+
+    /**
+     * 신청곡 추가
+     * @param {string} userId - 스트리머 ID
+     * @param {object} songData - 신청곡 데이터
+     * @param {object} requester - 신청자 정보
+     */
+    async addSongRequest(userId, songData, requester) {
+        const { title, artist } = songData;
+
+        // YouTube 검색
+        const youtubeData = await this.searchYouTube(title, artist);
+
+        if (!youtubeData) {
+            return {
+                success: false,
+                message: '노래를 찾을 수 없습니다'
+            };
+        }
+
+        // 신청곡 객체 생성
+        const song = {
+            id: `song_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            title: title,
+            artist: artist,
+            requester: requester.username,
+            requesterId: requester.uniqueId,
+            youtubeUrl: youtubeData.url,
+            videoId: youtubeData.videoId,
+            thumbnail: youtubeData.thumbnail,
+            priority: this.calculatePriority(requester),
+            timestamp: Date.now(),
+            played: false
+        };
+
+        // 큐에 추가
+        if (!this.songQueue.has(userId)) {
+            this.songQueue.set(userId, []);
+        }
+
+        const queue = this.songQueue.get(userId);
+        queue.push(song);
+
+        // 우선순위로 정렬
+        queue.sort((a, b) => {
+            if (a.priority !== b.priority) {
+                return b.priority - a.priority; // 높은 우선순위 먼저
+            }
+            return a.timestamp - b.timestamp; // 같으면 먼저 신청한 순서
+        });
+
+        console.log(`🎵 신청곡 추가: ${title} - ${artist} (신청: ${requester.username})`);
+
+        return {
+            success: true,
+            song: song,
+            queuePosition: queue.findIndex(s => s.id === song.id) + 1,
+            totalQueue: queue.length
+        };
+    }
+
+    /**
+     * 우선순위 계산
+     * @param {object} requester - 신청자 정보
+     */
+    calculatePriority(requester) {
+        let priority = 100; // 기본값
+
+        // VIP 후원자 (나중에 구현)
+        if (requester.isVIP) {
+            priority += 1000;
+        }
+
+        // 사용자 레벨 (나중에 구현)
+        if (requester.level) {
+            priority += requester.level * 10;
+        }
+
+        // 팔로워 배지
+        if (requester.badges && requester.badges.includes('follower')) {
+            priority += 50;
+        }
+
+        return priority;
+    }
+
+    /**
+     * 신청곡 큐 가져오기
+     * @param {string} userId - 스트리머 ID
+     */
+    getQueue(userId) {
+        return this.songQueue.get(userId) || [];
+    }
+
+    /**
+     * 신청곡 삭제
+     * @param {string} userId - 스트리머 ID
+     * @param {string} songId - 신청곡 ID
+     */
+    removeSong(userId, songId) {
+        const queue = this.songQueue.get(userId);
+        if (!queue) return false;
+
+        const index = queue.findIndex(s => s.id === songId);
+        if (index === -1) return false;
+
+        queue.splice(index, 1);
+        console.log(`🗑️ 신청곡 삭제: ${songId}`);
+        return true;
+    }
+
+    /**
+     * 신청곡 재생 완료 처리
+     * @param {string} userId - 스트리머 ID
+     * @param {string} songId - 신청곡 ID
+     */
+    markAsPlayed(userId, songId) {
+        const queue = this.songQueue.get(userId);
+        if (!queue) return false;
+
+        const song = queue.find(s => s.id === songId);
+        if (!song) return false;
+
+        song.played = true;
+        console.log(`✅ 신청곡 재생 완료: ${song.title} - ${song.artist}`);
+        return true;
+    }
+
+    /**
+     * 신청자 재실 확인
+     * @param {string} userId - 스트리머 ID
+     * @param {Set} activeViewers - 현재 시청자 Set
+     */
+    checkRequesterPresence(userId, activeViewers) {
+        const queue = this.songQueue.get(userId);
+        if (!queue || queue.length === 0) return;
+
+        const nextSong = queue[0];
+        
+        // 신청자가 방에 없으면 스킵
+        if (!activeViewers.has(nextSong.requesterId)) {
+            console.log(`⏭️ 신청자 부재로 스킵: ${nextSong.title} (신청: ${nextSong.requester})`);
+            this.removeSong(userId, nextSong.id);
+            
+            // 재귀적으로 다음 곡도 확인
+            this.checkRequesterPresence(userId, activeViewers);
+        }
+    }
+
+    /**
+     * 신청곡 큐 초기화
+     * @param {string} userId - 스트리머 ID
+     */
+    clearQueue(userId) {
+        this.songQueue.delete(userId);
+        console.log(`🗑️ 신청곡 큐 초기화: ${userId}`);
+    }
+
+    /**
+     * 신청곡 순서 변경 (수동)
+     * @param {string} userId - 스트리머 ID
+     * @param {string} songId - 신청곡 ID
+     * @param {number} newPosition - 새 위치 (0-based)
+     */
+    moveSong(userId, songId, newPosition) {
+        const queue = this.songQueue.get(userId);
+        if (!queue) return false;
+
+        const currentIndex = queue.findIndex(s => s.id === songId);
+        if (currentIndex === -1) return false;
+
+        const [song] = queue.splice(currentIndex, 1);
+        queue.splice(newPosition, 0, song);
+
+        console.log(`🔄 신청곡 순서 변경: ${song.title} (${currentIndex} → ${newPosition})`);
+        return true;
+    }
+}
+
+module.exports = SongRequestService;

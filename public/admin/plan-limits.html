@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>플랜 제한 설정 - TikFind Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <!-- Admin Header -->
+    <header class="bg-slate-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold">TikFind Admin</h1>
+                <span class="px-3 py-1 bg-red-600 text-xs rounded-full">ADMIN</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-email" class="text-sm"></span>
+                <a href="/admin/dashboard" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
+                    <i class="fas fa-chart-line mr-2"></i>Dashboard
+                </a>
+                <a href="/auth/logout" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="mb-6">
+            <h2 class="text-3xl font-bold text-gray-800">플랜별 제한 설정</h2>
+            <p class="text-gray-600 mt-2">각 플랜의 일일 사용 제한을 설정합니다. -1은 무제한을 의미합니다.</p>
+        </div>
+
+        <!-- Free Plan -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-2xl font-bold text-gray-800">FREE 플랜</h3>
+                    <p class="text-gray-600">무료 사용자 제한</p>
+                </div>
+                <span class="px-4 py-2 bg-gray-200 text-gray-800 rounded-full font-semibold">$0/월</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-music mr-2 text-blue-600"></i>신청곡 (곡/일)
+                    </label>
+                    <input type="number" id="free-song" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="5">
+                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-brain mr-2 text-green-600"></i>GPT AI (건/일)
+                    </label>
+                    <input type="number" id="free-gpt" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="20">
+                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-microphone mr-2 text-purple-600"></i>AI 발음 코치 (건/일)
+                    </label>
+                    <input type="number" id="free-coach" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="10">
+                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- UNIVERSE Plan -->
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-md p-6 mb-6 border-2 border-indigo-200">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">UNIVERSE 플랜</h3>
+                    <p class="text-gray-600">프리미엄 사용자 제한</p>
+                </div>
+                <span class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full font-semibold">$9/월</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-music mr-2 text-blue-600"></i>신청곡 (곡/일)
+                    </label>
+                    <input type="number" id="universe-song" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="100">
+                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-brain mr-2 text-green-600"></i>GPT AI (건/일)
+                    </label>
+                    <input type="number" id="universe-gpt" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="100">
+                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-microphone mr-2 text-purple-600"></i>AI 발음 코치 (건/일)
+                    </label>
+                    <input type="number" id="universe-coach" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="100">
+                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- UNLIMITED Plan -->
+        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg shadow-md p-6 mb-6 border-2 border-yellow-300">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">UNLIMITED 플랜</h3>
+                    <p class="text-gray-600">최고급 사용자 제한</p>
+                </div>
+                <span class="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full font-semibold">$39/월</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-music mr-2 text-blue-600"></i>신청곡 (곡/일)
+                    </label>
+                    <input type="number" id="unlimited-song" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
+                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-brain mr-2 text-green-600"></i>GPT AI (건/일)
+                    </label>
+                    <input type="number" id="unlimited-gpt" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
+                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-microphone mr-2 text-purple-600"></i>AI 발음 코치 (건/일)
+                    </label>
+                    <input type="number" id="unlimited-coach" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
+                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex justify-end space-x-4">
+            <button onclick="loadLimits()" class="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-semibold">
+                <i class="fas fa-redo mr-2"></i>초기화
+            </button>
+            <button onclick="saveLimits()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">
+                <i class="fas fa-save mr-2"></i>저장
+            </button>
+        </div>
+    </main>
+
+    <script>
+        // Load admin info
+        async function loadAdminInfo() {
+            try {
+                const response = await fetch('/admin/auth/check');
+                const data = await response.json();
+                if (data.success && data.admin) {
+                    document.getElementById('admin-email').textContent = data.admin.email;
+                } else {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '/admin/login';
+                }
+            } catch (error) {
+                console.error('Error loading admin info:', error);
+                window.location.href = '/admin/login';
+            }
+        }
+
+        // Load current limits
+        async function loadLimits() {
+            try {
+                const response = await fetch('/admin/api/plan-limits');
+                const data = await response.json();
+                
+                if (data.success && data.limits) {
+                    data.limits.forEach(limit => {
+                        const planName = limit.planName;
+                        document.getElementById(`${planName}-song`).value = limit.songRequestLimit;
+                        document.getElementById(`${planName}-gpt`).value = limit.gptAiLimit;
+                        document.getElementById(`${planName}-coach`).value = limit.pronunciationCoachLimit;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading limits:', error);
+                alert('제한 설정을 불러오는데 실패했습니다.');
+            }
+        }
+
+        // Save limits
+        async function saveLimits() {
+            const limits = [
+                {
+                    planName: 'free',
+                    songRequestLimit: parseInt(document.getElementById('free-song').value),
+                    gptAiLimit: parseInt(document.getElementById('free-gpt').value),
+                    pronunciationCoachLimit: parseInt(document.getElementById('free-coach').value)
+                },
+                {
+                    planName: 'universe',
+                    songRequestLimit: parseInt(document.getElementById('universe-song').value),
+                    gptAiLimit: parseInt(document.getElementById('universe-gpt').value),
+                    pronunciationCoachLimit: parseInt(document.getElementById('universe-coach').value)
+                },
+                {
+                    planName: 'unlimited',
+                    songRequestLimit: parseInt(document.getElementById('unlimited-song').value),
+                    gptAiLimit: parseInt(document.getElementById('unlimited-gpt').value),
+                    pronunciationCoachLimit: parseInt(document.getElementById('unlimited-coach').value)
+                }
+            ];
+
+            try {
+                const response = await fetch('/admin/api/plan-limits', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ limits })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('플랜 제한 설정이 저장되었습니다!');
+                    loadLimits();
+                } else {
+                    alert('저장 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (error) {
+                console.error('Error saving limits:', error);
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+
+        // Initialize
+        loadAdminInfo();
+        loadLimits();
+    </script>
+</body>
+</html>

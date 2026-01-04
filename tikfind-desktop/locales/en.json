@@ -1,0 +1,44 @@
+{
+  "app": {
+    "title": "TikFind",
+    "subtitle": "TikTok Live Streaming Assistant"
+  },
+  "connection": {
+    "userId": "User ID (Copy from Web Dashboard)",
+    "userIdPlaceholder": "Enter User ID from Web Dashboard",
+    "username": "TikTok Username",
+    "usernamePlaceholder": "@imkimwhite or imkimwhite",
+    "startBtn": "🚀 Start Connection",
+    "stopBtn": "⏹️ Stop",
+    "statusDisconnected": "Disconnected",
+    "statusConnected": "Live",
+    "alertUserId": "Please copy and enter your User ID from the web dashboard.",
+    "alertUsername": "Please enter your TikTok username.",
+    "alertAlreadyConnected": "Already connected."
+  },
+  "tts": {
+    "title": "🔊 TTS Settings",
+    "enabled": "Enable TTS",
+    "speed": "Speed"
+  },
+  "chat": {
+    "title": "💬 Live Chat",
+    "empty": "Chat messages will appear here..."
+  },
+  "aiCoach": {
+    "title": "🤖 AI Pronunciation Coach",
+    "empty": "AI will guide pronunciation for foreign language chats..."
+  },
+  "songQueue": {
+    "title": "🎵 Song Queue",
+    "empty": "No song requests"
+  },
+  "badges": {
+    "free": "FREE",
+    "pro": "PRO"
+  },
+  "footer": {
+    "server": "Server",
+    "version": "v1.0.0 | Free TTS 🔊"
+  }
+}

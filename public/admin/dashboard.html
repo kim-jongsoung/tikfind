@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <!-- Admin Header -->
+    <header class="bg-slate-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold">TikFind Admin</h1>
+                <span class="px-3 py-1 bg-red-600 text-xs rounded-full">ADMIN</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-email" class="text-sm"></span>
+                <a href="/dashboard" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
+                    <i class="fas fa-home mr-2"></i>User Dashboard
+                </a>
+                <a href="/auth/logout" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Navigation -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4">
+            <ul class="flex space-x-8 py-4">
+                <li>
+                    <a href="/admin/dashboard" class="text-blue-600 font-semibold border-b-2 border-blue-600 pb-2">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-users mr-2"></i>Users
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/subscriptions" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-credit-card mr-2"></i>Subscriptions
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/payments" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-dollar-sign mr-2"></i>Payments
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/logs" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-history mr-2"></i>Activity Logs
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/plan-limits" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-sliders-h mr-2"></i>Plan Limits
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Users -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Total Users</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="total-users">-</h3>
+                        <p class="text-sm text-green-600 mt-2">
+                            <i class="fas fa-arrow-up"></i>
+                            <span id="new-users-week">-</span> this week
+                        </p>
+                    </div>
+                    <div class="bg-blue-100 rounded-full p-4">
+                        <i class="fas fa-users text-blue-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Subscribers -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Active Subscribers</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2" id="active-subscribers">-</h3>
+                        <p class="text-sm text-blue-600 mt-2">
+                            <span id="trial-users">-</span> on trial
+                        </p>
+                    </div>
+                    <div class="bg-green-100 rounded-full p-4">
+                        <i class="fas fa-crown text-green-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Revenue (MRR) -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">MRR</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2">$<span id="mrr">-</span></h3>
+                        <p class="text-sm text-gray-600 mt-2">
+                            $<span id="revenue-30">-</span> last 30 days
+                        </p>
+                    </div>
+                    <div class="bg-purple-100 rounded-full p-4">
+                        <i class="fas fa-dollar-sign text-purple-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conversion Rate -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-500 text-sm">Conversion Rate</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2"><span id="conversion-rate">-</span>%</h3>
+                        <p class="text-sm text-red-600 mt-2">
+                            <span id="churn-rate">-</span>% churn rate
+                        </p>
+                    </div>
+                    <div class="bg-yellow-100 rounded-full p-4">
+                        <i class="fas fa-chart-line text-yellow-600 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- User Growth Chart -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">User Growth (Last 30 Days)</h3>
+                <canvas id="userGrowthChart" height="200"></canvas>
+            </div>
+
+            <!-- Revenue Chart -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Revenue Trend (Last 30 Days)</h3>
+                <canvas id="revenueChart" height="200"></canvas>
+            </div>
+        </div>
+
+        <!-- Plan Distribution -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Plan Distribution</h3>
+                <canvas id="planChart" height="200"></canvas>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Recent Activity</h3>
+                <div id="recent-activity" class="space-y-4">
+                    <p class="text-gray-500 text-center py-8">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Quick Actions</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <a href="/admin/users?status=trial" class="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition text-center">
+                    <i class="fas fa-user-clock text-3xl text-blue-600 mb-2"></i>
+                    <p class="text-sm font-semibold">Trial Users</p>
+                </a>
+                <a href="/admin/users?status=expired" class="p-4 border-2 border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 transition text-center">
+                    <i class="fas fa-user-times text-3xl text-red-600 mb-2"></i>
+                    <p class="text-sm font-semibold">Expired Trials</p>
+                </a>
+                <a href="/admin/payments?status=failed" class="p-4 border-2 border-gray-200 rounded-lg hover:border-yellow-500 hover:bg-yellow-50 transition text-center">
+                    <i class="fas fa-exclamation-triangle text-3xl text-yellow-600 mb-2"></i>
+                    <p class="text-sm font-semibold">Failed Payments</p>
+                </a>
+                <a href="/admin/users/export" class="p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition text-center">
+                    <i class="fas fa-download text-3xl text-green-600 mb-2"></i>
+                    <p class="text-sm font-semibold">Export Data</p>
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Load admin info
+        async function loadAdminInfo() {
+            try {
+                const response = await fetch('/admin/auth/check');
+                const data = await response.json();
+                if (data.success && data.admin) {
+                    document.getElementById('admin-email').textContent = data.admin.email;
+                } else {
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '/admin/login';
+                }
+            } catch (error) {
+                console.error('Error loading admin info:', error);
+                window.location.href = '/admin/login';
+            }
+        }
+
+        // Load dashboard stats
+        async function loadStats() {
+            try {
+                const response = await fetch('/admin/api/stats');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.stats;
+                    document.getElementById('total-users').textContent = stats.totalUsers.toLocaleString();
+                    document.getElementById('active-subscribers').textContent = stats.activeSubscribers.toLocaleString();
+                    document.getElementById('trial-users').textContent = stats.trialUsers.toLocaleString();
+                    document.getElementById('new-users-week').textContent = stats.newUsersWeek.toLocaleString();
+                    document.getElementById('mrr').textContent = parseFloat(stats.mrr).toLocaleString();
+                    document.getElementById('revenue-30').textContent = parseFloat(stats.revenue30Days).toLocaleString();
+                    document.getElementById('conversion-rate').textContent = stats.conversionRate;
+                    document.getElementById('churn-rate').textContent = stats.churnRate;
+                    
+                    // Initialize charts
+                    initCharts(stats);
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Initialize charts
+        function initCharts(stats) {
+            // Plan Distribution Pie Chart
+            const planCtx = document.getElementById('planChart').getContext('2d');
+            new Chart(planCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pro Subscribers', 'Trial Users', 'Free/Expired'],
+                    datasets: [{
+                        data: [
+                            stats.activeSubscribers - stats.trialUsers,
+                            stats.trialUsers,
+                            stats.totalUsers - stats.activeSubscribers
+                        ],
+                        backgroundColor: ['#10b981', '#3b82f6', '#ef4444']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // User Growth Chart (mock data - replace with real data)
+            const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+            new Chart(userGrowthCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'New Users',
+                        data: [12, 19, 15, stats.newUsersWeek],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Revenue Chart (mock data - replace with real data)
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            new Chart(revenueCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: [120, 190, 150, parseFloat(stats.revenue30Days) / 4],
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Load recent activity
+        async function loadRecentActivity() {
+            try {
+                const response = await fetch('/admin/api/logs?limit=5');
+                const data = await response.json();
+                
+                if (data.success && data.logs.length > 0) {
+                    const container = document.getElementById('recent-activity');
+                    container.innerHTML = data.logs.map(log => `
+                        <div class="flex items-center justify-between border-b pb-3">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-800">${log.action.replace(/_/g, ' ').toUpperCase()}</p>
+                                <p class="text-xs text-gray-500">by ${log.adminId?.email || 'Unknown'}</p>
+                            </div>
+                            <span class="text-xs text-gray-400">${new Date(log.createdAt).toLocaleString()}</span>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('recent-activity').innerHTML = '<p class="text-gray-500 text-center py-8">No recent activity</p>';
+                }
+            } catch (error) {
+                console.error('Error loading recent activity:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAdminInfo();
+            loadStats();
+            loadRecentActivity();
+        });
+    </script>
+</body>
+</html>

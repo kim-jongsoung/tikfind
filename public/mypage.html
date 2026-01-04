@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Page - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <!-- Navigation -->
+    <nav class="bg-black shadow-lg fixed w-full top-0 z-50 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center">
+                    <a href="/">
+                        <img src="/images/logo.png" onerror="this.src='https://placehold.co/150x50?text=TikFind'" alt="TikFind" class="h-12 cursor-pointer hover:opacity-80 transition">
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="language-selector"></div>
+                    <a href="/dashboard" class="text-gray-300 hover:text-white transition">
+                        <i class="fas fa-home mr-2"></i><span data-i18n="dashboard">Dashboard</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="pt-28 pb-12 px-4">
+        <div class="max-w-6xl mx-auto">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-4xl font-black mb-2" data-i18n="mypageTitle">My Page</h1>
+                <p class="text-gray-400" data-i18n="mypageSubtitle">프로필 및 구독 정보를 관리하세요</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left Column: Profile -->
+                <div class="lg:col-span-1">
+                    <!-- Profile Card -->
+                    <div class="bg-gradient-to-br from-purple-900 to-indigo-900 rounded-2xl p-6 border border-purple-500/30 shadow-2xl">
+                        <div class="text-center">
+                            <div class="relative inline-block mb-4">
+                                <img id="profileImage" src="https://via.placeholder.com/120" alt="Profile" class="w-32 h-32 rounded-full border-4 border-white/20 shadow-xl">
+                                <div class="absolute bottom-0 right-0 bg-green-500 w-6 h-6 rounded-full border-4 border-gray-900"></div>
+                            </div>
+                            <h2 id="userName" class="text-2xl font-bold mb-1">Loading...</h2>
+                            <p id="userEmail" class="text-gray-300 text-sm mb-4">loading@email.com</p>
+                            <div class="bg-white/10 backdrop-blur-sm rounded-lg p-3 mb-4">
+                                <p class="text-xs text-gray-400 mb-1" data-i18n="tiktokId">TikTok ID</p>
+                                <p id="tiktokId" class="text-white font-semibold">Not connected</p>
+                            </div>
+                            <div class="text-xs text-gray-400">
+                                <i class="fas fa-calendar mr-2"></i>
+                                <span data-i18n="joinedDate">가입일:</span>
+                                <span id="joinedDate">2025-01-01</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="mt-6 space-y-3">
+                        <button onclick="editProfile()" class="w-full px-4 py-3 bg-gradient-to-r from-pink-600 to-purple-600 rounded-xl hover:shadow-xl transition font-semibold">
+                            <i class="fas fa-edit mr-2"></i><span data-i18n="editProfile">프로필 수정</span>
+                        </button>
+                        <button onclick="logout()" class="w-full px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition font-semibold border border-gray-700">
+                            <i class="fas fa-sign-out-alt mr-2"></i><span data-i18n="logout">로그아웃</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Subscription & Stats -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Subscription Status -->
+                    <div id="subscriptionCard" class="bg-gradient-to-br from-yellow-600 to-orange-600 rounded-2xl p-8 border border-yellow-500/30 shadow-2xl">
+                        <div class="flex items-start justify-between mb-6">
+                            <div>
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-crown text-3xl mr-3"></i>
+                                    <h3 class="text-3xl font-black" data-i18n="trialPeriod">무료 체험 중</h3>
+                                </div>
+                                <p class="text-white/80" data-i18n="trialDesc">7일 무료 체험 기간이 제공됩니다</p>
+                            </div>
+                            <div class="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-2">
+                                <p class="text-xs text-white/80" data-i18n="daysLeft">남은 기간</p>
+                                <p id="daysRemaining" class="text-3xl font-black">7</p>
+                                <p class="text-xs text-white/80" data-i18n="days">일</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-6">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm" data-i18n="trialStartDate">체험 시작일</span>
+                                <span id="trialStartDate" class="font-semibold">2025-01-01</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm" data-i18n="trialEndDate">체험 종료일</span>
+                                <span id="trialEndDate" class="font-semibold">2025-01-08</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-red-500/20 border border-red-500/50 rounded-xl p-4 mb-6">
+                            <div class="flex items-start">
+                                <i class="fas fa-exclamation-triangle text-red-400 text-xl mr-3 mt-1"></i>
+                                <div>
+                                    <p class="font-semibold mb-1" data-i18n="trialWarningTitle">체험 종료 후 결제 필수</p>
+                                    <p class="text-sm text-white/80" data-i18n="trialWarning">무료 체험 종료 후 결제하지 않으면 서비스 이용이 정지됩니다</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <a href="/billing" class="block w-full px-6 py-4 bg-white text-orange-600 rounded-xl hover:shadow-2xl transition font-black text-lg text-center transform hover:scale-105">
+                            <i class="fas fa-credit-card mr-2"></i><span data-i18n="subscribeToPro">Pro 플랜 구독하기</span>
+                        </a>
+                    </div>
+
+                    <!-- Usage Statistics -->
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <h3 class="text-2xl font-bold mb-6" data-i18n="usageStats">사용 통계</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl p-4 text-center">
+                                <i class="fas fa-music text-3xl mb-2"></i>
+                                <p id="totalSongs" class="text-3xl font-black mb-1">0</p>
+                                <p class="text-xs text-white/80" data-i18n="totalSongs">총 신청곡</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-pink-600 to-red-600 rounded-xl p-4 text-center">
+                                <i class="fas fa-language text-3xl mb-2"></i>
+                                <p id="totalTranslations" class="text-3xl font-black mb-1">0</p>
+                                <p class="text-xs text-white/80" data-i18n="totalTranslations">AI 번역</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-green-600 to-teal-600 rounded-xl p-4 text-center">
+                                <i class="fas fa-broadcast-tower text-3xl mb-2"></i>
+                                <p id="totalStreams" class="text-3xl font-black mb-1">0</p>
+                                <p class="text-xs text-white/80" data-i18n="totalStreams">라이브 방송</p>
+                            </div>
+                            <div class="bg-gradient-to-br from-yellow-600 to-orange-600 rounded-xl p-4 text-center">
+                                <i class="fas fa-clock text-3xl mb-2"></i>
+                                <p id="totalHours" class="text-3xl font-black mb-1">0</p>
+                                <p class="text-xs text-white/80" data-i18n="totalHours">총 시간</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Settings -->
+                    <div class="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+                        <h3 class="text-2xl font-bold mb-6" data-i18n="accountSettings">계정 설정</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-4 bg-gray-900 rounded-xl">
+                                <div class="flex items-center">
+                                    <i class="fab fa-google text-2xl text-blue-500 mr-4"></i>
+                                    <div>
+                                        <p class="font-semibold" data-i18n="googleAccount">Google 계정</p>
+                                        <p class="text-sm text-gray-400" data-i18n="connectedAccount">연결된 계정</p>
+                                    </div>
+                                </div>
+                                <div class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm font-semibold">
+                                    <i class="fas fa-check-circle mr-1"></i><span data-i18n="connected">연결됨</span>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between p-4 bg-gray-900 rounded-xl">
+                                <div class="flex items-center">
+                                    <i class="fab fa-tiktok text-2xl text-white mr-4"></i>
+                                    <div>
+                                        <p class="font-semibold" data-i18n="tiktokAccount">TikTok 계정</p>
+                                        <p class="text-sm text-gray-400" data-i18n="linkTiktok">TikTok 계정을 연결하세요</p>
+                                    </div>
+                                </div>
+                                <button class="bg-pink-600 hover:bg-pink-700 px-4 py-2 rounded-lg text-sm font-semibold transition">
+                                    <span data-i18n="connect">연결하기</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="bg-red-900/20 border border-red-500/30 rounded-2xl p-6">
+                        <h3 class="text-2xl font-bold mb-4 text-red-400" data-i18n="dangerZone">위험 구역</h3>
+                        <p class="text-gray-400 mb-4" data-i18n="dangerZoneDesc">계정 삭제는 되돌릴 수 없습니다</p>
+                        <button onclick="deleteAccount()" class="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-xl transition font-semibold">
+                            <i class="fas fa-trash-alt mr-2"></i><span data-i18n="deleteAccount">계정 삭제</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load user data
+        async function loadUserData() {
+            try {
+                const response = await fetch('/auth/current_user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    const user = data.user;
+                    
+                    // Update profile
+                    document.getElementById('userName').textContent = user.nickname || 'User';
+                    document.getElementById('userEmail').textContent = user.email || '';
+                    document.getElementById('tiktokId').textContent = user.tiktokId || 'Not connected';
+                    
+                    if (user.profileImage) {
+                        document.getElementById('profileImage').src = user.profileImage;
+                    }
+                    
+                    // Calculate trial days remaining
+                    if (user.createdAt) {
+                        const createdDate = new Date(user.createdAt);
+                        const now = new Date();
+                        const daysPassed = Math.floor((now - createdDate) / (1000 * 60 * 60 * 24));
+                        const daysRemaining = Math.max(0, 7 - daysPassed);
+                        
+                        document.getElementById('daysRemaining').textContent = daysRemaining;
+                        document.getElementById('trialStartDate').textContent = createdDate.toLocaleDateString('ko-KR');
+                        
+                        const endDate = new Date(createdDate);
+                        endDate.setDate(endDate.getDate() + 7);
+                        document.getElementById('trialEndDate').textContent = endDate.toLocaleDateString('ko-KR');
+                        document.getElementById('joinedDate').textContent = createdDate.toLocaleDateString('ko-KR');
+                        
+                        // Change card style if trial expired
+                        if (daysRemaining === 0) {
+                            const card = document.getElementById('subscriptionCard');
+                            card.className = 'bg-gradient-to-br from-red-600 to-red-800 rounded-2xl p-8 border border-red-500/30 shadow-2xl';
+                        }
+                    }
+                    
+                    // Update stats (mock data for now)
+                    document.getElementById('totalSongs').textContent = user.stats?.totalSongs || 0;
+                    document.getElementById('totalTranslations').textContent = user.stats?.totalTranslations || 0;
+                    document.getElementById('totalStreams').textContent = user.stats?.totalStreams || 0;
+                    document.getElementById('totalHours').textContent = user.stats?.totalHours || 0;
+                } else {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('Failed to load user data:', error);
+                window.location.href = '/';
+            }
+        }
+
+        function editProfile() {
+            alert('프로필 수정 기능은 곧 추가됩니다!');
+        }
+
+        function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                window.location.href = '/auth/logout';
+            }
+        }
+
+        function deleteAccount() {
+            const confirmed = confirm('정말로 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
+            if (confirmed) {
+                const doubleConfirm = confirm('모든 데이터가 영구적으로 삭제됩니다. 계속하시겠습니까?');
+                if (doubleConfirm) {
+                    alert('계정 삭제 기능은 곧 추가됩니다.');
+                }
+            }
+        }
+
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', loadUserData);
+    </script>
+
+    <script src="/js/i18n.js"></script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>설정 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-64 p-8" style="margin-top: 88px;">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">설정</h2>
+                <p class="text-gray-600 mt-2">계정 및 서비스 설정을 관리하세요</p>
+            </div>
+
+            <div class="space-y-6">
+                <!-- 프로필 정보 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-user mr-2 text-indigo-600"></i>
+                        프로필 정보
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+                            <input type="email" id="user-email" value="<%= user.email %>" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">닉네임</label>
+                            <input type="text" id="user-nickname" value="<%= user.nickname || '' %>" placeholder="닉네임 입력" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">스트리머 페르소나</label>
+                            <textarea id="user-persona" placeholder="예: 친근하고 활발한 게임 스트리머" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"><%= user.streamerPersona || '' %></textarea>
+                            <p class="text-xs text-gray-500 mt-1">AI가 당신의 성격을 반영한 답변을 생성합니다</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TikTok ID -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fab fa-tiktok mr-2 text-pink-600"></i>
+                        TikTok ID
+                    </h3>
+                    
+                    <% if (user.tiktokId) { %>
+                    <div id="tiktok-id-display">
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="flex items-center space-x-3">
+                                <i class="fab fa-tiktok text-2xl text-pink-600"></i>
+                                <div>
+                                    <p class="font-semibold text-gray-800">@<%= user.tiktokId %></p>
+                                    <p class="text-sm text-gray-500">연결됨</p>
+                                </div>
+                            </div>
+                            <button onclick="showTikTokEdit()" class="text-indigo-600 hover:text-indigo-700 text-sm">
+                                <i class="fas fa-edit mr-1"></i>변경
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="tiktok-edit-form" class="hidden">
+                        <div class="flex gap-2">
+                            <input type="text" id="tiktok-id-input" value="<%= user.tiktokId %>" placeholder="TikTok ID 입력 (예: aoqrhtm)" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <button onclick="saveTikTokId()" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                                <i class="fas fa-save mr-1"></i>저장
+                            </button>
+                            <button onclick="cancelTikTokEdit()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                                취소
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">@ 기호 없이 TikTok ID만 입력하세요</p>
+                    </div>
+                    <% } else { %>
+                    <div>
+                        <div class="flex gap-2">
+                            <input type="text" id="tiktok-id-input" placeholder="TikTok ID 입력 (예: aoqrhtm)" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <button onclick="saveTikTokId()" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                                <i class="fas fa-save mr-1"></i>저장
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2">@ 기호 없이 TikTok ID만 입력하세요</p>
+                    </div>
+                    <% } %>
+                </div>
+
+                <!-- 언어 설정 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-language mr-2 text-purple-600"></i>
+                        언어 설정
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">모국어 (AI 발음 코치용)</label>
+                            <select id="native-language" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="ko" <%= user.nativeLanguage === 'ko' ? 'selected' : '' %>>🇰🇷 한국어 (Korean)</option>
+                                <option value="en" <%= user.nativeLanguage === 'en' ? 'selected' : '' %>>🇺🇸 영어 (English)</option>
+                                <option value="ja" <%= user.nativeLanguage === 'ja' ? 'selected' : '' %>>🇯🇵 일본어 (Japanese)</option>
+                                <option value="es" <%= user.nativeLanguage === 'es' ? 'selected' : '' %>>🇪🇸 스페인어 (Spanish)</option>
+                                <option value="zh-TW" <%= user.nativeLanguage === 'zh-TW' ? 'selected' : '' %>>🇹🇼 중국어 (Chinese)</option>
+                                <option value="vi" <%= user.nativeLanguage === 'vi' ? 'selected' : '' %>>🇻🇳 베트남어 (Vietnamese)</option>
+                                <option value="th" <%= user.nativeLanguage === 'th' ? 'selected' : '' %>>🇹🇭 태국어 (Thai)</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-2">AI가 이 언어로 발음을 안내합니다</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">표시 언어</label>
+                            <select id="preferred-language" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="ko" <%= user.preferredLanguage === 'ko' ? 'selected' : '' %>>🇰🇷 한국어 (Korean)</option>
+                                <option value="en" <%= user.preferredLanguage === 'en' ? 'selected' : '' %>>🇺🇸 영어 (English)</option>
+                                <option value="ja" <%= user.preferredLanguage === 'ja' ? 'selected' : '' %>>🇯🇵 일본어 (Japanese)</option>
+                                <option value="es" <%= user.preferredLanguage === 'es' ? 'selected' : '' %>>🇪🇸 스페인어 (Spanish)</option>
+                                <option value="zh-TW" <%= user.preferredLanguage === 'zh-TW' ? 'selected' : '' %>>🇹🇼 중국어 (Chinese)</option>
+                                <option value="vi" <%= user.preferredLanguage === 'vi' ? 'selected' : '' %>>🇻🇳 베트남어 (Vietnamese)</option>
+                                <option value="th" <%= user.preferredLanguage === 'th' ? 'selected' : '' %>>🇹🇭 태국어 (Thai)</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-2">웹사이트 표시 언어</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 저장 버튼 -->
+                <div class="flex justify-end space-x-4">
+                    <button onclick="window.location.reload()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        취소
+                    </button>
+                    <button onclick="saveSettings()" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-save mr-2"></i>저장
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+    <script>
+        function showTikTokEdit() {
+            document.getElementById('tiktok-id-display').classList.add('hidden');
+            document.getElementById('tiktok-edit-form').classList.remove('hidden');
+        }
+
+        function cancelTikTokEdit() {
+            document.getElementById('tiktok-id-display').classList.remove('hidden');
+            document.getElementById('tiktok-edit-form').classList.add('hidden');
+        }
+
+        function saveTikTokId() {
+            const tiktokId = document.getElementById('tiktok-id-input').value.trim().replace('@', '');
+            
+            if (!tiktokId) {
+                alert('TikTok ID를 입력하세요.');
+                return;
+            }
+
+            fetch('/api/change-tiktok', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tiktokId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('TikTok ID가 저장되었습니다!');
+                    location.reload();
+                } else {
+                    alert('오류: ' + (data.message || 'TikTok ID 저장에 실패했습니다.'));
+                }
+            })
+            .catch(err => {
+                alert('서버 오류가 발생했습니다.');
+                console.error(err);
+            });
+        }
+
+        function saveSettings() {
+            const settings = {
+                nickname: document.getElementById('user-nickname').value.trim(),
+                streamerPersona: document.getElementById('user-persona').value.trim(),
+                nativeLanguage: document.getElementById('native-language').value,
+                preferredLanguage: document.getElementById('preferred-language').value
+            };
+
+            console.log('저장할 설정:', settings);
+
+            fetch('/api/user/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            })
+            .then(res => {
+                console.log('응답 상태:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('응답 데이터:', data);
+                if (data.success) {
+                    alert('설정이 저장되었습니다!');
+                    location.reload();
+                } else {
+                    alert('오류: ' + (data.message || '설정 저장에 실패했습니다.') + '\n\n상세: ' + (data.error || ''));
+                    console.error('오류 상세:', data);
+                }
+            })
+            .catch(err => {
+                alert('서버 오류가 발생했습니다: ' + err.message);
+                console.error('Fetch 오류:', err);
+            });
+        }
+    </script>
+</body>
+</html>

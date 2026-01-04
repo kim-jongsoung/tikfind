@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind Overlay</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: transparent;
+            overflow: hidden;
+            width: 1920px;
+            height: 1080px;
+        }
+        
+        .overlay-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 현재 재생 중인 곡 */
+        .current-song {
+            position: absolute;
+            bottom: 100px;
+            left: 50px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(236, 72, 153, 0.5);
+            transform: translateY(200px);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+        
+        .current-song.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .current-song-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .song-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+        
+        .song-info h3 {
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .song-info p {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+        
+        .requester {
+            color: #ec4899;
+            font-size: 12px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 대기열 */
+        .queue-container {
+            position: absolute;
+            bottom: 100px;
+            right: 50px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            min-width: 350px;
+            max-width: 450px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(139, 92, 246, 0.5);
+            transform: translateY(200px);
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+        
+        .queue-container.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+        
+        .queue-header {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .queue-count {
+            background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .queue-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .queue-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .queue-song-title {
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .queue-requester {
+            color: #9ca3af;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        /* 애니메이션 */
+        @keyframes slideIn {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .slide-in {
+            animation: slideIn 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay-container">
+        <!-- 현재 재생 중인 곡 -->
+        <div class="current-song" id="currentSong">
+            <div class="current-song-header">
+                <div class="song-icon">🎵</div>
+                <div class="song-info">
+                    <h3 id="songTitle">대기 중...</h3>
+                    <p id="songArtist">신청곡을 기다리고 있습니다</p>
+                </div>
+            </div>
+            <div class="requester" id="songRequester"></div>
+        </div>
+        
+        <!-- 대기열 -->
+        <div class="queue-container" id="queueContainer">
+            <div class="queue-header">
+                다음 곡 <span class="queue-count" id="queueCount">0</span>
+            </div>
+            <div id="queueList"></div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const userId = '<%= userId %>';
+        const socket = io();
+        
+        // 사용자 룸에 참여
+        socket.emit('join-overlay', userId);
+        
+        // 초기 표시
+        setTimeout(() => {
+            document.getElementById('currentSong').classList.add('show');
+            document.getElementById('queueContainer').classList.add('show');
+        }, 500);
+        
+        // 현재 재생 곡 업데이트
+        socket.on('current-song', (data) => {
+            const currentSong = document.getElementById('currentSong');
+            
+            if (data && data.title) {
+                document.getElementById('songTitle').textContent = data.title;
+                document.getElementById('songArtist').textContent = data.artist || '알 수 없음';
+                document.getElementById('songRequester').textContent = data.requester ? `신청: ${data.requester}` : '';
+                
+                // 애니메이션 효과
+                currentSong.classList.remove('show');
+                setTimeout(() => {
+                    currentSong.classList.add('show');
+                }, 100);
+            } else {
+                document.getElementById('songTitle').textContent = '대기 중...';
+                document.getElementById('songArtist').textContent = '신청곡을 기다리고 있습니다';
+                document.getElementById('songRequester').textContent = '';
+            }
+        });
+        
+        // 대기열 업데이트
+        socket.on('song-queue', (queue) => {
+            const queueList = document.getElementById('queueList');
+            const queueCount = document.getElementById('queueCount');
+            
+            queueCount.textContent = queue.length;
+            
+            if (queue.length === 0) {
+                queueList.innerHTML = '<p style="color: #9ca3af; font-size: 14px; text-align: center; padding: 20px;">대기 중인 곡이 없습니다</p>';
+            } else {
+                queueList.innerHTML = queue.slice(0, 5).map((song, index) => `
+                    <div class="queue-item fade-in">
+                        <span class="queue-song-title">${index + 1}. ${song.title} - ${song.artist || '알 수 없음'}</span>
+                        <span class="queue-requester">${song.requester || ''}</span>
+                    </div>
+                `).join('');
+            }
+        });
+        
+        // 연결 상태 모니터링
+        socket.on('connect', () => {
+            console.log('오버레이 연결됨');
+        });
+        
+        socket.on('disconnect', () => {
+            console.log('오버레이 연결 끊김');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,968 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #0a0a0a;
+    color: #fff;
+    overflow: hidden;
+}
+
+.container {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+}
+
+/* 헤더 */
+.header {
+    margin-bottom: 10px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: #000000;
+    border-radius: 8px;
+    height: 80px;
+    border: 1px solid #333;
+}
+
+.logo {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+}
+
+.header-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-title {
+    font-size: 16px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.plan-badge {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.plan-badge.free {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.plan-badge.pro {
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+}
+
+/* 2x2 그리드 레이아웃 */
+.main-layout-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 10px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.grid-item {
+    background: #1a1a1a;
+    border-radius: 8px;
+    border: 1px solid #333;
+    padding: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 채팅 패널 - 전체 높이 */
+.chat-panel {
+    grid-row: span 2;
+}
+
+/* 섹션 타이틀 */
+.section-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #fff;
+}
+
+.badge-pro {
+    font-size: 9px;
+    padding: 2px 6px;
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    border-radius: 3px;
+    margin-left: 5px;
+}
+
+/* 연결 설정 (컴팩트) */
+.connection-section-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.compact-label {
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 2px;
+}
+
+.input-group-compact {
+    display: flex;
+    gap: 6px;
+}
+
+.input-compact {
+    flex: 1;
+    padding: 6px 10px;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 12px;
+}
+
+.input-compact:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-compact {
+    padding: 6px 12px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-compact.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+}
+
+.btn-compact.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-compact.btn-danger {
+    background: #ef4444;
+    color: #fff;
+}
+
+.btn-compact.btn-danger:disabled {
+    background: #333;
+    cursor: not-allowed;
+}
+
+.btn-compact:not(.btn-primary):not(.btn-danger) {
+    background: #333;
+    color: #fff;
+}
+
+.button-group-compact {
+    display: flex;
+    gap: 6px;
+}
+
+/* 상태 표시 (컴팩트) */
+.status-compact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #999;
+    padding: 4px 0;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #666;
+    transition: all 0.3s;
+}
+
+.status-dot.connected {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+/* 통계 (컴팩트) */
+.stats-compact {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: #999;
+    padding: 4px 0;
+}
+
+.stats-compact span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* TTS 설정 (컴팩트) */
+.tts-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    background: #0a0a0a;
+    border-radius: 4px;
+    border: 1px solid #333;
+}
+
+.tts-label-compact {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.tts-label-compact input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+}
+
+.tts-speed-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 10px;
+    color: #999;
+}
+
+.tts-slider-compact {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    background: #333;
+    border-radius: 2px;
+    outline: none;
+}
+
+.tts-slider-compact::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #667eea;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* 채팅 섹션 */
+.chat-section-full {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    background: #0a0a0a;
+    border-radius: 4px;
+    border: 1px solid #333;
+}
+
+.chat-message {
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    background: #1a1a1a;
+    border-radius: 4px;
+    border-left: 2px solid #667eea;
+}
+
+.chat-username {
+    font-size: 11px;
+    color: #667eea;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.chat-text {
+    font-size: 12px;
+    color: #fff;
+    word-wrap: break-word;
+}
+
+.empty-message {
+    text-align: center;
+    color: #666;
+    font-size: 11px;
+    padding: 20px;
+}
+
+/* AI 발음 코치 섹션 */
+.ai-coach-section-compact {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.ai-coach-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    background: #0a0a0a;
+    border-radius: 4px;
+    border: 1px solid #333;
+}
+
+/* 신청곡 큐 섹션 */
+.song-queue-section-compact {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.song-queue-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    background: #0a0a0a;
+    border-radius: 4px;
+    border: 1px solid #333;
+}
+
+/* 푸터 */
+.footer {
+    margin-top: 10px;
+    padding: 8px;
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+    border-top: 1px solid #333;
+}
+
+.footer p {
+    margin: 2px 0;
+}
+
+/* 스크롤바 스타일 */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: white;
+    color: #333;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-google-login:hover {
+    background: #f0f0f0;
+    transform: translateY(-1px);
+}
+
+.google-icon {
+    font-weight: bold;
+    color: #4285f4;
+    font-size: 16px;
+}
+
+/* 기능 배지 */
+.feature-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+    margin-left: 8px;
+}
+
+.feature-badge.free {
+    background: #10b981;
+    color: white;
+}
+
+.feature-badge.pro {
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    color: white;
+}
+
+/* 메인 레이아웃 - 2열 구조 */
+.main-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.left-column,
+.right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 연결 설정 */
+.connection-section {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+}
+
+.connection-section label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #fff;
+    font-size: 12px;
+}
+
+.connection-section input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #333;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 15px;
+    transition: border-color 0.3s;
+    background: #0a0a0a;
+    color: #fff;
+}
+
+.connection-section input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+}
+
+.btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #dc2626;
+}
+
+/* 상태 표시 */
+.status-section {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #9ca3af;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.connected {
+    background: #10b981;
+}
+
+.status-dot.error {
+    background: #ef4444;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* 통계 */
+.stats-section {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.stats-section h3 {
+    margin-bottom: 15px;
+    color: #555;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+}
+
+.stat-icon {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #667eea;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+/* 통계 - 미니멀 */
+.stats-section-minimal {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    padding: 12px 15px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.stat-icon-mini {
+    font-size: 18px;
+}
+
+.stat-value-mini {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+}
+
+/* TTS 설정 */
+.tts-section {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+}
+
+.tts-section h3 {
+    margin-bottom: 15px;
+    color: #fff;
+    font-size: 13px;
+}
+
+.tts-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.tts-control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tts-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.tts-label input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.tts-select {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    cursor: pointer;
+    min-width: 120px;
+}
+
+.tts-slider {
+    flex: 1;
+    margin-left: 10px;
+    height: 6px;
+    border-radius: 3px;
+    background: #e5e7eb;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.tts-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+}
+
+.tts-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    border: none;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 13px;
+}
+
+/* 채팅 */
+.chat-section {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+}
+
+.chat-section h3 {
+    margin-bottom: 15px;
+    color: #fff;
+    font-size: 13px;
+}
+
+.chat-messages {
+    max-height: 150px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #0a0a0a;
+    border-radius: 8px;
+}
+
+.empty-message {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+}
+
+.chat-message {
+    padding: 8px;
+    margin-bottom: 8px;
+    background: #1a1a1a;
+    border-radius: 6px;
+    border-left: 3px solid #667eea;
+}
+
+.chat-username {
+    font-weight: 600;
+    color: #667eea;
+    font-size: 13px;
+}
+
+.chat-text {
+    font-size: 13px;
+    color: #fff;
+    margin-top: 3px;
+}
+
+/* AI 발음 코치 & 신청곡 섹션 */
+.ai-coach-section,
+.song-queue-section {
+    background: #1a1a1a;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+}
+
+.ai-coach-section h3,
+.song-queue-section h3 {
+    margin-bottom: 15px;
+    color: #fff;
+    font-size: 13px;
+}
+
+/* 업그레이드 프롬프트 */
+.upgrade-prompt {
+    text-align: center;
+    padding: 30px 20px;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    border-radius: 8px;
+    border: 2px dashed #d1d5db;
+}
+
+.upgrade-prompt p {
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.upgrade-prompt p.small {
+    font-size: 13px;
+    font-weight: 400;
+    color: #6b7280;
+    margin-bottom: 15px;
+}
+
+.btn-upgrade {
+    background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-upgrade:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* AI 코치 메시지 */
+.ai-coach-messages {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #0a0a0a;
+    border-radius: 8px;
+}
+
+.ai-coach-item {
+    padding: 12px;
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #10b981;
+}
+
+.ai-coach-original {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 5px;
+}
+
+.ai-coach-response {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 5px;
+}
+
+.ai-coach-pronunciation {
+    font-size: 16px;
+    color: #10b981;
+    font-weight: 700;
+}
+
+/* 신청곡 리스트 */
+.song-queue-list {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.song-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.song-info {
+    flex: 1;
+}
+
+.song-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.song-artist {
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.song-requester {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-top: 3px;
+}
+
+.song-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.song-actions button {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.song-actions button:hover {
+    transform: scale(1.05);
+}
+
+.btn-play {
+    background: #10b981;
+    color: white;
+}
+
+.btn-remove {
+    background: #ef4444;
+    color: white;
+}
+
+/* 푸터 */
+.footer {
+    text-align: center;
+    color: white;
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.footer p {
+    margin: 5px 0;
+}
+
+.version {
+    font-weight: 600;
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #764ba2;
+}

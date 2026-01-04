@@ -1,0 +1,155 @@
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: #000000; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+    <div class="container" style="padding: 1rem 0;">
+        <a class="navbar-brand" href="/">
+            <img src="/images/logo.png" alt="TikFind Logo" style="height: 50px; cursor: pointer; transition: opacity 0.3s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center" style="gap: 1.5rem;">
+                <li class="nav-item">
+                    <a class="nav-link" href="/" style="color: #9ca3af; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">홈</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/features" style="color: #9ca3af; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">기능</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/pricing" style="color: #9ca3af; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">가격</a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #9ca3af; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">
+                        <i class="fas fa-globe"></i> <span id="currentLanguage">한국어</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown" style="background: #1a1a1a; border: 1px solid #333;">
+                        <li><a class="dropdown-item" href="#" data-lang="ko" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/kr.png" width="20" class="me-2"> 한국어</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="en" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/us.png" width="20" class="me-2"> English</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="ja" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/jp.png" width="20" class="me-2"> 日本語</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="zh" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/cn.png" width="20" class="me-2"> 中文</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="es" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/es.png" width="20" class="me-2"> Español</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="fr" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/fr.png" width="20" class="me-2"> Français</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="de" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/de.png" width="20" class="me-2"> Deutsch</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="ru" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/ru.png" width="20" class="me-2"> Русский</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="pt" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/pt.png" width="20" class="me-2"> Português</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="th" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/th.png" width="20" class="me-2"> ไทย</a></li>
+                        <li><a class="dropdown-item" href="#" data-lang="vi" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/vn.png" width="20" class="me-2"> Tiếng Việt</a></li>
+                    </ul>
+                </li>
+                <% if (typeof user !== 'undefined' && user) { %>
+                <!-- 로그인 상태 -->
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard" style="color: #9ca3af; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">
+                        <i class="fas fa-tachometer-alt me-1"></i>대시보드
+                    </a>
+                </li>
+                <li class="nav-item dropdown ms-3">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #ffffff; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;">
+                        <img src="<%= user.profileImage || 'https://via.placeholder.com/32' %>" alt="Profile" style="width: 32px; height: 32px; border-radius: 50%; border: 2px solid #ec4899;">
+                        <span><%= user.name || user.email %></span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown" style="background: #1a1a1a; border: 1px solid #333;">
+                        <li><a class="dropdown-item" href="/dashboard/settings" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><i class="fas fa-cog me-2"></i>설정</a></li>
+                        <li><a class="dropdown-item" href="/dashboard/billing" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><i class="fas fa-credit-card me-2"></i>결제 관리</a></li>
+                        <li><hr class="dropdown-divider" style="border-color: #333;"></li>
+                        <li><a class="dropdown-item" href="/auth/logout" style="color: #ef4444; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#ff6b6b'" onmouseout="this.style.background='transparent'; this.style.color='#ef4444'"><i class="fas fa-sign-out-alt me-2"></i>로그아웃</a></li>
+                    </ul>
+                </li>
+                <% } else { %>
+                <!-- 비로그인 상태 -->
+                <li class="nav-item ms-3">
+                    <button class="btn" onclick="showLoginModal()" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; padding: 0.5rem 1.5rem; border-radius: 8px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3); border: none;" onmouseover="this.style.boxShadow='0 6px 20px rgba(236, 72, 153, 0.5)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(236, 72, 153, 0.3)'; this.style.transform='translateY(0)'">
+                        <i class="fab fa-google me-2"></i>Google 로그인
+                    </button>
+                </li>
+                <% } %>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid rgba(236, 72, 153, 0.3); border-radius: 20px; box-shadow: 0 20px 60px rgba(236, 72, 153, 0.3); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 30% 50%, rgba(236, 72, 153, 0.15) 0%, transparent 50%), radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%); pointer-events: none;"></div>
+            <div class="modal-header" style="border-bottom: none; position: relative; z-index: 2;">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-5 px-4" style="position: relative; z-index: 2;">
+                <div style="display: inline-block; padding: 1rem; background: rgba(236, 72, 153, 0.1); border-radius: 50%; margin-bottom: 1.5rem; box-shadow: 0 0 30px rgba(236, 72, 153, 0.3);">
+                    <i class="fas fa-rocket" style="font-size: 3rem; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.5));"></i>
+                </div>
+                <h2 class="text-white mb-3" style="font-weight: bold; font-size: 2rem; text-shadow: 0 0 20px rgba(236, 72, 153, 0.3);">지금 바로 시작하세요!</h2>
+                <p class="text-white mb-4" style="font-size: 1.1rem; opacity: 0.9;">글로벌 틱톡 방송의 첫 걸음</p>
+                <p style="color: #9ca3af; font-size: 1rem; margin-bottom: 2rem;">AI가 실시간으로 번역하고 발음까지 알려드립니다</p>
+                
+                <a href="/auth/google" class="btn btn-lg w-100 mb-4" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; padding: 1rem; border-radius: 10px; font-weight: 700; font-size: 1.1rem; transition: all 0.3s; box-shadow: 0 10px 30px rgba(236, 72, 153, 0.4); border: 1px solid rgba(255, 255, 255, 0.1);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 40px rgba(236, 72, 153, 0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(236, 72, 153, 0.4)'">
+                    <i class="fab fa-google me-2"></i>
+                    Google로 무료 시작
+                </a>
+                
+                <div class="text-white" style="font-size: 0.9rem;">
+                    <p class="mb-2" style="color: #9ca3af;"><i class="fas fa-check-circle me-2" style="color: #ec4899;"></i>평생 무료 TTS</p>
+                    <p class="mb-2" style="color: #9ca3af;"><i class="fas fa-check-circle me-2" style="color: #ec4899;"></i>신청곡 자동수집 (1일 5곡)</p>
+                    <p class="mb-0" style="color: #9ca3af;"><i class="fas fa-check-circle me-2" style="color: #ec4899;"></i>GPT AI 질문 (1일 20건)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showLoginModal() {
+    const modal = new bootstrap.Modal(document.getElementById('loginModal'));
+    modal.show();
+}
+</script>
+
+<script>
+// 언어 선택 처리
+document.querySelectorAll('[data-lang]').forEach(item => {
+    item.addEventListener('click', function(e) {
+        e.preventDefault();
+        const lang = this.getAttribute('data-lang');
+        const langNames = {
+            'ko': '한국어',
+            'en': 'English',
+            'ja': '日本語',
+            'zh': '中文',
+            'es': 'Español',
+            'fr': 'Français',
+            'de': 'Deutsch',
+            'ru': 'Русский',
+            'pt': 'Português',
+            'th': 'ไทย',
+            'vi': 'Tiếng Việt'
+        };
+        
+        // 언어 저장
+        localStorage.setItem('selectedLanguage', lang);
+        document.getElementById('currentLanguage').textContent = langNames[lang];
+        
+        // 페이지 리로드 (다국어 적용)
+        location.reload();
+    });
+});
+
+// 페이지 로드 시 저장된 언어 표시
+document.addEventListener('DOMContentLoaded', function() {
+    const savedLang = localStorage.getItem('selectedLanguage') || 'ko';
+    const langNames = {
+        'ko': '한국어',
+        'en': 'English',
+        'ja': '日本語',
+        'zh': '中文',
+        'es': 'Español',
+        'fr': 'Français',
+        'de': 'Deutsch',
+        'ru': 'Русский',
+        'pt': 'Português',
+        'th': 'ไทย',
+        'vi': 'Tiếng Việt'
+    };
+    document.getElementById('currentLanguage').textContent = langNames[savedLang];
+});
+</script>

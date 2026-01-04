@@ -1,0 +1,51 @@
+{
+  "name": "tikfind-desktop",
+  "version": "1.0.0",
+  "description": "TikFind Desktop Collector - TikTok Live 데이터 수집 앱",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build:win": "electron-builder --win",
+    "build:mac": "electron-builder --mac"
+  },
+  "keywords": [
+    "tiktok",
+    "live",
+    "collector",
+    "electron"
+  ],
+  "author": "TikFind",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^28.3.3",
+    "say": "^0.16.0",
+    "tiktok-live-connector": "^1.1.8",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.tikfind.desktop",
+    "productName": "TikFind Collector",
+    "protocols": {
+      "name": "TikFind Protocol",
+      "schemes": [
+        "tikfind"
+      ]
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities"
+    }
+  }
+}

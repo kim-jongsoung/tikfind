@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오버레이 설정 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-64 p-8" style="margin-top: 88px;">
+        <div class="max-w-6xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">오버레이 설정</h2>
+                <p class="text-gray-600 mt-2">방송 화면에 표시될 오버레이를 설정하세요</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- 오버레이 URL -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-link mr-2 text-indigo-600"></i>
+                        오버레이 URL
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">OBS나 다른 방송 소프트웨어에서 브라우저 소스로 추가하세요</p>
+                    
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                        <div class="flex items-center justify-between">
+                            <code class="text-sm text-gray-700 break-all flex-1 mr-4" id="overlay-url">
+                                https://tikfind.kr/overlay/<%= user._id %>
+                            </code>
+                            <button onclick="copyOverlayUrl()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition whitespace-nowrap">
+                                <i class="fas fa-copy mr-2"></i>복사
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                            <span class="text-sm text-gray-700">권장 해상도</span>
+                            <span class="font-medium text-gray-800">1920 x 1080</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <span class="text-sm text-gray-700">투명도 지원</span>
+                            <span class="font-medium text-green-600">지원됨</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+                        <p class="text-sm text-gray-700">
+                            <i class="fas fa-info-circle text-yellow-600 mr-2"></i>
+                            <strong>OBS 설정 방법:</strong><br>
+                            1. 소스 추가 → 브라우저<br>
+                            2. 위 URL 복사하여 붙여넣기<br>
+                            3. 너비: 1920, 높이: 1080<br>
+                            4. "페이지가 보이면 소스 새로고침" 체크
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 디자인 커스터마이징 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-palette mr-2 text-purple-600"></i>
+                        디자인 커스터마이징
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">테마 선택</label>
+                            <select id="theme" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="modern-dark">Modern Dark</option>
+                                <option value="neon-glow">Neon Glow</option>
+                                <option value="minimal-white">Minimal White</option>
+                                <option value="gradient-purple">Gradient Purple</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">폰트 크기: <span id="fontSize-value">16</span>px</label>
+                            <input type="range" id="fontSize" min="12" max="32" value="16" class="w-full" oninput="document.getElementById('fontSize-value').textContent = this.value">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">애니메이션 속도: <span id="animSpeed-value">5</span></label>
+                            <input type="range" id="animSpeed" min="1" max="10" value="5" class="w-full" oninput="document.getElementById('animSpeed-value').textContent = this.value">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">위치</label>
+                            <select id="position" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="bottom-left">왼쪽 하단</option>
+                                <option value="bottom-right">오른쪽 하단</option>
+                                <option value="top-left">왼쪽 상단</option>
+                                <option value="top-right">오른쪽 상단</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 표시 옵션 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-sliders-h mr-2 text-orange-600"></i>
+                    표시 옵션
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                        <div>
+                            <span class="text-sm font-medium text-gray-700">현재 재생 곡 표시</span>
+                            <p class="text-xs text-gray-500 mt-1">재생 중인 곡 정보를 표시합니다</p>
+                        </div>
+                        <input type="checkbox" id="showCurrentSong" class="w-5 h-5" checked>
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                        <div>
+                            <span class="text-sm font-medium text-gray-700">대기열 표시</span>
+                            <p class="text-xs text-gray-500 mt-1">다음 곡 목록을 표시합니다</p>
+                        </div>
+                        <input type="checkbox" id="showQueue" class="w-5 h-5" checked>
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                        <div>
+                            <span class="text-sm font-medium text-gray-700">신청자 이름 표시</span>
+                            <p class="text-xs text-gray-500 mt-1">곡을 신청한 사람의 이름을 표시합니다</p>
+                        </div>
+                        <input type="checkbox" id="showRequester" class="w-5 h-5" checked>
+                    </label>
+
+                    <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                        <div>
+                            <span class="text-sm font-medium text-gray-700">앨범 커버 표시</span>
+                            <p class="text-xs text-gray-500 mt-1">곡의 앨범 아트를 표시합니다</p>
+                        </div>
+                        <input type="checkbox" id="showAlbumArt" class="w-5 h-5">
+                    </label>
+                </div>
+
+                <div class="flex justify-end mt-6">
+                    <button onclick="saveSettings()" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-save mr-2"></i>설정 저장
+                    </button>
+                </div>
+            </div>
+
+            <!-- 미리보기 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-eye mr-2 text-green-600"></i>
+                        미리보기 (틱톡 세로 모드)
+                    </h3>
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm text-gray-600">크기:</label>
+                            <input type="range" id="previewScale" min="30" max="100" value="60" class="w-32" oninput="updatePreviewScale(this.value)">
+                            <span id="scaleValue" class="text-sm text-gray-700 font-medium">60%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center bg-gray-100 rounded-lg p-8">
+                    <!-- 틱톡 세로 모드 프레임 (9:16 비율) -->
+                    <div id="previewFrame" class="relative bg-gradient-to-br from-purple-900 via-pink-900 to-red-900 rounded-3xl shadow-2xl overflow-hidden" style="width: 360px; height: 640px; transform: scale(0.6); transform-origin: center;">
+                        <!-- 상단 틱톡 UI 시뮬레이션 -->
+                        <div class="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/50 to-transparent z-10">
+                            <div class="flex items-center justify-between text-white text-sm">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-pink-500 rounded-full"></div>
+                                    <span class="font-semibold">@your_tiktok_id</span>
+                                    <button class="px-3 py-1 bg-pink-500 rounded-full text-xs">팔로우</button>
+                                </div>
+                                <i class="fas fa-ellipsis-v"></i>
+                            </div>
+                        </div>
+
+                        <!-- 오버레이 컨텐츠 영역 -->
+                        <div class="absolute inset-0 pointer-events-none">
+                            <!-- 현재 재생 중인 곡 -->
+                            <div id="previewCurrentSong" class="absolute bottom-32 left-4 right-4">
+                                <div class="bg-black/70 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-white/20">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+                                            🎵
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-white font-bold text-sm truncate">Sample Song Title</p>
+                                            <p class="text-gray-300 text-xs truncate">Artist Name</p>
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 pt-2 border-t border-white/10">
+                                        <p class="text-pink-400 text-xs">신청: @user123</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 대기열 -->
+                            <div id="previewQueue" class="absolute bottom-32 right-4" style="max-width: 200px;">
+                                <div class="bg-black/70 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-white/20">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <p class="text-white font-bold text-xs">다음 곡</p>
+                                        <span class="px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white text-xs">3</span>
+                                    </div>
+                                    <div class="space-y-1.5">
+                                        <div class="text-xs">
+                                            <p class="text-gray-200 truncate">1. Next Song</p>
+                                            <p class="text-gray-400 text-[10px]">@user456</p>
+                                        </div>
+                                        <div class="text-xs">
+                                            <p class="text-gray-200 truncate">2. Another Song</p>
+                                            <p class="text-gray-400 text-[10px]">@user789</p>
+                                        </div>
+                                        <div class="text-xs">
+                                            <p class="text-gray-200 truncate">3. Third Song</p>
+                                            <p class="text-gray-400 text-[10px]">@user012</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 하단 틱톡 UI 시뮬레이션 -->
+                        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/50 to-transparent z-10">
+                            <div class="text-white text-sm mb-2">
+                                <p class="font-semibold">방송 제목이 여기에 표시됩니다 🎵</p>
+                                <p class="text-xs text-gray-300 mt-1">#음악방송 #신청곡 #라이브</p>
+                            </div>
+                        </div>
+
+                        <!-- 우측 액션 버튼들 -->
+                        <div class="absolute right-2 bottom-24 flex flex-col gap-4 z-10">
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 bg-gray-800/50 rounded-full flex items-center justify-center text-white">
+                                    <i class="fas fa-heart text-xl"></i>
+                                </div>
+                                <span class="text-white text-xs mt-1">1.2K</span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 bg-gray-800/50 rounded-full flex items-center justify-center text-white">
+                                    <i class="fas fa-comment text-xl"></i>
+                                </div>
+                                <span class="text-white text-xs mt-1">234</span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <div class="w-12 h-12 bg-gray-800/50 rounded-full flex items-center justify-center text-white">
+                                    <i class="fas fa-share text-xl"></i>
+                                </div>
+                                <span class="text-white text-xs mt-1">89</span>
+                            </div>
+                        </div>
+
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white/30 text-center">
+                            <i class="fas fa-video text-6xl mb-2"></i>
+                            <p class="text-sm">라이브 방송 화면</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+                    <p class="text-sm text-gray-700">
+                        <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                        <strong>미리보기 안내:</strong> 실제 틱톡 라이브 세로 모드(9:16)에서 오버레이가 어떻게 보이는지 확인하세요. 
+                        크기 슬라이더로 전체 화면을 조절할 수 있습니다.
+                    </p>
+                </div>
+
+                <div class="mt-4 flex justify-center gap-4">
+                    <button onclick="togglePreviewElement('previewCurrentSong')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                        <i class="fas fa-music mr-2"></i>현재 곡 토글
+                    </button>
+                    <button onclick="togglePreviewElement('previewQueue')" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                        <i class="fas fa-list mr-2"></i>대기열 토글
+                    </button>
+                    <a href="/overlay/<%= user._id %>" target="_blank" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm">
+                        <i class="fas fa-external-link-alt mr-2"></i>새 창에서 열기
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+    <script>
+        function copyOverlayUrl() {
+            const url = document.getElementById('overlay-url').textContent.trim();
+            navigator.clipboard.writeText(url).then(() => {
+                alert('오버레이 URL이 복사되었습니다!\n\nOBS에서 브라우저 소스로 추가하세요.');
+            }).catch(err => {
+                alert('복사 실패: ' + err);
+            });
+        }
+
+        function saveSettings() {
+            const settings = {
+                theme: document.getElementById('theme').value,
+                fontSize: document.getElementById('fontSize').value,
+                animSpeed: document.getElementById('animSpeed').value,
+                position: document.getElementById('position').value,
+                showCurrentSong: document.getElementById('showCurrentSong').checked,
+                showQueue: document.getElementById('showQueue').checked,
+                showRequester: document.getElementById('showRequester').checked,
+                showAlbumArt: document.getElementById('showAlbumArt').checked
+            };
+
+            fetch('/api/overlay/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(settings)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert('설정이 저장되었습니다!');
+                } else {
+                    alert('오류: ' + (data.message || '설정 저장에 실패했습니다.'));
+                }
+            })
+            .catch(err => {
+                alert('서버 오류가 발생했습니다.');
+                console.error(err);
+            });
+        }
+
+        // 미리보기 크기 조절
+        function updatePreviewScale(value) {
+            const scale = value / 100;
+            document.getElementById('previewFrame').style.transform = `scale(${scale})`;
+            document.getElementById('scaleValue').textContent = value + '%';
+        }
+
+        // 미리보기 요소 토글
+        function togglePreviewElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element.style.display === 'none') {
+                element.style.display = '';
+            } else {
+                element.style.display = 'none';
+            }
+        }
+
+        // 설정 로드
+        fetch('/api/overlay/settings')
+            .then(res => res.json())
+            .then(data => {
+                if (data.settings) {
+                    const s = data.settings;
+                    if (s.theme) document.getElementById('theme').value = s.theme;
+                    if (s.fontSize) {
+                        document.getElementById('fontSize').value = s.fontSize;
+                        document.getElementById('fontSize-value').textContent = s.fontSize;
+                    }
+                    if (s.animSpeed) {
+                        document.getElementById('animSpeed').value = s.animSpeed;
+                        document.getElementById('animSpeed-value').textContent = s.animSpeed;
+                    }
+                    if (s.position) document.getElementById('position').value = s.position;
+                    if (s.showCurrentSong !== undefined) document.getElementById('showCurrentSong').checked = s.showCurrentSong;
+                    if (s.showQueue !== undefined) document.getElementById('showQueue').checked = s.showQueue;
+                    if (s.showRequester !== undefined) document.getElementById('showRequester').checked = s.showRequester;
+                    if (s.showAlbumArt !== undefined) document.getElementById('showAlbumArt').checked = s.showAlbumArt;
+                }
+            })
+            .catch(err => console.error('설정 로드 오류:', err));
+    </script>
+</body>
+</html>

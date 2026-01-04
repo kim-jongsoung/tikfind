@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind - Pricing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <nav class="bg-black shadow-lg fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center">
+                    <a href="/">
+                        <img src="/images/logo.png" onerror="this.src='https://placehold.co/150x50?text=TikFind'" alt="TikFind" class="h-12 cursor-pointer hover:opacity-80 transition">
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="language-selector"></div>
+                    <a href="/" class="text-gray-300 hover:text-white transition">Home</a>
+                    <a href="/auth/google" class="px-6 py-2 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:shadow-xl transition font-medium">
+                        <i class="fas fa-sign-in-alt mr-2"></i><span data-i18n="login">Login</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-24 pb-20 px-4">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h1 class="text-5xl font-bold text-gray-900 mb-4">
+                    <span data-i18n="pricingTitle">Simple, Transparent Pricing</span>
+                </h1>
+                <p class="text-xl text-gray-600 mb-6">
+                    <span data-i18n="pricingSubtitle">7일 무료체험 후 Pro 플랜으로 자동 전환</span>
+                </p>
+                <div class="inline-block bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 text-white px-8 py-3 rounded-full shadow-xl">
+                    <i class="fas fa-gift mr-2"></i>
+                    <span class="font-bold" data-i18n="trial7Days">7일 무료체험 제공</span>
+                </div>
+            </div>
+
+            <div class="max-w-2xl mx-auto mb-16">
+                <!-- Pro Plan -->
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-2xl p-10 text-white relative">
+                    <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-full text-sm font-black shadow-xl">
+                        <i class="fas fa-crown mr-2"></i>
+                        <span data-i18n="onlyPlan">유일한 플랜</span>
+                    </div>
+                    
+                    <div class="text-center mb-6">
+                        <div class="inline-block px-4 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-semibold mb-4">
+                            <span data-i18n="proPlan">Pro Plan</span>
+                        </div>
+                        <div class="text-5xl font-bold mb-2">
+                            $9.99
+                            <span class="text-xl font-normal opacity-90" data-i18n="perMonth">/month</span>
+                        </div>
+                        <p class="opacity-90" data-i18n="forProfessionals">For professional streamers</p>
+                    </div>
+
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
+                            <span data-i18n="unlimitedSongs">Unlimited song requests</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
+                            <span data-i18n="aiTranslation">AI real-time translation</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
+                            <span data-i18n="premiumThemes">10+ premium themes</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
+                            <span data-i18n="removeWatermark">Remove watermark</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
+                            <span data-i18n="noAds">No ads</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
+                            <span data-i18n="prioritySupport">24/7 priority support</span>
+                        </li>
+                    </ul>
+
+                    <button onclick="handleSubscribe('pro')" class="w-full py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition">
+                        <span data-i18n="subscribe">Subscribe Now</span>
+                    </button>
+                    
+                    
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mt-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-gift text-yellow-300 text-2xl mr-3"></i>
+                                <div>
+                                    <p class="font-bold text-lg" data-i18n="trial7Days">7일 무료체험</p>
+                                    <p class="text-sm opacity-80" data-i18n="trialDesc">신용카드 등록 필요 없음</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-3xl font-black text-yellow-300">$0</p>
+                                <p class="text-xs opacity-80" data-i18n="for7Days">7일간</p>
+                            </div>
+                        </div>
+                        <div class="border-t border-white/20 pt-4">
+                            <p class="text-center text-sm opacity-90">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                <span data-i18n="trialEndInfo">체험 종료 후 자동으로 Pro 플랜으로 전환됩니다</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="bg-white rounded-2xl shadow-lg p-8 mb-16">
+                <h3 class="text-2xl font-bold text-gray-800 text-center mb-6">
+                    <span data-i18n="acceptedPayments">Accepted Payment Methods</span>
+                </h3>
+                <div class="flex justify-center items-center space-x-8 flex-wrap">
+                    <img src="https://placehold.co/100x60?text=Visa" alt="Visa" class="h-12 grayscale hover:grayscale-0 transition">
+                    <img src="https://placehold.co/100x60?text=Mastercard" alt="Mastercard" class="h-12 grayscale hover:grayscale-0 transition">
+                    <img src="https://placehold.co/100x60?text=PayPal" alt="PayPal" class="h-12 grayscale hover:grayscale-0 transition">
+                    <img src="https://placehold.co/100x60?text=Stripe" alt="Stripe" class="h-12 grayscale hover:grayscale-0 transition">
+                </div>
+                <p class="text-center text-gray-600 mt-6">
+                    <i class="fas fa-lock mr-2"></i>
+                    <span data-i18n="securePayment">Secure payment processing with 256-bit SSL encryption</span>
+                </p>
+            </div>
+
+            <!-- FAQ -->
+            <div class="bg-white rounded-2xl shadow-lg p-8">
+                <h3 class="text-2xl font-bold text-gray-800 text-center mb-8">
+                    <span data-i18n="faq">Frequently Asked Questions</span>
+                </h3>
+                <div class="max-w-3xl mx-auto space-y-4">
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800" data-i18n="faqQuestion1">Can I change my plan anytime?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm" data-i18n="faqAnswer1">Yes, you can upgrade or downgrade your plan at any time. Changes will take effect in the next billing cycle.</p>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800" data-i18n="faqQuestion2">What is your refund policy?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm" data-i18n="faqAnswer2">We offer a full refund within 7 days of subscription. After that, pro-rated refunds are available.</p>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800" data-i18n="faqQuestion3">Do you offer discounts for annual plans?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm" data-i18n="faqAnswer3">Yes! Annual subscriptions receive a 20% discount compared to monthly billing.</p>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-900 text-white py-12 mt-20">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-gray-400">&copy; 2025 TikFind. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/i18n.js"></script>
+    <script>
+        function handleSubscribe(plan) {
+            // Redirect to Google login
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

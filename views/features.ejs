@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기능 소개 - TikFind</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            overflow-x: hidden;
+            padding-top: 80px;
+        }
+        
+        /* 반짝이는 배경 효과 */
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        
+        .sparkle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .sparkle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: white;
+            border-radius: 50%;
+            animation: sparkle 3s infinite;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            padding: 6rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(236, 72, 153, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+        .hero h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .hero p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+        }
+        .feature-section {
+            padding: 4rem 0;
+            background: #0f0f0f;
+            position: relative;
+        }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 20px;
+            padding: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
+        }
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(236, 72, 153, 0.5);
+            box-shadow: 0 10px 40px rgba(236, 72, 153, 0.2);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(236, 72, 153, 0.5));
+        }
+        .feature-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+        .feature-description {
+            color: #9ca3af;
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+        .feature-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-top: 1rem;
+        }
+        .badge-free {
+            background: #28a745;
+            color: white;
+        }
+        .badge-premium {
+            background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+            color: white;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 1.5rem;
+        }
+        .feature-list li {
+            padding: 0.5rem 0;
+            color: #9ca3af;
+        }
+        .feature-list li i {
+            color: #ec4899;
+            margin-right: 0.5rem;
+        }
+        .feature-icon {
+            background-clip: text;
+            -webkit-background-clip: text;
+        }
+    </style>
+</head>
+<body>
+    <!-- 반짝이는 배경 효과 -->
+    <div class="sparkle-container" id="sparkleContainer"></div>
+    
+    <%- include('partials/navbar') %>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1><i class="fas fa-star"></i> TikFind 핵심 기능</h1>
+            <p>TikTok 라이브 스트리밍을 위한 올인원 솔루션</p>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="feature-section">
+        <div class="container">
+            <!-- TTS 기능 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-volume-up"></i>
+                </div>
+                <h2 class="feature-title">실시간 TTS (Text-to-Speech)</h2>
+                <span class="feature-badge badge-free">무료 기능</span>
+                <p class="feature-description">
+                    시청자의 채팅을 실시간으로 음성으로 읽어주는 기능입니다. 
+                    스트리머가 화면을 보지 않아도 채팅 내용을 들을 수 있어 방송에 집중할 수 있습니다.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> 한글 채팅 자동 음성 변환</li>
+                    <li><i class="fas fa-check-circle"></i> 여성/남성 목소리 선택 가능</li>
+                    <li><i class="fas fa-check-circle"></i> 읽기 속도 조절 (0.5x ~ 2.0x)</li>
+                    <li><i class="fas fa-check-circle"></i> 이모티콘/기호 자동 필터링</li>
+                    <li><i class="fas fa-check-circle"></i> 온/오프 즉시 전환</li>
+                    <li><i class="fas fa-check-circle"></i> 자동 스크롤 기능</li>
+                </ul>
+            </div>
+
+            <!-- AI 발음 코치 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h2 class="feature-title">AI 발음 코치</h2>
+                <span class="feature-badge badge-premium">UNIVERSE 전용</span>
+                <p class="feature-description">
+                    외국어 시청자와 소통할 때 AI가 발음을 도와주는 기능입니다. 
+                    외국어 채팅을 감지하면 자동으로 답변과 발음을 한글로 표기해줍니다.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> 46개 언어 자동 감지 (영어, 일본어, 중국어 등)</li>
+                    <li><i class="fas fa-check-circle"></i> 외국어 의미 자동 번역</li>
+                    <li><i class="fas fa-check-circle"></i> 자연스러운 답변 생성</li>
+                    <li><i class="fas fa-check-circle"></i> 한글 발음 표기 제공</li>
+                    <li><i class="fas fa-check-circle"></i> 일반 인사말 즉시 반환 (무료)</li>
+                    <li><i class="fas fa-check-circle"></i> 10,000개 캐시 시스템 (빠른 응답)</li>
+                </ul>
+                <div class="alert alert-info mt-3">
+                    <strong>예시:</strong> 시청자가 "Hello"라고 채팅하면<br>
+                    → AI가 "Nice to meet you! (나이스 투 밋 유)" 표시
+                </div>
+            </div>
+
+            <!-- 신청곡 큐 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-music"></i>
+                </div>
+                <h2 class="feature-title">신청곡 큐 관리</h2>
+                <span class="feature-badge badge-premium">UNIVERSE 전용</span>
+                <p class="feature-description">
+                    시청자가 신청한 노래를 자동으로 관리하고 YouTube에서 재생할 수 있습니다.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> #노래제목#가수이름 형식으로 간편 신청</li>
+                    <li><i class="fas fa-check-circle"></i> YouTube 자동 검색 및 링크 생성</li>
+                    <li><i class="fas fa-check-circle"></i> 우선순위 시스템 (VIP > 레벨 > 일반)</li>
+                    <li><i class="fas fa-check-circle"></i> 신청자 재실 확인 (없으면 자동 스킵)</li>
+                    <li><i class="fas fa-check-circle"></i> 같은 창에서 연속 재생</li>
+                    <li><i class="fas fa-check-circle"></i> 자동 재생 방지 (수동 제어)</li>
+                </ul>
+                <div class="alert alert-info mt-3">
+                    <strong>예시:</strong> 시청자가 "#Dynamite#BTS"라고 채팅하면<br>
+                    → 자동으로 신청곡 큐에 추가됨
+                </div>
+            </div>
+
+            <!-- 실시간 데이터 수집 -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h2 class="feature-title">실시간 데이터 수집</h2>
+                <span class="feature-badge badge-free">무료 기능</span>
+                <p class="feature-description">
+                    TikTok 라이브 방송의 모든 데이터를 실시간으로 수집하고 표시합니다.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> 실시간 채팅 수집</li>
+                    <li><i class="fas fa-check-circle"></i> 시청자 수 모니터링</li>
+                    <li><i class="fas fa-check-circle"></i> 선물/좋아요 알림</li>
+                    <li><i class="fas fa-check-circle"></i> 사용자 레벨/뱃지 표시</li>
+                    <li><i class="fas fa-check-circle"></i> 자동 연결 및 재연결</li>
+                </ul>
+            </div>
+
+            <!-- Desktop App -->
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-desktop"></i>
+                </div>
+                <h2 class="feature-title">Desktop App</h2>
+                <span class="feature-badge badge-free">무료 다운로드</span>
+                <p class="feature-description">
+                    Windows 전용 데스크톱 앱으로 모든 기능을 한 곳에서 사용할 수 있습니다.
+                </p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check-circle"></i> 간편한 Google 로그인</li>
+                    <li><i class="fas fa-check-circle"></i> 모든 설정 자동 동기화</li>
+                    <li><i class="fas fa-check-circle"></i> 깔끔한 UI/UX</li>
+                    <li><i class="fas fa-check-circle"></i> 실시간 업데이트</li>
+                    <li><i class="fas fa-check-circle"></i> 낮은 시스템 리소스 사용</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <%- include('partials/footer') %>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 반짝이는 효과 생성
+        function createSparkles() {
+            const container = document.getElementById('sparkleContainer');
+            const sparkleCount = 50;
+            
+            for (let i = 0; i < sparkleCount; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                sparkle.style.animationDelay = Math.random() * 3 + 's';
+                sparkle.style.animationDuration = (2 + Math.random() * 3) + 's';
+                container.appendChild(sparkle);
+            }
+        }
+        
+        createSparkles();
+    </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind - TikTok Live Assistant</title>
+    <link rel="stylesheet" href="style-new.css">
+    <link rel="stylesheet" href="ai-assistant-styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 헤더 -->
+        <div class="header">
+            <div class="header-content">
+                <img src="http://localhost:3001/images/logo.png" alt="TikFind Logo" class="logo">
+                <div class="header-info">
+                    <span class="header-title">틱톡라이브도우미</span>
+                    <span class="plan-badge" id="planBadge">FREE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 레이아웃 (2x2 그리드 - 모든 섹션 동일 크기) -->
+        <div class="main-layout-grid">
+            <!-- 좌측 상단: 연결 설정 -->
+            <div class="grid-item">
+                <div class="connection-section-compact">
+                    <div style="display: flex; gap: 4px; margin-bottom: 6px; align-items: center;">
+                        <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                            <label style="font-size: 10px; color: #666; margin-bottom: 2px;">User ID</label>
+                            <input 
+                                type="text" 
+                                id="userId" 
+                                placeholder="User ID"
+                                autocomplete="off"
+                                class="input-compact"
+                                style="width: 100%;"
+                            >
+                        </div>
+                        <button id="saveUserIdBtn" class="btn-compact" style="padding: 4px 8px; font-size: 11px; margin-top: 16px;">설정</button>
+                        <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                            <label style="font-size: 10px; color: #666; margin-bottom: 2px;">TikTok ID</label>
+                            <input 
+                                type="text" 
+                                id="username" 
+                                placeholder="TikTok ID"
+                                autocomplete="off"
+                                class="input-compact"
+                                style="width: 100%;"
+                            >
+                        </div>
+                        <button id="startBtn" class="btn-compact btn-primary" style="padding: 4px 12px; font-size: 11px; margin-top: 16px;">시작</button>
+                        <button id="stopBtn" class="btn-compact btn-danger" disabled style="padding: 4px 12px; font-size: 11px; margin-top: 16px;">중지</button>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 12px;">
+                        <div class="status-compact" style="margin: 0;">
+                            <span class="status-dot" id="statusDot"></span>
+                            <span id="statusText">연결 안 됨</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; color: #666;">
+                            <span>👥 <span id="viewerCount">0</span></span>
+                            <span>💬 <span id="messageCount">0</span></span>
+                            <span>🎁 <span id="giftCount">0</span></span>
+                            <span>❤️ <span id="likeCount">0</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="tts-compact">
+                        <label class="tts-label-compact">
+                            <input type="checkbox" id="ttsEnabled" checked>
+                            <span>TTS - 채팅내용을 음성으로 읽어주는 기능</span>
+                        </label>
+                        <div class="tts-speed-inline">
+                            <span class="speed-label">속도</span>
+                            <input type="range" id="ttsSpeed" min="0.5" max="2.0" step="0.1" value="1.0" class="tts-slider-inline">
+                            <span id="ttsSpeedValue" class="speed-value">1.0x</span>
+                        </div>
+                        <div class="tts-info" style="font-size: 10px; color: #666; margin-top: 4px; padding: 4px 8px; background: #f8f9fa; border-radius: 4px;">
+                            ℹ️ Windows 언어 팩 설치 시 다국어 지원 (한/영/일/중/프/독/스/러)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 우측 상단: AI 어시스턴트 -->
+            <div class="grid-item">
+                <div class="ai-assistant">
+                    <div class="ai-assistant-header">
+                        <span>🤖 AI 어시스턴트</span>
+                        <span class="ai-usage" id="aiUsage">0/20</span>
+                    </div>
+                    <div class="ai-chat-history" id="aiChatHistory">
+                        <p class="empty-message">방송 중 궁금한 것을 물어보세요!</p>
+                    </div>
+                    <div class="ai-input-area">
+                        <input type="text" id="aiQuestion" placeholder="질문을 입력하세요..." class="ai-input" maxlength="200">
+                        <button id="aiSendBtn" class="ai-send-btn">전송</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 좌측 하단: 신청곡 큐 -->
+            <div class="grid-item">
+                <div class="song-queue-section-compact">
+                    <h3 class="section-title">🎵 신청곡 큐 <span class="badge-pro">PRO</span></h3>
+                    
+                    <!-- 신청곡 관리 툴바 -->
+                    <div class="song-toolbar">
+                        <div class="toolbar-left">
+                            <span class="song-count" id="songCount">총 0곡</span>
+                        </div>
+                        <div class="toolbar-right">
+                            <button class="btn-toolbar" onclick="clearAllSongs()" title="전체 삭제">🗑️ 전체삭제</button>
+                            <button class="btn-toolbar" onclick="exportPlaylist()" title="목록 저장">💾 저장</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 스트리머 신청곡 추가 -->
+                    <div class="streamer-add-song">
+                        <input type="text" id="streamerSongInput" placeholder="노래 제목 + 가수 (예: Dynamite BTS)" class="song-input">
+                        <button id="streamerAddBtn" class="btn-add-song" onclick="streamerAddSong()">🔍 검색 & 추가</button>
+                    </div>
+                    
+                    <!-- 신청곡 검색 -->
+                    <div class="song-search">
+                        <input type="text" id="songSearchInput" placeholder="🔍 신청곡 검색..." class="song-search-input" onkeyup="searchSongs()">
+                    </div>
+                    
+                    <!-- 신청곡 안내 -->
+                    <div class="song-queue-info">
+                        <p class="info-text">💡 시청자: 30분에 1곡 / 스트리머: 자유 추가</p>
+                        <p class="info-text">🎯 순서 변경, 검색, 일괄 관리 가능</p>
+                    </div>
+                    
+                    <!-- 신청곡 리스트 -->
+                    <div class="song-queue-list" id="songQueueList">
+                        <p class="empty-message">신청곡이 없습니다</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 우측 하단: 채팅 + AI 발음 코치 통합 -->
+            <div class="grid-item">
+                <div class="chat-ai-integrated">
+                    <h3 class="section-title">💬 실시간 채팅 + 🤖 AI 발음 코치</h3>
+                    <div class="chat-ai-messages" id="chatAiMessages">
+                        <p class="empty-message">채팅 메시지가 여기에 표시됩니다...<br>외국어 감지 시 자동으로 발음 코치가 나타납니다.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- 메인 레이아웃 끝 -->
+
+        <!-- 푸터 -->
+        <div class="footer">
+            <p>서버: <span id="serverStatus">http://localhost:3001</span></p>
+            <p class="version">v1.0.0 | TTS 무료 제공 🔊</p>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>

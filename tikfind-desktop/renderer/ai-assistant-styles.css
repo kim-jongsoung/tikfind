@@ -1,0 +1,123 @@
+/* AI 어시스턴트 */
+.ai-assistant {
+    padding: 8px;
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.ai-assistant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.ai-usage {
+    font-size: 10px;
+    color: #999;
+    background: #333;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+
+.ai-chat-history {
+    flex: 1;
+    overflow-y: auto;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 8px;
+    margin-bottom: 8px;
+    font-size: 11px;
+}
+
+.ai-chat-history::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ai-chat-history::-webkit-scrollbar-track {
+    background: #0a0a0a;
+}
+
+.ai-chat-history::-webkit-scrollbar-thumb {
+    background: #667eea;
+    border-radius: 3px;
+}
+
+.ai-chat-history .empty-message {
+    color: #666;
+    text-align: center;
+    margin: 20px 0;
+    font-size: 11px;
+}
+
+.ai-message {
+    margin-bottom: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    word-wrap: break-word;
+}
+
+.ai-message.user {
+    background: rgba(102, 126, 234, 0.2);
+    text-align: right;
+    color: #fff;
+    border-left: 3px solid #667eea;
+}
+
+.ai-message.assistant {
+    background: #1a1a1a;
+    color: #fff;
+    border-left: 3px solid #f59e0b;
+}
+
+.ai-input-area {
+    display: flex;
+    gap: 4px;
+}
+
+.ai-input {
+    flex: 1;
+    padding: 6px 8px;
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 11px;
+}
+
+.ai-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.ai-send-btn {
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.ai-send-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.ai-send-btn:disabled {
+    background: #333;
+    cursor: not-allowed;
+    transform: none;
+}

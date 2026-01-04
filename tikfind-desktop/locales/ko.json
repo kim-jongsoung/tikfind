@@ -1,0 +1,44 @@
+{
+  "app": {
+    "title": "TikFind",
+    "subtitle": "TikTok Live 스트리밍 도우미"
+  },
+  "connection": {
+    "userId": "User ID (웹 대시보드에서 복사)",
+    "userIdPlaceholder": "웹 대시보드의 User ID 입력",
+    "username": "TikTok 사용자 이름",
+    "usernamePlaceholder": "@imkimwhite 또는 imkimwhite",
+    "startBtn": "🚀 연결 시작",
+    "stopBtn": "⏹️ 중지",
+    "statusDisconnected": "연결 안 됨",
+    "statusConnected": "방송 중",
+    "alertUserId": "웹 대시보드에서 User ID를 복사해서 입력하세요.",
+    "alertUsername": "TikTok 사용자 이름을 입력하세요.",
+    "alertAlreadyConnected": "이미 연결되어 있습니다."
+  },
+  "tts": {
+    "title": "🔊 TTS 설정",
+    "enabled": "TTS 활성화",
+    "speed": "속도"
+  },
+  "chat": {
+    "title": "💬 실시간 채팅",
+    "empty": "채팅 메시지가 여기에 표시됩니다..."
+  },
+  "aiCoach": {
+    "title": "🤖 AI 발음 코치",
+    "empty": "외국어 채팅이 오면 AI가 발음을 안내합니다..."
+  },
+  "songQueue": {
+    "title": "🎵 신청곡 큐",
+    "empty": "신청곡이 없습니다"
+  },
+  "badges": {
+    "free": "무료",
+    "pro": "PRO"
+  },
+  "footer": {
+    "server": "서버",
+    "version": "v1.0.0 | TTS 무료 제공 🔊"
+  }
+}

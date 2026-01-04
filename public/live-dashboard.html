@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind Live Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- 헤더 -->
+        <div class="bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg p-6 mb-6">
+            <h1 class="text-3xl font-bold mb-2">🎥 TikFind Live Dashboard</h1>
+            <p class="text-gray-200">실시간 TikTok Live 방송 보조 도구</p>
+        </div>
+
+        <!-- 사용자 정보 -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">📋 사용자 정보</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <p class="text-sm text-gray-400">이메일</p>
+                    <p id="user-email" class="font-semibold">로딩 중...</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-400">TikTok ID</p>
+                    <p id="user-tiktok" class="font-semibold">로딩 중...</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-400">사용자 ID</p>
+                    <p id="user-id" class="font-mono text-sm bg-gray-700 px-2 py-1 rounded">로딩 중...</p>
+                </div>
+            </div>
+            <div class="mt-4 p-4 bg-blue-900 rounded">
+                <p class="text-sm font-semibold mb-2">🐍 Python Collector 실행 명령어:</p>
+                <code id="python-command" class="text-xs bg-gray-800 px-3 py-2 rounded block">로딩 중...</code>
+                <button onclick="copyCommand()" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm">
+                    📋 복사
+                </button>
+            </div>
+        </div>
+
+        <!-- 상태 표시 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-sm text-gray-400 mb-2">방송 상태</h3>
+                <p id="live-status" class="text-2xl font-bold">⚫ 오프라인</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-sm text-gray-400 mb-2">시청자 수</h3>
+                <p id="viewer-count" class="text-2xl font-bold">0명</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-sm text-gray-400 mb-2">총 메시지</h3>
+                <p id="total-messages" class="text-2xl font-bold">0개</p>
+            </div>
+        </div>
+
+        <!-- 채팅 및 AI 응답 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- 실시간 채팅 -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">💬 실시간 채팅</h2>
+                <div id="chat-messages" class="h-96 overflow-y-auto space-y-2 bg-gray-900 rounded p-4">
+                    <p class="text-gray-500 text-center">채팅 메시지가 여기에 표시됩니다...</p>
+                </div>
+            </div>
+
+            <!-- AI 자동응답 -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">🤖 AI 자동응답</h2>
+                <div id="ai-responses" class="h-96 overflow-y-auto space-y-2 bg-gray-900 rounded p-4">
+                    <p class="text-gray-500 text-center">AI 응답이 여기에 표시됩니다...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 신청곡 큐 -->
+        <div class="bg-gray-800 rounded-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">🎵 신청곡 큐</h2>
+            <div id="song-queue" class="space-y-2">
+                <p class="text-gray-500 text-center">신청곡이 여기에 표시됩니다...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let userId = null;
+        let messageCount = 0;
+        let songQueue = [];
+
+        // 사용자 정보 로드
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/current_user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    userId = data.user.id;
+                    document.getElementById('user-email').textContent = data.user.email;
+                    document.getElementById('user-tiktok').textContent = data.user.tiktokId || '미설정';
+                    document.getElementById('user-id').textContent = userId;
+                    
+                    // Python 명령어 생성
+                    const serverUrl = window.location.origin;
+                    const tiktokId = data.user.tiktokId || 'YOUR_TIKTOK_ID';
+                    const command = `python tiktok_collector.py --username ${tiktokId} --server ${serverUrl} --user-id ${userId}`;
+                    document.getElementById('python-command').textContent = command;
+                    
+                    // Socket.io 룸 참가
+                    socket.emit('join-room', userId);
+                } else {
+                    alert('로그인이 필요합니다.');
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+            }
+        }
+
+        // 명령어 복사
+        function copyCommand() {
+            const command = document.getElementById('python-command').textContent;
+            navigator.clipboard.writeText(command);
+            alert('명령어가 복사되었습니다!');
+        }
+
+        // Socket.io 이벤트
+        socket.on('connect', () => {
+            console.log('✅ Socket.io 연결 성공');
+        });
+
+        // Live 상태 업데이트
+        socket.on('live-status', (data) => {
+            if (data.isLive) {
+                document.getElementById('live-status').innerHTML = '🔴 방송 중';
+                document.getElementById('live-status').classList.add('text-red-500');
+            } else {
+                document.getElementById('live-status').innerHTML = '⚫ 오프라인';
+                document.getElementById('live-status').classList.remove('text-red-500');
+            }
+        });
+
+        // 시청자 수 업데이트
+        socket.on('viewer-update', (data) => {
+            document.getElementById('viewer-count').textContent = data.viewerCount + '명';
+        });
+
+        // 채팅 메시지
+        socket.on('chat-message', (data) => {
+            messageCount++;
+            document.getElementById('total-messages').textContent = messageCount + '개';
+            
+            const chatDiv = document.getElementById('chat-messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'bg-gray-800 rounded p-3';
+            
+            const isKorean = data.language === 'ko';
+            const languageEmoji = {
+                'ko': '🇰🇷',
+                'en': '🇺🇸',
+                'ja': '🇯🇵',
+                'es': '🇪🇸',
+                'zh-TW': '🇨🇳',
+                'vi': '🇻🇳',
+                'th': '🇹🇭'
+            };
+            
+            messageEl.innerHTML = `
+                <p class="font-semibold text-blue-400">${languageEmoji[data.language] || '🌍'} @${data.username}</p>
+                <p class="text-sm">${data.message}</p>
+                <p class="text-xs text-gray-500">${new Date(data.timestamp).toLocaleTimeString()}</p>
+            `;
+            chatDiv.appendChild(messageEl);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+            
+            // AI 응답 표시
+            if (data.aiResponse) {
+                const aiDiv = document.getElementById('ai-responses');
+                const responseEl = document.createElement('div');
+                responseEl.className = 'bg-purple-900 rounded p-3';
+                responseEl.innerHTML = `
+                    <p class="font-semibold text-purple-300">🤖 AI → @${data.username}</p>
+                    <div class="text-sm text-gray-200 whitespace-pre-line">${data.aiResponse}</div>
+                    <p class="text-xs text-gray-500">${new Date(data.timestamp).toLocaleTimeString()}</p>
+                `;
+                aiDiv.appendChild(responseEl);
+                aiDiv.scrollTop = aiDiv.scrollHeight;
+            }
+            
+            // 신청곡 추가
+            if (data.songRequest) {
+                addSongToQueue(data.songRequest, data.username);
+            }
+        });
+
+        // 선물 수신
+        socket.on('gift-received', (data) => {
+            const chatDiv = document.getElementById('chat-messages');
+            const giftEl = document.createElement('div');
+            giftEl.className = 'bg-yellow-900 rounded p-3';
+            giftEl.innerHTML = `
+                <p class="font-semibold text-yellow-400">🎁 선물: ${data.giftName}</p>
+                <p class="text-sm">from @${data.username}</p>
+                <p class="text-xs text-gray-500">${new Date(data.timestamp).toLocaleTimeString()}</p>
+            `;
+            chatDiv.appendChild(giftEl);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        });
+
+        // 신청곡 큐에 추가
+        function addSongToQueue(song, requester) {
+            const queueItem = {
+                id: Date.now(),
+                song,
+                requester,
+                timestamp: Date.now()
+            };
+            
+            songQueue.push(queueItem);
+            updateSongQueue();
+        }
+
+        // 신청곡 큐 업데이트
+        function updateSongQueue() {
+            const queueDiv = document.getElementById('song-queue');
+            queueDiv.innerHTML = '';
+            
+            if (songQueue.length === 0) {
+                queueDiv.innerHTML = '<p class="text-gray-500 text-center">신청곡이 없습니다</p>';
+            } else {
+                songQueue.forEach((item, index) => {
+                    const songEl = document.createElement('div');
+                    songEl.className = 'bg-gray-900 rounded p-4 flex justify-between items-center';
+                    songEl.innerHTML = `
+                        <div>
+                            <p class="font-semibold">${index + 1}. ${item.song.artist || ''} - ${item.song.title}</p>
+                            <p class="text-sm text-gray-400">신청: @${item.requester}</p>
+                        </div>
+                        <button onclick="removeSong(${item.id})" class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+                            삭제
+                        </button>
+                    `;
+                    queueDiv.appendChild(songEl);
+                });
+            }
+        }
+
+        // 신청곡 삭제
+        function removeSong(songId) {
+            songQueue = songQueue.filter(item => item.id !== songId);
+            updateSongQueue();
+        }
+
+        // 페이지 로드 시
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadUserInfo();
+        });
+    </script>
+</body>
+</html>

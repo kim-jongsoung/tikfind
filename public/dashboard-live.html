@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind - Live Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="bg-slate-900">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-0 md:ml-64 mt-16 p-4 md:p-8">
+        <div class="max-w-7xl mx-auto">
+            <!-- 헤더 & 라이브 시작 버튼 -->
+            <div class="mb-6 flex justify-between items-center">
+                <div>
+                    <h2 class="text-3xl font-bold text-white">🎥 Live Dashboard</h2>
+                    <p class="text-gray-400 mt-2">실시간 TikTok Live 방송 관리</p>
+                </div>
+                <button id="startLiveBtn" class="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-bold rounded-lg hover:shadow-xl transition transform hover:scale-105">
+                    <i class="fas fa-rocket mr-2"></i>라이브 시작
+                </button>
+            </div>
+
+            <!-- Desktop App 상태 -->
+            <div id="appStatus" class="mb-6 p-4 bg-slate-800 rounded-lg border-l-4 border-yellow-500">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-desktop text-yellow-400 text-2xl mr-3"></i>
+                        <div>
+                            <p class="text-white font-semibold">Desktop App 상태</p>
+                            <p id="appStatusText" class="text-sm text-gray-400">확인 중...</p>
+                            <p class="text-xs text-gray-500 mt-1">User ID: <span id="userIdDisplay" class="font-mono">로딩 중...</span></p>
+                        </div>
+                    </div>
+                    <button id="downloadAppBtn" class="hidden px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                        <i class="fas fa-download mr-2"></i>다운로드
+                    </button>
+                </div>
+            </div>
+
+            <!-- 실시간 통계 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="bg-slate-800 rounded-lg p-6 border-l-4 border-red-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-400 mb-1">방송 상태</p>
+                            <h3 id="liveStatus" class="text-2xl font-bold text-white">⚫ 오프라인</h3>
+                        </div>
+                        <div class="bg-red-900 p-3 rounded-full">
+                            <i class="fas fa-broadcast-tower text-red-400 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg p-6 border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-400 mb-1">시청자</p>
+                            <h3 id="viewerCount" class="text-2xl font-bold text-white">0</h3>
+                        </div>
+                        <div class="bg-green-900 p-3 rounded-full">
+                            <i class="fas fa-users text-green-400 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg p-6 border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-400 mb-1">총 메시지</p>
+                            <h3 id="messageCount" class="text-2xl font-bold text-white">0</h3>
+                        </div>
+                        <div class="bg-blue-900 p-3 rounded-full">
+                            <i class="fas fa-comments text-blue-400 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg p-6 border-l-4 border-yellow-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-400 mb-1">선물</p>
+                            <h3 id="giftCount" class="text-2xl font-bold text-white">0</h3>
+                        </div>
+                        <div class="bg-yellow-900 p-3 rounded-full">
+                            <i class="fas fa-gift text-yellow-400 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TTS 설정 -->
+            <div class="bg-slate-800 rounded-lg p-6 mb-6">
+                <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+                    <i class="fas fa-volume-up text-purple-400 mr-2"></i>
+                    TTS 음성 설정
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- TTS ON/OFF -->
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">TTS 활성화</label>
+                        <button id="ttsToggle" class="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition">
+                            <i class="fas fa-power-off mr-2"></i>
+                            <span id="ttsToggleText">OFF</span>
+                        </button>
+                    </div>
+
+                    <!-- 언어 선택 -->
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">언어</label>
+                        <select id="ttsLanguage" class="w-full px-4 py-2 bg-gray-700 text-white rounded-lg">
+                            <option value="ko-KR">한국어</option>
+                            <option value="en-US">English</option>
+                            <option value="ja-JP">日本語</option>
+                            <option value="zh-CN">中文</option>
+                        </select>
+                    </div>
+
+                    <!-- 목소리 선택 -->
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">목소리</label>
+                        <select id="ttsVoice" class="w-full px-4 py-2 bg-gray-700 text-white rounded-lg">
+                            <option value="female">여성</option>
+                            <option value="male">남성</option>
+                        </select>
+                    </div>
+
+                    <!-- 속도 -->
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-2">속도: <span id="ttsSpeedValue">1.0</span>x</label>
+                        <input id="ttsSpeed" type="range" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 메인 콘텐츠 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- 실시간 채팅 -->
+                <div class="bg-slate-800 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-comments text-blue-400 mr-2"></i>
+                        실시간 채팅
+                    </h3>
+                    <div id="chatMessages" class="h-96 overflow-y-auto space-y-2 bg-slate-900 rounded-lg p-4">
+                        <p class="text-gray-500 text-center">채팅 메시지가 여기에 표시됩니다...</p>
+                    </div>
+                </div>
+
+                <!-- AI 자동응답 -->
+                <div class="bg-slate-800 rounded-lg p-6">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-robot text-purple-400 mr-2"></i>
+                        AI 자동응답
+                    </h3>
+                    <div id="aiResponses" class="h-96 overflow-y-auto space-y-2 bg-slate-900 rounded-lg p-4">
+                        <p class="text-gray-500 text-center">AI 응답이 여기에 표시됩니다...</p>
+                    </div>
+                </div>
+
+                <!-- 신청곡 큐 -->
+                <div class="bg-slate-800 rounded-lg p-6 lg:col-span-2">
+                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
+                        <i class="fas fa-music text-pink-400 mr-2"></i>
+                        신청곡 큐
+                    </h3>
+                    <div id="songQueue" class="space-y-2">
+                        <p class="text-gray-500 text-center">신청곡이 여기에 표시됩니다...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Desktop App 다운로드 모달 -->
+    <div id="installModal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-slate-800 rounded-lg p-8 max-w-md w-full mx-4">
+            <h3 class="text-2xl font-bold text-white mb-4">
+                <i class="fas fa-download text-blue-400 mr-2"></i>
+                Desktop App 설치 필요
+            </h3>
+            <p class="text-gray-300 mb-6">
+                TikTok Live 데이터를 수집하려면 Desktop App을 설치해야 합니다.
+            </p>
+            <div class="space-y-3">
+                <a href="/downloads/TikFind-Setup.exe" class="block w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-center rounded-lg font-semibold">
+                    <i class="fab fa-windows mr-2"></i>Windows 다운로드
+                </a>
+                <a href="/downloads/TikFind.dmg" class="block w-full px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white text-center rounded-lg font-semibold">
+                    <i class="fab fa-apple mr-2"></i>Mac 다운로드
+                </a>
+                <button onclick="closeInstallModal()" class="block w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white text-center rounded-lg">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+    <script>
+        const socket = io();
+        let currentUser = null;
+        let ttsEnabled = false;
+        let messageCount = 0;
+        let giftCount = 0;
+        let songQueue = [];
+
+        // 사용자 정보 로드
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/current_user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    currentUser = data.user;
+                    const userId = String(currentUser._id || currentUser.id);
+                    console.log('✅ 사용자 로드:', currentUser);
+                    console.log('🔑 User ID:', userId);
+                    
+                    // userId 표시
+                    document.getElementById('userIdDisplay').textContent = userId;
+                } else {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+                window.location.href = '/';
+            }
+        }
+
+        // 라이브 시작
+        document.getElementById('startLiveBtn').onclick = async () => {
+            if (!currentUser) {
+                alert('사용자 정보를 불러오는 중입니다...');
+                return;
+            }
+
+            if (!currentUser.tiktokId) {
+                alert('설정 페이지에서 TikTok ID를 먼저 등록해주세요.');
+                window.location.href = '/settings';
+                return;
+            }
+
+            const userId = currentUser.id;
+            const tiktokId = currentUser.tiktokId;
+            const serverUrl = window.location.origin;
+
+            // Desktop App 실행
+            window.location.href = `tikfind://start?userId=${userId}&tiktokId=${tiktokId}&serverUrl=${serverUrl}`;
+
+            // 3초 후 Desktop App 연결 확인
+            setTimeout(() => {
+                checkDesktopAppConnection();
+            }, 3000);
+        };
+
+        // Desktop App 연결 확인
+        function checkDesktopAppConnection() {
+            // Socket.io로 연결 상태 확인
+            if (!socket.connected) {
+                showInstallModal();
+            }
+        }
+
+        // 설치 모달 표시
+        function showInstallModal() {
+            document.getElementById('installModal').classList.remove('hidden');
+            document.getElementById('appStatusText').textContent = '미설치';
+            document.getElementById('downloadAppBtn').classList.remove('hidden');
+        }
+
+        // 설치 모달 닫기
+        function closeInstallModal() {
+            document.getElementById('installModal').classList.add('hidden');
+        }
+
+        // Socket.io 이벤트
+        socket.on('connect', () => {
+            console.log('✅ Socket.io 연결');
+            document.getElementById('appStatusText').textContent = '연결됨';
+            document.getElementById('downloadAppBtn').classList.add('hidden');
+            
+            if (currentUser) {
+                const userId = String(currentUser._id || currentUser.id);
+                console.log('🔑 룸 참가:', userId);
+                socket.emit('join-room', userId);
+            }
+        });
+
+        socket.on('disconnect', () => {
+            console.log('❌ Socket.io 연결 끊김');
+            document.getElementById('appStatusText').textContent = '연결 끊김';
+        });
+
+        // 방송 상태
+        socket.on('live-status', (data) => {
+            if (data.isLive) {
+                document.getElementById('liveStatus').innerHTML = '🔴 방송 중';
+                document.getElementById('liveStatus').classList.add('text-red-500');
+            } else {
+                document.getElementById('liveStatus').innerHTML = '⚫ 오프라인';
+                document.getElementById('liveStatus').classList.remove('text-red-500');
+            }
+        });
+
+        // 시청자 수
+        socket.on('viewer-update', (data) => {
+            document.getElementById('viewerCount').textContent = data.viewerCount.toLocaleString();
+        });
+
+        // 채팅 메시지
+        socket.on('chat-message', (data) => {
+            messageCount++;
+            document.getElementById('messageCount').textContent = messageCount.toLocaleString();
+            
+            addChatMessage(data);
+            
+            // AI 응답 표시
+            if (data.aiResponse) {
+                addAIResponse(data);
+            }
+            
+            // 신청곡 추가
+            if (data.songRequest) {
+                addSongToQueue(data.songRequest, data.username);
+            }
+        });
+
+        // 선물
+        socket.on('gift-received', (data) => {
+            giftCount += data.count || 1;
+            document.getElementById('giftCount').textContent = giftCount.toLocaleString();
+            
+            addGiftMessage(data);
+        });
+
+        // 채팅 메시지 추가
+        function addChatMessage(data) {
+            const chatDiv = document.getElementById('chatMessages');
+            const empty = chatDiv.querySelector('.text-gray-500');
+            if (empty) empty.remove();
+            
+            const messageEl = document.createElement('div');
+            messageEl.className = 'bg-slate-800 rounded-lg p-3';
+            
+            const languageEmoji = {
+                'ko': '🇰🇷',
+                'en': '🇺🇸',
+                'ja': '🇯🇵',
+                'zh': '🇨🇳'
+            };
+            
+            messageEl.innerHTML = `
+                <p class="font-semibold text-blue-400">${languageEmoji[data.language] || '🌍'} @${data.username}</p>
+                <p class="text-sm text-white">${escapeHtml(data.message)}</p>
+                <p class="text-xs text-gray-500">${new Date(data.timestamp).toLocaleTimeString()}</p>
+            `;
+            
+            chatDiv.appendChild(messageEl);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+            
+            // 최대 50개 유지
+            while (chatDiv.children.length > 50) {
+                chatDiv.removeChild(chatDiv.firstChild);
+            }
+        }
+
+        // AI 응답 추가
+        function addAIResponse(data) {
+            const aiDiv = document.getElementById('aiResponses');
+            const empty = aiDiv.querySelector('.text-gray-500');
+            if (empty) empty.remove();
+            
+            const responseEl = document.createElement('div');
+            responseEl.className = 'bg-purple-900 rounded-lg p-3';
+            responseEl.innerHTML = `
+                <p class="font-semibold text-purple-300">🤖 AI → @${data.username}</p>
+                <div class="text-sm text-gray-200 whitespace-pre-line">${escapeHtml(data.aiResponse)}</div>
+                <p class="text-xs text-gray-500">${new Date(data.timestamp).toLocaleTimeString()}</p>
+            `;
+            
+            aiDiv.appendChild(responseEl);
+            aiDiv.scrollTop = aiDiv.scrollHeight;
+            
+            while (aiDiv.children.length > 50) {
+                aiDiv.removeChild(aiDiv.firstChild);
+            }
+        }
+
+        // 선물 메시지 추가
+        function addGiftMessage(data) {
+            const chatDiv = document.getElementById('chatMessages');
+            const giftEl = document.createElement('div');
+            giftEl.className = 'bg-yellow-900 rounded-lg p-3';
+            giftEl.innerHTML = `
+                <p class="font-semibold text-yellow-400">🎁 선물: ${data.giftName} x${data.count || 1}</p>
+                <p class="text-sm text-white">from @${data.username}</p>
+                <p class="text-xs text-gray-500">${new Date().toLocaleTimeString()}</p>
+            `;
+            chatDiv.appendChild(giftEl);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        // 신청곡 추가
+        function addSongToQueue(song, requester) {
+            const queueDiv = document.getElementById('songQueue');
+            const empty = queueDiv.querySelector('.text-gray-500');
+            if (empty) empty.remove();
+            
+            const songId = Date.now();
+            songQueue.push({ id: songId, song, requester });
+            
+            updateSongQueue();
+        }
+
+        // 신청곡 큐 업데이트
+        function updateSongQueue() {
+            const queueDiv = document.getElementById('songQueue');
+            queueDiv.innerHTML = '';
+            
+            if (songQueue.length === 0) {
+                queueDiv.innerHTML = '<p class="text-gray-500 text-center">신청곡이 없습니다</p>';
+            } else {
+                songQueue.forEach((item, index) => {
+                    const songEl = document.createElement('div');
+                    songEl.className = 'bg-slate-900 rounded-lg p-4 flex justify-between items-center';
+                    songEl.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-white">${index + 1}. ${item.song.title || item.song}</p>
+                            <p class="text-sm text-gray-400">신청: @${item.requester}</p>
+                        </div>
+                        <button onclick="removeSong(${item.id})" class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+                            삭제
+                        </button>
+                    `;
+                    queueDiv.appendChild(songEl);
+                });
+            }
+        }
+
+        // 신청곡 삭제
+        function removeSong(songId) {
+            songQueue = songQueue.filter(item => item.id !== songId);
+            updateSongQueue();
+        }
+
+        // TTS 토글
+        document.getElementById('ttsToggle').onclick = () => {
+            ttsEnabled = !ttsEnabled;
+            const toggleBtn = document.getElementById('ttsToggle');
+            const toggleText = document.getElementById('ttsToggleText');
+            
+            if (ttsEnabled) {
+                toggleBtn.classList.remove('bg-gray-700');
+                toggleBtn.classList.add('bg-green-600');
+                toggleText.textContent = 'ON';
+                
+                // 서버로 TTS 설정 전송
+                sendTTSSettings();
+            } else {
+                toggleBtn.classList.remove('bg-green-600');
+                toggleBtn.classList.add('bg-gray-700');
+                toggleText.textContent = 'OFF';
+                
+                sendTTSSettings();
+            }
+        };
+
+        // TTS 설정 변경
+        document.getElementById('ttsLanguage').onchange = sendTTSSettings;
+        document.getElementById('ttsVoice').onchange = sendTTSSettings;
+        document.getElementById('ttsSpeed').oninput = (e) => {
+            document.getElementById('ttsSpeedValue').textContent = e.target.value;
+            sendTTSSettings();
+        };
+
+        // TTS 설정 전송
+        function sendTTSSettings() {
+            const settings = {
+                enabled: ttsEnabled,
+                language: document.getElementById('ttsLanguage').value,
+                voice: document.getElementById('ttsVoice').value,
+                speed: parseFloat(document.getElementById('ttsSpeed').value)
+            };
+            
+            socket.emit('tts-settings', settings);
+            console.log('🔊 TTS 설정 전송:', settings);
+        }
+
+        // HTML 이스케이프
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 페이지 로드 시
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadUserInfo();
+        });
+    </script>
+</body>
+</html>

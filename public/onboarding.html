@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind - Onboarding</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 60px 80px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 550px;
+            width: 100%;
+        }
+        h1 {
+            color: #667eea;
+            font-size: 2.2rem;
+            margin-bottom: 1rem;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 2.5rem;
+        }
+        .form-group {
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+        label {
+            display: block;
+            color: #444;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .hint {
+            color: #999;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 1rem;
+        }
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+        .skip-link {
+            display: inline-block;
+            margin-top: 1rem;
+            color: #999;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+        .skip-link:hover {
+            color: #667eea;
+        }
+        .success-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-icon">🎉</div>
+        <h1>가입을 축하합니다!</h1>
+        <p class="subtitle">프로필 설정을 완료해주세요</p>
+        
+        <form id="onboardingForm" action="/api/setup-profile" method="POST">
+            <div class="form-group">
+                <label for="nativeLanguage">모국어 선택 <span style="color: red;">*</span></label>
+                <select 
+                    id="nativeLanguage" 
+                    name="nativeLanguage" 
+                    required
+                    style="width: 100%; padding: 15px; font-size: 1.1rem; border: 2px solid #ddd; border-radius: 10px; background: white; cursor: pointer;"
+                >
+                    <option value="">언어를 선택하세요</option>
+                    <option value="ko">🇰🇷 한국어 (Korean)</option>
+                    <option value="en">🇺🇸 영어 (English)</option>
+                    <option value="ja">🇯🇵 일본어 (Japanese)</option>
+                    <option value="es">🇪🇸 스페인어 (Spanish)</option>
+                    <option value="zh">🇨🇳 중국어 (Chinese)</option>
+                    <option value="vi">🇻🇳 베트남어 (Vietnamese)</option>
+                    <option value="th">🇹🇭 태국어 (Thai)</option>
+                </select>
+                <p class="hint" style="color: #ff6b6b; font-weight: 600;">⚠️ 중요: 선택한 언어는 채팅에서 제외되며, 다른 언어만 AI가 번역합니다</p>
+            </div>
+
+            <div class="form-group">
+                <label for="tiktokId">틱톡 ID</label>
+                <input 
+                    type="text" 
+                    id="tiktokId" 
+                    name="tiktokId" 
+                    placeholder="@your_tiktok_id" 
+                    required
+                >
+                <p class="hint">예: @tiktoker123 (@ 포함)</p>
+            </div>
+            
+            <button type="submit" class="submit-btn">완료</button>
+        </form>
+        
+        <a href="/" class="skip-link">나중에 설정하기</a>
+    </div>
+
+    <script>
+        document.getElementById('onboardingForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const nativeLanguage = document.getElementById('nativeLanguage').value;
+            const tiktokId = document.getElementById('tiktokId').value;
+            
+            if (!nativeLanguage) {
+                alert('모국어를 선택해주세요!');
+                return;
+            }
+            
+            try {
+                // 언어 설정 저장
+                await fetch('/api/update-language', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language: nativeLanguage })
+                });
+                
+                // TikTok ID 저장
+                const response = await fetch('/api/setup-tiktok', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tiktokId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 로컬 스토리지에 언어 저장
+                    localStorage.setItem('tikfind_lang', nativeLanguage);
+                    alert('프로필 설정이 완료되었습니다!');
+                    window.location.href = '/dashboard';
+                } else {
+                    alert('오류: ' + (data.message || '설정에 실패했습니다.'));
+                }
+            } catch (error) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(error);
+            }
+        });
+    </script>
+</body>
+</html>

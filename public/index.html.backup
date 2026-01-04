@@ -18,7 +18,53 @@
     </style>
 </head>
 <body>
-    <%- include('partials/navbar') %>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top" style="background: #000000; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+        <div class="container" style="padding: 1rem 0;">
+            <a class="navbar-brand" href="/">
+                <img src="/images/logo.png" alt="TikFind Logo" style="height: 50px; cursor: pointer; transition: opacity 0.3s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center" style="gap: 1.5rem;">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/" style="color: #9ca3af; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">홈</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/features" style="color: #9ca3af; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">기능</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/pricing" style="color: #9ca3af; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">가격</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: #9ca3af; font-weight: 500; transition: color 0.3s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#9ca3af'">
+                            <i class="fas fa-globe"></i> <span id="currentLanguage">한국어</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown" style="background: #1a1a1a; border: 1px solid #333;">
+                            <li><a class="dropdown-item" href="#" data-lang="ko" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/kr.png" width="20" class="me-2"> 한국어</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="en" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/us.png" width="20" class="me-2"> English</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="ja" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/jp.png" width="20" class="me-2"> 日本語</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="zh" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/cn.png" width="20" class="me-2"> 中文</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="es" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/es.png" width="20" class="me-2"> Español</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="fr" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/fr.png" width="20" class="me-2"> Français</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="de" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/de.png" width="20" class="me-2"> Deutsch</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="ru" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/ru.png" width="20" class="me-2"> Русский</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="pt" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/pt.png" width="20" class="me-2"> Português</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="th" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/th.png" width="20" class="me-2"> ไทย</a></li>
+                            <li><a class="dropdown-item" href="#" data-lang="vi" style="color: #9ca3af; transition: all 0.3s;" onmouseover="this.style.background='#333'; this.style.color='#fff'" onmouseout="this.style.background='transparent'; this.style.color='#9ca3af'"><img src="https://flagcdn.com/w20/vn.png" width="20" class="me-2"> Tiếng Việt</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <button onclick="openLoginModal()" class="btn" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; padding: 0.5rem 1.5rem; border-radius: 8px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);" onmouseover="this.style.boxShadow='0 6px 20px rgba(236, 72, 153, 0.5)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(236, 72, 153, 0.3)'; this.style.transform='translateY(0)'">
+                            <i class="fab fa-google me-2"></i>Google 로그인
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
     <!-- Hero Section -->
     <section class="py-5" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); position: relative; overflow: hidden; min-height: 600px;">

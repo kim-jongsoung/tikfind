@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind - 설정</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-64 mt-16 p-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">설정</h2>
+                <p class="text-gray-600 mt-2">계정 및 서비스 설정을 관리하세요</p>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-user mr-2 text-indigo-600"></i>
+                        프로필 정보
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">이메일</label>
+                            <input type="email" id="user-email" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">닉네임</label>
+                            <input type="text" id="user-nickname" placeholder="닉네임 입력" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">스트리머 페르소나</label>
+                            <textarea id="user-persona" placeholder="예: 친근하고 활발한 게임 스트리머" rows="2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                            <p class="text-xs text-gray-500 mt-1">AI가 당신의 성격을 반영한 답변을 생성합니다</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">틱톡 ID</label>
+                            <div id="tiktok-id-display" class="hidden">
+                                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div class="flex items-center space-x-3">
+                                        <i class="fab fa-tiktok text-2xl"></i>
+                                        <div>
+                                            <p class="font-semibold text-gray-800" id="display-tiktok-id"></p>
+                                            <p class="text-sm text-gray-500" id="display-tiktok-nickname"></p>
+                                        </div>
+                                    </div>
+                                    <button onclick="disconnectTikTok()" class="text-red-600 hover:text-red-700 text-sm">
+                                        <i class="fas fa-unlink mr-1"></i>연결 해제
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- TikTok 로그인 버튼 (임시 숨김) -->
+                            <div id="tiktok-connect-btn" class="hidden">
+                                <button onclick="connectTikTok()" class="w-full px-4 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition flex items-center justify-center space-x-2">
+                                    <i class="fab fa-tiktok text-xl"></i>
+                                    <span>TikTok 아이디 등록</span>
+                                </button>
+                                <p class="text-xs text-gray-500 mt-2">TikTok 계정으로 로그인하여 자동으로 등록하세요</p>
+                            </div>
+                            
+                            <!-- TikTok ID 수동 입력 (임시) -->
+                            <div id="tiktok-manual-input" class="block">
+                                <div class="flex gap-2">
+                                    <input type="text" id="manual-tiktok-id" placeholder="TikTok ID 입력 (예: aoqrhtm)" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    <button onclick="saveTikTokId()" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                                        <i class="fas fa-save mr-1"></i>저장
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-2">@ 기호 없이 TikTok ID만 입력하세요</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-language mr-2 text-purple-600"></i>
+                        언어 설정
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">표시 언어</label>
+                            <select id="user-language" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                <option value="ko">🇰🇷 한국어 (Korean)</option>
+                                <option value="en">🇺🇸 영어 (English)</option>
+                                <option value="ja">🇯🇵 일본어 (Japanese)</option>
+                                <option value="es">🇪🇸 스페인어 (Spanish)</option>
+                                <option value="zh-TW">🇹🇼 중국어 (Chinese)</option>
+                                <option value="vi">🇻🇳 베트남어 (Vietnamese)</option>
+                                <option value="th">🇹🇭 태국어 (Thai)</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-2">선택한 언어로 모든 페이지가 표시됩니다</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-bell mr-2 text-yellow-600"></i>
+                        알림 설정
+                    </h3>
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span class="text-sm text-gray-700">신청곡 알림</span>
+                            <input type="checkbox" class="toggle" checked>
+                        </label>
+                        <label class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <span class="text-sm text-gray-700">이메일 알림</span>
+                            <input type="checkbox" class="toggle">
+                        </label>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-shield-alt mr-2 text-green-600"></i>
+                        보안
+                    </h3>
+                    <button class="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-left">
+                        <i class="fas fa-key mr-2"></i>비밀번호 변경
+                    </button>
+                </div>
+
+                <div class="flex justify-end space-x-4">
+                    <button onclick="window.location.reload()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                        취소
+                    </button>
+                    <button id="save-settings-btn" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-save mr-2"></i>저장
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+    <script>
+        // TikTok 연결
+        function connectTikTok() {
+            const width = 500;
+            const height = 600;
+            const left = (screen.width - width) / 2;
+            const top = (screen.height - height) / 2;
+            
+            const authWindow = window.open(
+                '/auth/tiktok',
+                'TikTok Login',
+                `width=${width},height=${height},left=${left},top=${top}`
+            );
+            
+            // 로그인 완료 확인
+            const checkInterval = setInterval(() => {
+                if (authWindow.closed) {
+                    clearInterval(checkInterval);
+                    // 사용자 정보 다시 로드
+                    loadUserInfo();
+                }
+            }, 1000);
+        }
+        
+        // TikTok ID 수동 저장
+        async function saveTikTokId() {
+            const tiktokId = document.getElementById('manual-tiktok-id').value.trim();
+            
+            if (!tiktokId) {
+                alert('TikTok ID를 입력해주세요.');
+                return;
+            }
+            
+            // @ 기호 제거
+            const cleanId = tiktokId.replace('@', '');
+            
+            try {
+                const response = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nickname: document.getElementById('user-nickname').value,
+                        tiktokId: cleanId
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert('TikTok ID가 저장되었습니다!');
+                    loadUserInfo();
+                } else {
+                    alert(data.message || '저장에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('TikTok ID 저장 실패:', error);
+                alert('오류가 발생했습니다.');
+            }
+        }
+        
+        // TikTok 연결 해제
+        async function disconnectTikTok() {
+            if (!confirm('TikTok 계정 연결을 해제하시겠습니까?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/disconnect-tiktok', {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('TikTok 계정 연결이 해제되었습니다.');
+                    loadUserInfo();
+                } else {
+                    alert('연결 해제에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('TikTok 연결 해제 실패:', error);
+                alert('오류가 발생했습니다.');
+            }
+        }
+
+        // 사용자 정보 로드
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/current_user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    document.getElementById('user-email').value = data.user.email;
+                    document.getElementById('user-nickname').value = data.user.nickname || '';
+                    document.getElementById('user-persona').value = data.user.streamerPersona || '';
+                    
+                    // TikTok ID 표시
+                    if (data.user.tiktokId) {
+                        document.getElementById('display-tiktok-id').textContent = '@' + data.user.tiktokId;
+                        document.getElementById('display-tiktok-nickname').textContent = data.user.nickname || '';
+                        document.getElementById('tiktok-id-display').classList.remove('hidden');
+                        document.getElementById('tiktok-connect-btn').classList.add('hidden');
+                        document.getElementById('tiktok-manual-input').classList.add('hidden');
+                    } else {
+                        document.getElementById('tiktok-id-display').classList.add('hidden');
+                        document.getElementById('tiktok-connect-btn').classList.add('hidden');
+                        document.getElementById('tiktok-manual-input').classList.remove('hidden');
+                    }
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+            }
+        }
+
+        // 설정 저장
+        async function saveSettings() {
+            const nickname = document.getElementById('user-nickname').value.trim();
+            const persona = document.getElementById('user-persona').value.trim();
+            const language = document.getElementById('user-language').value;
+            
+            if (!nickname) {
+                alert('닉네임을 입력해주세요.');
+                return;
+            }
+            
+            const btn = document.getElementById('save-settings-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>저장 중...';
+            
+            try {
+                // 프로필 정보 저장 (닉네임, 페르소나)
+                const profileResponse = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        nickname,
+                        streamerPersona: persona
+                    })
+                });
+                
+                // 언어 설정 저장
+                const langResponse = await fetch('/api/update-language', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ language })
+                });
+                
+                if (profileResponse.ok && langResponse.ok) {
+                    localStorage.setItem('tikfind_lang', language);
+                    alert('설정이 저장되었습니다.');
+                    location.reload();
+                } else {
+                    const profileData = await profileResponse.json();
+                    const langData = await langResponse.json();
+                    alert(profileData.message || langData.message || '설정 저장에 실패했습니다.');
+                }
+            } catch (error) {
+                console.error('설정 저장 실패:', error);
+                alert('설정 저장 중 오류가 발생했습니다.');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save mr-2"></i>저장';
+            }
+        }
+
+        // 페이지 로드 시
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 사용자 정보 로드
+            await loadUserInfo();
+            
+            // 현재 언어 설정 로드
+            const currentLang = localStorage.getItem('tikfind_lang') || 'ko';
+            document.getElementById('user-language').value = currentLang;
+            
+            // 저장 버튼 이벤트
+            document.getElementById('save-settings-btn').addEventListener('click', saveSettings);
+        });
+    </script>
+</body>
+</html>

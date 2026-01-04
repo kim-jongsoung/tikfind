@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Live 테스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-4xl font-bold mb-8">🎥 TikTok Live 테스트</h1>
+
+        <!-- 연결 설정 -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-6">
+            <h2 class="text-2xl font-semibold mb-4">연결 설정</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">TikTok Username (@ 제외)</label>
+                    <input type="text" id="tiktok-username" placeholder="예: kimjongsoung" 
+                           class="w-full px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:ring-2 focus:ring-blue-500">
+                    <p class="text-xs text-gray-400 mt-1">현재 라이브 방송 중인 TikTok 계정 이름을 입력하세요</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button id="start-btn" onclick="startLive()" 
+                            class="px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition">
+                        🔴 Live 시작
+                    </button>
+                    <button id="stop-btn" onclick="stopLive()" disabled
+                            class="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-semibold transition disabled:opacity-50">
+                        ⏹️ Live 중지
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 상태 표시 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-sm text-gray-400 mb-2">연결 상태</h3>
+                <p id="connection-status" class="text-2xl font-bold">⚫ 오프라인</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-sm text-gray-400 mb-2">시청자 수</h3>
+                <p id="viewer-count" class="text-2xl font-bold">0명</p>
+            </div>
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h3 class="text-sm text-gray-400 mb-2">총 메시지</h3>
+                <p id="total-messages" class="text-2xl font-bold">0개</p>
+            </div>
+        </div>
+
+        <!-- 채팅 메시지 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 채팅 -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">💬 실시간 채팅</h2>
+                <div id="chat-messages" class="h-96 overflow-y-auto space-y-2 bg-gray-900 rounded p-4">
+                    <p class="text-gray-500 text-center">채팅 메시지가 여기에 표시됩니다...</p>
+                </div>
+            </div>
+
+            <!-- AI 응답 -->
+            <div class="bg-gray-800 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">🤖 AI 자동응답</h2>
+                <div id="ai-responses" class="h-96 overflow-y-auto space-y-2 bg-gray-900 rounded p-4">
+                    <p class="text-gray-500 text-center">AI 응답이 여기에 표시됩니다...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 신청곡 큐 -->
+        <div class="bg-gray-800 rounded-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">🎵 신청곡 큐</h2>
+            <div id="song-queue" class="space-y-2">
+                <p class="text-gray-500 text-center">신청곡이 여기에 표시됩니다...</p>
+            </div>
+        </div>
+
+        <!-- 로그 -->
+        <div class="bg-gray-800 rounded-lg p-6 mt-6">
+            <h2 class="text-xl font-semibold mb-4">📋 시스템 로그</h2>
+            <div id="system-log" class="h-48 overflow-y-auto bg-gray-900 rounded p-4 font-mono text-xs">
+                <p class="text-green-400">[시스템] 테스트 페이지 준비 완료</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentUserId = 'test-user-' + Date.now();
+        let isConnected = false;
+
+        // 로그 추가
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('system-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: 'text-blue-400',
+                success: 'text-green-400',
+                error: 'text-red-400',
+                warning: 'text-yellow-400'
+            };
+            log.innerHTML += `<p class="${colors[type]}">[${timestamp}] ${message}</p>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Live 시작
+        async function startLive() {
+            const username = document.getElementById('tiktok-username').value.trim();
+            
+            if (!username) {
+                alert('TikTok 사용자 이름을 입력하세요!');
+                return;
+            }
+
+            addLog(`TikTok Live 연결 시도: @${username}`, 'info');
+            
+            socket.emit('start-tiktok-live', {
+                userId: currentUserId,
+                tiktokId: username
+            });
+
+            document.getElementById('start-btn').disabled = true;
+            document.getElementById('stop-btn').disabled = false;
+        }
+
+        // Live 중지
+        function stopLive() {
+            addLog('TikTok Live 연결 종료 요청', 'warning');
+            
+            socket.emit('stop-tiktok-live', {
+                userId: currentUserId
+            });
+
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+            
+            document.getElementById('connection-status').textContent = '⚫ 오프라인';
+            isConnected = false;
+        }
+
+        // Socket.io 이벤트 리스너
+        socket.on('connect', () => {
+            addLog('Socket.io 서버 연결 성공', 'success');
+        });
+
+        socket.on('live-started', (data) => {
+            addLog('TikTok Live 연결 성공!', 'success');
+            isConnected = true;
+        });
+
+        socket.on('live-error', (data) => {
+            addLog(`에러: ${data.message}`, 'error');
+            alert(`연결 실패: ${data.message}`);
+            document.getElementById('start-btn').disabled = false;
+            document.getElementById('stop-btn').disabled = true;
+        });
+
+        socket.on('live-stopped', (data) => {
+            addLog('TikTok Live 연결 종료됨', 'warning');
+        });
+
+        // 방송 상태 업데이트
+        socket.on('live-status', (status) => {
+            if (status.isLive) {
+                document.getElementById('connection-status').textContent = '🔴 방송 중';
+            } else {
+                document.getElementById('connection-status').textContent = '⚫ 오프라인';
+            }
+            
+            document.getElementById('viewer-count').textContent = status.viewerCount + '명';
+            
+            if (status.stats) {
+                document.getElementById('total-messages').textContent = status.stats.totalMessages + '개';
+            }
+        });
+
+        // 채팅 메시지
+        socket.on('chat-message', (data) => {
+            const chatDiv = document.getElementById('chat-messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'bg-gray-800 rounded p-3';
+            messageEl.innerHTML = `
+                <p class="font-semibold text-blue-400">@${data.username}</p>
+                <p class="text-sm">${data.message}</p>
+                <p class="text-xs text-gray-500">${new Date(data.timestamp).toLocaleTimeString()}</p>
+            `;
+            chatDiv.appendChild(messageEl);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+            
+            addLog(`채팅: @${data.username}: ${data.message}`, 'info');
+        });
+
+        // AI 응답
+        socket.on('ai-response', (data) => {
+            const aiDiv = document.getElementById('ai-responses');
+            const responseEl = document.createElement('div');
+            responseEl.className = 'bg-purple-900 rounded p-3';
+            responseEl.innerHTML = `
+                <p class="font-semibold text-purple-300">🤖 AI → @${data.username}</p>
+                <p class="text-sm text-gray-300">${data.response}</p>
+                <p class="text-xs text-gray-500">언어: ${data.language} | ${new Date(data.timestamp).toLocaleTimeString()}</p>
+            `;
+            aiDiv.appendChild(responseEl);
+            aiDiv.scrollTop = aiDiv.scrollHeight;
+            
+            addLog(`AI 응답 [${data.language}]: ${data.response}`, 'success');
+        });
+
+        // 신청곡 큐 업데이트
+        socket.on('queue-update', (data) => {
+            const queueDiv = document.getElementById('song-queue');
+            queueDiv.innerHTML = '';
+            
+            if (data.queue.length === 0) {
+                queueDiv.innerHTML = '<p class="text-gray-500 text-center">신청곡이 없습니다</p>';
+            } else {
+                data.queue.forEach((item, index) => {
+                    const songEl = document.createElement('div');
+                    songEl.className = 'bg-gray-900 rounded p-4 flex justify-between items-center';
+                    songEl.innerHTML = `
+                        <div>
+                            <p class="font-semibold">${index + 1}. ${item.song.artist} - ${item.song.title}</p>
+                            <p class="text-sm text-gray-400">신청: @${item.requester}</p>
+                        </div>
+                        <button onclick="removeSong(${item.id})" class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+                            삭제
+                        </button>
+                    `;
+                    queueDiv.appendChild(songEl);
+                });
+                
+                addLog(`신청곡 큐 업데이트: ${data.queue.length}곡`, 'info');
+            }
+        });
+
+        // 신청곡 삭제
+        function removeSong(songId) {
+            socket.emit('remove-song', {
+                userId: currentUserId,
+                songId: songId
+            });
+        }
+
+        socket.on('disconnect', () => {
+            addLog('Socket.io 서버 연결 끊김', 'error');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TikFind - Live 신청곡</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Prompter Mode Styles */
+        .prompter-card {
+            min-height: 120px;
+        }
+        .prompter-text {
+            font-size: 1.5rem;
+            line-height: 1.4;
+        }
+        @media (min-width: 768px) {
+            .prompter-text {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-900">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-0 md:ml-64 mt-16 p-4 md:p-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="mb-4 md:mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-white">Live 신청곡 관리</h2>
+                <p class="text-gray-400 mt-2 text-sm md:text-base">실시간으로 들어오는 신청곡을 관리하세요</p>
+            </div>
+
+            <div class="bg-slate-800 rounded-lg shadow-xl overflow-hidden">
+                <div class="p-4 md:p-6 bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
+                    <div class="flex items-center justify-between flex-wrap gap-3">
+                        <div>
+                            <h3 class="text-lg md:text-xl font-semibold">신청곡 대기열</h3>
+                            <p class="text-indigo-100 mt-1 text-sm md:text-base">총 <span id="queue-count">0</span>곡 대기 중</p>
+                        </div>
+                        <button class="bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-indigo-50 transition text-sm md:text-base">
+                            <i class="fas fa-sync-alt mr-2"></i><span class="hidden sm:inline">새로고침</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PC View: Table -->
+                <div class="p-6 hidden md:block">
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-slate-700">
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-300">#</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-300">곡명</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-300">아티스트</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-300">신청자</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-300">신청 시간</th>
+                                    <th class="text-left py-3 px-4 text-sm font-semibold text-gray-300">상태</th>
+                                    <th class="text-center py-3 px-4 text-sm font-semibold text-gray-300">액션</th>
+                                </tr>
+                            </thead>
+                            <tbody id="song-queue-table">
+                                <tr>
+                                    <td colspan="7" class="text-center py-12 text-gray-400">
+                                        <i class="fas fa-music text-4xl mb-3 text-gray-600"></i>
+                                        <p>아직 신청된 곡이 없습니다</p>
+                                        <p class="text-sm mt-2">방송을 시작하면 신청곡이 여기에 표시됩니다</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Mobile View: Prompter Mode (Card Stack) -->
+                <div class="p-4 md:hidden" id="prompter-mode">
+                    <div id="song-queue-cards" class="space-y-4">
+                        <!-- Empty State -->
+                        <div class="text-center py-12 text-gray-400">
+                            <i class="fas fa-music text-5xl mb-4 text-gray-600"></i>
+                            <p class="text-xl">아직 신청된 곡이 없습니다</p>
+                            <p class="text-sm mt-2">방송을 시작하면 신청곡이 여기에 표시됩니다</p>
+                        </div>
+                        
+                        <!-- Example Card (Hidden by default) -->
+                        <div class="prompter-card bg-slate-700 rounded-xl p-6 shadow-lg hidden" data-example="true">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <div class="text-sm text-gray-400 mb-1">#1</div>
+                                    <h4 class="prompter-text font-bold text-white mb-2">곡명이 여기에 표시됩니다</h4>
+                                    <p class="text-xl text-gray-300 mb-1">아티스트명</p>
+                                    <p class="text-sm text-gray-400">신청자: <span class="text-indigo-400">닉네임</span></p>
+                                </div>
+                            </div>
+                            
+                            <!-- AI Pronunciation Guide (Large Text) -->
+                            <div class="bg-slate-800 rounded-lg p-4 mb-4">
+                                <div class="text-xs text-gray-400 mb-2">🤖 AI 발음 가이드</div>
+                                <p class="text-3xl font-bold text-yellow-300 leading-relaxed">
+                                    [발음 가이드가 여기에 큰 글씨로 표시됩니다]
+                                </p>
+                            </div>
+                            
+                            <!-- Action Buttons (Large Touch Target) -->
+                            <div class="grid grid-cols-2 gap-3">
+                                <button class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-xl transition text-lg">
+                                    <i class="fas fa-check mr-2"></i>수락
+                                </button>
+                                <button class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-xl transition text-lg">
+                                    <i class="fas fa-times mr-2"></i>거절
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mt-4 md:mt-6">
+                <div class="bg-slate-800 rounded-lg shadow-xl p-4 md:p-6">
+                    <h3 class="text-base md:text-lg font-semibold text-white mb-4 flex items-center">
+                        <i class="fas fa-play-circle mr-2 text-green-500"></i>
+                        현재 재생 중
+                    </h3>
+                    <div class="text-center py-6 md:py-8 text-gray-400">
+                        <i class="fas fa-pause-circle text-4xl md:text-5xl mb-3 text-gray-600"></i>
+                        <p class="text-sm md:text-base">재생 중인 곡이 없습니다</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg shadow-xl p-4 md:p-6">
+                    <h3 class="text-base md:text-lg font-semibold text-white mb-4 flex items-center">
+                        <i class="fas fa-chart-bar mr-2 text-indigo-500"></i>
+                        오늘의 통계
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm md:text-base">총 신청곡</span>
+                            <span class="font-bold text-white text-sm md:text-base">0곡</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm md:text-base">재생 완료</span>
+                            <span class="font-bold text-green-500 text-sm md:text-base">0곡</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-sm md:text-base">스킵됨</span>
+                            <span class="font-bold text-red-500 text-sm md:text-base">0곡</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg shadow-xl p-4 md:p-6">
+                    <h3 class="text-base md:text-lg font-semibold text-white mb-4 flex items-center">
+                        <i class="fas fa-cog mr-2 text-purple-500"></i>
+                        빠른 설정
+                    </h3>
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm text-gray-300">자동 재생</span>
+                            <input type="checkbox" class="toggle" checked>
+                        </label>
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm text-gray-300">중복 신청 허용</span>
+                            <input type="checkbox" class="toggle">
+                        </label>
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm text-gray-300">신청 알림</span>
+                            <input type="checkbox" class="toggle" checked>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+</body>
+</html>

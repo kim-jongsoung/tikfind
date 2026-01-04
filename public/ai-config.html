@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind - AI 설정</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-64 mt-16 p-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">AI 설정</h2>
+                <p class="text-gray-600 mt-2">AI 번역 및 자동 응답 기능을 설정하세요</p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800">AI 번역 기능</h3>
+                        <p class="text-sm text-gray-600 mt-1">실시간 채팅 번역으로 글로벌 시청자와 소통하세요</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" class="sr-only peer" id="ai-translation-toggle">
+                        <div class="w-14 h-7 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                </div>
+
+                <form class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-language mr-2 text-indigo-600"></i>번역 대상 언어
+                        </label>
+                        <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="ko">한국어</option>
+                            <option value="en">English</option>
+                            <option value="ja">日本語</option>
+                            <option value="zh">中文</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-2">채팅 메시지가 선택한 언어로 자동 번역됩니다</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-brain mr-2 text-purple-600"></i>AI 모델 선택
+                        </label>
+                        <select class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                            <option value="gpt-3.5">GPT-3.5 (빠름, 기본)</option>
+                            <option value="gpt-4">GPT-4 (정확함, Pro 전용)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-comment-dots mr-2 text-green-600"></i>자동 응답 프롬프트
+                        </label>
+                        <textarea 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+                            rows="6"
+                            placeholder="AI가 시청자에게 응답할 때 사용할 프롬프트를 입력하세요...&#10;&#10;예시: 당신은 친근하고 유머러스한 스트리머의 AI 어시스턴트입니다. 시청자의 질문에 간결하고 재미있게 답변해주세요."
+                        ></textarea>
+                        <p class="text-xs text-gray-500 mt-2">프롬프트를 통해 AI의 응답 스타일을 커스터마이징할 수 있습니다</p>
+                    </div>
+
+                    <div class="border-t pt-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">고급 설정</h4>
+                        
+                        <div class="space-y-4">
+                            <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <span class="text-sm font-medium text-gray-700">욕설 필터링</span>
+                                    <p class="text-xs text-gray-500 mt-1">부적절한 단어를 자동으로 필터링합니다</p>
+                                </div>
+                                <input type="checkbox" class="toggle" checked>
+                            </label>
+
+                            <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <span class="text-sm font-medium text-gray-700">스팸 방지</span>
+                                    <p class="text-xs text-gray-500 mt-1">반복적인 메시지를 자동으로 차단합니다</p>
+                                </div>
+                                <input type="checkbox" class="toggle" checked>
+                            </label>
+
+                            <label class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                <div>
+                                    <span class="text-sm font-medium text-gray-700">감정 분석</span>
+                                    <p class="text-xs text-gray-500 mt-1">채팅의 감정을 분석하여 표시합니다</p>
+                                </div>
+                                <input type="checkbox" class="toggle">
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-4 pt-6">
+                        <button type="button" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                            초기화
+                        </button>
+                        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fas fa-save mr-2"></i>설정 저장
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-6 border border-purple-200">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-purple-600 text-2xl mr-4 mt-1"></i>
+                    <div>
+                        <h4 class="font-semibold text-gray-800 mb-2">Pro 플랜으로 업그레이드하세요</h4>
+                        <p class="text-sm text-gray-600 mb-3">GPT-4 모델, 무제한 번역, 고급 감정 분석 등 더 많은 AI 기능을 사용할 수 있습니다.</p>
+                        <a href="/dashboard/billing" class="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm">
+                            업그레이드 하기 →
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+</body>
+</html>

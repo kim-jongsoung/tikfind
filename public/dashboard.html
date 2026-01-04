@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TikFind - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-0 md:ml-64 mt-16 p-4 md:p-8">
+        <div class="max-w-7xl mx-auto">
+            <div class="mb-6 md:mb-8">
+                <h2 class="text-2xl md:text-3xl font-bold text-white" data-i18n="dashboard">대시보드</h2>
+                <p class="text-gray-400 mt-2 text-sm md:text-base" data-i18n="dashboardSubtitle">TikFind 방송 현황을 한눈에 확인하세요</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+                <div class="bg-slate-800 rounded-lg shadow-xl p-4 md:p-6 border-l-4 border-indigo-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs md:text-sm text-gray-400 mb-1" data-i18n="broadcastStatus">방송 상태</p>
+                            <h3 class="text-xl md:text-2xl font-bold text-white" data-i18n="offline">오프라인</h3>
+                        </div>
+                        <div class="bg-indigo-900 p-3 rounded-full">
+                            <i class="fas fa-broadcast-tower text-indigo-400 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg shadow-xl p-4 md:p-6 border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs md:text-sm text-gray-400 mb-1" data-i18n="todayViewers">오늘 시청자</p>
+                            <h3 class="text-xl md:text-2xl font-bold text-white">0</h3>
+                        </div>
+                        <div class="bg-green-900 p-3 rounded-full">
+                            <i class="fas fa-users text-green-400 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg shadow-xl p-4 md:p-6 border-l-4 border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs md:text-sm text-gray-400 mb-1" data-i18n="songQueue">신청곡 대기</p>
+                            <h3 class="text-xl md:text-2xl font-bold text-white">0</h3>
+                        </div>
+                        <div class="bg-purple-900 p-3 rounded-full">
+                            <i class="fas fa-music text-purple-400 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg shadow-xl p-4 md:p-6 border-l-4 border-yellow-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-xs md:text-sm text-gray-400 mb-1" data-i18n="subscriptionPlan">구독 플랜</p>
+                            <h3 class="text-xl md:text-2xl font-bold text-white">Free</h3>
+                        </div>
+                        <div class="bg-yellow-900 p-3 rounded-full">
+                            <i class="fas fa-crown text-yellow-400 text-xl md:text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                <div class="bg-slate-800 rounded-lg shadow-xl p-4 md:p-6">
+                    <h3 class="text-lg md:text-xl font-semibold text-white mb-4 flex items-center">
+                        <i class="fas fa-chart-line mr-2 text-indigo-400"></i>
+                        <span data-i18n="recentActivity">최근 활동</span>
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center p-3 bg-slate-700 rounded-lg">
+                            <div class="bg-indigo-900 p-2 rounded-full mr-3">
+                                <i class="fas fa-check text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-white" data-i18n="googleConnected">Google 계정 연동 완료</p>
+                                <p class="text-xs text-gray-400" data-i18n="justNow">방금 전</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center p-3 bg-slate-700 rounded-lg">
+                            <div class="bg-green-900 p-2 rounded-full mr-3">
+                                <i class="fas fa-user-plus text-green-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-white" data-i18n="tiktokRegistered">틱톡 ID 등록 완료</p>
+                                <p class="text-xs text-gray-400" data-i18n="justNow">방금 전</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-lg shadow-xl p-4 md:p-6">
+                    <h3 class="text-lg md:text-xl font-semibold text-white mb-4 flex items-center">
+                        <i class="fas fa-rocket mr-2 text-purple-400"></i>
+                        <span data-i18n="quickStart">빠른 시작</span>
+                    </h3>
+                    <div class="space-y-3">
+                        <a href="/dashboard/live" class="block p-4 bg-gradient-to-r from-indigo-900 to-purple-900 rounded-lg hover:shadow-lg transition">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-white" data-i18n="manageSongRequests">신청곡 관리하기</p>
+                                    <p class="text-sm text-gray-300" data-i18n="checkRealtimeSongs">실시간 신청곡을 확인하세요</p>
+                                </div>
+                                <i class="fas fa-arrow-right text-indigo-400"></i>
+                            </div>
+                        </a>
+                        <a href="/dashboard/overlay" class="block p-4 bg-gradient-to-r from-green-900 to-teal-900 rounded-lg hover:shadow-lg transition">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-white" data-i18n="overlaySettings">오버레이 설정</p>
+                                    <p class="text-sm text-gray-300" data-i18n="addToStream">방송 화면에 추가하세요</p>
+                                </div>
+                                <i class="fas fa-arrow-right text-green-400"></i>
+                            </div>
+                        </a>
+                        <a href="/dashboard/billing" class="block p-4 bg-gradient-to-r from-yellow-900 to-orange-900 rounded-lg hover:shadow-lg transition">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium text-white" data-i18n="upgradeProPlan">Pro 플랜 업그레이드</p>
+                                    <p class="text-sm text-gray-300" data-i18n="useMoreFeatures">더 많은 기능을 사용하세요</p>
+                                </div>
+                                <i class="fas fa-arrow-right text-yellow-400"></i>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+</body>
+</html>

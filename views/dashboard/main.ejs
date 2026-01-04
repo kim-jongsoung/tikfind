@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대시보드 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-64 p-8" style="margin-top: 88px;">
+        <div class="max-w-4xl mx-auto">
+            <div class="space-y-6">
+                <!-- Desktop App 다운로드 카드 -->
+                <div class="bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg shadow-md p-6 text-white relative overflow-hidden">
+                    <div class="absolute top-0 left-0 right-0 bottom-0 opacity-10" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <h3 class="text-2xl font-bold mb-2 flex items-center">
+                                    <i class="fas fa-desktop mr-2"></i>
+                                    Desktop App 다운로드
+                                </h3>
+                                <p class="mb-4 opacity-90">TikTok Live 방송을 시작하려면 Desktop App을 다운로드하세요</p>
+                                <div class="flex flex-wrap gap-2 text-sm mb-4">
+                                    <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                                        <i class="fas fa-check-circle mr-1"></i>실시간 채팅 수집
+                                    </span>
+                                    <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                                        <i class="fas fa-check-circle mr-1"></i>AI 발음 코치
+                                    </span>
+                                    <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                                        <i class="fas fa-check-circle mr-1"></i>신청곡 자동 수집
+                                    </span>
+                                </div>
+                                <button onclick="downloadApp()" class="bg-white text-pink-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition shadow-lg">
+                                    <i class="fas fa-download mr-2"></i>Windows 다운로드
+                                </button>
+                                <p class="text-sm mt-2 opacity-75">Mac 버전은 곧 출시됩니다</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 플랜 정보 -->
+                <div class="bg-white rounded-lg shadow-md p-6" id="planSection">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-crown mr-2 text-yellow-500"></i>
+                        현재 플랜
+                    </h3>
+                    
+                    <!-- 무료 플랜 -->
+                    <div id="freePlanContent">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-2xl font-bold text-gray-800">FREE</p>
+                                <p class="text-sm text-gray-600 mt-1">무료 플랜을 사용 중입니다</p>
+                            </div>
+                            <a href="/dashboard/billing" class="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition font-semibold">
+                                <i class="fas fa-arrow-up mr-2"></i>UNIVERSE로 업그레이드
+                            </a>
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-4 mb-4 border-l-4 border-pink-500">
+                            <p class="text-sm font-semibold text-gray-800 mb-2">
+                                <i class="fas fa-star text-yellow-500 mr-2"></i>
+                                UNIVERSE 플랜 ($9/월)으로 업그레이드하면?
+                            </p>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-pink-500 mr-2 mt-1"></i>
+                                    <span><strong>신청곡 100곡/일</strong> (현재: 5곡)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-pink-500 mr-2 mt-1"></i>
+                                    <span><strong>GPT AI 100건/일</strong> (현재: 20건)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-pink-500 mr-2 mt-1"></i>
+                                    <span><strong>AI 발음 코치 100건/일</strong> (현재: 10건)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-pink-500 mr-2 mt-1"></i>
+                                    <span><strong>24/7 우선 지원</strong></span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="pt-4 border-t border-gray-200">
+                            <p class="text-sm text-gray-600 mb-2">현재 무료 플랜 혜택:</p>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>평생 무료 TTS</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>신청곡 자동수집 (1일 5곡)</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>GPT AI 질문 (1일 20건)</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>AI 발음 코치 (1일 10건)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- 유니버스 플랜 -->
+                    <div id="universePlanContent" class="hidden">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <p class="text-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent">UNIVERSE</p>
+                                <p class="text-sm text-gray-600 mt-1">프리미엄 플랜을 사용 중입니다</p>
+                            </div>
+                            <a href="/dashboard/billing" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg hover:shadow-lg transition font-semibold">
+                                <i class="fas fa-crown mr-2"></i>UNLIMITED로 업그레이드
+                            </a>
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 mb-4 border-l-4 border-yellow-500">
+                            <p class="text-sm font-semibold text-gray-800 mb-2">
+                                <i class="fas fa-crown text-yellow-600 mr-2"></i>
+                                UNLIMITED 플랜 ($39/월)으로 업그레이드하면?
+                            </p>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-orange-500 mr-2 mt-1"></i>
+                                    <span><strong>신청곡 무제한</strong> (현재: 100곡/일)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-orange-500 mr-2 mt-1"></i>
+                                    <span><strong>GPT AI 무제한</strong> (현재: 100건/일)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-orange-500 mr-2 mt-1"></i>
+                                    <span><strong>AI 발음 코치 무제한</strong> (현재: 100건/일)</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fas fa-arrow-right text-orange-500 mr-2 mt-1"></i>
+                                    <span><strong>전용 계정 매니저</strong> - 1:1 맞춤 지원</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-xs text-gray-500 mb-1">구독 시작일</p>
+                                <p class="text-lg font-semibold text-gray-800" id="subscriptionStartDate">-</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-xs text-gray-500 mb-1">다음 결제 예정일</p>
+                                <p class="text-lg font-semibold text-gray-800" id="nextBillingDate">-</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 rounded-lg p-4 mb-4 border-l-4 border-blue-500">
+                            <p class="text-sm text-gray-700">
+                                <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+                                <strong>구독 정지 안내:</strong> 구독을 정지하면 다음 결제 예정일 전날까지 UNIVERSE 플랜을 계속 이용할 수 있으며, 
+                                결제일부터 자동으로 FREE 플랜으로 전환됩니다. 환불 처리 없이 간편하게 관리하세요.
+                            </p>
+                        </div>
+                        
+                        <button onclick="cancelSubscription()" class="w-full px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition border border-gray-300">
+                            <i class="fas fa-pause-circle mr-2"></i>구독 정지 신청
+                        </button>
+                        
+                        <div class="pt-4 mt-4 border-t border-gray-200">
+                            <p class="text-sm text-gray-600 mb-2">UNIVERSE 플랜 혜택:</p>
+                            <ul class="space-y-2 text-sm text-gray-700">
+                                <li><i class="fas fa-check text-purple-500 mr-2"></i>평생 무료 TTS</li>
+                                <li><i class="fas fa-check text-purple-500 mr-2"></i>신청곡 자동수집 (1일 100곡)</li>
+                                <li><i class="fas fa-check text-purple-500 mr-2"></i>GPT AI 질문 (1일 100건)</li>
+                                <li><i class="fas fa-check text-purple-500 mr-2"></i>AI 발음 코치 (1일 100건)</li>
+                                <li><i class="fas fa-check text-purple-500 mr-2"></i>우선 고객 지원</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="ml-64 bg-black text-white py-8 border-t border-gray-800">
+        <div class="max-w-4xl mx-auto px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
+                <div>
+                    <h5 class="font-bold mb-3 text-lg">TikFind</h5>
+                    <p class="text-gray-400 text-sm">글로벌 틱톡커를 위한 AI 라이브 스트리밍 어시스턴트</p>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-3 text-lg">제품</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="/features" class="text-gray-400 hover:text-white transition">기능</a></li>
+                        <li><a href="/pricing" class="text-gray-400 hover:text-white transition">가격</a></li>
+                        <li><a href="/dashboard" class="text-gray-400 hover:text-white transition">대시보드</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h5 class="font-bold mb-3 text-lg">지원</h5>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">고객센터</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">이용약관</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition">개인정보처리방침</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-6 border-t border-gray-800 text-center text-sm text-gray-400">
+                <p>&copy; 2025 TikFind. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+    <script>
+        function downloadApp() {
+            window.location.href = '/api/download-app';
+        }
+
+        // 구독 정지 함수
+        function cancelSubscription() {
+            if (confirm('구독을 정지하시겠습니까?\n\n다음 결제 예정일 전날까지 UNIVERSE 플랜을 계속 이용할 수 있으며, 결제일부터 FREE 플랜으로 자동 전환됩니다.')) {
+                fetch('/api/subscription/cancel', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('구독 정지가 신청되었습니다.\n다음 결제 예정일 전날까지 UNIVERSE 플랜을 이용하실 수 있습니다.');
+                        location.reload();
+                    } else {
+                        alert('오류: ' + (data.message || '구독 정지에 실패했습니다.'));
+                    }
+                })
+                .catch(err => {
+                    alert('서버 오류가 발생했습니다.');
+                    console.error(err);
+                });
+            }
+        }
+
+        // 사용자 플랜 로드
+        fetch('/api/user/plan')
+            .then(res => res.json())
+            .then(data => {
+                console.log('플랜 정보:', data);
+                
+                const plan = data.plan || 'free';
+                const planLower = plan.toLowerCase();
+                
+                // plan이 'pro'이고 subscriptionStatus가 'active' 또는 'trial'일 때만 유니버스 플랜 표시
+                if (planLower === 'pro' && (data.subscriptionStatus === 'active' || data.subscriptionStatus === 'trial')) {
+                    // 유니버스 플랜 표시
+                    document.getElementById('freePlanContent').classList.add('hidden');
+                    document.getElementById('universePlanContent').classList.remove('hidden');
+                    
+                    // 구독 시작일
+                    if (data.subscriptionStartDate) {
+                        const startDate = new Date(data.subscriptionStartDate);
+                        document.getElementById('subscriptionStartDate').textContent = 
+                            startDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+                    }
+                    
+                    // 다음 결제일
+                    if (data.nextBillingDate) {
+                        const nextDate = new Date(data.nextBillingDate);
+                        document.getElementById('nextBillingDate').textContent = 
+                            nextDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+                    } else {
+                        // 다음 달 1일로 계산
+                        const today = new Date();
+                        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+                        document.getElementById('nextBillingDate').textContent = 
+                            nextMonth.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+                    }
+                } else {
+                    // 무료 플랜 표시 (plan이 'free'이거나 구독 상태가 active/trial이 아닌 경우)
+                    document.getElementById('freePlanContent').classList.remove('hidden');
+                    document.getElementById('universePlanContent').classList.add('hidden');
+                }
+            })
+            .catch(err => {
+                console.error('플랜 정보 로드 오류:', err);
+                // 오류 시 무료 플랜 표시
+                document.getElementById('freePlanContent').classList.remove('hidden');
+                document.getElementById('universePlanContent').classList.add('hidden');
+            });
+    </script>
+</body>
+</html>

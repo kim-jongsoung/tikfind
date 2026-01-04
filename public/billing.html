@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TikFind - 구독 관리</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-900">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-0 md:ml-64 mt-16 p-4 md:p-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="mb-6 md:mb-8">
+                <div class="flex justify-between items-center flex-wrap gap-4">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-bold text-white" data-i18n="billing">구독 관리</h2>
+                        <p class="text-gray-400 mt-2 text-sm md:text-base" data-i18n="choosePlan">당신의 방송에 맞는 플랜을 선택하세요</p>
+                    </div>
+                    <div id="language-selector" class="hidden md:block"></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-8 md:mb-12">
+                <div class="bg-slate-800 rounded-2xl shadow-xl p-6 md:p-8 border-2 border-slate-700 hover:border-slate-600 transition">
+                    <div class="text-center mb-6">
+                        <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Free</h3>
+                        <div class="text-3xl md:text-4xl font-bold text-white mb-2">
+                            $0
+                            <span class="text-base md:text-lg font-normal text-gray-400">/월</span>
+                        </div>
+                        <p class="text-gray-400 text-sm md:text-base">시작하기에 완벽한 플랜</p>
+                    </div>
+
+                    <ul class="space-y-3 md:space-y-4 mb-6 md:mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                            <span class="text-gray-300 text-sm md:text-base">평생 무료 TTS</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                            <span class="text-gray-300 text-sm md:text-base">신청곡 자동수집 (1일 5곡)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                            <span class="text-gray-300 text-sm md:text-base">GPT AI 질문 (1일 20건)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                            <span class="text-gray-300 text-sm md:text-base">AI 발음 코치 (1일 10건)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-green-400 mr-3"></i>
+                            <span class="text-gray-300 text-sm md:text-base">기본 오버레이</span>
+                        </li>
+                        <li class="flex items-center text-gray-500">
+                            <i class="fas fa-times-circle mr-3"></i>
+                            <span class="text-sm md:text-base">프리미엄 테마</span>
+                        </li>
+                        <li class="flex items-center text-gray-500">
+                            <i class="fas fa-times-circle mr-3"></i>
+                            <span class="text-sm md:text-base">커스텀 오버레이</span>
+                        </li>
+                    </ul>
+
+                    <button class="w-full py-3 bg-slate-700 text-gray-300 rounded-lg font-semibold cursor-not-allowed text-sm md:text-base">
+                        현재 플랜
+                    </button>
+                </div>
+
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-2xl p-8 text-white relative overflow-hidden">
+                    <div class="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-bold">
+                        인기
+                    </div>
+                    
+                    <div class="text-center mb-6">
+                        <h3 class="text-2xl font-bold mb-2">UNIVERSE</h3>
+                        <div class="text-4xl font-bold mb-2">
+                            $9
+                            <span class="text-lg font-normal opacity-90">/월</span>
+                        </div>
+                        <p class="opacity-90">글로벌 스트리머를 위한 플랜</p>
+                    </div>
+
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3"></i>
+                            <span>평생 무료 TTS</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3"></i>
+                            <span>신청곡 자동수집 (1일 100곡)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3"></i>
+                            <span>AI 발음 코치 (1일 100건)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3"></i>
+                            <span>GPT AI 질문 (1일 100건)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3"></i>
+                            <span>프리미엄 오버레이 테마</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3"></i>
+                            <span>커스텀 오버레이</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-300 mr-3"></i>
+                            <span>24/7 우선 지원</span>
+                        </li>
+                    </ul>
+
+                    <button onclick="handleSubscribe('pro')" class="w-full py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition">
+                        <span data-i18n="subscribe">UNIVERSE로 업그레이드</span>
+                    </button>
+                </div>
+
+                <div class="bg-gradient-to-br from-yellow-500 via-orange-500 to-red-500 rounded-2xl shadow-2xl p-8 text-white relative overflow-hidden">
+                    <div class="absolute top-4 right-4 bg-white text-orange-600 px-3 py-1 rounded-full text-sm font-bold">
+                        최고급
+                    </div>
+                    
+                    <div class="text-center mb-6">
+                        <h3 class="text-2xl font-bold mb-2">UNLIMITED</h3>
+                        <div class="text-4xl font-bold mb-2">
+                            $39
+                            <span class="text-lg font-normal opacity-90">/월</span>
+                        </div>
+                        <p class="opacity-90">프로페셔널 스트리머를 위한 최고급 플랜</p>
+                    </div>
+
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-200 mr-3"></i>
+                            <span>평생 무료 TTS</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-200 mr-3"></i>
+                            <span>신청곡 자동수집 (무제한)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-200 mr-3"></i>
+                            <span>AI 발음 코치 (무제한)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-200 mr-3"></i>
+                            <span>GPT AI 질문 (무제한)</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-200 mr-3"></i>
+                            <span>프리미엄 오버레이 테마</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-200 mr-3"></i>
+                            <span>커스텀 오버레이</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-200 mr-3"></i>
+                            <span>24/7 최우선 지원</span>
+                        </li>
+                        <li class="flex items-center">
+                            <i class="fas fa-check-circle text-yellow-200 mr-3"></i>
+                            <span>전용 계정 매니저</span>
+                        </li>
+                    </ul>
+
+                    <button onclick="handleSubscribe('unlimited')" class="w-full py-3 bg-white text-orange-600 rounded-lg font-semibold hover:bg-gray-100 transition">
+                        <span data-i18n="subscribe">UNLIMITED로 업그레이드</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 text-center mb-6">
+                    <i class="fas fa-credit-card mr-2"></i>
+                    <span data-i18n="acceptedPayments">지원하는 결제 수단</span>
+                </h3>
+                <div class="flex justify-center items-center space-x-6 flex-wrap gap-6">
+                    <div class="flex items-center justify-center w-24 h-16 bg-white rounded-lg shadow-md hover:shadow-lg transition">
+                        <svg class="h-8" viewBox="0 0 48 32" fill="none"><rect width="48" height="32" rx="4" fill="#1434CB"/><path d="M18 16L22 12L26 16L22 20L18 16Z" fill="#FFA500"/></svg>
+                        <span class="sr-only">Visa</span>
+                    </div>
+                    <div class="flex items-center justify-center w-24 h-16 bg-white rounded-lg shadow-md hover:shadow-lg transition">
+                        <svg class="h-8" viewBox="0 0 48 32" fill="none"><circle cx="18" cy="16" r="10" fill="#EB001B"/><circle cx="30" cy="16" r="10" fill="#F79E1B"/></svg>
+                        <span class="sr-only">Mastercard</span>
+                    </div>
+                    <div class="flex items-center justify-center w-24 h-16 bg-white rounded-lg shadow-md hover:shadow-lg transition">
+                        <svg class="h-8" viewBox="0 0 48 32" fill="none"><rect width="48" height="32" rx="4" fill="#003087"/><text x="24" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">PayPal</text></svg>
+                        <span class="sr-only">PayPal</span>
+                    </div>
+                    <div class="flex items-center justify-center w-24 h-16 bg-white rounded-lg shadow-md hover:shadow-lg transition">
+                        <svg class="h-8" viewBox="0 0 48 32" fill="none"><rect width="48" height="32" rx="4" fill="#635BFF"/><text x="24" y="20" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Stripe</text></svg>
+                        <span class="sr-only">Stripe</span>
+                    </div>
+                    <div class="flex items-center justify-center w-24 h-16 bg-white rounded-lg shadow-md hover:shadow-lg transition">
+                        <svg class="h-8" viewBox="0 0 48 32" fill="none"><rect width="48" height="32" rx="4" fill="#1E3A8A"/><text x="24" y="20" text-anchor="middle" fill="white" font-size="10" font-weight="bold">토스페이</text></svg>
+                        <span class="sr-only">토스페이</span>
+                    </div>
+                </div>
+                <p class="text-center text-gray-600 mt-6">
+                    <i class="fas fa-lock mr-2"></i>
+                    <span data-i18n="securePayment">256-bit SSL 암호화로 안전한 결제</span>
+                </p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <i class="fas fa-question-circle mr-2 text-purple-600"></i>
+                    <span data-i18n="faq">자주 묻는 질문</span>
+                </h3>
+                <div class="space-y-4">
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800">무료 플랜에서 어떤 기능을 사용할 수 있나요?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm">무료 플랜에서는 평생 무료 TTS, 1일 5곡 신청곡 자동수집, 1일 20건 GPT AI 질문, 1일 10건 AI 발음 코치, 기본 오버레이를 사용하실 수 있습니다.</p>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800">UNIVERSE 플랜의 주요 기능은 무엇인가요?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm">신청곡 자동수집(1일 100곡), AI 발음 코치(1일 100건), GPT AI 질문(1일 100건), 프리미엄 오버레이 테마, 커스텀 오버레이, 24/7 우선 지원을 제공합니다.</p>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800">UNLIMITED 플랜은 어떤 경우에 필요한가요?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm">UNLIMITED 플랜은 매일 100곡 이상의 신청곡을 받거나, AI 기능을 무제한으로 사용하고 싶은 프로페셔널 스트리머를 위한 플랜입니다. 모든 기능이 무제한이며, 전용 계정 매니저가 배정되어 24/7 최우선 지원을 받으실 수 있습니다.</p>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800">구독을 취소하면 어떻게 되나요?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm">구독을 취소하시면 다음 결제 예정일 전날까지 UNIVERSE 플랜을 계속 이용하실 수 있으며, 이후 자동으로 무료 플랜으로 전환됩니다. 환불은 제공되지 않습니다.</p>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800">결제 수단은 무엇이 있나요?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm">Visa, Mastercard, PayPal, Stripe, 토스페이 등 다양한 결제 수단을 지원합니다. 모든 결제는 256-bit SSL 암호화로 안전하게 처리됩니다.</p>
+                    </details>
+
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800">언제든지 플랜을 변경할 수 있나요?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm">네, 언제든지 UNIVERSE 플랜으로 업그레이드하거나 무료 플랜으로 다운그레이드할 수 있습니다. 업그레이드는 즉시 적용되며, 다운그레이드는 다음 결제 주기부터 적용됩니다.</p>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+    <script>
+        function handleSubscribe(plan) {
+            if (plan === 'free') {
+                alert(window.TikFindI18n.t('currentPlan'));
+                return;
+            }
+            alert(window.TikFindI18n.t('comingSoon'));
+        }
+    </script>
+</body>
+</html>
