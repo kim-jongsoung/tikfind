@@ -126,13 +126,13 @@ const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
     secret: process.env.SESSION_SECRET || 'tikfind-secret-key',
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     store: MongoStore.create({
         mongoUrl: process.env.MONGO_URL,
         touchAfter: 24 * 3600
     }),
     cookie: { 
-        secure: isProduction,
+        secure: false, // HTTPS 없이도 쿠키 전송 허용
         httpOnly: true,
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000
