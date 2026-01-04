@@ -56,11 +56,12 @@ function loadSavedUserId() {
 // 서버에서 User ID로 TikTok ID 가져오기
 async function fetchUserInfo(userId) {
     try {
-        const response = await fetch(`http://localhost:3001/api/user/${userId}`);
+        const response = await fetch(`https://tikfind.kr/api/user/${userId}`);
         const data = await response.json();
         
         if (data.success && data.user) {
-            const tiktokId = data.user.tiktokId;
+            const user = data.user;
+            const tiktokId = user.tiktokId;
             
             if (tiktokId) {
                 console.log('✅ 서버에서 TikTok ID 로드:', tiktokId);
@@ -68,20 +69,86 @@ async function fetchUserInfo(userId) {
                 usernameInput.value = tiktokId;
                 
                 // 닉네임과 언어도 저장
-                if (data.user.nickname) {
-                    localStorage.setItem('userNickname', data.user.nickname);
+                if (user.nickname) {
+                    localStorage.setItem('userNickname', user.nickname);
                 }
-                if (data.user.preferredLanguage) {
-                    localStorage.setItem('preferredLanguage', data.user.preferredLanguage);
+                if (user.preferredLanguage) {
+                    localStorage.setItem('preferredLanguage', user.preferredLanguage);
                 }
             } else {
                 console.log('⚠️ TikTok ID가 설정되지 않았습니다');
+            }
+            
+            // 플랜 정보 표시
+            if (user.plan && user.planName) {
+                updatePlanDisplay(user.plan, user.planName, user.limits, user.usage);
             }
         } else {
             console.log('❌ 사용자 정보를 찾을 수 없습니다');
         }
     } catch (error) {
         console.error('❌ 사용자 정보 로드 오류:', error);
+    }
+}
+
+// 플랜 정보 표시 업데이트
+function updatePlanDisplay(plan, planName, limits, usage) {
+    const planBadge = document.getElementById('planBadge');
+    const planUsageInfo = document.getElementById('planUsageInfo');
+    const upgradePlanBtn = document.getElementById('upgradePlanBtn');
+    
+    // 플랜 배지 업데이트
+    if (planBadge) {
+        planBadge.textContent = planName;
+        planBadge.className = 'plan-badge';
+        if (plan === 'free') {
+            planBadge.style.background = '#95a5a6';
+        } else if (plan === 'trial') {
+            planBadge.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        } else if (plan === 'active') {
+            planBadge.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+        }
+    }
+    
+    // 사용량 정보 표시
+    if (planUsageInfo && limits && usage) {
+        planUsageInfo.style.display = 'block';
+        
+        // AI 발음 코치
+        const aiCoachUsageEl = document.getElementById('aiCoachUsage');
+        if (aiCoachUsageEl) {
+            const aiCoachLimit = limits.aiCoach === -1 ? '∞' : limits.aiCoach;
+            aiCoachUsageEl.textContent = `${usage.aiCoach || 0}/${aiCoachLimit}`;
+            aiCoachUsageEl.style.color = usage.aiCoach >= limits.aiCoach && limits.aiCoach !== -1 ? '#e74c3c' : '#2ecc71';
+        }
+        
+        // 신청곡
+        const songRequestUsageEl = document.getElementById('songRequestUsage');
+        if (songRequestUsageEl) {
+            const songRequestLimit = limits.songRequest === -1 ? '∞' : limits.songRequest;
+            songRequestUsageEl.textContent = `${usage.songRequest || 0}/${songRequestLimit}`;
+            songRequestUsageEl.style.color = usage.songRequest >= limits.songRequest && limits.songRequest !== -1 ? '#e74c3c' : '#2ecc71';
+        }
+        
+        // GPT AI
+        const gptAiUsageEl = document.getElementById('gptAiUsage');
+        if (gptAiUsageEl) {
+            const gptAiLimit = limits.gptAi === -1 ? '∞' : limits.gptAi;
+            gptAiUsageEl.textContent = `${usage.gptAi || 0}/${gptAiLimit}`;
+            gptAiUsageEl.style.color = usage.gptAi >= limits.gptAi && limits.gptAi !== -1 ? '#e74c3c' : '#2ecc71';
+        }
+    }
+    
+    // 업그레이드 버튼 표시 (Free 플랜만)
+    if (upgradePlanBtn) {
+        if (plan === 'free') {
+            upgradePlanBtn.style.display = 'inline-block';
+            upgradePlanBtn.onclick = () => {
+                window.open('https://tikfind.kr/dashboard/billing', '_blank');
+            };
+        } else {
+            upgradePlanBtn.style.display = 'none';
+        }
     }
 }
 
@@ -143,7 +210,7 @@ function updateUILanguage() {
     
     // 푸터
     const footerServer = document.querySelector('.footer p:first-child');
-    if (footerServer) footerServer.innerHTML = `${t('footer.server')}: <span id="serverStatus">http://localhost:3001</span>`;
+    if (footerServer) footerServer.innerHTML = `${t('footer.server')}: <span id="serverStatus">https://tikfind.kr</span>`;
     
     const footerVersion = document.querySelector('.footer .version');
     if (footerVersion) footerVersion.textContent = t('footer.version');
@@ -169,7 +236,7 @@ saveUserIdBtn.addEventListener('click', async () => {
     
     // 서버에서 사용자 정보 가져오기
     try {
-        const response = await fetch(`http://localhost:3001/api/user/${userId}`);
+        const response = await fetch(`https://tikfind.kr/api/user/${userId}`);
         
         if (response.ok) {
             const data = await response.json();
@@ -291,7 +358,7 @@ startBtn.addEventListener('click', () => {
     window.tikfind.startCollection({
         username: username,
         userId: userId,
-        serverUrl: 'http://localhost:3001'
+        serverUrl: 'https://tikfind.kr'
     });
     
     startBtn.disabled = true;
@@ -440,7 +507,7 @@ async function requestAiCoach(username, message, messageEl, streamerLanguage = '
         const streamerPersona = localStorage.getItem('streamerPersona') || '친근하고 활발한 스트리머';
         
         // 서버에 AI 발음 코치 요청
-        const response = await fetch('http://localhost:3001/api/ai/pronunciation', {
+        const response = await fetch('https://tikfind.kr/api/ai/pronunciation', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -488,7 +555,7 @@ async function autoAddSongFromChat(title, artist, username) {
     
     try {
         // 서버에 YouTube 검색 요청
-        const response = await fetch('http://localhost:3001/api/youtube/search', {
+        const response = await fetch('https://tikfind.kr/api/youtube/search', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -591,7 +658,7 @@ async function sendAIQuestion() {
     sendBtn.textContent = '...';
     
     try {
-        const response = await fetch('http://localhost:3001/api/ai-assistant', {
+        const response = await fetch('https://tikfind.kr/api/ai-assistant', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -907,7 +974,7 @@ async function streamerAddSong() {
     
     try {
         // 서버에 YouTube 검색 요청
-        const response = await fetch('http://localhost:3001/api/youtube/search', {
+        const response = await fetch('https://tikfind.kr/api/youtube/search', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1087,6 +1154,12 @@ function addTestSongRequest() {
 // 테스트용 AI 발음 코치 추가 함수
 function addTestAICoach() {
     const aiCoachMessages = document.getElementById('aiCoachMessages');
+    
+    // 요소가 없으면 함수 종료
+    if (!aiCoachMessages) {
+        console.log('⚠️ aiCoachMessages 요소를 찾을 수 없습니다');
+        return;
+    }
     
     // 빈 메시지 제거
     const emptyMessage = aiCoachMessages.querySelector('.empty-message');

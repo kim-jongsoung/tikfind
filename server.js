@@ -299,6 +299,24 @@ app.get('/api/user/:userId', async (req, res) => {
             return res.json({ success: false, message: '사용자를 찾을 수 없습니다' });
         }
         
+        // 플랜별 제한 설정
+        const planLimits = {
+            free: { aiCoach: 10, songRequest: 5, gptAi: 3 },
+            trial: { aiCoach: 100, songRequest: 50, gptAi: 30 },
+            active: { aiCoach: -1, songRequest: -1, gptAi: -1 } // 무제한
+        };
+        
+        const userPlan = user.subscriptionStatus || 'free';
+        const limits = planLimits[userPlan];
+        
+        // 오늘 사용량 계산
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const dailyUsage = user.dailyUsage || {};
+        const todayKey = today.toISOString().split('T')[0];
+        const todayUsage = dailyUsage[todayKey] || { aiCoach: 0, songRequest: 0, gptAi: 0 };
+        
         res.json({
             success: true,
             user: {
@@ -306,7 +324,11 @@ app.get('/api/user/:userId', async (req, res) => {
                 nickname: user.nickname,
                 tiktokId: user.tiktokId,
                 streamerPersona: user.streamerPersona || '',
-                preferredLanguage: user.preferredLanguage || 'ko'
+                preferredLanguage: user.preferredLanguage || 'ko',
+                plan: userPlan,
+                planName: userPlan === 'free' ? 'Free' : userPlan === 'trial' ? 'UNIVERSE' : 'UNLIMITED',
+                limits: limits,
+                usage: todayUsage
             }
         });
     } catch (error) {

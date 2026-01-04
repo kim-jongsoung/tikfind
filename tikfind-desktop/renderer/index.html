@@ -12,10 +12,27 @@
         <!-- 헤더 -->
         <div class="header">
             <div class="header-content">
-                <img src="http://localhost:3001/images/logo.png" alt="TikFind Logo" class="logo">
+                <img src="https://tikfind.kr/images/logo.png" alt="TikFind Logo" class="logo">
                 <div class="header-info">
                     <span class="header-title">틱톡라이브도우미</span>
-                    <span class="plan-badge" id="planBadge">FREE</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="plan-badge" id="planBadge">FREE</span>
+                        <button id="upgradePlanBtn" class="btn-upgrade" style="display: none; padding: 4px 12px; font-size: 11px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; cursor: pointer;">업그레이드</button>
+                    </div>
+                </div>
+            </div>
+            <div id="planUsageInfo" style="display: none; margin-top: 8px; padding: 8px 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; font-size: 11px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>🎯 AI 발음 코치</span>
+                    <span id="aiCoachUsage">0/10</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span>🎵 신청곡</span>
+                    <span id="songRequestUsage">0/5</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>🤖 GPT AI</span>
+                    <span id="gptAiUsage">0/3</span>
                 </div>
             </div>
         </div>
