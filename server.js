@@ -127,12 +127,9 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'tikfind-secret-key',
     resave: false,
     saveUninitialized: false,
-    store: new MongoStore({
+    store: MongoStore.create({
         mongoUrl: process.env.MONGO_URL,
-        touchAfter: 24 * 3600,
-        crypto: {
-            secret: process.env.SESSION_SECRET || 'tikfind-secret-key'
-        }
+        touchAfter: 24 * 3600
     }),
     cookie: { 
         secure: isProduction,
