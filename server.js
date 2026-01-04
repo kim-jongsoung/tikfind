@@ -151,6 +151,11 @@ console.log('✅ Auth Routes 연결됨: /auth/google, /auth/google/callback, /au
 app.use('/api', apiRoutes);
 console.log('✅ API Routes 연결됨: /api/download-app, /api/user/plan 등');
 
+// 업데이트 라우트
+const updateRoutes = require('./routes/updates');
+app.use('/updates', updateRoutes);
+console.log('✅ Update Routes 연결됨: /updates/latest.yml');
+
 // Desktop App 메인 화면 라우트
 app.get('/desktop-main', (req, res) => {
     res.sendFile(path.join(__dirname, 'tikfind-desktop', 'renderer', 'index.html'));

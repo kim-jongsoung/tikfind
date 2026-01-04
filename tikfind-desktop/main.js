@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 const TikTokCollector = require('./src/collector');
@@ -241,4 +242,100 @@ ipcMain.on('auth-user-data', (event, userData) => {
     if (mainWindow) {
         mainWindow.webContents.send('user-data', userData);
     }
+});
+
+// ==================== 자동 업데이트 ====================
+
+// 자동 업데이트 로그 설정
+autoUpdater.logger = require('electron-log');
+autoUpdater.logger.transports.file.level = 'info';
+
+// 업데이트 서버 URL 설정 (자체 서버 사용)
+autoUpdater.setFeedURL({
+    provider: 'generic',
+    url: process.env.UPDATE_SERVER_URL || 'http://localhost:3001/updates'
+});
+
+// 앱 시작 시 업데이트 확인
+app.on('ready', () => {
+    // 개발 모드가 아닐 때만 업데이트 확인
+    if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'development') {
+        setTimeout(() => {
+            autoUpdater.checkForUpdates();
+        }, 3000); // 3초 후 업데이트 확인
+    }
+});
+
+// 업데이트 확인 중
+autoUpdater.on('checking-for-update', () => {
+    console.log('🔍 업데이트 확인 중...');
+    if (mainWindow) {
+        mainWindow.webContents.send('update-status', { status: 'checking' });
+    }
+});
+
+// 업데이트 사용 가능
+autoUpdater.on('update-available', (info) => {
+    console.log('✅ 새 업데이트 발견:', info.version);
+    if (mainWindow) {
+        mainWindow.webContents.send('update-status', { 
+            status: 'available', 
+            version: info.version 
+        });
+    }
+});
+
+// 업데이트 없음
+autoUpdater.on('update-not-available', (info) => {
+    console.log('✅ 최신 버전입니다:', info.version);
+    if (mainWindow) {
+        mainWindow.webContents.send('update-status', { 
+            status: 'not-available', 
+            version: info.version 
+        });
+    }
+});
+
+// 업데이트 다운로드 진행률
+autoUpdater.on('download-progress', (progressObj) => {
+    const message = `다운로드 속도: ${progressObj.bytesPerSecond} - ${progressObj.percent}% 완료 (${progressObj.transferred}/${progressObj.total})`;
+    console.log('📥', message);
+    if (mainWindow) {
+        mainWindow.webContents.send('update-status', { 
+            status: 'downloading', 
+            progress: progressObj 
+        });
+    }
+});
+
+// 업데이트 다운로드 완료
+autoUpdater.on('update-downloaded', (info) => {
+    console.log('✅ 업데이트 다운로드 완료:', info.version);
+    if (mainWindow) {
+        mainWindow.webContents.send('update-status', { 
+            status: 'downloaded', 
+            version: info.version 
+        });
+    }
+    
+    // 5초 후 자동으로 재시작하여 업데이트 적용
+    setTimeout(() => {
+        autoUpdater.quitAndInstall();
+    }, 5000);
+});
+
+// 업데이트 오류
+autoUpdater.on('error', (err) => {
+    console.error('❌ 업데이트 오류:', err);
+    if (mainWindow) {
+        mainWindow.webContents.send('update-status', { 
+            status: 'error', 
+            error: err.message 
+        });
+    }
+});
+
+// 수동 업데이트 확인 요청
+ipcMain.on('check-for-updates', () => {
+    autoUpdater.checkForUpdates();
 });

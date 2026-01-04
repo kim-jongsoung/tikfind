@@ -18,6 +18,7 @@
   "author": "TikFind",
   "license": "MIT",
   "dependencies": {
+    "electron-updater": "^6.6.2",
     "say": "^0.16.0",
     "tiktok-live-connector": "^1.1.8",
     "ws": "^8.16.0"
@@ -36,7 +37,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "build/icon.ico"
@@ -48,6 +51,10 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "TikFind"
+    },
+    "publish": {
+      "provider": "generic",
+      "url": "http://localhost:3001/updates"
     }
   }
 }
