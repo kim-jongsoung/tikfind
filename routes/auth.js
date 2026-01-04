@@ -135,13 +135,9 @@ router.get('/google/callback',
             `);
         }
         
-        // 웹 브라우저에서 로그인한 경우
-        if (req.user && !req.user.isSetupComplete) {
-            console.log('🔄 온보딩 페이지로 리다이렉트');
-            return res.redirect('/onboarding');
-        }
-        
+        // 웹 브라우저에서 로그인한 경우 - 바로 대시보드로
         console.log('🔄 대시보드로 리다이렉트');
+        console.log('👤 로그인 사용자:', req.user.email);
         res.redirect('/dashboard');
     }
 );
