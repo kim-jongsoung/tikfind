@@ -172,7 +172,7 @@ ipcMain.on('open-google-auth', (event) => {
         }
     });
     
-    authWindow.loadURL('http://localhost:3001/auth/google?desktop=true');
+    authWindow.loadURL('https://tikfind.kr/auth/google?desktop=true');
     
     // 창이 닫힐 때
     authWindow.on('closed', () => {
@@ -294,7 +294,7 @@ autoUpdater.logger.transports.file.level = 'info';
 // 업데이트 서버 URL 설정 (자체 서버 사용)
 autoUpdater.setFeedURL({
     provider: 'generic',
-    url: process.env.UPDATE_SERVER_URL || 'http://localhost:3001/updates'
+    url: process.env.UPDATE_SERVER_URL || 'https://tikfind.kr/updates'
 });
 
 // 앱 시작 시 업데이트 확인
