@@ -139,7 +139,7 @@
             
             try {
                 // 브라우저에서 Google OAuth 페이지 열기
-                const authUrl = 'http://localhost:3001/auth/google';
+                const authUrl = 'https://tikfind.kr/auth/google';
                 await ipcRenderer.invoke('open-browser', authUrl);
                 
                 // 로그인 완료 대기
