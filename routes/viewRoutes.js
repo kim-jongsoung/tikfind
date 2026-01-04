@@ -17,6 +17,10 @@ router.get('/onboarding', requireAuth, (req, res) => {
 
 // 대시보드 라우트 (인증 필요)
 router.get('/dashboard', requireAuth, (req, res) => {
+    // 첫 로그인 시 TikTok ID가 없으면 온보딩으로
+    if (!req.user.tiktokId) {
+        return res.redirect('/onboarding');
+    }
     res.render('dashboard/main', { title: '대시보드 - TikFind', user: req.user });
 });
 
