@@ -179,21 +179,64 @@ router.get('/logout', (req, res) => {
     });
 });
 
-router.get('/current_user', (req, res) => {
+router.get('/current_user', async (req, res) => {
     if (req.user) {
-        res.json({
-            success: true,
-            user: {
-                id: req.user._id,
-                email: req.user.email,
-                nickname: req.user.nickname,
-                profileImage: req.user.profileImage,
-                plan: req.user.plan,
-                tiktokId: req.user.tiktokId,
-                isSetupComplete: req.user.isSetupComplete,
-                authProvider: req.user.authProvider
+        try {
+            const PlanLimit = require('../models/PlanLimit');
+            const planName = req.user.subscription?.plan || 'free';
+            
+            // 플랜별 제한 정보 조회
+            let planLimits = await PlanLimit.findOne({ planName });
+            
+            // 플랜 제한 정보가 없으면 기본값 사용
+            if (!planLimits) {
+                planLimits = {
+                    songRequestLimit: planName === 'free' ? 50 : planName === 'universe' ? 200 : -1,
+                    gptAiLimit: -1,
+                    pronunciationCoachLimit: planName === 'free' ? 0 : -1
+                };
             }
-        });
+            
+            res.json({
+                success: true,
+                user: {
+                    id: req.user._id,
+                    _id: req.user._id,
+                    email: req.user.email,
+                    nickname: req.user.nickname,
+                    profileImage: req.user.profileImage,
+                    plan: req.user.plan,
+                    subscription: req.user.subscription,
+                    tiktokId: req.user.tiktokId,
+                    isSetupComplete: req.user.isSetupComplete,
+                    authProvider: req.user.authProvider,
+                    preferredLanguage: req.user.preferredLanguage
+                },
+                planLimits: {
+                    songRequestLimit: planLimits.songRequestLimit,
+                    gptAiLimit: planLimits.gptAiLimit,
+                    pronunciationCoachLimit: planLimits.pronunciationCoachLimit
+                }
+            });
+        } catch (error) {
+            console.error('플랜 제한 조회 오류:', error);
+            res.json({
+                success: true,
+                user: {
+                    id: req.user._id,
+                    _id: req.user._id,
+                    email: req.user.email,
+                    nickname: req.user.nickname,
+                    profileImage: req.user.profileImage,
+                    plan: req.user.plan,
+                    subscription: req.user.subscription,
+                    tiktokId: req.user.tiktokId,
+                    isSetupComplete: req.user.isSetupComplete,
+                    authProvider: req.user.authProvider,
+                    preferredLanguage: req.user.preferredLanguage
+                }
+            });
+        }
     } else {
         res.json({
             success: false,

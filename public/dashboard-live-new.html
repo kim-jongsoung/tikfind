@@ -321,6 +321,15 @@
                     currentUser = data.user;
                     const userId = String(currentUser._id || currentUser.id);
                     
+                    // 플랜 제한 정보 저장
+                    window.planLimits = data.planLimits || {
+                        songRequestLimit: 50,
+                        gptAiLimit: -1,
+                        pronunciationCoachLimit: 0
+                    };
+                    
+                    console.log('💎 플랜 제한 정보:', window.planLimits);
+                    
                     // User ID와 TikTok ID 표시
                     document.getElementById('userId').value = userId;
                     document.getElementById('username').value = currentUser.tiktokId || '';
@@ -1306,25 +1315,22 @@
                 const genre = document.getElementById('genreSelect').value;
                 const button = document.getElementById('addPopularSongsBtn');
                 
-                // 회원 레벨별 최대 곡수 확인
-                const subscription = currentUser.subscription || {};
-                const planType = subscription.plan || 'free';
-                let maxSongs = 50; // 기본값
+                // 관리자 설정값에서 최대 곡수 가져오기
+                const planLimits = window.planLimits || { songRequestLimit: 50 };
+                let maxSongs = planLimits.songRequestLimit;
                 
-                if (planType === 'free') {
-                    maxSongs = 50;
-                } else if (planType === 'universe') {
-                    maxSongs = 200;
-                } else if (planType === 'unlimited') {
-                    maxSongs = 999999; // 무제한
+                // -1은 무제한
+                if (maxSongs === -1) {
+                    maxSongs = 999999;
                 }
                 
                 const currentQueueLength = autoPlayQueue.length;
                 const remainingSongs = maxSongs - currentQueueLength;
                 
+                const planType = currentUser.subscription?.plan || 'free';
                 console.log('🎵 인기곡 추가 시작 - 장르:', genre);
                 console.log('📊 현재 큐 길이:', currentQueueLength);
-                console.log('💎 플랜:', planType, '/ 최대:', maxSongs, '곡 / 남은 곡수:', remainingSongs);
+                console.log('💎 플랜:', planType, '/ 관리자 설정 최대:', maxSongs, '곡 / 남은 곡수:', remainingSongs);
                 
                 // 이미 최대 곡수에 도달한 경우
                 if (currentQueueLength >= maxSongs) {
