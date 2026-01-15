@@ -1298,11 +1298,47 @@
             
             // 인기곡 추가 버튼
             document.getElementById('addPopularSongsBtn').onclick = async () => {
+                if (!currentUser) {
+                    alert('사용자 정보를 불러오는 중입니다...');
+                    return;
+                }
+                
                 const genre = document.getElementById('genreSelect').value;
                 const button = document.getElementById('addPopularSongsBtn');
                 
+                // 회원 레벨별 최대 곡수 확인
+                const subscription = currentUser.subscription || {};
+                const planType = subscription.plan || 'free';
+                let maxSongs = 50; // 기본값
+                
+                if (planType === 'free') {
+                    maxSongs = 50;
+                } else if (planType === 'universe') {
+                    maxSongs = 200;
+                } else if (planType === 'unlimited') {
+                    maxSongs = 999999; // 무제한
+                }
+                
+                const currentQueueLength = autoPlayQueue.length;
+                const remainingSongs = maxSongs - currentQueueLength;
+                
                 console.log('🎵 인기곡 추가 시작 - 장르:', genre);
-                console.log('📊 현재 큐 길이:', autoPlayQueue.length);
+                console.log('📊 현재 큐 길이:', currentQueueLength);
+                console.log('💎 플랜:', planType, '/ 최대:', maxSongs, '곡 / 남은 곡수:', remainingSongs);
+                
+                // 이미 최대 곡수에 도달한 경우
+                if (currentQueueLength >= maxSongs) {
+                    alert(`❌ 최대 ${maxSongs}곡까지만 추가할 수 있습니다.\n현재 ${currentQueueLength}곡이 대기 중입니다.\n\n더 많은 곡을 추가하려면 플랜을 업그레이드하세요.`);
+                    return;
+                }
+                
+                // 추가할 곡 수 계산 (최대 20곡, 남은 곡수 고려)
+                const songsToAdd = Math.min(20, remainingSongs);
+                
+                if (songsToAdd < 20) {
+                    const confirm = window.confirm(`현재 ${remainingSongs}곡만 추가할 수 있습니다.\n계속하시겠습니까?`);
+                    if (!confirm) return;
+                }
                 
                 button.disabled = true;
                 button.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 2px;"></i>추가 중...';
@@ -1312,7 +1348,7 @@
                     const response = await fetch('/api/popular-songs/random', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ genre: genre, count: 20 })
+                        body: JSON.stringify({ genre: genre, count: songsToAdd })
                     });
                     
                     console.log('📡 API 응답 상태:', response.status);
@@ -1346,7 +1382,8 @@
                             await playNextAutoSong();
                         }
                         
-                        alert(`✅ ${data.songs.length}곡이 추가되었습니다!`);
+                        const newRemaining = maxSongs - autoPlayQueue.length;
+                        alert(`✅ ${data.songs.length}곡이 추가되었습니다!\n\n현재 대기곡: ${autoPlayQueue.length}곡\n추가 가능: ${newRemaining}곡`);
                     } else {
                         console.warn('⚠️ 곡이 없음:', data);
                         alert('❌ 해당 장르의 곡이 없습니다. 먼저 수집 스크립트를 실행해주세요.');
