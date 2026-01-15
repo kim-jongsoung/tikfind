@@ -8,6 +8,9 @@ npm-debug.log*
 uploads/
 temp/
 
+# 임시 player-script 파일 (API Key 포함)
+*-player-script.js
+
 # Desktop App 빌드 파일 (용량이 커서 GitHub에 업로드하지 않음)
 tikfind-desktop/dist/
 public/downloads/*.exe
