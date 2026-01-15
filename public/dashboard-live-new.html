@@ -1645,8 +1645,35 @@
                     const videoPlayer = document.getElementById('videoPlayer');
                     currentVideoPlayer = videoPlayer;
                     
+                    let hasStartedPlaying = false;
+                    
+                    // 10초 타임아웃 - 재생 시작 안 되면 스킵
+                    const loadTimeout = setTimeout(() => {
+                        if (!hasStartedPlaying) {
+                            console.error('⏱️ 비디오 로딩 타임아웃 (10초) - 다음 곡으로');
+                            alert(`⚠️ "${currentSong.title}" 로딩 실패\n다음 곡으로 넘어갑니다.`);
+                            autoPlayQueue.shift();
+                            updateAutoPlayQueue();
+                            playNextAutoSong();
+                        }
+                    }, 10000);
+                    
+                    // 재생 시작 감지
+                    videoPlayer.onloadeddata = () => {
+                        hasStartedPlaying = true;
+                        clearTimeout(loadTimeout);
+                        console.log('✅ 비디오 로딩 완료');
+                    };
+                    
+                    videoPlayer.onplaying = () => {
+                        hasStartedPlaying = true;
+                        clearTimeout(loadTimeout);
+                        console.log('▶️ 비디오 재생 시작');
+                    };
+                    
                     // 재생 종료 시 다음 곡 재생
                     videoPlayer.onended = () => {
+                        clearTimeout(loadTimeout);
                         console.log('✅ 재생 완료, 다음 곡으로...');
                         autoPlayQueue.shift();
                         updateAutoPlayQueue();
@@ -1655,7 +1682,9 @@
                     
                     // 에러 처리
                     videoPlayer.onerror = (e) => {
+                        clearTimeout(loadTimeout);
                         console.error('❌ 비디오 재생 오류:', e);
+                        alert(`⚠️ "${currentSong.title}" 재생 오류\n다음 곡으로 넘어갑니다.`);
                         autoPlayQueue.shift();
                         updateAutoPlayQueue();
                         playNextAutoSong();
