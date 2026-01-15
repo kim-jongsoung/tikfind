@@ -99,29 +99,16 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">모국어 (AI 발음 코치용)</label>
-                            <select id="native-language" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                                <option value="ko" <%= user.nativeLanguage === 'ko' ? 'selected' : '' %>>🇰🇷 한국어 (Korean)</option>
-                                <option value="en" <%= user.nativeLanguage === 'en' ? 'selected' : '' %>>🇺🇸 영어 (English)</option>
-                                <option value="ja" <%= user.nativeLanguage === 'ja' ? 'selected' : '' %>>🇯🇵 일본어 (Japanese)</option>
-                                <option value="es" <%= user.nativeLanguage === 'es' ? 'selected' : '' %>>🇪🇸 스페인어 (Spanish)</option>
-                                <option value="zh-TW" <%= user.nativeLanguage === 'zh-TW' ? 'selected' : '' %>>🇹🇼 중국어 (Chinese)</option>
-                                <option value="vi" <%= user.nativeLanguage === 'vi' ? 'selected' : '' %>>🇻🇳 베트남어 (Vietnamese)</option>
-                                <option value="th" <%= user.nativeLanguage === 'th' ? 'selected' : '' %>>🇹🇭 태국어 (Thai)</option>
-                            </select>
-                            <p class="text-xs text-gray-500 mt-2">AI가 이 언어로 발음을 안내합니다</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">표시 언어</label>
-                            <select id="preferred-language" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <select id="native-language" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
                                 <option value="ko" <%= user.preferredLanguage === 'ko' ? 'selected' : '' %>>🇰🇷 한국어 (Korean)</option>
                                 <option value="en" <%= user.preferredLanguage === 'en' ? 'selected' : '' %>>🇺🇸 영어 (English)</option>
                                 <option value="ja" <%= user.preferredLanguage === 'ja' ? 'selected' : '' %>>🇯🇵 일본어 (Japanese)</option>
                                 <option value="es" <%= user.preferredLanguage === 'es' ? 'selected' : '' %>>🇪🇸 스페인어 (Spanish)</option>
-                                <option value="zh-TW" <%= user.preferredLanguage === 'zh-TW' ? 'selected' : '' %>>🇹🇼 중국어 (Chinese)</option>
+                                <option value="zh" <%= user.preferredLanguage === 'zh' ? 'selected' : '' %>>🇨🇳 중국어 (Chinese)</option>
                                 <option value="vi" <%= user.preferredLanguage === 'vi' ? 'selected' : '' %>>🇻🇳 베트남어 (Vietnamese)</option>
                                 <option value="th" <%= user.preferredLanguage === 'th' ? 'selected' : '' %>>🇹🇭 태국어 (Thai)</option>
                             </select>
-                            <p class="text-xs text-gray-500 mt-2">웹사이트 표시 언어</p>
+                            <p class="text-xs text-gray-500 mt-2">AI가 이 언어로 발음을 안내합니다</p>
                         </div>
                     </div>
                 </div>
@@ -183,9 +170,7 @@
         function saveSettings() {
             const settings = {
                 nickname: document.getElementById('user-nickname').value.trim(),
-                streamerPersona: document.getElementById('user-persona').value.trim(),
-                nativeLanguage: document.getElementById('native-language').value,
-                preferredLanguage: document.getElementById('preferred-language').value
+                streamerPersona: document.getElementById('user-persona').value.trim()
             };
 
             console.log('저장할 설정:', settings);

@@ -33,6 +33,12 @@ function loadSidebar() {
                         </a>
                     </li>
                     <li>
+                        <a href="/dashboard/live" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="live">
+                            <i class="fas fa-broadcast-tower mr-3"></i>
+                            <span data-i18n="liveStart">방송시작</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="/dashboard/overlay" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="overlay">
                             <i class="fas fa-layer-group mr-3"></i>
                             <span data-i18n="overlay">오버레이</span>

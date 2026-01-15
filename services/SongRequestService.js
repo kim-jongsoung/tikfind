@@ -1,9 +1,11 @@
 /**
  * 신청곡 관리 서비스
  * #노래제목#가수이름 형식 파싱 및 YouTube 검색
+ * 하이브리드 방식: DB 우선 검색 → YouTube API 백업 → 자동 DB 저장
  */
 
 const axios = require('axios');
+const PopularSong = require('../models/PopularSong');
 
 class SongRequestService {
     constructor() {
@@ -32,7 +34,83 @@ class SongRequestService {
     }
 
     /**
-     * YouTube에서 노래 검색
+     * 하이브리드 곡 검색: DB 우선 → YouTube API 백업
+     * @param {string} title - 노래 제목
+     * @param {string} artist - 가수 이름
+     */
+    async searchSong(title, artist) {
+        try {
+            // 1. 먼저 DB에서 검색 (무료, 빠름)
+            console.log('🔍 DB 검색 시작:', title, artist);
+            
+            const dbSong = await PopularSong.findOne({
+                $or: [
+                    {
+                        title: new RegExp(title, 'i'),
+                        artist: new RegExp(artist, 'i')
+                    },
+                    {
+                        $text: { $search: `${title} ${artist}` }
+                    }
+                ]
+            });
+
+            if (dbSong) {
+                console.log('✅ DB에서 찾음 (무료):', dbSong.title);
+                
+                // 신청 횟수 증가
+                await dbSong.incrementRequestCount();
+                
+                return {
+                    videoId: dbSong.videoId,
+                    url: `https://www.youtube.com/watch?v=${dbSong.videoId}`,
+                    thumbnail: dbSong.thumbnail,
+                    channelTitle: dbSong.artist,
+                    fromDB: true
+                };
+            }
+
+            // 2. DB에 없으면 YouTube API 검색 (유료)
+            console.log('🔍 DB에 없음. YouTube API 검색 시작...');
+            const youtubeResult = await this.searchYouTube(title, artist);
+            
+            if (youtubeResult) {
+                // 3. YouTube 검색 결과를 DB에 저장 (다음번엔 무료)
+                try {
+                    await PopularSong.create({
+                        videoId: youtubeResult.videoId,
+                        title: title,
+                        artist: artist,
+                        thumbnail: youtubeResult.thumbnail,
+                        keywords: [
+                            title.toLowerCase(),
+                            artist.toLowerCase()
+                        ],
+                        source: 'user',
+                        popularity: 1,
+                        requestCount: 1,
+                        lastRequestedAt: new Date()
+                    });
+                    console.log('💾 DB에 저장 완료 (다음번엔 무료)');
+                } catch (saveError) {
+                    console.error('⚠️ DB 저장 실패:', saveError.message);
+                }
+                
+                return {
+                    ...youtubeResult,
+                    fromDB: false
+                };
+            }
+
+            return null;
+        } catch (error) {
+            console.error('❌ 곡 검색 오류:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * YouTube에서 노래 검색 (내부용)
      * @param {string} title - 노래 제목
      * @param {string} artist - 가수 이름
      */
@@ -83,6 +161,56 @@ class SongRequestService {
             }
             return null;
         }
+    }
+
+    /**
+     * YouTube 영상 길이 가져오기
+     * @param {string} videoId - YouTube 비디오 ID
+     */
+    async getVideoDuration(videoId) {
+        try {
+            if (!this.youtubeApiKey) {
+                console.error('❌ YouTube API 키가 설정되지 않았습니다.');
+                return null;
+            }
+
+            const url = 'https://www.googleapis.com/youtube/v3/videos';
+            const response = await axios.get(url, {
+                params: {
+                    key: this.youtubeApiKey,
+                    id: videoId,
+                    part: 'contentDetails'
+                }
+            });
+
+            if (response.data.items && response.data.items.length > 0) {
+                const duration = response.data.items[0].contentDetails.duration;
+                // ISO 8601 duration을 초로 변환 (예: PT3M45S -> 225초)
+                const seconds = this.parseDuration(duration);
+                console.log(`⏱️ 영상 길이: ${videoId} = ${seconds}초`);
+                return seconds;
+            }
+
+            return null;
+        } catch (error) {
+            console.error('❌ YouTube 영상 길이 조회 오류:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * ISO 8601 duration을 초로 변환
+     * @param {string} duration - ISO 8601 형식 (예: PT3M45S)
+     */
+    parseDuration(duration) {
+        const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+        if (!match) return 0;
+
+        const hours = parseInt(match[1] || 0);
+        const minutes = parseInt(match[2] || 0);
+        const seconds = parseInt(match[3] || 0);
+
+        return hours * 3600 + minutes * 60 + seconds;
     }
 
     /**

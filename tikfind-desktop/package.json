@@ -1,8 +1,8 @@
 {
   "name": "tikfind-desktop",
-  "version": "1.0.6",
-  "description": "TikFind Desktop Collector - TikTok Live 데이터 수집 앱",
-  "main": "main.js",
+  "version": "1.0.7",
+  "description": "TikFind Desktop Collector - TikTok Live 데이터 수집 앱 (Background Service)",
+  "main": "main-background.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
@@ -21,7 +21,8 @@
     "electron-log": "^5.4.3",
     "electron-updater": "^6.6.2",
     "say": "^0.16.0",
-    "tiktok-live-connector": "^1.1.8",
+    "socket.io-client": "^4.7.2",
+    "tiktok-live-connector": "^2.1.1-beta1",
     "ws": "^8.16.0"
   },
   "devDependencies": {

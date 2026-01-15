@@ -13,7 +13,26 @@ class TikTokCollector extends EventEmitter {
         this.userId = userId;
         this.serverUrl = serverUrl || 'http://localhost:3001';
         this.client = new WebcastPushConnection(username, {
-            enableExtendedGiftInfo: true
+            enableExtendedGiftInfo: true,
+            // TikTok 차단 우회 설정
+            processInitialData: false,
+            fetchRoomInfoOnConnect: true,
+            requestOptions: {
+                timeout: 10000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'Cache-Control': 'max-age=0'
+                }
+            }
         });
         this.isRunning = false;
         this.stats = {
@@ -66,6 +85,14 @@ class TikTokCollector extends EventEmitter {
         
         // 채팅 메시지
         this.client.on('chat', (data) => {
+            // 첫 채팅 수신 시 연결된 것으로 간주
+            if (!this.isRunning) {
+                console.log('✅ TikTok Live 연결 성공 (첫 채팅 수신)');
+                this.isRunning = true;
+                this.emit('connected');
+                this.broadcastStatus(true);
+            }
+            
             const chatData = {
                 userId: this.userId,
                 username: data.uniqueId || data.nickname,
@@ -78,6 +105,7 @@ class TikTokCollector extends EventEmitter {
             this.stats.messages++;
             
             console.log(`💬 [${chatData.username}]: ${chatData.message}`);
+            console.log(`📤 채팅 데이터 전송 준비:`, chatData.username);
             
             // 즉시 UI 업데이트 (최우선)
             this.emit('chat', chatData);
@@ -121,6 +149,7 @@ class TikTokCollector extends EventEmitter {
             console.log(`🎁 선물: ${giftData.giftName} x${giftData.count} (from ${giftData.username})`);
             
             // 즉시 UI 업데이트
+            this.emit('gift', giftData);
             this.emit('stats', this.stats);
             
             // 서버 전송 (비동기, 백그라운드)
@@ -129,10 +158,16 @@ class TikTokCollector extends EventEmitter {
         
         // 좋아요
         this.client.on('like', (data) => {
-            this.stats.likes += data.likeCount || 1;
+            const likeData = {
+                count: data.likeCount || 1,
+                timestamp: Date.now()
+            };
             
-            console.log(`❤️ 좋아요 +${data.likeCount || 1}`);
+            this.stats.likes += likeData.count;
             
+            console.log(`❤️ 좋아요 +${likeData.count}`);
+            
+            this.emit('like', likeData);
             this.emit('stats', this.stats);
         });
         

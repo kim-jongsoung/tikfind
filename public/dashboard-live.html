@@ -161,14 +161,51 @@
                     </div>
                 </div>
 
-                <!-- 신청곡 큐 -->
-                <div class="bg-slate-800 rounded-lg p-6 lg:col-span-2">
-                    <h3 class="text-xl font-bold text-white mb-4 flex items-center">
-                        <i class="fas fa-music text-pink-400 mr-2"></i>
-                        신청곡 큐
-                    </h3>
-                    <div id="songQueue" class="space-y-2">
-                        <p class="text-gray-500 text-center">신청곡이 여기에 표시됩니다...</p>
+                <!-- 신청곡 큐 ('들어주세요' 스타일) -->
+                <div class="bg-slate-800 rounded-lg lg:col-span-2 flex flex-col border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                    <!-- 헤더 -->
+                    <div class="flex items-center justify-between p-4 border-b border-white/10">
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-purple-400">
+                                <path d="M21 15V6"></path>
+                                <path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"></path>
+                                <path d="M12 12H3"></path>
+                                <path d="M16 6H3"></path>
+                                <path d="M12 18H3"></path>
+                            </svg>
+                            <span class="font-bold text-white">신청 대기열</span>
+                            <span class="text-gray-400">(<span id="queueCount">0</span>)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button id="testSongBtn" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-full text-xs font-medium transition-colors">
+                                <i class="fas fa-plus mr-1"></i>테스트 추가
+                            </button>
+                            <button id="pauseBtn" class="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-xs font-medium transition-colors hidden">
+                                <i class="fas fa-pause mr-1"></i>일시중단
+                            </button>
+                            <button id="nextBtn" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-medium transition-colors">
+                                <i class="fas fa-forward mr-1"></i>다음 곡
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- YouTube 플레이어 -->
+                    <div class="bg-slate-900">
+                        <div id="youtubePlayer" class="aspect-video bg-slate-950 flex items-center justify-center">
+                            <p class="text-gray-500">신청곡이 없습니다</p>
+                        </div>
+                        <div id="nowPlaying" class="p-3 border-t border-white/10 hidden">
+                            <p class="text-xs text-gray-400">재생 중</p>
+                            <p class="font-semibold text-white text-sm" id="currentSongTitle">-</p>
+                            <p class="text-xs text-gray-400 mt-0.5">신청: <span id="currentRequester">-</span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- 신청곡 대기열 리스트 -->
+                    <div class="flex-1 overflow-y-auto max-h-96">
+                        <div id="songQueue" class="space-y-1 py-2 px-2">
+                            <p class="text-gray-500 text-center py-4 text-sm">신청곡이 여기에 표시됩니다...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -241,21 +278,28 @@
 
             if (!currentUser.tiktokId) {
                 alert('설정 페이지에서 TikTok ID를 먼저 등록해주세요.');
-                window.location.href = '/settings';
+                window.location.href = '/dashboard/settings';
                 return;
             }
 
-            const userId = currentUser.id;
+            const userId = String(currentUser._id || currentUser.id);
             const tiktokId = currentUser.tiktokId;
-            const serverUrl = window.location.origin;
 
-            // Desktop App 실행
-            window.location.href = `tikfind://start?userId=${userId}&tiktokId=${tiktokId}&serverUrl=${serverUrl}`;
+            console.log('🎥 라이브 시작 명령 전송:', { userId, tiktokId });
 
-            // 3초 후 Desktop App 연결 확인
+            // Socket.io로 Desktop App에 명령 전송
+            socket.emit('start-live', { userId, tiktokId });
+
+            // 버튼 상태 변경
+            const btn = document.getElementById('startLiveBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>연결 중...';
+
+            // 5초 후 버튼 복구
             setTimeout(() => {
-                checkDesktopAppConnection();
-            }, 3000);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-rocket mr-2"></i>라이브 시작';
+            }, 5000);
         };
 
         // Desktop App 연결 확인
@@ -406,36 +450,68 @@
         }
 
         // 신청곡 추가
-        function addSongToQueue(song, requester) {
+        async function addSongToQueue(song, requester) {
             const queueDiv = document.getElementById('songQueue');
             const empty = queueDiv.querySelector('.text-gray-500');
             if (empty) empty.remove();
             
-            const songId = Date.now();
-            songQueue.push({ id: songId, song, requester });
+            // YouTube 비디오 ID 추출
+            let videoId = null;
+            if (song.videoId) {
+                videoId = song.videoId;
+            } else if (typeof song === 'string' && song.includes('youtube.com')) {
+                const urlParams = new URLSearchParams(new URL(song).search);
+                videoId = urlParams.get('v');
+            }
             
+            const songId = Date.now();
+            const songData = {
+                id: songId,
+                title: song.title || song,
+                artist: song.artist || '',
+                videoId: videoId,
+                thumbnail: song.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
+                requester: requester,
+                youtubeUrl: song.youtubeUrl || song.url || `https://www.youtube.com/watch?v=${videoId}`
+            };
+            
+            songQueue.push(songData);
             updateSongQueue();
+            
+            // 첫 번째 곡이면 자동 재생
+            if (songQueue.length === 1) {
+                await playNextSong();
+            }
         }
 
-        // 신청곡 큐 업데이트
+        // 신청곡 큐 업데이트 ('들어주세요' 스타일)
         function updateSongQueue() {
             const queueDiv = document.getElementById('songQueue');
             queueDiv.innerHTML = '';
             
+            // 큐 카운트 업데이트
+            document.getElementById('queueCount').textContent = songQueue.length;
+            
             if (songQueue.length === 0) {
-                queueDiv.innerHTML = '<p class="text-gray-500 text-center">신청곡이 없습니다</p>';
+                queueDiv.innerHTML = '<p class="text-gray-500 text-center py-4 text-sm">신청곡이 여기에 표시됩니다...</p>';
             } else {
                 songQueue.forEach((item, index) => {
+                    const isPlaying = index === 0;
                     const songEl = document.createElement('div');
-                    songEl.className = 'bg-slate-900 rounded-lg p-4 flex justify-between items-center';
+                    songEl.className = `flex items-center gap-1.5 py-1.5 pl-2 pr-3 rounded-lg ${isPlaying ? 'bg-primary/20' : 'hover:bg-slate-700/50'}`;
                     songEl.innerHTML = `
-                        <div>
-                            <p class="font-semibold text-white">${index + 1}. ${item.song.title || item.song}</p>
-                            <p class="text-sm text-gray-400">신청: @${item.requester}</p>
+                        <div class="w-3.5 text-center text-sm font-medium shrink-0 ${isPlaying ? 'text-primary' : 'text-gray-400'}">
+                            ${isPlaying ? '▶' : index}
                         </div>
-                        <button onclick="removeSong(${item.id})" class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
-                            삭제
-                        </button>
+                        <img src="${item.thumbnail}" alt="썸네일" class="rounded object-cover w-12 h-9 flex-shrink-0">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-medium text-sm text-gray-200 line-clamp-3 break-words leading-tight">${escapeHtml(item.title)}</p>
+                            <p class="text-xs text-gray-400 truncate mt-0.5">${escapeHtml(item.artist)}</p>
+                            <div class="flex items-center gap-1 text-xs mt-0.5">
+                                <span class="text-gray-500">${escapeHtml(item.requester)}</span>
+                            </div>
+                        </div>
+                        ${isPlaying ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-primary shrink-0 animate-spin"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>' : `<button onclick="removeSong(${item.id})" class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs text-white shrink-0">삭제</button>`}
                     `;
                     queueDiv.appendChild(songEl);
                 });
@@ -446,6 +522,77 @@
         function removeSong(songId) {
             songQueue = songQueue.filter(item => item.id !== songId);
             updateSongQueue();
+        }
+        
+        // 다음 곡 재생
+        let currentPlayer = null;
+        async function playNextSong() {
+            if (songQueue.length === 0) {
+                // 재생할 곡이 없으면 플레이어 숨김
+                document.getElementById('nowPlaying').classList.add('hidden');
+                document.getElementById('youtubePlayer').innerHTML = '<div class="flex items-center justify-center h-full bg-slate-950 text-gray-500"><p>신청곡이 없습니다</p></div>';
+                return;
+            }
+            
+            const currentSong = songQueue[0];
+            console.log('🎵 재생 시작:', currentSong);
+            
+            // 현재 재생 중 정보 표시
+            document.getElementById('nowPlaying').classList.remove('hidden');
+            document.getElementById('currentSongTitle').textContent = currentSong.title;
+            document.getElementById('currentRequester').textContent = currentSong.requester;
+            
+            try {
+                // 서버에서 스트림 URL 가져오기
+                const response = await fetch('/api/youtube/stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoId: currentSong.videoId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // HTML5 video 태그로 재생
+                    const playerDiv = document.getElementById('youtubePlayer');
+                    playerDiv.innerHTML = `
+                        <video id="videoPlayer" class="w-full h-full" controls autoplay>
+                            <source src="${data.streamUrl}" type="video/mp4">
+                            브라우저가 비디오를 지원하지 않습니다.
+                        </video>
+                    `;
+                    
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    currentPlayer = videoPlayer;
+                    
+                    // 재생 종료 시 다음 곡 재생
+                    videoPlayer.onended = () => {
+                        console.log('✅ 재생 완료, 다음 곡으로...');
+                        songQueue.shift(); // 첫 번째 곡 제거
+                        updateSongQueue();
+                        playNextSong();
+                    };
+                    
+                    // 에러 처리
+                    videoPlayer.onerror = (e) => {
+                        console.error('❌ 비디오 재생 오류:', e);
+                        alert('비디오 재생 중 오류가 발생했습니다. 다음 곡으로 넘어갑니다.');
+                        songQueue.shift();
+                        updateSongQueue();
+                        playNextSong();
+                    };
+                    
+                    updateSongQueue();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('❌ YouTube 스트림 로드 실패:', error);
+                alert('YouTube 스트림을 불러올 수 없습니다: ' + error.message);
+                songQueue.shift();
+                updateSongQueue();
+                playNextSong();
+            }
         }
 
         // TTS 토글
@@ -497,6 +644,47 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // 테스트 신청곡 추가 버튼
+        document.getElementById('testSongBtn').onclick = async () => {
+            const testSongs = [
+                { videoId: 'gdZLi9oWNZg', title: 'Dynamite', artist: 'BTS', requester: 'TestUser1' },
+                { videoId: 'WMweEpGlu_U', title: 'Butter', artist: 'BTS', requester: 'TestUser2' },
+                { videoId: 'z6rxN94JkfU', title: '롤린', artist: '브레이브걸스', requester: 'TestUser3' },
+                { videoId: '32si5cfrCNc', title: 'How You Like That', artist: 'BLACKPINK', requester: 'TestUser4' }
+            ];
+            
+            // 랜덤으로 하나 선택
+            const randomSong = testSongs[Math.floor(Math.random() * testSongs.length)];
+            
+            console.log('🎵 테스트 신청곡 추가:', randomSong);
+            
+            await addSongToQueue(randomSong, randomSong.requester);
+            
+            // 버튼 피드백
+            const btn = document.getElementById('testSongBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check mr-1"></i>추가됨!';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 1000);
+        };
+
+        // 다음 곡 버튼
+        document.getElementById('nextBtn').onclick = () => {
+            if (songQueue.length > 0) {
+                console.log('⏭️ 다음 곡으로 스킵');
+                if (currentPlayer) {
+                    currentPlayer.pause();
+                }
+                songQueue.shift(); // 현재 곡 제거
+                updateSongQueue();
+                playNextSong();
+            }
+        };
 
         // 페이지 로드 시
         document.addEventListener('DOMContentLoaded', async () => {

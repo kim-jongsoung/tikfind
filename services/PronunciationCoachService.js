@@ -56,7 +56,7 @@ class PronunciationCoachService {
             const prompt = this.buildPrompt(message, messageLanguage, streamerLanguage);
 
             const response = await this.openai.chat.completions.create({
-                model: 'gpt-4',
+                model: 'gpt-4o-mini',
                 messages: [
                     {
                         role: 'system',
@@ -103,13 +103,15 @@ class PronunciationCoachService {
 한국어 스트리머가 이 시청자에게 답변할 수 있도록 도와주세요.
 
 다음 형식으로 답변해주세요:
-1. 의미: (메시지의 한국어 의미)
+1. 원본의미: (시청자 메시지의 한국어 의미)
 2. 답변: (${messageLangName}로 적절한 답변)
-3. 발음: (답변을 한글로 발음 표기)
+3. 답변의미: (답변의 한국어 의미)
+4. 발음: (답변을 한글로 발음 표기)
 
 예시:
-의미: 안녕하세요
+원본의미: 안녕하세요
 답변: Nice to meet you
+답변의미: 만나서 반가워요
 발음: 나이스 투 밋 유
 `;
         } else if (streamerLanguage === 'en') {
@@ -120,13 +122,15 @@ A viewer said in ${messageLangName}:
 Help an English-speaking streamer respond to this viewer.
 
 Please provide:
-1. Meaning: (English translation)
+1. Original Meaning: (English translation of viewer's message)
 2. Response: (Appropriate response in ${messageLangName})
-3. Pronunciation: (Romanized pronunciation of the response)
+3. Response Meaning: (English translation of the response)
+4. Pronunciation: (Romanized pronunciation of the response)
 
 Example:
-Meaning: Hello
+Original Meaning: Hello
 Response: 안녕하세요
+Response Meaning: Nice to meet you
 Pronunciation: An-nyeong-ha-se-yo
 `;
         } else {
@@ -150,15 +154,24 @@ Provide:
     parseResponse(aiResponse, originalMessage, messageLanguage) {
         const lines = aiResponse.split('\n').filter(line => line.trim());
         
-        let meaning = '';
+        let originalMeaning = '';
         let response = '';
+        let responseMeaning = '';
         let pronunciation = '';
 
         for (const line of lines) {
-            if (line.includes('의미:') || line.includes('Meaning:')) {
-                meaning = line.split(':')[1]?.trim() || '';
+            if (line.includes('원본의미:') || line.includes('Original Meaning:')) {
+                originalMeaning = line.split(':')[1]?.trim() || '';
+            } else if (line.includes('의미:') && !line.includes('원본의미:') && !line.includes('답변의미:')) {
+                // 구버전 호환성
+                originalMeaning = line.split(':')[1]?.trim() || '';
+            } else if (line.includes('Meaning:') && !line.includes('Original Meaning:') && !line.includes('Response Meaning:')) {
+                // 구버전 호환성
+                originalMeaning = line.split(':')[1]?.trim() || '';
             } else if (line.includes('답변:') || line.includes('Response:')) {
                 response = line.split(':')[1]?.trim() || '';
+            } else if (line.includes('답변의미:') || line.includes('Response Meaning:')) {
+                responseMeaning = line.split(':')[1]?.trim() || '';
             } else if (line.includes('발음:') || line.includes('Pronunciation:')) {
                 pronunciation = line.split(':')[1]?.trim() || '';
             }
@@ -167,8 +180,10 @@ Provide:
         return {
             original: originalMessage,
             originalLanguage: messageLanguage,
-            meaning: meaning,
+            originalMeaning: originalMeaning,  // 원본 메시지의 의미 (스트리머 언어로)
+            meaning: originalMeaning,  // 하위 호환성
             response: response,
+            responseMeaning: responseMeaning,  // 답변의 의미 (스트리머 언어로)
             pronunciation: pronunciation,
             timestamp: Date.now()
         };
@@ -199,11 +214,15 @@ Provide:
         const responses = quickResponses[messageLanguage];
 
         if (responses && responses[messageLower]) {
+            const originalMeaning = this.getMeaning(messageLower, messageLanguage, streamerLanguage);
+            const responseMeaning = this.getResponseMeaning(responses[messageLower].response, messageLanguage, streamerLanguage);
             return {
                 original: message,
                 originalLanguage: messageLanguage,
-                meaning: this.getMeaning(messageLower, messageLanguage, streamerLanguage),
+                originalMeaning: originalMeaning,
+                meaning: originalMeaning,
                 response: responses[messageLower].response,
+                responseMeaning: responseMeaning,
                 pronunciation: responses[messageLower].pronunciation,
                 timestamp: Date.now(),
                 isQuickResponse: true
@@ -235,6 +254,30 @@ Provide:
         };
 
         return translations[fromLang]?.[message] || message;
+    }
+
+    /**
+     * 답변의 의미 가져오기
+     */
+    getResponseMeaning(response, responseLang, streamerLang) {
+        const responseMeanings = {
+            'en': {
+                'Nice to meet you': '만나서 반가워요',
+                'Hello! Welcome!': '안녕하세요! 환영합니다!',
+                'You\'re welcome': '천만에요',
+                'See you later': '나중에 봐요'
+            },
+            'ja': {
+                'はじめまして': '처음 뵙겠습니다',
+                'どういたしまして': '천만에요'
+            },
+            'zh': {
+                '很高兴见到你': '만나서 반가워요',
+                '不客气': '천만에요'
+            }
+        };
+
+        return responseMeanings[responseLang]?.[response] || response;
     }
 }
 

@@ -84,17 +84,17 @@
                     </h3>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">표시 언어</label>
-                            <select id="user-language" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">모국어 (AI 발음 코치용)</label>
+                            <select id="user-language" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
                                 <option value="ko">🇰🇷 한국어 (Korean)</option>
                                 <option value="en">🇺🇸 영어 (English)</option>
                                 <option value="ja">🇯🇵 일본어 (Japanese)</option>
                                 <option value="es">🇪🇸 스페인어 (Spanish)</option>
-                                <option value="zh-TW">🇹🇼 중국어 (Chinese)</option>
+                                <option value="zh">🇨🇳 중국어 (Chinese)</option>
                                 <option value="vi">🇻🇳 베트남어 (Vietnamese)</option>
                                 <option value="th">🇹🇭 태국어 (Thai)</option>
                             </select>
-                            <p class="text-xs text-gray-500 mt-2">선택한 언어로 모든 페이지가 표시됩니다</p>
+                            <p class="text-xs text-gray-500 mt-1">AI가 이 언어로 발음을 안내합니다</p>
                         </div>
                     </div>
                 </div>
@@ -236,6 +236,11 @@
                     document.getElementById('user-nickname').value = data.user.nickname || '';
                     document.getElementById('user-persona').value = data.user.streamerPersona || '';
                     
+                    // AI 발음 코치 기준 언어 설정 (자동 감지된 언어)
+                    if (data.user.preferredLanguage) {
+                        document.getElementById('user-language').value = data.user.preferredLanguage;
+                    }
+                    
                     // TikTok ID 표시
                     if (data.user.tiktokId) {
                         document.getElementById('display-tiktok-id').textContent = '@' + data.user.tiktokId;
@@ -258,7 +263,6 @@
         async function saveSettings() {
             const nickname = document.getElementById('user-nickname').value.trim();
             const persona = document.getElementById('user-persona').value.trim();
-            const language = document.getElementById('user-language').value;
             
             if (!nickname) {
                 alert('닉네임을 입력해주세요.');
@@ -270,7 +274,7 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>저장 중...';
             
             try {
-                // 프로필 정보 저장 (닉네임, 페르소나)
+                // 프로필 정보 저장 (닉네임, 페르소나만)
                 const profileResponse = await fetch('/api/update-profile', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -280,21 +284,12 @@
                     })
                 });
                 
-                // 언어 설정 저장
-                const langResponse = await fetch('/api/update-language', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ language })
-                });
-                
-                if (profileResponse.ok && langResponse.ok) {
-                    localStorage.setItem('tikfind_lang', language);
+                if (profileResponse.ok) {
                     alert('설정이 저장되었습니다.');
                     location.reload();
                 } else {
                     const profileData = await profileResponse.json();
-                    const langData = await langResponse.json();
-                    alert(profileData.message || langData.message || '설정 저장에 실패했습니다.');
+                    alert(profileData.message || '설정 저장에 실패했습니다.');
                 }
             } catch (error) {
                 console.error('설정 저장 실패:', error);
@@ -310,9 +305,7 @@
             // 사용자 정보 로드
             await loadUserInfo();
             
-            // 현재 언어 설정 로드
-            const currentLang = localStorage.getItem('tikfind_lang') || 'ko';
-            document.getElementById('user-language').value = currentLang;
+            // 언어는 자동 감지되므로 로컬스토리지에서 로드하지 않음
             
             // 저장 버튼 이벤트
             document.getElementById('save-settings-btn').addEventListener('click', saveSettings);

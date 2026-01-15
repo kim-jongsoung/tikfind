@@ -13,6 +13,7 @@ const TikTokLiveService = require('./services/TikTokLiveService');
 const authRoutes = require('./routes/auth');
 const viewRoutes = require('./routes/viewRoutes');
 const apiRoutes = require('./routes/api');
+const { checkUsageLimit, getUserDailyUsage } = require('./middleware/usageLimit');
 
 const app = express();
 const server = http.createServer(app);
@@ -115,6 +116,16 @@ app.use(cors({
     credentials: true // 쿠키 전달 허용
 }));
 
+// www → non-www 리디렉션 미들웨어
+app.use((req, res, next) => {
+    const host = req.headers.host;
+    if (host && host.startsWith('www.')) {
+        const newHost = host.replace('www.', '');
+        return res.redirect(301, `${req.protocol}://${newHost}${req.originalUrl}`);
+    }
+    next();
+});
+
 // 미들웨어 설정
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -190,8 +201,39 @@ app.get('/onboarding', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'onboarding.html'));
 });
 
-app.get('/api/current_user', (req, res) => {
+// 사용자 시간대 업데이트 API
+app.post('/api/update-timezone', async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
+    }
+    
+    try {
+        const { timezone } = req.body;
+        if (!timezone) {
+            return res.status(400).json({ success: false, message: '시간대 정보가 필요합니다.' });
+        }
+        
+        const User = require('./models/User');
+        await User.findByIdAndUpdate(req.user._id, { timezone });
+        
+        console.log('🌍 시간대 업데이트:', timezone, '(사용자:', req.user.email, ')');
+        
+        res.json({ success: true, message: '시간대가 업데이트되었습니다.', timezone });
+    } catch (error) {
+        console.error('❌ 시간대 업데이트 실패:', error);
+        res.status(500).json({ success: false, message: '시간대 업데이트 실패' });
+    }
+});
+
+app.get('/api/current_user', async (req, res) => {
     if (req.user) {
+        // 사용자의 일일 사용량 조회
+        const usage = await getUserDailyUsage(req.user._id, req.user.timezone || 'UTC');
+        
+        // 플랜 제한 조회
+        const PlanLimit = require('./models/PlanLimit');
+        const planLimit = await PlanLimit.findOne({ planName: req.user.plan || 'free' });
+        
         res.json({
             success: true,
             user: {
@@ -205,8 +247,27 @@ app.get('/api/current_user', (req, res) => {
                 isSetupComplete: req.user.isSetupComplete,
                 authProvider: req.user.authProvider,
                 preferredLanguage: req.user.preferredLanguage || 'ko',
+                timezone: req.user.timezone || 'UTC',
                 isAdmin: req.user.isAdmin || false,
-                role: req.user.role || 'user'
+                role: req.user.role || 'user',
+                subscription: {
+                    status: req.user.subscriptionStatus,
+                    plan: req.user.plan
+                }
+            },
+            usage: {
+                songRequest: {
+                    used: usage.songRequestCount,
+                    limit: planLimit?.songRequestLimit || 5
+                },
+                gptAi: {
+                    used: usage.gptAiCount,
+                    limit: planLimit?.gptAiLimit || 20
+                },
+                pronunciationCoach: {
+                    used: usage.pronunciationCoachCount,
+                    limit: planLimit?.pronunciationCoachLimit || 10
+                }
             }
         });
     } else {
@@ -259,14 +320,17 @@ app.post('/api/youtube/search', async (req, res) => {
         const SongRequestService = require('./services/SongRequestService');
         const songService = new SongRequestService();
         
-        const result = await songService.searchYouTube(title, artist);
+        // 하이브리드 검색: DB 우선 → YouTube API 백업
+        const result = await songService.searchSong(title, artist);
         
         if (result && result.videoId) {
             res.json({
                 success: true,
-                videoId: result.videoId,
-                url: result.url,
-                thumbnail: result.thumbnail
+                video: {
+                    videoId: result.videoId,
+                    url: result.url,
+                    thumbnail: result.thumbnail
+                }
             });
         } else {
             res.json({
@@ -278,7 +342,41 @@ app.post('/api/youtube/search', async (req, res) => {
         console.error('❌ YouTube 검색 오류:', error);
         res.json({
             success: false,
-            message: 'YouTube 검색 중 오류가 발생했습니다'
+            message: '검색 중 오류가 발생했습니다'
+        });
+    }
+});
+
+// YouTube 영상 길이 조회 API
+app.get('/api/youtube/duration/:videoId', async (req, res) => {
+    try {
+        const { videoId } = req.params;
+        
+        if (!videoId) {
+            return res.json({ success: false, message: 'Video ID가 필요합니다' });
+        }
+        
+        const SongRequestService = require('./services/SongRequestService');
+        const songService = new SongRequestService();
+        
+        const duration = await songService.getVideoDuration(videoId);
+        
+        if (duration !== null) {
+            res.json({
+                success: true,
+                duration: duration
+            });
+        } else {
+            res.json({
+                success: false,
+                message: '영상 길이를 가져올 수 없습니다'
+            });
+        }
+    } catch (error) {
+        console.error('❌ YouTube 영상 길이 조회 오류:', error);
+        res.json({
+            success: false,
+            message: '조회 중 오류가 발생했습니다'
         });
     }
 });
@@ -648,7 +746,7 @@ app.post('/api/disconnect-tiktok', async (req, res) => {
 const AIService = require('./services/AIService');
 const PronunciationCoachService = require('./services/PronunciationCoachService');
 const SongRequestService = require('./services/SongRequestService');
-const { checkSubscription, checkAdmin, checkHWID, checkUsageLimit } = require('./middleware/checkSubscription');
+const { checkSubscription, checkAdmin, checkHWID } = require('./middleware/checkSubscription');
 
 const aiService = new AIService();
 const pronunciationCoach = new PronunciationCoachService();
@@ -696,16 +794,83 @@ app.post('/api/live/chat', async (req, res) => {
         // 2. AI 발음 코치 (유료 기능 - 구독 필요)
         let pronunciationGuide = null;
         if (hasSubscription && messageLanguage !== streamerLanguage) {
-            // 빠른 응답 먼저 확인
-            pronunciationGuide = pronunciationCoach.getQuickResponse(message, messageLanguage, streamerLanguage);
+            // 메시지 필터링: 이모티콘, 숫자만, 특수문자만 있는 메시지는 AI 호출 안 함
+            const shouldProcessMessage = (msg) => {
+                // 숫자만 있는 경우
+                if (/^\d+$/.test(msg.trim())) {
+                    console.log('⏭️ 숫자만 있는 메시지, AI 호출 스킵:', msg);
+                    return false;
+                }
+                
+                // 특수문자만 있는 경우 (공백, 특수문자, 이모티콘만)
+                const textOnly = msg.replace(/[\s\p{Emoji}\p{P}\p{S}]/gu, '');
+                if (textOnly.length === 0) {
+                    console.log('⏭️ 특수문자/이모티콘만 있는 메시지, AI 호출 스킵:', msg);
+                    return false;
+                }
+                
+                // 최소 2글자 이상의 의미 있는 텍스트가 있어야 함
+                if (textOnly.length < 2) {
+                    console.log('⏭️ 너무 짧은 메시지, AI 호출 스킵:', msg);
+                    return false;
+                }
+                
+                return true;
+            };
             
-            // 없으면 AI로 생성
-            if (!pronunciationGuide) {
-                pronunciationGuide = await pronunciationCoach.generatePronunciationGuide(
-                    message, 
-                    messageLanguage, 
-                    streamerLanguage
-                );
+            if (!shouldProcessMessage(message)) {
+                console.log('🚫 AI 발음 코치 호출 스킵 (필터링됨):', message);
+            } else {
+                // 사용량 체크
+                const UsageLog = require('./models/UsageLog');
+                const PlanLimit = require('./models/PlanLimit');
+                
+                const today = new Date().toISOString().split('T')[0];
+                let usageLog = await UsageLog.findOne({ userId, date: today });
+                
+                if (!usageLog) {
+                    usageLog = await UsageLog.create({
+                        userId,
+                        date: today,
+                        songRequestCount: 0,
+                        gptAiCount: 0,
+                        pronunciationCoachCount: 0
+                    });
+                }
+                
+                const planLimit = await PlanLimit.findOne({ planName: user.plan || 'free' });
+                const limit = planLimit?.pronunciationCoachLimit || 10;
+                const currentUsage = usageLog.pronunciationCoachCount || 0;
+                
+                // 제한 체크 (무제한은 -1)
+                if (limit === -1 || currentUsage < limit) {
+                    // 빠른 응답 먼저 확인
+                    pronunciationGuide = pronunciationCoach.getQuickResponse(message, messageLanguage, streamerLanguage);
+                    
+                    // 없으면 AI로 생성
+                    if (!pronunciationGuide) {
+                        pronunciationGuide = await pronunciationCoach.generatePronunciationGuide(
+                            message, 
+                            messageLanguage, 
+                            streamerLanguage
+                        );
+                    }
+                    
+                    // 사용량 증가
+                    if (pronunciationGuide) {
+                        usageLog.pronunciationCoachCount = (usageLog.pronunciationCoachCount || 0) + 1;
+                        await usageLog.save();
+                    }
+                } else {
+                    console.log(`⚠️ AI 발음 코치 제한 초과: ${currentUsage}/${limit}`);
+                    // 한도 초과 메시지 전송
+                    pronunciationGuide = {
+                        limitExceeded: true,
+                        currentUsage,
+                        limit,
+                        message: '일일 AI 발음 코치 한도를 초과했습니다.'
+                    };
+                }
             }
         }
         
@@ -714,33 +879,82 @@ app.post('/api/live/chat', async (req, res) => {
         let songRequest = null;
         
         if (hasSubscription && songData) {
-            const requesterInfo = {
-                username: username,
-                uniqueId: uniqueId || username,
-                badges: badges || [],
-                isVIP: false, // 나중에 구현
-                level: 1 // 나중에 구현
-            };
+            // 사용량 체크
+            const UsageLog = require('./models/UsageLog');
+            const PlanLimit = require('./models/PlanLimit');
             
-            const result = await songRequestService.addSongRequest(userId, songData, requesterInfo);
-            if (result.success) {
-                songRequest = result.song;
-                
-                // 신청곡 큐 업데이트 전송
-                io.to(userId).emit('song-queue-update', {
-                    queue: songRequestService.getQueue(userId)
+            const today = new Date().toISOString().split('T')[0];
+            let usageLog = await UsageLog.findOne({ userId, date: today });
+            
+            if (!usageLog) {
+                usageLog = await UsageLog.create({
+                    userId,
+                    date: today,
+                    songRequestCount: 0,
+                    gptAiCount: 0,
+                    pronunciationCoachCount: 0
                 });
+            }
+            
+            const planLimit = await PlanLimit.findOne({ planName: user.plan || 'free' });
+            const limit = planLimit?.songRequestLimit || 5;
+            const currentUsage = usageLog.songRequestCount || 0;
+            
+            // 제한 체크 (무제한은 -1)
+            if (limit === -1 || currentUsage < limit) {
+                const requesterInfo = {
+                    username: username,
+                    uniqueId: uniqueId || username,
+                    badges: badges || [],
+                    isVIP: false, // 나중에 구현
+                    level: 1 // 나중에 구현
+                };
+                
+                const result = await songRequestService.addSongRequest(userId, songData, requesterInfo);
+                if (result.success) {
+                    songRequest = result.song;
+                    
+                    // 사용량 증가
+                    usageLog.songRequestCount = (usageLog.songRequestCount || 0) + 1;
+                    await usageLog.save();
+                    
+                    // 신청곡 큐 업데이트 전송
+                    io.to(userId).emit('song-queue-update', {
+                        queue: songRequestService.getQueue(userId)
+                    });
+                }
+            } else {
+                console.log(`⚠️ 신청곡 제한 초과: ${currentUsage}/${limit}`);
             }
         }
         
-        // 4. Socket.io로 전송
+        // 현재 사용량 조회
+        const currentUsage = await getUserDailyUsage(userId, user.timezone || 'UTC');
+        const PlanLimit = require('./models/PlanLimit');
+        const planLimit = await PlanLimit.findOne({ planName: user.plan || 'free' });
+        
+        // 4. Socket.io로 전송 (사용량 정보 포함)
         io.to(userId).emit('chat-message', {
             username,
             message,
             messageLanguage,
             pronunciationGuide,
             songRequest,
-            timestamp: timestamp || Date.now()
+            timestamp: timestamp || Date.now(),
+            usage: {
+                songRequest: {
+                    used: currentUsage.songRequestCount,
+                    limit: planLimit?.songRequestLimit || 5
+                },
+                gptAi: {
+                    used: currentUsage.gptAiCount,
+                    limit: planLimit?.gptAiLimit || 20
+                },
+                pronunciationCoach: {
+                    used: currentUsage.pronunciationCoachCount,
+                    limit: planLimit?.pronunciationCoachLimit || 10
+                }
+            }
         });
         
         res.json({ success: true });
@@ -879,18 +1093,130 @@ app.use((err, req, res, next) => {
 // ==================== Socket.io 이벤트 ====================
 io.on('connection', (socket) => {
     console.log('🔌 클라이언트 연결:', socket.id);
+    
+    // 클라이언트 타입 확인
+    const clientType = socket.handshake.auth.type || 'web';
+    const userId = socket.handshake.auth.userId;
+    
+    console.log(`📱 클라이언트 타입: ${clientType}, User ID: ${userId}`);
 
     // 사용자 룸 참가
-    socket.on('join-room', (userId) => {
-        socket.join(userId);
-        console.log(`👤 사용자 룸 참가: ${userId}`);
+    socket.on('join-room', (roomUserId) => {
+        const targetUserId = roomUserId || userId;
+        socket.join(targetUserId);
+        console.log(`👤 사용자 룸 참가: ${targetUserId} (타입: ${clientType})`);
+        
+        // Desktop App이 룸에 참가한 후 웹에 알림
+        if (clientType === 'desktop-app') {
+            // 같은 룸의 모든 클라이언트(웹 포함)에게 알림
+            io.to(targetUserId).emit('desktop-app-connected', { userId: targetUserId });
+            console.log(`📱 Desktop App 연결 알림 전송: ${targetUserId}`);
+        }
+        
+        // 웹 클라이언트가 룸에 참가할 때 Desktop App이 이미 연결되어 있는지 확인
+        if (clientType === 'web') {
+            const roomSockets = io.sockets.adapter.rooms.get(targetUserId);
+            if (roomSockets) {
+                for (const socketId of roomSockets) {
+                    const clientSocket = io.sockets.sockets.get(socketId);
+                    if (clientSocket && clientSocket.handshake.auth.type === 'desktop-app') {
+                        // Desktop App이 이미 연결되어 있음을 웹에 알림
+                        socket.emit('desktop-app-connected', { userId: targetUserId });
+                        console.log(`📱 기존 Desktop App 연결 알림: ${targetUserId}`);
+                        break;
+                    }
+                }
+            }
+        }
+    });
+    
+    // 라이브 상태 조회 (웹 → 서버)
+    socket.on('get-live-status', (data) => {
+        const { userId: targetUserId } = data;
+        console.log(`🔍 라이브 상태 조회: ${targetUserId}`);
+        
+        // Desktop App에 상태 요청
+        io.to(targetUserId).emit('get-live-status');
+    });
+    
+    // 연결 해제 시
+    socket.on('disconnect', () => {
+        console.log('❌ 클라이언트 연결 해제:', socket.id);
+        
+        // Desktop App 연결 해제 시 웹에 알림
+        if (clientType === 'desktop-app' && userId) {
+            io.to(userId).emit('desktop-app-disconnected', { userId });
+        }
+    });
+    
+    // Desktop App → 웹: TikTok 데이터 전송
+    socket.on('tiktok-data', (data) => {
+        const { userId, type, data: tiktokData } = data;
+        console.log(`📡 TikTok 데이터 수신 (${type}):`, userId);
+        
+        // 해당 사용자의 웹 대시보드로 전송
+        if (type === 'chat') {
+            io.to(userId).emit('chat-message', tiktokData);
+        } else if (type === 'stats') {
+            io.to(userId).emit('viewer-update', tiktokData);
+        } else if (type === 'gift') {
+            io.to(userId).emit('gift-received', tiktokData);
+        } else if (type === 'like') {
+            io.to(userId).emit('like-received', tiktokData);
+        }
+    });
+    
+    // Desktop App → 웹: 라이브 상태 업데이트
+    socket.on('live-status', (data) => {
+        const { userId, isLive, tiktokId } = data;
+        console.log(`🎥 라이브 상태 업데이트: ${userId}, Live: ${isLive}, TikTok: ${tiktokId}`);
+        console.log(`📤 웹으로 live-status 전송 시도 (룸: ${userId})`);
+        
+        // 룸에 있는 클라이언트 확인
+        const roomSockets = io.sockets.adapter.rooms.get(userId);
+        if (roomSockets) {
+            console.log(`✅ 룸 ${userId}에 ${roomSockets.size}개 클라이언트 존재`);
+            roomSockets.forEach(socketId => {
+                const clientSocket = io.sockets.sockets.get(socketId);
+                if (clientSocket) {
+                    const clientType = clientSocket.handshake.auth.type || 'unknown';
+                    console.log(`  - Socket ${socketId}: ${clientType}`);
+                }
+            });
+        } else {
+            console.log(`❌ 룸 ${userId}에 클라이언트 없음`);
+        }
+        
+        // 웹 대시보드로 전송
+        io.to(userId).emit('live-status', { isLive, tiktokId });
+        console.log(`✅ live-status 전송 완료`);
+    });
+    
+    // 웹 → Desktop App: 라이브 시작 명령
+    socket.on('start-live', async (data) => {
+        const { userId, tiktokId } = data;
+        console.log(`🎥 라이브 시작 명령: ${userId}, TikTok: ${tiktokId}`);
+        
+        // Desktop App으로 명령 전송
+        io.to(userId).emit('start-live', { tiktokId });
+    });
+    
+    // 웹 → Desktop App: 라이브 종료 명령
+    socket.on('stop-live', (data) => {
+        const { userId } = data;
+        console.log(`⏹️ 라이브 종료 명령: ${userId}`);
+        
+        // Desktop App으로 명령 전송
+        io.to(userId).emit('stop-live');
     });
     
     // TTS 설정 (웹 → Desktop App)
     socket.on('tts-settings', (settings) => {
         console.log('🔊 TTS 설정 수신:', settings);
-        // Desktop App으로 브로드캐스트
-        io.emit('tts-settings-update', settings);
+        const targetUserId = settings.userId || userId;
+        
+        // Desktop App으로 전송
+        io.to(targetUserId).emit('tts-settings', settings);
     });
 
     // TikTok Live 시작
@@ -932,6 +1258,30 @@ io.on('connection', (socket) => {
             liveConnections.delete(userId);
             console.log(`⏹️ TikTok Live 중지: User ${userId}`);
             socket.emit('live-stopped', { success: true });
+        }
+    });
+
+    // 스트리머가 직접 신청곡 추가
+    socket.on('add-song-request', async (data) => {
+        try {
+            const { userId, songData } = data;
+            console.log('🎵 스트리머 신청곡 추가 요청:', songData);
+            
+            const result = await songRequestService.addSongRequest(
+                userId, 
+                { title: songData.title, artist: songData.artist },
+                songData.requester
+            );
+            
+            if (result.success) {
+                console.log('✅ 스트리머 신청곡 추가 성공:', result.song.title);
+                // 신청곡 큐 업데이트 전송
+                io.to(userId).emit('song-queue-update', {
+                    queue: songRequestService.getQueue(userId)
+                });
+            }
+        } catch (error) {
+            console.error('❌ 스트리머 신청곡 추가 오류:', error);
         }
     });
 

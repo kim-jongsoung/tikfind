@@ -25,7 +25,7 @@ router.get('/dashboard', requireAuth, (req, res) => {
 });
 
 router.get('/dashboard/live', requireAuth, (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/live.html'));
+    res.sendFile(path.join(__dirname, '../public/dashboard-live-new.html'));
 });
 
 router.get('/dashboard/overlay', requireAuth, (req, res) => {

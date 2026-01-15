@@ -42,7 +42,7 @@ router.get('/google/callback',
     passport.authenticate('google', { 
         failureRedirect: '/' 
     }),
-    (req, res) => {
+    async (req, res) => {
         const fs = require('fs');
         const logMsg = `[${new Date().toISOString()}] ✅ 로그인 성공: ${req.user?.email} - 세션 ID: ${req.sessionID} - Desktop 플래그: ${req.session.isDesktopLogin}\n`;
         fs.appendFileSync('auth-debug.log', logMsg);
@@ -52,6 +52,33 @@ router.get('/google/callback',
         console.log('📋 온보딩 완료 여부:', req.user?.isSetupComplete);
         console.log('🔍 세션 Desktop 플래그:', req.session.isDesktopLogin);
         console.log('🔍 전체 세션:', JSON.stringify(req.session));
+        
+        // 시간대 및 언어 자동 감지 및 저장 (쿼리 파라미터에서)
+        if (req.user) {
+            try {
+                const User = require('../models/User');
+                const updateData = {};
+                
+                // 시간대 저장 (없거나 UTC인 경우)
+                if (req.query.timezone && (!req.user.timezone || req.user.timezone === 'UTC')) {
+                    updateData.timezone = req.query.timezone;
+                    console.log('🌍 시간대 저장:', req.query.timezone, '(사용자:', req.user.email, ')');
+                }
+                
+                // 언어 저장 (없는 경우에만)
+                if (req.query.language && !req.user.preferredLanguage) {
+                    updateData.preferredLanguage = req.query.language;
+                    console.log('🌐 언어 저장:', req.query.language, '(사용자:', req.user.email, ')');
+                }
+                
+                // 업데이트할 데이터가 있으면 저장
+                if (Object.keys(updateData).length > 0) {
+                    await User.findByIdAndUpdate(req.user._id, updateData);
+                }
+            } catch (error) {
+                console.error('❌ 시간대/언어 저장 실패:', error);
+            }
+        }
         
         // Desktop App에서 로그인한 경우 (세션 플래그 확인)
         const isDesktopApp = req.session.isDesktopLogin === true;

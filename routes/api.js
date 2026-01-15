@@ -4,12 +4,61 @@ const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
 const User = require('../models/User');
+const ytdl = require('@distube/ytdl-core');
+
+// 사용자별 신청곡 쿨다운 맵 (메모리 기반)
+// { userId: { lastRequestTime: Date, cooldownMinutes: Number } }
+const userSongCooldowns = new Map();
 
 // 인증 체크 미들웨어
 const requireAuth = (req, res, next) => {
     if (!req.user) {
         return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
     }
+    next();
+};
+
+// 시간 기반 중복신청제한 체크 미들웨어
+const checkSongCooldown = (req, res, next) => {
+    const userId = req.body.userId || req.user?._id?.toString();
+    const cooldownMinutes = parseInt(req.body.cooldownMinutes) || 30;
+    
+    if (!userId) {
+        return next(); // userId 없으면 통과
+    }
+    
+    // 제한없음(0분) 선택 시 쿨다운 체크 건너뛰기
+    const userCooldown = userSongCooldowns.get(userId);
+    const requiredCooldown = userCooldown?.cooldownMinutes ?? cooldownMinutes;
+    
+    if (requiredCooldown === 0) {
+        console.log('⏭️ 쿨다운 제한없음:', userId);
+        return next(); // 제한없음이면 통과
+    }
+    
+    const now = new Date();
+    
+    if (userCooldown && userCooldown.lastRequestTime) {
+        const timeSinceLastRequest = (now - userCooldown.lastRequestTime) / 1000 / 60; // 분 단위
+        
+        if (timeSinceLastRequest < requiredCooldown) {
+            const remainingMinutes = Math.ceil(requiredCooldown - timeSinceLastRequest);
+            return res.status(429).json({
+                success: false,
+                error: 'COOLDOWN_ACTIVE',
+                message: `${remainingMinutes}분 후에 다시 신청할 수 있습니다.`,
+                remainingMinutes: remainingMinutes,
+                cooldownMinutes: requiredCooldown
+            });
+        }
+    }
+    
+    // 쿨다운 업데이트
+    userSongCooldowns.set(userId, {
+        lastRequestTime: now,
+        cooldownMinutes: cooldownMinutes
+    });
+    
     next();
 };
 
@@ -84,13 +133,50 @@ router.get('/user/usage', requireAuth, async (req, res) => {
     }
 });
 
-// 신청곡 요청 API (제한 적용)
-router.post('/song-request', requireAuth, checkSongRequestLimit, async (req, res) => {
+// 쿨다운 설정 업데이트 API
+router.post('/song-cooldown/update', requireAuth, async (req, res) => {
     try {
-        const { songTitle, artist } = req.body;
+        const userId = req.user._id.toString();
+        const { cooldownMinutes } = req.body;
+        
+        if (!cooldownMinutes || cooldownMinutes < 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: '유효하지 않은 쿨다운 시간입니다.' 
+            });
+        }
+        
+        // 기존 쿨다운 정보 가져오기
+        const existingCooldown = userSongCooldowns.get(userId);
+        
+        // 쿨다운 시간만 업데이트 (마지막 신청 시간은 유지)
+        userSongCooldowns.set(userId, {
+            lastRequestTime: existingCooldown?.lastRequestTime || null,
+            cooldownMinutes: parseInt(cooldownMinutes)
+        });
+        
+        console.log(`⏱️ 쿨다운 설정 업데이트: ${userId} -> ${cooldownMinutes}분`);
+        
+        res.json({
+            success: true,
+            message: '쿨다운 설정이 업데이트되었습니다.',
+            cooldownMinutes: parseInt(cooldownMinutes)
+        });
+    } catch (error) {
+        console.error('쿨다운 설정 오류:', error);
+        res.status(500).json({ success: false, message: '쿨다운 설정 중 오류가 발생했습니다.' });
+    }
+});
+
+// 신청곡 요청 API (일일 제한 + 시간 제한 적용)
+router.post('/song-request', requireAuth, checkSongCooldown, checkSongRequestLimit, async (req, res) => {
+    try {
+        const { songTitle, artist, userId } = req.body;
         
         // 실제 신청곡 처리 로직
         // TODO: YouTube API 연동 등
+        
+        console.log(`✅ 신청곡 추가: ${songTitle} - ${artist} (사용자: ${userId})`);
         
         res.json({
             success: true,
@@ -358,6 +444,140 @@ router.post('/user/settings', requireAuth, async (req, res) => {
             error: error.message,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
+    }
+});
+
+// YouTube 스트림 URL 추출 API
+router.post('/youtube/stream', async (req, res) => {
+    try {
+        const { videoId } = req.body;
+        
+        if (!videoId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'videoId가 필요합니다.' 
+            });
+        }
+        
+        console.log('🎵 YouTube 스트림 URL 추출 시작:', videoId);
+        
+        // YouTube 비디오 정보 가져오기
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        const info = await ytdl.getInfo(videoUrl);
+        
+        console.log('📊 사용 가능한 포맷 수:', info.formats.length);
+        
+        // 비디오+오디오 포맷 우선 선택 (재생 가능성 높음)
+        const videoFormats = ytdl.filterFormats(info.formats, 'videoandaudio');
+        const audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
+        
+        console.log('🎬 비디오+오디오 포맷:', videoFormats.length);
+        console.log('🎵 오디오 전용 포맷:', audioFormats.length);
+        
+        // 최고 품질의 포맷 선택
+        let selectedFormat = null;
+        if (videoFormats.length > 0) {
+            // 360p 또는 480p 정도의 중간 품질 선택 (안정성)
+            selectedFormat = videoFormats.find(f => f.qualityLabel === '360p') || videoFormats[0];
+        } else if (audioFormats.length > 0) {
+            selectedFormat = audioFormats[0];
+        }
+        
+        if (!selectedFormat || !selectedFormat.url) {
+            console.log('❌ 재생 가능한 포맷을 찾을 수 없음');
+            return res.status(404).json({ 
+                success: false, 
+                message: '재생 가능한 포맷을 찾을 수 없습니다.' 
+            });
+        }
+        
+        console.log('✅ YouTube 스트림 URL 추출 성공');
+        console.log('📺 선택된 포맷:', selectedFormat.qualityLabel || 'audio', selectedFormat.container);
+        
+        res.json({
+            success: true,
+            streamUrl: selectedFormat.url,
+            videoInfo: {
+                title: info.videoDetails.title,
+                author: info.videoDetails.author.name,
+                lengthSeconds: info.videoDetails.lengthSeconds,
+                thumbnail: info.videoDetails.thumbnails[info.videoDetails.thumbnails.length - 1].url
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ YouTube 스트림 URL 추출 오류:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'YouTube 스트림 URL 추출 중 오류가 발생했습니다.',
+            error: error.message
+        });
+    }
+});
+
+// 장르별 인기곡 통계 조회
+router.get('/popular-songs/stats', async (req, res) => {
+    try {
+        const PopularSong = require('../models/PopularSong');
+        
+        // 장르별 곡 수 집계
+        const stats = await PopularSong.aggregate([
+            { $match: { isActive: true } },
+            { $group: { _id: '$genre', count: { $sum: 1 } } },
+            { $sort: { _id: 1 } }
+        ]);
+        
+        // 전체 곡 수
+        const total = await PopularSong.countDocuments({ isActive: true });
+        
+        // 장르별 객체로 변환
+        const genreStats = {};
+        stats.forEach(stat => {
+            genreStats[stat._id] = stat.count;
+        });
+        
+        res.json({
+            success: true,
+            total: total,
+            genres: genreStats
+        });
+    } catch (error) {
+        console.error('❌ 인기곡 통계 조회 오류:', error);
+        res.status(500).json({ success: false, message: '통계 조회 실패' });
+    }
+});
+
+// 장르별 랜덤 곡 가져오기
+router.post('/popular-songs/random', async (req, res) => {
+    try {
+        const { genre, count = 20 } = req.body;
+        const PopularSong = require('../models/PopularSong');
+        
+        const query = { isActive: true };
+        if (genre && genre !== 'all') {
+            query.genre = genre;
+        }
+        
+        // 랜덤으로 곡 선택
+        const songs = await PopularSong.aggregate([
+            { $match: query },
+            { $sample: { size: parseInt(count) } }
+        ]);
+        
+        res.json({
+            success: true,
+            songs: songs.map(song => ({
+                id: song._id,
+                videoId: song.videoId,
+                title: song.title,
+                artist: song.artist,
+                thumbnail: song.thumbnail,
+                genre: song.genre
+            }))
+        });
+    } catch (error) {
+        console.error('❌ 랜덤 곡 조회 오류:', error);
+        res.status(500).json({ success: false, message: '곡 조회 실패' });
     }
 });
 

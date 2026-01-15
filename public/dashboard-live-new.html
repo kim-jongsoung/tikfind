@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind - 방송 시작</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- YouTube IFrame Player API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <link rel="stylesheet" href="/css/desktop-app.css">
+    <link rel="stylesheet" href="/css/ai-assistant.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="bg-slate-900 min-h-screen">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-64 mt-16 p-8">
+        <div class="max-w-full mx-auto">
+            <div class="container" style="max-height: none; overflow: visible;">
+            <!-- 헤더 -->
+            <div class="header">
+                <div class="header-content">
+                    <img src="/images/logo.png" alt="TikFind Logo" class="logo">
+                    <div class="header-info">
+                        <span class="header-title">틱톡라이브도우미</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="plan-badge" id="planBadge">FREE</span>
+                            <span class="language-badge" id="languageBadge" style="padding: 4px 12px; font-size: 11px; background: rgba(102, 126, 234, 0.2); color: #667eea; border: 1px solid #667eea; border-radius: 12px; font-weight: 600;">🌐 한국어</span>
+                            <button id="upgradePlanBtn" class="btn-upgrade" style="display: none; padding: 4px 12px; font-size: 11px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; cursor: pointer;">업그레이드</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="planUsageInfo" style="display: none; margin-top: 8px; padding: 8px 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; font-size: 11px;">
+                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                        <span style="display: flex; align-items: center; gap: 4px;">
+                            🎯 AI 발음 코치: <span id="aiCoachUsage">0/10</span>
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 4px;">
+                            🎵 신청곡: <span id="songRequestUsage">0/5</span>
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 4px;">
+                            🤖 GPT AI: <span id="gptAiUsage">0/3</span>
+                        </span>
+                        <button id="usageLimitUpgradeBtn" style="display: none; padding: 4px 12px; font-size: 11px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-left: auto;">
+                            ⚠️ 업그레이드
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 메인 레이아웃 (2x2 그리드) -->
+            <div class="main-layout-grid" style="display: grid; grid-template-columns: 3fr 7fr; gap: 16px; margin-bottom: 20px;">
+                <!-- 좌측 전체: 신청곡 큐 -->
+                <div class="grid-item" style="grid-row: 1 / 3; background: #1a1a1a; padding: 16px; border-radius: 8px;">
+                    <div class="song-queue-section-compact" style="height: 100%; display: flex; flex-direction: column;">
+                        <!-- 연결 설정 (상단) -->
+                        <div class="connection-section-compact" style="margin-bottom: 12px;">
+                            <div style="display: flex; gap: 4px; margin-bottom: 6px; align-items: center;">
+                                <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                                    <label style="font-size: 10px; color: #666; margin-bottom: 2px;">User ID</label>
+                                    <input 
+                                        type="text" 
+                                        id="userId" 
+                                        placeholder="User ID"
+                                        autocomplete="off"
+                                        class="input-compact"
+                                        style="width: 100%;"
+                                        readonly
+                                    >
+                                </div>
+                                <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                                    <label style="font-size: 10px; color: #666; margin-bottom: 2px;">TikTok ID</label>
+                                    <input 
+                                        type="text" 
+                                        id="username" 
+                                        placeholder="TikTok ID"
+                                        autocomplete="off"
+                                        class="input-compact"
+                                        style="width: 100%;"
+                                        readonly
+                                    >
+                                </div>
+                                <button id="startBtn" class="btn-compact btn-primary" style="padding: 4px 12px; font-size: 11px; margin-top: 16px;">시작</button>
+                                <button id="stopBtn" class="btn-compact btn-danger" disabled style="padding: 4px 12px; font-size: 11px; margin-top: 16px;">중지</button>
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 12px;">
+                                <div class="status-compact" style="margin: 0;">
+                                    <span class="status-dot" id="statusDot"></span>
+                                    <span id="statusText">연결 안 됨</span>
+                                </div>
+                                <div style="display: flex; gap: 8px; color: #666;">
+                                    <span>👥 <span id="viewerCount">0</span></span>
+                                    <span>💬 <span id="messageCount">0</span></span>
+                                    <span>🎁 <span id="giftCount">0</span></span>
+                                    <span>❤️ <span id="likeCount">0</span></span>
+                                </div>
+                            </div>
+                            
+                            <div class="tts-compact" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 6px 8px; background: #1a1a1a; border-radius: 4px;">
+                                <label class="tts-label-compact" style="display: flex; align-items: center; gap: 4px; margin: 0;">
+                                    <input type="checkbox" id="ttsEnabled" checked>
+                                    <span style="font-size: 10px; color: #fff;">채팅을 음성으로 안내</span>
+                                </label>
+                                <div style="display: flex; align-items: center; gap: 6px; justify-content: flex-end;">
+                                    <span style="font-size: 9px; color: #999;">속도</span>
+                                    <input type="range" id="ttsSpeed" min="0.5" max="2.0" step="0.1" value="1.0" style="width: 70px;">
+                                    <span id="ttsSpeedValue" style="font-size: 9px; color: #999; min-width: 30px;">1.0x</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 신청곡 큐 헤더 -->
+                        <div style="display: flex; justify-between; align-items: center; margin-bottom: 8px;">
+                            <h3 class="section-title" style="margin: 0;">🎵 신청곡 큐</h3>
+                            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                                <select id="genreSelect" style="padding: 4px 8px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                    <option value="all">전체 (0곡)</option>
+                                    <option value="kpop">K-POP (0곡)</option>
+                                    <option value="pop">팝 (0곡)</option>
+                                    <option value="ballad">발라드 (0곡)</option>
+                                    <option value="dance">댄스/EDM (0곡)</option>
+                                    <option value="tiktok_dance">틱톡댄스곡 (0곡)</option>
+                                    <option value="jpop">J-POP (0곡)</option>
+                                    <option value="trot">트로트 (0곡)</option>
+                                    <option value="hiphop">힙합 (0곡)</option>
+                                    <option value="rnb">R&B (0곡)</option>
+                                    <option value="rock">록 (0곡)</option>
+                                    <option value="indie">인디 (0곡)</option>
+                                </select>
+                                <button id="addPopularSongsBtn" class="btn-toolbar" style="background: #9333ea; color: white; padding: 4px 10px; font-size: 10px;">
+                                    <i class="fas fa-robot" style="margin-right: 2px;"></i>AI곡 추가
+                                </button>
+                                <button id="nextSongBtn" class="btn-toolbar" style="background: #2563eb; color: white; padding: 4px 10px; font-size: 10px;">
+                                    <i class="fas fa-forward" style="margin-right: 2px;"></i>다음곡
+                                </button>
+                                <button id="pausePlayBtn" class="btn-toolbar" style="background: #f59e0b; color: white; padding: 4px 10px; font-size: 10px;">
+                                    <i class="fas fa-pause" style="margin-right: 2px;"></i>일시정지
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 신청곡 설정 -->
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; padding: 6px; background: #0a0a0a; border-radius: 6px; flex-wrap: wrap;">
+                            <span style="font-size: 10px; color: #999;">신청곡:</span>
+                            <select id="requestAcceptSelect" style="padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                <option value="accept">받기</option>
+                                <option value="reject">안받기</option>
+                            </select>
+                            <span style="font-size: 10px; color: #999;">중복신청제한:</span>
+                            <select id="requestCooldown" style="padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                <option value="0">제한없음</option>
+                                <option value="10">10분에 1곡 가능</option>
+                                <option value="20">20분에 1곡 가능</option>
+                                <option value="30" selected>30분에 1곡 가능</option>
+                            </select>
+                            <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: #999; margin-left: auto;">
+                                <input type="checkbox" id="autoSkipAbsent" checked style="width: 14px; height: 14px;">
+                                <span>부재자 자동패스</span>
+                            </label>
+                        </div>
+                        
+                        <!-- 시청자 신청곡 안내 -->
+                        <div style="padding: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px; margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <i class="fas fa-info-circle" style="color: white; font-size: 14px;"></i>
+                                <span style="font-size: 11px; font-weight: 600; color: white;">시청자 신청곡 안내</span>
+                                <button id="copyGuideBtn" onclick="copyRequestGuide()" style="margin-left: auto; padding: 3px 8px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; font-size: 9px; cursor: pointer; transition: all 0.2s;">
+                                    <i class="fas fa-copy" style="margin-right: 2px;"></i>복사
+                                </button>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 4px; font-family: 'Courier New', monospace;">
+                                <p style="margin: 0; font-size: 10px; color: #fff; font-weight: 600;">신청곡신청은 #노래제목#가수이름</p>
+                                <p style="margin: 4px 0 0 0; font-size: 9px; color: rgba(255,255,255,0.8);">예시: #Dynamite#BTS</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 신청곡 관리 툴바 -->
+                        <div class="song-toolbar">
+                            <div class="toolbar-left">
+                                <span class="song-count" id="songCount">총 0곡</span>
+                            </div>
+                            <div class="toolbar-right">
+                                <button class="btn-toolbar" onclick="clearAllSongs()" title="전체 삭제">🗑️ 전체삭제</button>
+                                <button class="btn-toolbar" onclick="exportPlaylist()" title="목록 저장">💾 저장</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 스트리머 신청곡 추가 -->
+                        <div class="streamer-add-song">
+                            <input type="text" id="streamerSongInput" placeholder="노래 제목 + 가수 (예: Dynamite BTS)" class="song-input">
+                            <button id="streamerAddBtn" class="btn-add-song" onclick="streamerAddSong()">🔍 검색 & 추가</button>
+                        </div>
+                        
+                        <!-- 신청곡 리스트 -->
+                        <div class="song-queue-list" id="songQueueList" style="flex: 1; overflow-y: auto; max-height: 250px; margin-bottom: 8px;">
+                            <p class="empty-message">신청곡이 여기에 표시됩니다...</p>
+                        </div>
+                        
+                        <!-- YouTube 플레이어 (축소) -->
+                        <div style="background: #0a0a0a; border-radius: 8px; overflow: hidden;">
+                            <div id="youtubePlayer" style="height: 180px; background: #000; display: flex; align-items: center; justify-content: center;">
+                                <p style="color: #666; font-size: 11px;">신청곡이 없습니다</p>
+                            </div>
+                            <div id="nowPlaying" style="padding: 8px; border-top: 1px solid #222; display: none;">
+                                <p style="font-size: 9px; color: #666; margin: 0 0 2px 0;">재생 중</p>
+                                <p id="currentSongTitle" style="font-size: 11px; font-weight: 600; color: white; margin: 0 0 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</p>
+                                <p style="font-size: 9px; color: #666; margin: 0;">신청: <span id="currentRequester">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI 발음 코치 -->
+                <div class="grid-item" style="background: #1a1a1a; padding: 16px; border-radius: 8px;">
+                    <div class="chat-ai-integrated">
+                        <h3 class="section-title">💬 실시간 채팅 + 🤖 AI 발음 코치</h3>
+                        <div style="display: flex; gap: 10px; height: 750px;">
+                            <!-- 왼쪽 30%: 전체 채팅 -->
+                            <div style="width: 30%; display: flex; flex-direction: column;">
+                                <h4 style="font-size: 12px; color: #999; margin-bottom: 8px; padding: 0 8px;">💬 전체 채팅</h4>
+                                <div id="nativeLanguageMessages" style="height: 720px; overflow-y: auto; padding: 8px; background: #0a0a0a; border-radius: 4px; border: 1px solid #333;">
+                                    <p class="empty-message" style="font-size: 11px;">모든 채팅이 여기에 표시됩니다</p>
+                                </div>
+                            </div>
+                            <!-- 오른쪽 70%: AI 발음 코치 -->
+                            <div style="width: 70%; display: flex; flex-direction: column;">
+                                <h4 style="font-size: 12px; color: #999; margin-bottom: 8px; padding: 0 8px;">🤖 AI 발음 코치</h4>
+                                <div id="foreignLanguageMessages" style="height: 720px; overflow-y: auto; padding: 8px; background: #0a0a0a; border-radius: 4px; border: 1px solid #333;">
+                                    <p class="empty-message" style="font-size: 11px;">외국어 채팅 시 AI 발음 코치가 나타납니다</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI 어시스턴트 -->
+                <div class="bg-slate-800 rounded-lg shadow-md p-6">
+                    <div class="ai-assistant">
+                        <div class="ai-assistant-header">
+                            <span>🤖 AI 어시스턴트</span>
+                            <span class="ai-usage" id="aiUsage">0/20</span>
+                        </div>
+                        <div class="ai-chat-history" id="aiChatHistory">
+                            <p class="empty-message">방송 중 궁금한 것을 물어보세요!</p>
+                        </div>
+                        <div class="ai-input-area">
+                            <input type="text" id="aiQuestion" placeholder="질문을 입력하세요..." class="ai-input" maxlength="200">
+                            <button id="aiSendBtn" class="ai-send-btn">전송</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- 메인 레이아웃 끝 -->
+            </div>
+        </div>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="ml-64 bg-slate-800 text-white py-3 px-8 border-t border-slate-700">
+        <div class="max-w-full mx-auto text-center">
+            <p class="text-sm text-gray-400">TikFind v1.0.7</p>
+        </div>
+    </footer>
+
+    <!-- Desktop App 안내 모달 -->
+    <div id="desktopAppModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 32px; border-radius: 16px; max-width: 600px; text-align: left;">
+            <h2 style="color: #333; margin-bottom: 16px; text-align: center;">⚠️ Desktop App이 실행되지 않았습니다</h2>
+            <p style="color: #666; margin-bottom: 24px; line-height: 1.6; text-align: center;">
+                TikTok Live 데이터를 수집하려면 Desktop App이 실행되어 있어야 합니다.
+            </p>
+            
+            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
+                <h3 style="color: #333; font-size: 14px; margin-bottom: 12px;">📋 Desktop App 실행 방법:</h3>
+                <ol style="color: #666; font-size: 14px; line-height: 1.8; margin-left: 20px;">
+                    <li>다운로드한 <strong>TikFind Setup.exe</strong> 파일을 실행</li>
+                    <li>설치 완료 후 자동으로 Desktop App 실행됨</li>
+                    <li>시스템 트레이(화면 오른쪽 하단)에 TikFind 아이콘 확인</li>
+                    <li>이 페이지에서 <strong>"시작"</strong> 버튼 클릭</li>
+                </ol>
+                <p style="color: #999; font-size: 12px; margin-top: 12px; margin-bottom: 0;">
+                    💡 PC 재부팅 시에도 Desktop App이 자동으로 실행됩니다.
+                </p>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button onclick="closeModal()" style="padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                    ✅ 확인 (Desktop App 실행 후 다시 시도)
+                </button>
+                <a id="downloadAppLink" href="/api/desktop-app/download" style="padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; text-decoration: none; display: block; text-align: center;">
+                    📥 Desktop App 다운로드
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+    <script>
+        const socket = io();
+        let currentUser = null;
+        let messageCount = 0;
+        let viewerCount = 0;
+        let giftCount = 0;
+        let likeCount = 0;
+        let processedMessageIds = new Set();
+        let limitExceededShown = false;
+        let desktopAppConnected = false;
+
+        // 사용자 정보 로드
+        async function loadUserInfo() {
+            try {
+                const response = await fetch('/api/current_user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    currentUser = data.user;
+                    const userId = String(currentUser._id || currentUser.id);
+                    
+                    // User ID와 TikTok ID 표시
+                    document.getElementById('userId').value = userId;
+                    document.getElementById('username').value = currentUser.tiktokId || '';
+                    
+                    // 플랜 정보 표시
+                    updatePlanBadge(currentUser.subscription);
+                    
+                    // 다운로드 링크에 User ID 포함
+                    const downloadLink = document.getElementById('downloadAppLink');
+                    if (downloadLink) {
+                        downloadLink.href = `/api/desktop-app/download?userId=${userId}`;
+                    }
+                    
+                    console.log('✅ 사용자 로드:', currentUser);
+                    
+                    // 선택한 언어 표시
+                    updateLanguageBadge(currentUser.preferredLanguage || 'ko');
+                    
+                    // 사용량 정보 표시
+                    if (data.usage) {
+                        updateUsageDisplay(data.usage);
+                        
+                        // 한도 초과 상태 확인 및 메시지 표시
+                        checkAndShowLimitExceeded(data.usage);
+                    }
+                    
+                    // Socket이 이미 연결되어 있으면 join-room 호출
+                    if (socket.connected) {
+                        socket.emit('join-room', userId);
+                        console.log('👤 사용자 룸 참가:', userId);
+                    }
+                    
+                    // 신청곡 큐 복원
+                    loadSongQueue(userId);
+                } else {
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+                window.location.href = '/';
+            }
+        }
+        
+        // 사용량 표시 업데이트
+        function updateUsageDisplay(usage) {
+            const aiCoachUsage = document.getElementById('aiCoachUsage');
+            const songRequestUsage = document.getElementById('songRequestUsage');
+            const gptAiUsage = document.getElementById('gptAiUsage');
+            
+            if (aiCoachUsage) {
+                const limit = usage.pronunciationCoach.limit === -1 ? '∞개' : `${usage.pronunciationCoach.limit}개중`;
+                const used = `/${usage.pronunciationCoach.used}사용`;
+                aiCoachUsage.textContent = `${limit} ${used}`;
+                
+                // 제한 초과 시 빨간색 표시
+                if (usage.pronunciationCoach.limit !== -1 && usage.pronunciationCoach.used >= usage.pronunciationCoach.limit) {
+                    aiCoachUsage.style.color = '#ef4444';
+                    aiCoachUsage.style.fontWeight = 'bold';
+                } else {
+                    aiCoachUsage.style.color = '';
+                    aiCoachUsage.style.fontWeight = '';
+                }
+            }
+            
+            if (songRequestUsage) {
+                const limit = usage.songRequest.limit === -1 ? '∞개' : `${usage.songRequest.limit}개중`;
+                const used = `/${usage.songRequest.used}사용`;
+                songRequestUsage.textContent = `${limit} ${used}`;
+                
+                if (usage.songRequest.limit !== -1 && usage.songRequest.used >= usage.songRequest.limit) {
+                    songRequestUsage.style.color = '#ef4444';
+                    songRequestUsage.style.fontWeight = 'bold';
+                } else {
+                    songRequestUsage.style.color = '';
+                    songRequestUsage.style.fontWeight = '';
+                }
+            }
+            
+            if (gptAiUsage) {
+                const limit = usage.gptAi.limit === -1 ? '∞개' : `${usage.gptAi.limit}개중`;
+                const used = `/${usage.gptAi.used}사용`;
+                gptAiUsage.textContent = `${limit} ${used}`;
+                
+                if (usage.gptAi.limit !== -1 && usage.gptAi.used >= usage.gptAi.limit) {
+                    gptAiUsage.style.color = '#ef4444';
+                    gptAiUsage.style.fontWeight = 'bold';
+                } else {
+                    gptAiUsage.style.color = '';
+                    gptAiUsage.style.fontWeight = '';
+                }
+            }
+            
+            // 플랜 사용량 정보 항상 표시
+            const planUsageInfo = document.getElementById('planUsageInfo');
+            if (planUsageInfo) {
+                planUsageInfo.style.display = 'block';
+            }
+            
+            // 사용량 초과 시 업그레이드 버튼 표시
+            const usageLimitUpgradeBtn = document.getElementById('usageLimitUpgradeBtn');
+            const isAnyLimitReached = 
+                (usage.pronunciationCoach.limit !== -1 && usage.pronunciationCoach.used >= usage.pronunciationCoach.limit) ||
+                (usage.songRequest.limit !== -1 && usage.songRequest.used >= usage.songRequest.limit) ||
+                (usage.gptAi.limit !== -1 && usage.gptAi.used >= usage.gptAi.limit);
+            
+            if (usageLimitUpgradeBtn && isAnyLimitReached) {
+                usageLimitUpgradeBtn.style.display = 'block';
+                usageLimitUpgradeBtn.onclick = () => {
+                    window.location.href = '/pricing';
+                };
+            } else if (usageLimitUpgradeBtn) {
+                usageLimitUpgradeBtn.style.display = 'none';
+            }
+        }
+
+        // 플랜 뱃지 업데이트
+        function updatePlanBadge(subscription) {
+            const planBadge = document.getElementById('planBadge');
+            const upgradePlanBtn = document.getElementById('upgradePlanBtn');
+            const planUsageInfo = document.getElementById('planUsageInfo');
+            
+            if (!subscription || subscription.plan === 'free') {
+                planBadge.textContent = 'FREE';
+                planBadge.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                upgradePlanBtn.style.display = 'inline-block';
+            } else if (subscription.plan === 'trial') {
+                planBadge.textContent = 'TRIAL';
+                planBadge.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+                planUsageInfo.style.display = 'block';
+                upgradePlanBtn.style.display = 'inline-block';
+            } else if (subscription.plan === 'pro') {
+                planBadge.textContent = 'PRO';
+                planBadge.style.background = 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)';
+                upgradePlanBtn.style.display = 'none';
+            }
+        }
+        
+        // 언어 뱃지 업데이트
+        function updateLanguageBadge(languageCode) {
+            const languageBadge = document.getElementById('languageBadge');
+            const languageNames = {
+                'ko': '한국어',
+                'en': 'English',
+                'ja': '日本語',
+                'zh': '中文',
+                'es': 'Español',
+                'fr': 'Français',
+                'de': 'Deutsch',
+                'pt': 'Português',
+                'ru': 'Русский',
+                'ar': 'العربية',
+                'hi': 'हिन्दी',
+                'th': 'ไทย',
+                'vi': 'Tiếng Việt',
+                'id': 'Bahasa Indonesia'
+            };
+            
+            const languageName = languageNames[languageCode] || languageCode.toUpperCase();
+            languageBadge.textContent = `🌐 ${languageName}`;
+        }
+
+        // 모달 제어
+        function showDesktopAppModal() {
+            const modal = document.getElementById('desktopAppModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('desktopAppModal');
+            modal.style.display = 'none';
+        }
+
+        // Socket.io 연결
+        socket.on('connect', () => {
+            console.log('✅ Socket.io 연결');
+            
+            if (currentUser) {
+                const userId = String(currentUser._id || currentUser.id);
+                socket.emit('join-room', userId);
+                
+                // 저장된 라이브 상태 복원
+                const savedLiveState = localStorage.getItem('tikfind_live_state');
+                if (savedLiveState === 'true') {
+                    // 서버에 현재 상태 요청
+                    socket.emit('get-live-status', { userId });
+                }
+            }
+        });
+
+        socket.on('disconnect', () => {
+            console.log('❌ Socket.io 연결 끊김');
+            updateStatus('연결 끊김', false);
+        });
+
+        // Desktop App 연결 상태
+        socket.on('desktop-app-connected', (data) => {
+            desktopAppConnected = true;
+            console.log('✅ Desktop App 연결됨');
+        });
+
+        socket.on('desktop-app-disconnected', (data) => {
+            desktopAppConnected = false;
+            console.log('❌ Desktop App 연결 끊김');
+            if (isLive) {
+                updateStatus('Desktop App 연결 끊김', false);
+            }
+        });
+
+        // 라이브 상태
+        socket.on('live-status', (data) => {
+            console.log('📱 live-status 수신:', data);
+            isLive = data.isLive;
+            localStorage.setItem('tikfind_live_state', isLive ? 'true' : 'false');
+            
+            if (data.isLive) {
+                desktopAppConnected = true;
+                updateStatus('방송 중', true);
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('startBtn').textContent = '방송 중';
+                document.getElementById('stopBtn').disabled = false;
+            } else {
+                updateStatus('연결 안 됨', false);
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('startBtn').textContent = '시작';
+                document.getElementById('stopBtn').disabled = true;
+            }
+        });
+
+        // 시청자 수
+        socket.on('viewer-update', (data) => {
+            document.getElementById('viewerCount').textContent = data.viewerCount || 0;
+        });
+
+        // 채팅 메시지
+        socket.on('chat-message', (data) => {
+            // 중복 메시지 방지
+            const messageId = `${data.username}_${data.message}_${data.timestamp}`;
+            if (processedMessageIds.has(messageId)) {
+                console.log('⏭️ 중복 메시지 스킵:', messageId);
+                return;
+            }
+            processedMessageIds.add(messageId);
+            
+            // 메시지 ID가 1000개 이상이면 오래된 것 제거
+            if (processedMessageIds.size > 1000) {
+                const firstId = processedMessageIds.values().next().value;
+                processedMessageIds.delete(firstId);
+            }
+            
+            messageCount++;
+            document.getElementById('messageCount').textContent = messageCount;
+            addChatMessage(data);
+            
+            // 시청자 재실 여부 추적
+            if (data.username) {
+                currentViewers.add(data.username);
+                // 신청곡 큐 UI 업데이트 (재실 여부 반영)
+                if (currentSongQueue.length > 0) {
+                    updateSongQueue(currentSongQueue);
+                }
+            }
+            
+            // 사용량 정보 실시간 업데이트
+            if (data.usage) {
+                updateUsageDisplay(data.usage);
+            }
+        });
+
+        // 선물
+        socket.on('gift-received', (data) => {
+            giftCount += data.count || 1;
+            document.getElementById('giftCount').textContent = giftCount;
+        });
+
+        // 좋아요
+        socket.on('like-received', (data) => {
+            likeCount += data.count || 1;
+            document.getElementById('likeCount').textContent = likeCount;
+        });
+
+        // 상태 업데이트
+        function updateStatus(text, isConnected) {
+            const statusText = document.getElementById('statusText');
+            const statusDot = document.getElementById('statusDot');
+            
+            statusText.textContent = text;
+            
+            if (isConnected) {
+                statusDot.style.background = '#10b981';
+                statusDot.style.boxShadow = '0 0 8px rgba(16, 185, 129, 0.6)';
+            } else {
+                statusDot.style.background = '#ef4444';
+                statusDot.style.boxShadow = '0 0 8px rgba(239, 68, 68, 0.6)';
+            }
+        }
+
+        // 채팅 메시지 추가
+        function addChatMessage(data) {
+            console.log('📨 메시지 수신:', {
+                message: data.message,
+                messageLanguage: data.messageLanguage,
+                preferredLanguage: currentUser?.preferredLanguage,
+                hasPronunciationGuide: !!data.pronunciationGuide
+            });
+            
+            // 왼쪽: 모든 채팅 표시 (내 언어 + 외국어)
+            const nativeDiv = document.getElementById('nativeLanguageMessages');
+            const nativeEmpty = nativeDiv.querySelector('.empty-message');
+            if (nativeEmpty) nativeEmpty.remove();
+            
+            const allMessageEl = document.createElement('div');
+            allMessageEl.className = 'chat-message';
+            allMessageEl.style.cssText = 'padding: 4px 0; margin-bottom: 6px;';
+            allMessageEl.innerHTML = `
+                <div>
+                    <span style="color: #fff; font-size: 11px;">@${data.username}</span>
+                    <span style="color: #999; font-size: 11px; margin: 0 4px;">/</span>
+                    <span style="color: #fff; font-size: 11px;">${escapeHtml(data.message)}</span>
+                </div>
+            `;
+            
+            nativeDiv.appendChild(allMessageEl);
+            nativeDiv.scrollTop = nativeDiv.scrollHeight;
+            
+            // 오른쪽: 외국어 AI 발음 코치만 표시
+            const guide = data.pronunciationGuide;
+            if (guide) {
+                const foreignDiv = document.getElementById('foreignLanguageMessages');
+                const foreignEmpty = foreignDiv.querySelector('.empty-message');
+                if (foreignEmpty) foreignEmpty.remove();
+                
+                const coachMessageEl = document.createElement('div');
+                coachMessageEl.className = 'chat-message';
+                
+                // 한도 초과 메시지 체크
+                if (guide.limitExceeded) {
+                    // 한도 초과 메시지는 한 번만 표시
+                    if (limitExceededShown) {
+                        return;
+                    }
+                    limitExceededShown = true;
+                    
+                    coachMessageEl.style.cssText = 'padding: 16px; margin-bottom: 10px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 8px; border: 2px solid #fca5a5;';
+                    coachMessageEl.innerHTML = `
+                        <div style="text-align: center;">
+                            <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
+                            <div style="color: #fff; font-size: 14px; font-weight: bold; margin-bottom: 8px;">
+                                일일 AI 발음 코치 한도 초과
+                            </div>
+                            <div style="color: #fee2e2; font-size: 12px; margin-bottom: 12px;">
+                                오늘 사용량: ${guide.currentUsage}/${guide.limit}
+                            </div>
+                            <button onclick="window.location.href='/dashboard/subscription'" style="
+                                padding: 8px 16px;
+                                background: #fff;
+                                color: #dc2626;
+                                border: none;
+                                border-radius: 6px;
+                                font-weight: bold;
+                                cursor: pointer;
+                                font-size: 13px;
+                            ">
+                                ⬆️ 플랜 업그레이드
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // 정상 AI 발음 코치
+                    coachMessageEl.style.cssText = 'padding: 8px; margin-bottom: 10px; background: #1a1a1a; border-radius: 6px;';
+                    coachMessageEl.innerHTML = `
+                        <div style="margin-bottom: 6px;">
+                            <span style="color: #22c55e; font-size: 12px;">@${data.username}</span>
+                            <span style="color: #22c55e; font-size: 12px; margin: 0 4px;">/</span>
+                            <span style="color: #22c55e; font-size: 12px;">${escapeHtml(data.message)}</span>
+                            <span style="color: #22c55e; font-size: 12px; margin: 0 4px;">(${escapeHtml(guide.originalMeaning || '')})</span>
+                        </div>
+                        <div style="margin-bottom: 6px;">
+                            <span style="color: #3b82f6; font-size: 12px;">AI 추천답변</span>
+                            <span style="color: #3b82f6; font-size: 12px; margin: 0 4px;">${escapeHtml(guide.response || '')}</span>
+                            <span style="color: #3b82f6; font-size: 12px;">(${escapeHtml(guide.responseMeaning || '')})</span>
+                        </div>
+                        <div>
+                            <span style="color: #ef4444; font-size: 16px; font-weight: bold;">AI 발음 : ${escapeHtml(guide.pronunciation || '')}</span>
+                        </div>
+                    `;
+                }
+                
+                foreignDiv.appendChild(coachMessageEl);
+                foreignDiv.scrollTop = foreignDiv.scrollHeight;
+            }
+        }
+
+        // 한도 초과 상태 확인 및 메시지 표시
+        function checkAndShowLimitExceeded(usage) {
+            if (!usage || !usage.pronunciationCoach) return;
+            
+            const { used, limit } = usage.pronunciationCoach;
+            
+            // 한도 초과 상태 확인 (무제한이 아니고, 사용량이 한도 이상일 때)
+            if (limit !== -1 && used >= limit) {
+                console.log('⚠️ 페이지 로드 시 한도 초과 감지:', used, '/', limit);
+                
+                // 한도 초과 메시지 표시
+                const foreignDiv = document.getElementById('foreignLanguageMessages');
+                if (!foreignDiv) return;
+                
+                const empty = foreignDiv.querySelector('.empty-message');
+                if (empty) empty.remove();
+                
+                // 이미 한도 초과 메시지가 있는지 확인
+                const existingLimitMsg = foreignDiv.querySelector('.limit-exceeded-message');
+                if (existingLimitMsg) return;
+                
+                const limitMessageEl = document.createElement('div');
+                limitMessageEl.className = 'chat-message limit-exceeded-message';
+                limitMessageEl.style.cssText = 'padding: 16px; margin-bottom: 10px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 8px; border: 2px solid #fca5a5;';
+                limitMessageEl.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; margin-bottom: 8px;">⚠️</div>
+                        <div style="color: #fff; font-size: 14px; font-weight: bold; margin-bottom: 8px;">
+                            일일 AI 발음 코치 한도 초과
+                        </div>
+                        <div style="color: #fee2e2; font-size: 12px; margin-bottom: 12px;">
+                            오늘 사용량: ${used}/${limit}
+                        </div>
+                        <button onclick="window.location.href='/dashboard/subscription'" style="
+                            padding: 8px 16px;
+                            background: #fff;
+                            color: #dc2626;
+                            border: none;
+                            border-radius: 6px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            font-size: 13px;
+                        ">
+                            ⬆️ 플랜 업그레이드
+                        </button>
+                    </div>
+                `;
+                
+                foreignDiv.appendChild(limitMessageEl);
+                limitExceededShown = true;
+            }
+        }
+
+        // HTML 이스케이프
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 라이브 시작
+        document.getElementById('startBtn').onclick = async () => {
+            if (!currentUser) {
+                alert('사용자 정보를 불러오는 중입니다...');
+                return;
+            }
+
+            if (!currentUser.tiktokId) {
+                alert('설정 페이지에서 TikTok ID를 먼저 등록해주세요.');
+                window.location.href = '/dashboard/settings';
+                return;
+            }
+
+            const userId = String(currentUser._id || currentUser.id);
+            const tiktokId = currentUser.tiktokId;
+
+            console.log('🎥 라이브 시작 명령 전송:', { userId, tiktokId });
+            
+            // 버튼 상태 변경
+            updateStatus('연결 중...', false);
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('startBtn').textContent = '연결 중...';
+            document.getElementById('stopBtn').disabled = false;
+            
+            socket.emit('start-live', { userId, tiktokId });
+        };
+
+        // 라이브 중지
+        document.getElementById('stopBtn').onclick = () => {
+            if (!currentUser) return;
+
+            const userId = String(currentUser._id || currentUser.id);
+            console.log('⏹️ 라이브 종료 명령 전송:', userId);
+            socket.emit('stop-live', { userId });
+            
+            // 상태 초기화
+            isLive = false;
+            localStorage.setItem('tikfind_live_state', 'false');
+            updateStatus('연결 안 됨', false);
+            
+            // 버튼 상태 변경
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('startBtn').textContent = '시작';
+            document.getElementById('stopBtn').disabled = true;
+            updateStatus('연결 안 됨', false);
+        };
+
+        // TTS 설정
+        document.getElementById('ttsEnabled').onchange = sendTTSSettings;
+        document.getElementById('ttsSpeed').oninput = (e) => {
+            document.getElementById('ttsSpeedValue').textContent = e.target.value + 'x';
+            sendTTSSettings();
+        };
+
+        function sendTTSSettings() {
+            if (!currentUser) return;
+
+            const settings = {
+                userId: String(currentUser._id || currentUser.id),
+                enabled: document.getElementById('ttsEnabled').checked,
+                speed: parseFloat(document.getElementById('ttsSpeed').value)
+            };
+            
+            socket.emit('tts-settings', settings);
+            console.log('🔊 TTS 설정 전송:', settings);
+        }
+
+        // 신청곡 큐 로드
+        async function loadSongQueue(userId) {
+            try {
+                const response = await fetch(`/api/song-queue/${userId}`);
+                const data = await response.json();
+                if (data.success && data.queue) {
+                    console.log('🎵 신청곡 큐 복원:', data.queue.length, '곡');
+                    updateSongQueue(data.queue);
+                }
+            } catch (error) {
+                console.error('❌ 신청곡 큐 로드 오류:', error);
+            }
+        }
+
+        // 신청곡 큐 업데이트 수신
+        socket.on('song-queue-update', (data) => {
+            console.log('🎵 신청곡 큐 업데이트:', data.queue);
+            updateSongQueue(data.queue);
+        });
+
+        // 현재 신청곡 큐 저장 (재생 시 URL 참조용)
+        let currentSongQueue = [];
+        let isYoutubePremium = false;
+        let currentViewers = new Set(); // 현재 방에 있는 시청자 목록
+        let youtubeWindow = null; // YouTube 재생 창
+
+        // 신청곡 큐 UI 업데이트
+        function updateSongQueue(queue) {
+            const queueList = document.getElementById('songQueueList');
+            const songCount = document.getElementById('songCount');
+            
+            // 큐 저장
+            currentSongQueue = queue || [];
+            
+            if (!queue || queue.length === 0) {
+                queueList.innerHTML = '<p class="empty-message">신청곡이 없습니다</p>';
+                songCount.textContent = '총 0곡';
+                return;
+            }
+            
+            songCount.textContent = `총 ${queue.length}곡`;
+            
+            queueList.innerHTML = queue.map((song, index) => {
+                // 스트리머가 직접 추가한 곡인지 확인
+                const isStreamerSong = song.requester === (currentUser?.tiktokId || 'Streamer') || 
+                                      song.badges?.includes('streamer');
+                
+                // 신청자 표시 텍스트
+                let requesterText = '';
+                if (isStreamerSong) {
+                    requesterText = '직접선곡';
+                } else {
+                    const isPresent = currentViewers.has(song.requester);
+                    const presenceText = isPresent ? '' : ' <span style="color: #ef4444; font-size: 9px;">(방에 없음)</span>';
+                    requesterText = `@${escapeHtml(song.requester)}${presenceText}`;
+                }
+                
+                return `
+                <div class="song-item" style="
+                    padding: 10px;
+                    margin-bottom: 8px;
+                    background: #1a1a1a;
+                    border-radius: 6px;
+                    border: 1px solid #333;
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                ">
+                    <!-- 순서 번호 -->
+                    <div style="font-size: 14px; font-weight: bold; color: #666; min-width: 20px;">
+                        ${index + 1}
+                    </div>
+                    
+                    <!-- 영상 썸네일 -->
+                    <img src="${song.thumbnail}" alt="${song.title}" style="
+                        width: 80px;
+                        height: 60px;
+                        border-radius: 4px;
+                        object-fit: cover;
+                    ">
+                    
+                    <!-- 노래 정보 -->
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 12px; font-weight: bold; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            ${escapeHtml(song.title)} - ${escapeHtml(song.artist)} | 신청: ${requesterText}
+                        </div>
+                    </div>
+                    
+                    <!-- 순서 변경 버튼 -->
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                        <button onclick="moveSongUp(${index})" ${index === 0 ? 'disabled' : ''} style="
+                            padding: 2px 6px;
+                            background: ${index === 0 ? '#333' : '#4a5568'};
+                            color: ${index === 0 ? '#666' : '#fff'};
+                            border: none;
+                            border-radius: 3px;
+                            cursor: ${index === 0 ? 'not-allowed' : 'pointer'};
+                            font-size: 10px;
+                        ">▲</button>
+                        <button onclick="moveSongDown(${index})" ${index === queue.length - 1 ? 'disabled' : ''} style="
+                            padding: 2px 6px;
+                            background: ${index === queue.length - 1 ? '#333' : '#4a5568'};
+                            color: ${index === queue.length - 1 ? '#666' : '#fff'};
+                            border: none;
+                            border-radius: 3px;
+                            cursor: ${index === queue.length - 1 ? 'not-allowed' : 'pointer'};
+                            font-size: 10px;
+                        ">▼</button>
+                    </div>
+                    
+                    <!-- 재생/삭제 버튼 -->
+                    <div style="display: flex; gap: 4px;">
+                        <button onclick="playSong('${song.id}')" style="
+                            padding: 6px 10px;
+                            background: #22c55e;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 16px;
+                            line-height: 1;
+                        ">▶</button>
+                        <button onclick="removeSong('${song.id}')" style="
+                            padding: 6px 10px;
+                            background: #ef4444;
+                            color: white;
+                            border: none;
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 16px;
+                            line-height: 1;
+                        ">✕</button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        // 스트리머 신청곡 추가
+        async function streamerAddSong() {
+            if (!currentUser) {
+                alert('사용자 정보를 불러오는 중입니다...');
+                return;
+            }
+            
+            const input = document.getElementById('streamerSongInput');
+            const query = input.value.trim();
+            
+            if (!query) {
+                alert('노래 제목과 가수를 입력해주세요.');
+                return;
+            }
+            
+            // 간단한 파싱 (공백으로 구분)
+            const parts = query.split(' ');
+            if (parts.length < 2) {
+                alert('노래 제목과 가수를 입력해주세요. (예: Dynamite BTS)');
+                return;
+            }
+            
+            const artist = parts.pop(); // 마지막 단어를 가수로
+            const title = parts.join(' '); // 나머지를 제목으로
+            
+            try {
+                const userId = String(currentUser._id || currentUser.id);
+                const response = await fetch('/api/youtube/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, artist })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.video) {
+                    // 신청곡 추가 (스트리머가 직접 추가)
+                    const songData = {
+                        title,
+                        artist,
+                        requester: {
+                            username: currentUser.tiktokId || 'Streamer',
+                            uniqueId: userId,
+                            badges: ['streamer']
+                        },
+                        youtubeData: data.video
+                    };
+                    
+                    socket.emit('add-song-request', { userId, songData });
+                    input.value = '';
+                    console.log('✅ 신청곡 추가 요청:', title, '-', artist);
+                } else {
+                    alert('노래를 찾을 수 없습니다. 다른 검색어로 시도해주세요.');
+                }
+            } catch (error) {
+                console.error('❌ 신청곡 추가 오류:', error);
+                alert('신청곡 추가 중 오류가 발생했습니다.');
+            }
+        }
+
+        // YouTube Premium 상태 업데이트
+        function updateYoutubePremiumStatus() {
+            const premiumYes = document.getElementById('premiumYes');
+            isYoutubePremium = premiumYes.checked;
+            
+            // localStorage에 저장
+            localStorage.setItem('tikfind_youtube_premium', isYoutubePremium);
+            
+            console.log('🎵 YouTube Premium 상태:', isYoutubePremium ? '가입' : '미가입');
+            
+            if (isYoutubePremium) {
+                alert('✅ YouTube Premium 자동재생 모드가 활성화되었습니다.\n노래가 끝나면 자동으로 다음 곡이 재생됩니다.');
+            } else {
+                alert('❌ 수동 재생 모드입니다.\n각 곡마다 재생 버튼을 클릭해주세요.');
+            }
+        }
+
+        // YouTube 영상 길이 가져오기 (YouTube Data API)
+        async function getYoutubeVideoDuration(videoId) {
+            try {
+                const response = await fetch(`/api/youtube/duration/${videoId}`);
+                const data = await response.json();
+                if (data.success && data.duration) {
+                    return data.duration; // 초 단위
+                }
+                return null;
+            } catch (error) {
+                console.error('❌ YouTube 영상 길이 조회 오류:', error);
+                return null;
+            }
+        }
+
+        // 다음 곡 자동 재생
+        function playNextSong() {
+            if (currentSongQueue.length === 0) {
+                console.log('✅ 모든 신청곡 재생 완료');
+                return;
+            }
+            
+            const nextSong = currentSongQueue[0];
+            playSong(nextSong.id);
+        }
+
+        // 신청곡 순서 위로 이동
+        function moveSongUp(index) {
+            if (!currentUser || index === 0) return;
+            
+            const userId = String(currentUser._id || currentUser.id);
+            const songId = currentSongQueue[index].id;
+            const newPosition = index - 1;
+            
+            fetch('/api/song-queue/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, songId, newPosition })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ 신청곡 순서 변경:', songId, '→', newPosition);
+                }
+            })
+            .catch(error => {
+                console.error('❌ 신청곡 순서 변경 오류:', error);
+            });
+        }
+
+        // 신청곡 순서 아래로 이동
+        function moveSongDown(index) {
+            if (!currentUser || index === currentSongQueue.length - 1) return;
+            
+            const userId = String(currentUser._id || currentUser.id);
+            const songId = currentSongQueue[index].id;
+            const newPosition = index + 1;
+            
+            fetch('/api/song-queue/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, songId, newPosition })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ 신청곡 순서 변경:', songId, '→', newPosition);
+                }
+            })
+            .catch(error => {
+                console.error('❌ 신청곡 순서 변경 오류:', error);
+            });
+        }
+
+        // 신청곡 재생
+        async function playSong(songId) {
+            if (!currentUser) return;
+            
+            // 현재 큐에서 해당 곡 찾기
+            const song = currentSongQueue.find(s => s.id === songId);
+            if (!song) {
+                console.error('❌ 신청곡을 찾을 수 없습니다:', songId);
+                return;
+            }
+            
+            console.log('✅ 신청곡 재생:', song.title, '-', song.artist);
+            
+            // 서버에 재생 완료 알림
+            const userId = String(currentUser._id || currentUser.id);
+            fetch('/api/song-queue/played', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, songId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // 재생 완료 후 삭제
+                    setTimeout(() => removeSong(songId), 1000);
+                }
+            })
+            .catch(error => {
+                console.error('❌ 신청곡 재생 오류:', error);
+            });
+            
+            // 자동재생은 YouTube Player의 onStateChange 이벤트에서 처리
+        }
+
+        // 신청곡 삭제
+        function removeSong(songId) {
+            if (!currentUser) return;
+            
+            const userId = String(currentUser._id || currentUser.id);
+            
+            fetch('/api/song-queue/remove', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, songId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ 신청곡 삭제:', songId);
+                }
+            })
+            .catch(error => {
+                console.error('❌ 신청곡 삭제 오류:', error);
+            });
+        }
+
+        // 전체 삭제
+        function clearAllSongs() {
+            if (!confirm('모든 신청곡을 삭제하시겠습니까?')) return;
+            
+            // autoPlayQueue 초기화
+            autoPlayQueue = [];
+            
+            // localStorage에서 삭제
+            localStorage.removeItem('tikfind_song_queue');
+            
+            // UI 업데이트
+            updateAutoPlayQueue();
+            
+            // 재생 중인 비디오 정지
+            if (currentVideoPlayer) {
+                currentVideoPlayer.pause();
+                currentVideoPlayer = null;
+            }
+            
+            document.getElementById('youtubePlayer').innerHTML = '<p style="color: #666; font-size: 12px;">신청곡이 없습니다</p>';
+            document.getElementById('nowPlaying').style.display = 'none';
+            
+            console.log('🗑️ 전체 삭제 완료');
+        }
+
+        // 목록 저장
+        function exportPlaylist() {
+            console.log('💾 목록 저장');
+            alert('목록 저장 기능은 추후 구현 예정입니다.');
+        }
+
+        // ========== YouTube 자동재생 시스템 (ytdl-core) ==========
+        let autoPlayQueue = [];
+        let currentVideoPlayer = null;
+        let isRequestAccepting = true; // 신청곡 받기 상태
+        let requestCooldownMinutes = 30; // 신청 시간 제한 (분)
+        let autoSkipAbsentSetting = true; // 부재자 자동 패스
+        let lastRequestTime = {}; // 마지막 신청 시간 기록
+
+        // 페이지 로드 시 이전 상태 복원
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedLiveState = localStorage.getItem('tikfind_live_state');
+            if (savedLiveState === 'true') {
+                isLive = true;
+                updateStatus('방송 중 (복원됨)', true);
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('startBtn').textContent = '방송 중';
+                document.getElementById('stopBtn').disabled = false;
+            }
+            
+            // 장르별 곡 수 업데이트
+            async function updateGenreStats() {
+                try {
+                    const response = await fetch('/api/popular-songs/stats');
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        const genreSelect = document.getElementById('genreSelect');
+                        const genres = data.genres;
+                        
+                        // 드롭다운 옵션 업데이트
+                        genreSelect.innerHTML = `
+                            <option value="all">전체 (${data.total}곡)</option>
+                            <option value="kpop">K-POP (${genres.kpop || 0}곡)</option>
+                            <option value="pop">팝 (${genres.pop || 0}곡)</option>
+                            <option value="ballad">발라드 (${genres.ballad || 0}곡)</option>
+                            <option value="dance">댄스/EDM (${genres.dance || 0}곡)</option>
+                            <option value="tiktok_dance">틱톡댄스곡 (${genres.tiktok_dance || 0}곡)</option>
+                            <option value="jpop">J-POP (${genres.jpop || 0}곡)</option>
+                            <option value="trot">트로트 (${genres.trot || 0}곡)</option>
+                            <option value="hiphop">힙합 (${genres.hiphop || 0}곡)</option>
+                            <option value="rnb">R&B (${genres.rnb || 0}곡)</option>
+                            <option value="rock">록 (${genres.rock || 0}곡)</option>
+                            <option value="indie">인디 (${genres.indie || 0}곡)</option>
+                        `;
+                        
+                        console.log('✅ 장르별 곡 수 업데이트:', data.total, '곡');
+                    }
+                } catch (error) {
+                    console.error('❌ 장르별 곡 수 조회 실패:', error);
+                }
+            }
+            
+            // 장르별 곡 수 업데이트
+            updateGenreStats();
+            
+            // 저장된 노래 큐 복원
+            loadQueueFromStorage();
+            
+            // 초기 쿨다운 설정 전달
+            (async () => {
+                try {
+                    const response = await fetch('/api/song-cooldown/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            cooldownMinutes: requestCooldownMinutes
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('✅ 초기 쿨다운 설정:', requestCooldownMinutes, '분');
+                    }
+                } catch (error) {
+                    console.error('❌ 초기 쿨다운 설정 오류:', error);
+                }
+            })();
+            
+            // 인기곡 추가 버튼
+            document.getElementById('addPopularSongsBtn').onclick = async () => {
+                const genre = document.getElementById('genreSelect').value;
+                const button = document.getElementById('addPopularSongsBtn');
+                
+                console.log('🎵 인기곡 추가 시작 - 장르:', genre);
+                console.log('📊 현재 큐 길이:', autoPlayQueue.length);
+                
+                button.disabled = true;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 2px;"></i>추가 중...';
+                
+                try {
+                    console.log('🔍 API 호출 시작...');
+                    const response = await fetch('/api/popular-songs/random', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ genre: genre, count: 20 })
+                    });
+                    
+                    console.log('📡 API 응답 상태:', response.status);
+                    const data = await response.json();
+                    console.log('📦 API 응답 데이터:', data);
+                    
+                    if (data.success && data.songs.length > 0) {
+                        console.log('✅ 인기곡 추가:', data.songs.length, '곡');
+                        
+                        // 큐에 추가
+                        data.songs.forEach((song, idx) => {
+                            const newSong = {
+                                id: Date.now() + Math.random(),
+                                videoId: song.videoId,
+                                title: song.title,
+                                artist: song.artist,
+                                requester: 'AI 추천',
+                                thumbnail: song.thumbnail
+                            };
+                            autoPlayQueue.push(newSong);
+                            console.log(`  ${idx + 1}. ${song.title} - ${song.artist}`);
+                        });
+                        
+                        console.log('📊 업데이트 후 큐 길이:', autoPlayQueue.length);
+                        console.log('🔄 updateAutoPlayQueue() 호출...');
+                        updateAutoPlayQueue();
+                        
+                        // 첫 곡이면 자동 재생
+                        if (autoPlayQueue.length === data.songs.length) {
+                            console.log('▶️ 첫 곡 자동 재생 시작...');
+                            await playNextAutoSong();
+                        }
+                        
+                        alert(`✅ ${data.songs.length}곡이 추가되었습니다!`);
+                    } else {
+                        console.warn('⚠️ 곡이 없음:', data);
+                        alert('❌ 해당 장르의 곡이 없습니다. 먼저 수집 스크립트를 실행해주세요.');
+                    }
+                } catch (error) {
+                    console.error('❌ 인기곡 추가 실패:', error);
+                    alert('❌ 인기곡 추가 중 오류가 발생했습니다: ' + error.message);
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="fas fa-robot" style="margin-right: 2px;"></i>AI곡 추가';
+                }
+            };
+
+            // 다음 곡 버튼
+            document.getElementById('nextSongBtn').onclick = () => {
+                if (autoPlayQueue.length > 0) {
+                    console.log('⏭️ 다음 곡으로 스킵');
+                    if (currentVideoPlayer) {
+                        currentVideoPlayer.pause();
+                    }
+                    autoPlayQueue.shift();
+                    updateAutoPlayQueue();
+                    playNextAutoSong();
+                }
+            };
+
+            // 음악 일시정지/재생 버튼
+            let isPaused = false;
+            document.getElementById('pausePlayBtn').onclick = () => {
+                const btn = document.getElementById('pausePlayBtn');
+                if (currentVideoPlayer) {
+                    if (isPaused) {
+                        currentVideoPlayer.play();
+                        btn.innerHTML = '<i class="fas fa-pause" style="margin-right: 2px;"></i>일시정지';
+                        btn.style.background = '#f59e0b';
+                        console.log('▶️ 음악 재생');
+                        isPaused = false;
+                    } else {
+                        currentVideoPlayer.pause();
+                        btn.innerHTML = '<i class="fas fa-play" style="margin-right: 2px;"></i>재생';
+                        btn.style.background = '#10b981';
+                        console.log('⏸️ 음악 일시정지');
+                        isPaused = true;
+                    }
+                } else {
+                    alert('재생 중인 곡이 없습니다.');
+                }
+            };
+
+            // 신청곡 받기/안받기 드롭다운
+            document.getElementById('requestAcceptSelect').onchange = (e) => {
+                const value = e.target.value;
+                if (value === 'accept') {
+                    isRequestAccepting = true;
+                    console.log('✅ 신청곡 받기 시작');
+                } else {
+                    isRequestAccepting = false;
+                    console.log('❌ 신청곡 안받기');
+                }
+            };
+
+            // 시간 제한 설정
+            document.getElementById('requestCooldown').onchange = async (e) => {
+                requestCooldownMinutes = parseInt(e.target.value);
+                console.log('⏱️ 신청 시간 제한:', requestCooldownMinutes, '분');
+                
+                // 서버에 쿨다운 설정 전달
+                try {
+                    const response = await fetch('/api/song-cooldown/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            cooldownMinutes: requestCooldownMinutes
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('✅ 서버 쿨다운 설정 업데이트:', requestCooldownMinutes, '분');
+                    } else {
+                        console.error('❌ 쿨다운 설정 실패:', data.message);
+                    }
+                } catch (error) {
+                    console.error('❌ 쿨다운 설정 오류:', error);
+                }
+            };
+
+            // 부재자 자동 패스 설정
+            document.getElementById('autoSkipAbsent').onchange = (e) => {
+                autoSkipAbsentSetting = e.target.checked;
+                console.log('👤 부재자 자동 패스:', autoSkipAbsentSetting ? '활성화' : '비활성화');
+            };
+        });
+
+        // 신청곡 안내 복사 기능
+        function copyRequestGuide() {
+            const guideText = '신청곡신청은 #노래제목#가수이름 예시: #Dynamite#BTS';
+            
+            navigator.clipboard.writeText(guideText).then(() => {
+                const btn = document.getElementById('copyGuideBtn');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check" style="margin-right: 2px;"></i>복사됨!';
+                btn.style.background = 'rgba(34, 197, 94, 0.3)';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHTML;
+                    btn.style.background = 'rgba(255,255,255,0.2)';
+                }, 2000);
+                
+                console.log('✅ 신청곡 안내 복사됨');
+            }).catch(err => {
+                console.error('❌ 복사 실패:', err);
+                alert('복사에 실패했습니다. 수동으로 복사해주세요.');
+            });
+        }
+
+        // 페이지 언로드 시 (새로고침/닫기)
+        window.addEventListener('beforeunload', () => {
+            // 라이브 상태 유지 (localStorage에 저장됨)
+        });
+
+        // localStorage에 큐 저장
+        function saveQueueToStorage() {
+            try {
+                localStorage.setItem('tikfind_song_queue', JSON.stringify(autoPlayQueue));
+                console.log('💾 노래 큐 저장:', autoPlayQueue.length, '곡');
+            } catch (error) {
+                console.error('❌ 큐 저장 실패:', error);
+            }
+        }
+
+        // localStorage에서 큐 복원
+        function loadQueueFromStorage() {
+            try {
+                const savedQueue = localStorage.getItem('tikfind_song_queue');
+                if (savedQueue) {
+                    autoPlayQueue = JSON.parse(savedQueue);
+                    console.log('✅ 노래 큐 복원:', autoPlayQueue.length, '곡');
+                    updateAutoPlayQueue();
+                    
+                    // 첫 곡이 있으면 자동 재생
+                    if (autoPlayQueue.length > 0) {
+                        playNextAutoSong();
+                    }
+                }
+            } catch (error) {
+                console.error('❌ 큐 복원 실패:', error);
+                autoPlayQueue = [];
+            }
+        }
+
+        // 자동재생 큐 업데이트
+        function updateAutoPlayQueue() {
+            const queueList = document.getElementById('songQueueList');
+            const songCount = document.getElementById('songCount');
+            
+            songCount.textContent = `총 ${autoPlayQueue.length}곡`;
+            
+            // localStorage에 저장
+            saveQueueToStorage();
+            
+            if (autoPlayQueue.length === 0) {
+                queueList.innerHTML = '<p class="empty-message">신청곡이 여기에 표시됩니다...</p>';
+                return;
+            }
+            
+            queueList.innerHTML = autoPlayQueue.map((song, index) => {
+                const isPlaying = index === 0;
+                const isPresent = song.requester === 'AI 추천' || currentViewers.has(song.requester);
+                const statusBadge = !isPresent ? '<span style="font-size: 9px; color: #ef4444; background: rgba(239, 68, 68, 0.2); padding: 2px 6px; border-radius: 3px; margin-left: 4px;">부재</span>' : '';
+                
+                return `
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: ${isPlaying ? 'rgba(147, 51, 234, 0.2)' : (!isPresent ? 'rgba(239, 68, 68, 0.1)' : '#1a1a1a')}; border-radius: 4px; margin-bottom: 4px; ${!isPresent ? 'opacity: 0.7;' : ''}">
+                        <div style="width: 20px; text-align: center; font-size: 11px; color: ${isPlaying ? '#9333ea' : '#666'};">
+                            ${isPlaying ? '▶' : index + 1}
+                        </div>
+                        <img src="${song.thumbnail}" style="width: 48px; height: 36px; border-radius: 4px; object-fit: cover;">
+                        <div style="flex: 1; min-width: 0;">
+                            <p style="font-size: 12px; font-weight: 600; color: white; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${song.title}</p>
+                            <p style="font-size: 10px; color: #999; margin: 2px 0 0 0;">${song.artist}</p>
+                            <p style="font-size: 10px; color: #666; margin: 2px 0 0 0; display: flex; align-items: center;">
+                                신청: ${song.requester}${statusBadge}
+                            </p>
+                        </div>
+                        ${isPlaying ? '<div style="width: 16px; height: 16px; border: 2px solid #9333ea; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>' : `<button onclick="removeAutoSong(${song.id})" style="padding: 4px 8px; background: #dc2626; color: white; border: none; border-radius: 4px; font-size: 10px; cursor: pointer;">삭제</button>`}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 자동재생 큐에서 삭제
+        window.removeAutoSong = (songId) => {
+            autoPlayQueue = autoPlayQueue.filter(s => s.id !== songId);
+            updateAutoPlayQueue();
+        };
+
+        // 다음 곡 자동 재생
+        async function playNextAutoSong() {
+            if (autoPlayQueue.length === 0) {
+                document.getElementById('nowPlaying').style.display = 'none';
+                document.getElementById('youtubePlayer').innerHTML = '<p style="color: #666; font-size: 12px;">신청곡이 없습니다</p>';
+                return;
+            }
+            
+            const currentSong = autoPlayQueue[0];
+            
+            // 부재자 자동 패스 체크 (AI 추천 제외)
+            if (autoSkipAbsentSetting && 
+                currentSong.requester !== 'AI 추천' && 
+                !currentViewers.has(currentSong.requester)) {
+                console.log('⏭️ 부재자 자동 패스:', currentSong.requester);
+                autoPlayQueue.shift();
+                updateAutoPlayQueue();
+                playNextAutoSong();
+                return;
+            }
+            
+            console.log('🎵 재생 시작:', currentSong);
+            
+            // 현재 재생 중 정보 표시
+            document.getElementById('nowPlaying').style.display = 'block';
+            document.getElementById('currentSongTitle').textContent = currentSong.title;
+            document.getElementById('currentRequester').textContent = currentSong.requester;
+            
+            try {
+                // 서버에서 스트림 URL 가져오기
+                const response = await fetch('/api/youtube/stream', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoId: currentSong.videoId })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // HTML5 video 태그로 재생
+                    const playerDiv = document.getElementById('youtubePlayer');
+                    playerDiv.innerHTML = `
+                        <video id="videoPlayer" style="width: 100%; height: 100%;" controls autoplay>
+                            <source src="${data.streamUrl}" type="video/mp4">
+                            브라우저가 비디오를 지원하지 않습니다.
+                        </video>
+                    `;
+                    
+                    const videoPlayer = document.getElementById('videoPlayer');
+                    currentVideoPlayer = videoPlayer;
+                    
+                    // 재생 종료 시 다음 곡 재생
+                    videoPlayer.onended = () => {
+                        console.log('✅ 재생 완료, 다음 곡으로...');
+                        autoPlayQueue.shift();
+                        updateAutoPlayQueue();
+                        playNextAutoSong();
+                    };
+                    
+                    // 에러 처리
+                    videoPlayer.onerror = (e) => {
+                        console.error('❌ 비디오 재생 오류:', e);
+                        autoPlayQueue.shift();
+                        updateAutoPlayQueue();
+                        playNextAutoSong();
+                    };
+                    
+                    updateAutoPlayQueue();
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('❌ YouTube 스트림 로드 실패:', error);
+                autoPlayQueue.shift();
+                updateAutoPlayQueue();
+                playNextAutoSong();
+            }
+        }
+
+        // CSS 애니메이션 추가
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+    <script src="/js/timezone-detector.js"></script>
+</body>
+</html>
