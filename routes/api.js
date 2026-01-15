@@ -448,6 +448,62 @@ router.post('/user/settings', requireAuth, async (req, res) => {
 });
 
 // YouTube 스트림 URL 추출 API
+// YouTube 영상 재생 가능 여부 검증 API
+router.post('/youtube/verify', async (req, res) => {
+    try {
+        const { videoId } = req.body;
+        
+        if (!videoId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'videoId가 필요합니다.' 
+            });
+        }
+        
+        console.log('🔍 YouTube 재생 가능 여부 검증:', videoId);
+        
+        try {
+            const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+            const info = await ytdl.getInfo(videoUrl);
+            
+            // 비디오+오디오 또는 오디오 포맷이 있는지 확인
+            const videoFormats = ytdl.filterFormats(info.formats, 'videoandaudio');
+            const audioFormats = ytdl.filterFormats(info.formats, 'audioonly');
+            
+            const isPlayable = videoFormats.length > 0 || audioFormats.length > 0;
+            
+            if (isPlayable) {
+                console.log('✅ 재생 가능:', videoId);
+                res.json({
+                    success: true,
+                    playable: true,
+                    message: '재생 가능한 영상입니다.'
+                });
+            } else {
+                console.log('❌ 재생 불가:', videoId, '(포맷 없음)');
+                res.json({
+                    success: true,
+                    playable: false,
+                    message: '재생할 수 없는 영상입니다. (저작권 제한 또는 embed 비활성화)'
+                });
+            }
+        } catch (error) {
+            console.log('❌ 재생 불가:', videoId, `(${error.message})`);
+            res.json({
+                success: true,
+                playable: false,
+                message: '재생할 수 없는 영상입니다.'
+            });
+        }
+    } catch (error) {
+        console.error('❌ 검증 오류:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '검증 중 오류가 발생했습니다.' 
+        });
+    }
+});
+
 router.post('/youtube/stream', async (req, res) => {
     try {
         const { videoId } = req.body;

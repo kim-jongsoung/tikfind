@@ -1014,6 +1014,10 @@
             
             try {
                 const userId = String(currentUser._id || currentUser.id);
+                const button = document.getElementById('streamerAddBtn');
+                button.disabled = true;
+                button.textContent = '🔍 검색 중...';
+                
                 const response = await fetch('/api/youtube/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1023,33 +1027,54 @@
                 const data = await response.json();
                 
                 if (data.success && data.video) {
-                    // autoPlayQueue에 직접 추가
-                    const newSong = {
-                        id: Date.now() + Math.random(),
-                        videoId: data.video.videoId,
-                        title: data.video.title,
-                        artist: artist,
-                        requester: currentUser.tiktokId || 'Streamer',
-                        thumbnail: data.video.thumbnail
-                    };
+                    // 재생 가능 여부 검증
+                    button.textContent = '✅ 검증 중...';
+                    const verifyResponse = await fetch('/api/youtube/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ videoId: data.video.videoId })
+                    });
                     
-                    autoPlayQueue.push(newSong);
-                    updateAutoPlayQueue();
+                    const verifyData = await verifyResponse.json();
                     
-                    // 첫 곡이면 자동 재생
-                    if (autoPlayQueue.length === 1) {
-                        playNextAutoSong();
+                    if (verifyData.success && verifyData.playable) {
+                        // 재생 가능 - autoPlayQueue에 추가
+                        const newSong = {
+                            id: Date.now() + Math.random(),
+                            videoId: data.video.videoId,
+                            title: data.video.title,
+                            artist: artist,
+                            requester: currentUser.tiktokId || 'Streamer',
+                            thumbnail: data.video.thumbnail
+                        };
+                        
+                        autoPlayQueue.push(newSong);
+                        updateAutoPlayQueue();
+                        
+                        // 첫 곡이면 자동 재생
+                        if (autoPlayQueue.length === 1) {
+                            playNextAutoSong();
+                        }
+                        
+                        input.value = '';
+                        console.log('✅ 신청곡 추가:', title, '-', artist);
+                        alert(`✅ "${title}" 곡이 추가되었습니다!`);
+                    } else {
+                        // 재생 불가
+                        console.log('❌ 재생 불가:', title, '-', artist);
+                        alert(`⚠️ "${title}" 재생 불가\n\n저작권 제한 또는 embed 비활성화된 영상입니다.\n다른 곡을 검색해주세요.`);
                     }
-                    
-                    input.value = '';
-                    console.log('✅ 신청곡 추가:', title, '-', artist);
-                    alert(`✅ "${title}" 곡이 추가되었습니다!`);
                 } else {
                     alert('노래를 찾을 수 없습니다. 다른 검색어로 시도해주세요.');
                 }
+                
+                button.disabled = false;
+                button.textContent = '🔍 검색 & 추가';
             } catch (error) {
                 console.error('❌ 신청곡 추가 오류:', error);
                 alert('신청곡 추가 중 오류가 발생했습니다.');
+                document.getElementById('streamerAddBtn').disabled = false;
+                document.getElementById('streamerAddBtn').textContent = '🔍 검색 & 추가';
             }
         }
 
