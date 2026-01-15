@@ -1567,10 +1567,18 @@
             queueList.innerHTML = autoPlayQueue.map((song, index) => {
                 const isPlaying = index === 0;
                 const isPresent = song.requester === 'AI 추천' || currentViewers.has(song.requester);
-                const statusBadge = !isPresent ? '<span style="font-size: 9px; color: #ef4444; background: rgba(239, 68, 68, 0.2); padding: 2px 6px; border-radius: 3px; margin-left: 4px;">부재</span>' : '';
+                const isFailed = song.failed || false;
+                
+                let statusBadges = '';
+                if (!isPresent) {
+                    statusBadges += '<span style="font-size: 9px; color: #ef4444; background: rgba(239, 68, 68, 0.2); padding: 2px 6px; border-radius: 3px; margin-left: 4px;">부재</span>';
+                }
+                if (isFailed) {
+                    statusBadges += '<span style="font-size: 9px; color: #f59e0b; background: rgba(245, 158, 11, 0.2); padding: 2px 6px; border-radius: 3px; margin-left: 4px;">⚠️ 재생불가</span>';
+                }
                 
                 return `
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: ${isPlaying ? 'rgba(147, 51, 234, 0.2)' : (!isPresent ? 'rgba(239, 68, 68, 0.1)' : '#1a1a1a')}; border-radius: 4px; margin-bottom: 4px; ${!isPresent ? 'opacity: 0.7;' : ''}">
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: ${isPlaying ? 'rgba(147, 51, 234, 0.2)' : (isFailed ? 'rgba(245, 158, 11, 0.1)' : (!isPresent ? 'rgba(239, 68, 68, 0.1)' : '#1a1a1a'))}; border-radius: 4px; margin-bottom: 4px; ${!isPresent || isFailed ? 'opacity: 0.7;' : ''}">
                         <div style="width: 20px; text-align: center; font-size: 11px; color: ${isPlaying ? '#9333ea' : '#666'};">
                             ${isPlaying ? '▶' : index + 1}
                         </div>
@@ -1579,8 +1587,9 @@
                             <p style="font-size: 12px; font-weight: 600; color: white; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${song.title}</p>
                             <p style="font-size: 10px; color: #999; margin: 2px 0 0 0;">${song.artist}</p>
                             <p style="font-size: 10px; color: #666; margin: 2px 0 0 0; display: flex; align-items: center;">
-                                신청: ${song.requester}${statusBadge}
+                                신청: ${song.requester}${statusBadges}
                             </p>
+                            ${isFailed ? `<p style="font-size: 9px; color: #f59e0b; margin: 2px 0 0 0;">💬 시청자에게 다른 곡 신청 요청</p>` : ''}
                         </div>
                         ${isPlaying ? '<div style="width: 16px; height: 16px; border: 2px solid #9333ea; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>' : `<button onclick="removeAutoSong(${song.id})" style="padding: 4px 8px; background: #dc2626; color: white; border: none; border-radius: 4px; font-size: 10px; cursor: pointer;">삭제</button>`}
                     </div>
@@ -1651,7 +1660,15 @@
                     const loadTimeout = setTimeout(() => {
                         if (!hasStartedPlaying) {
                             console.error('⏱️ 비디오 로딩 타임아웃 (10초) - 다음 곡으로');
-                            alert(`⚠️ "${currentSong.title}" 로딩 실패\n다음 곡으로 넘어갑니다.`);
+                            
+                            // 재생 실패 표시
+                            currentSong.failed = true;
+                            currentSong.failReason = '재생 불가 (로딩 타임아웃)';
+                            updateAutoPlayQueue();
+                            
+                            alert(`⚠️ "${currentSong.title}" 재생 불가\n\n시청자에게 다른 곡 신청을 요청하세요.`);
+                            
+                            // 다음 곡으로
                             autoPlayQueue.shift();
                             updateAutoPlayQueue();
                             playNextAutoSong();
@@ -1684,7 +1701,14 @@
                     videoPlayer.onerror = (e) => {
                         clearTimeout(loadTimeout);
                         console.error('❌ 비디오 재생 오류:', e);
-                        alert(`⚠️ "${currentSong.title}" 재생 오류\n다음 곡으로 넘어갑니다.`);
+                        
+                        // 재생 실패 표시
+                        currentSong.failed = true;
+                        currentSong.failReason = '재생 불가 (재생 오류)';
+                        updateAutoPlayQueue();
+                        
+                        alert(`⚠️ "${currentSong.title}" 재생 불가\n\n시청자에게 다른 곡 신청을 요청하세요.`);
+                        
                         autoPlayQueue.shift();
                         updateAutoPlayQueue();
                         playNextAutoSong();
