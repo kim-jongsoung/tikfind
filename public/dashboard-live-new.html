@@ -1023,21 +1023,27 @@
                 const data = await response.json();
                 
                 if (data.success && data.video) {
-                    // 신청곡 추가 (스트리머가 직접 추가)
-                    const songData = {
-                        title,
-                        artist,
-                        requester: {
-                            username: currentUser.tiktokId || 'Streamer',
-                            uniqueId: userId,
-                            badges: ['streamer']
-                        },
-                        youtubeData: data.video
+                    // autoPlayQueue에 직접 추가
+                    const newSong = {
+                        id: Date.now() + Math.random(),
+                        videoId: data.video.videoId,
+                        title: data.video.title,
+                        artist: artist,
+                        requester: currentUser.tiktokId || 'Streamer',
+                        thumbnail: data.video.thumbnail
                     };
                     
-                    socket.emit('add-song-request', { userId, songData });
+                    autoPlayQueue.push(newSong);
+                    updateAutoPlayQueue();
+                    
+                    // 첫 곡이면 자동 재생
+                    if (autoPlayQueue.length === 1) {
+                        playNextAutoSong();
+                    }
+                    
                     input.value = '';
-                    console.log('✅ 신청곡 추가 요청:', title, '-', artist);
+                    console.log('✅ 신청곡 추가:', title, '-', artist);
+                    alert(`✅ "${title}" 곡이 추가되었습니다!`);
                 } else {
                     alert('노래를 찾을 수 없습니다. 다른 검색어로 시도해주세요.');
                 }
