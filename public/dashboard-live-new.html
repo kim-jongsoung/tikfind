@@ -1072,9 +1072,12 @@
                 button.textContent = '🔍 검색 & 추가';
             } catch (error) {
                 console.error('❌ 신청곡 추가 오류:', error);
-                alert('신청곡 추가 중 오류가 발생했습니다.');
-                document.getElementById('streamerAddBtn').disabled = false;
-                document.getElementById('streamerAddBtn').textContent = '🔍 검색 & 추가';
+                alert(`신청곡 추가 중 오류가 발생했습니다.\n\n오류: ${error.message}\n\n콘솔(F12)을 확인해주세요.`);
+                const button = document.getElementById('streamerAddBtn');
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = '🔍 검색 & 추가';
+                }
             }
         }
 
