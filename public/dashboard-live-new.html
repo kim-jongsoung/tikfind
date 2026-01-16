@@ -1059,21 +1059,32 @@
                         
                         input.value = '';
                         console.log('✅ 신청곡 추가:', title, '-', artist);
-                        alert(`✅ "${title}" 곡이 추가되었습니다!`);
+                        // 버튼으로 피드백 (alert 제거)
+                        button.textContent = '✅ 추가 완료!';
+                        setTimeout(() => {
+                            button.textContent = '🔍 검색 & 추가';
+                        }, 2000);
                     } else {
                         // 재생 불가
                         console.log('❌ 재생 불가:', title, '-', artist);
-                        alert(`⚠️ "${title}" 재생 불가\n\n저작권 제한 또는 embed 비활성화된 영상입니다.\n다른 곡을 검색해주세요.`);
+                        // 버튼으로 피드백 (alert 제거)
+                        button.textContent = '❌ 재생 불가';
+                        setTimeout(() => {
+                            button.textContent = '🔍 검색 & 추가';
+                        }, 3000);
                     }
                 } else {
-                    alert('노래를 찾을 수 없습니다. 다른 검색어로 시도해주세요.');
+                    // 버튼으로 피드백 (alert 제거)
+                    button.textContent = '❌ 검색 실패';
+                    setTimeout(() => {
+                        button.textContent = '🔍 검색 & 추가';
+                    }, 3000);
                 }
                 
                 button.disabled = false;
-                button.textContent = '🔍 검색 & 추가';
             } catch (error) {
                 console.error('❌ 신청곡 추가 오류:', error);
-                alert(`신청곡 추가 중 오류가 발생했습니다.\n\n오류: ${error.message}\n\n콘솔(F12)을 확인해주세요.`);
+                // 버튼으로 피드백 (alert 제거)
                 const button = document.getElementById('streamerAddBtn');
                 if (button) {
                     button.disabled = false;
@@ -1699,17 +1710,17 @@
                         if (!hasStartedPlaying) {
                             console.error('⏱️ 비디오 로딩 타임아웃 (10초) - 다음 곡으로');
                             
-                            // 재생 실패 표시
+                            // 재생 실패 표시 (UI에만 표시, alert 없음)
                             currentSong.failed = true;
                             currentSong.failReason = '재생 불가 (로딩 타임아웃)';
                             updateAutoPlayQueue();
                             
-                            alert(`⚠️ "${currentSong.title}" 재생 불가\n\n시청자에게 다른 곡 신청을 요청하세요.`);
-                            
-                            // 다음 곡으로
-                            autoPlayQueue.shift();
-                            updateAutoPlayQueue();
-                            playNextAutoSong();
+                            // 조용히 다음 곡으로 (alert 제거)
+                            setTimeout(() => {
+                                autoPlayQueue.shift();
+                                updateAutoPlayQueue();
+                                playNextAutoSong();
+                            }, 1000);
                         }
                     }, 10000);
                     
@@ -1740,16 +1751,17 @@
                         clearTimeout(loadTimeout);
                         console.error('❌ 비디오 재생 오류:', e);
                         
-                        // 재생 실패 표시
+                        // 재생 실패 표시 (UI에만 표시, alert 없음)
                         currentSong.failed = true;
                         currentSong.failReason = '재생 불가 (재생 오류)';
                         updateAutoPlayQueue();
                         
-                        alert(`⚠️ "${currentSong.title}" 재생 불가\n\n시청자에게 다른 곡 신청을 요청하세요.`);
-                        
-                        autoPlayQueue.shift();
-                        updateAutoPlayQueue();
-                        playNextAutoSong();
+                        // 조용히 다음 곡으로 (alert 제거)
+                        setTimeout(() => {
+                            autoPlayQueue.shift();
+                            updateAutoPlayQueue();
+                            playNextAutoSong();
+                        }, 1000);
                     };
                     
                     updateAutoPlayQueue();
