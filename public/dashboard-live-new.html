@@ -110,6 +110,15 @@
                                     <span id="ttsSpeedValue" style="font-size: 9px; color: #999; min-width: 30px;">1.0x</span>
                                 </div>
                             </div>
+                            
+                            <!-- 시청자 신청곡 안내 -->
+                            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; margin-top: 8px;">
+                                <i class="fas fa-music" style="color: white; font-size: 12px;"></i>
+                                <span style="font-size: 10px; color: white; flex: 1;">신청곡신청은 #노래제목#가수이름 으로 신청해주세요.</span>
+                                <button id="copyGuideBtn" onclick="copyRequestGuide()" style="padding: 4px 8px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; font-size: 9px; cursor: pointer; transition: all 0.2s;">
+                                    <i class="fas fa-copy" style="margin-right: 2px;"></i>복사
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- 신청곡 큐 헤더 -->
@@ -163,20 +172,6 @@
                             </label>
                         </div>
                         
-                        <!-- 시청자 신청곡 안내 -->
-                        <div style="padding: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px; margin-bottom: 8px;">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                <i class="fas fa-info-circle" style="color: white; font-size: 14px;"></i>
-                                <span style="font-size: 11px; font-weight: 600; color: white;">시청자 신청곡 안내</span>
-                                <button id="copyGuideBtn" onclick="copyRequestGuide()" style="margin-left: auto; padding: 3px 8px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; font-size: 9px; cursor: pointer; transition: all 0.2s;">
-                                    <i class="fas fa-copy" style="margin-right: 2px;"></i>복사
-                                </button>
-                            </div>
-                            <div style="background: rgba(0,0,0,0.3); padding: 6px 8px; border-radius: 4px; font-family: 'Courier New', monospace;">
-                                <p style="margin: 0; font-size: 10px; color: #fff; font-weight: 600;">신청곡신청은 #노래제목#가수이름</p>
-                                <p style="margin: 4px 0 0 0; font-size: 9px; color: rgba(255,255,255,0.8);">예시: #Dynamite#BTS</p>
-                            </div>
-                        </div>
                         
                         <!-- 신청곡 관리 툴바 -->
                         <div class="song-toolbar">
