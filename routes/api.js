@@ -659,4 +659,63 @@ router.post('/popular-songs/random', async (req, res) => {
     }
 });
 
+// 사용량 카운팅 API
+router.post('/usage/increment', async (req, res) => {
+    try {
+        const { userId, featureType } = req.body;
+        
+        if (!userId || !featureType) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'userId와 featureType이 필요합니다.' 
+            });
+        }
+        
+        const UsageLog = require('../models/UsageLog');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // 오늘 사용량 로그 찾기 또는 생성
+        let usageLog = await UsageLog.findOne({ userId, date: today });
+        
+        if (!usageLog) {
+            usageLog = await UsageLog.create({
+                userId,
+                date: today,
+                songRequestCount: 0,
+                gptAiCount: 0,
+                pronunciationCoachCount: 0
+            });
+        }
+        
+        // 사용량 증가
+        if (featureType === 'songRequest') {
+            usageLog.songRequestCount = (usageLog.songRequestCount || 0) + 1;
+        } else if (featureType === 'gptAi') {
+            usageLog.gptAiCount = (usageLog.gptAiCount || 0) + 1;
+        } else if (featureType === 'pronunciationCoach') {
+            usageLog.pronunciationCoachCount = (usageLog.pronunciationCoachCount || 0) + 1;
+        }
+        
+        await usageLog.save();
+        
+        console.log(`✅ 사용량 카운팅: ${featureType} - ${userId}`);
+        
+        res.json({
+            success: true,
+            usage: {
+                songRequestCount: usageLog.songRequestCount,
+                gptAiCount: usageLog.gptAiCount,
+                pronunciationCoachCount: usageLog.pronunciationCoachCount
+            }
+        });
+    } catch (error) {
+        console.error('❌ 사용량 카운팅 오류:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '사용량 카운팅 실패' 
+        });
+    }
+});
+
 module.exports = router;
