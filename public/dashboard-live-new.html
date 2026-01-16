@@ -1045,7 +1045,8 @@
                             title: data.video.title,
                             artist: artist,
                             requester: currentUser.tiktokId || 'Streamer',
-                            thumbnail: data.video.thumbnail
+                            thumbnail: data.video.thumbnail,
+                            isStreamer: true // 스트리머가 직접 추가한 곡
                         };
                         
                         autoPlayQueue.push(newSong);
@@ -1594,11 +1595,19 @@
             
             queueList.innerHTML = autoPlayQueue.map((song, index) => {
                 const isPlaying = index === 0;
-                const isPresent = song.requester === 'AI 추천' || currentViewers.has(song.requester);
+                const isStreamerSong = song.isStreamer === true;
+                const isAISong = song.requester === 'AI 추천';
+                // 스트리머 직접 등록 또는 AI 추천 또는 시청자 재실 중
+                const isPresent = isStreamerSong || isAISong || currentViewers.has(song.requester);
                 const isFailed = song.failed || false;
                 
                 let statusBadges = '';
-                if (!isPresent) {
+                // 스트리머 직접 등록 곡 표시
+                if (isStreamerSong) {
+                    statusBadges += '<span style="font-size: 9px; color: #9333ea; background: rgba(147, 51, 234, 0.2); padding: 2px 6px; border-radius: 3px; margin-left: 4px;">🎤 스트리머</span>';
+                }
+                // 부재 표시 (스트리머/AI 제외)
+                if (!isPresent && !isStreamerSong && !isAISong) {
                     statusBadges += '<span style="font-size: 9px; color: #ef4444; background: rgba(239, 68, 68, 0.2); padding: 2px 6px; border-radius: 3px; margin-left: 4px;">부재</span>';
                 }
                 if (isFailed) {
@@ -1641,9 +1650,10 @@
             
             const currentSong = autoPlayQueue[0];
             
-            // 부재자 자동 패스 체크 (AI 추천 제외)
+            // 부재자 자동 패스 체크 (AI 추천, 스트리머 직접 등록 제외)
             if (autoSkipAbsentSetting && 
                 currentSong.requester !== 'AI 추천' && 
+                !currentSong.isStreamer &&
                 !currentViewers.has(currentSong.requester)) {
                 console.log('⏭️ 부재자 자동 패스:', currentSong.requester);
                 autoPlayQueue.shift();
