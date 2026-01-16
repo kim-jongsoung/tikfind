@@ -5,6 +5,7 @@ const path = require('path');
 const archiver = require('archiver');
 const User = require('../models/User');
 const ytdl = require('@distube/ytdl-core');
+const SongRequestService = require('../services/SongRequestService');
 
 // 사용자별 신청곡 쿨다운 맵 (메모리 기반)
 // { userId: { lastRequestTime: Date, cooldownMinutes: Number } }
@@ -714,6 +715,52 @@ router.post('/usage/increment', async (req, res) => {
         res.status(500).json({ 
             success: false, 
             message: '사용량 카운팅 실패' 
+        });
+    }
+});
+
+// 신청곡 검색 API (DB 체크 → API 조회 → DB 저장)
+router.post('/song-request/search', async (req, res) => {
+    try {
+        const { userId, title, artist } = req.body;
+        
+        if (!userId || !title) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'userId와 title이 필요합니다.' 
+            });
+        }
+        
+        console.log('🎵 신청곡 검색:', title, artist || '');
+        
+        const songRequestService = new SongRequestService();
+        const song = await songRequestService.searchSong(title, artist || '');
+        
+        if (song) {
+            console.log('✅ 곡 찾음:', song.videoId);
+            res.json({
+                success: true,
+                song: {
+                    videoId: song.videoId,
+                    title: song.title || title,
+                    artist: song.channelTitle || song.artist,
+                    thumbnail: song.thumbnail,
+                    fromDB: song.fromDB || false
+                }
+            });
+        } else {
+            console.log('❌ 곡을 찾을 수 없음');
+            res.json({
+                success: false,
+                message: '곡을 찾을 수 없습니다.'
+            });
+        }
+    } catch (error) {
+        console.error('❌ 신청곡 검색 오류:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '신청곡 검색 실패',
+            error: error.message
         });
     }
 });

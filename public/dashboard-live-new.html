@@ -1012,23 +1012,28 @@
                 button.disabled = true;
                 button.textContent = '🔍 검색 중...';
                 
-                const response = await fetch('/api/youtube/search', {
+                // SongRequestService 사용 (DB 체크 → API 조회 → DB 저장)
+                const response = await fetch('/api/song-request/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ title, artist })
+                    body: JSON.stringify({ 
+                        userId,
+                        title, 
+                        artist 
+                    })
                 });
                 
                 const data = await response.json();
                 
-                if (data.success && data.video) {
-                    // 검증 없이 바로 추가
+                if (data.success && data.song) {
+                    // DB 또는 API에서 찾은 곡 추가
                     const newSong = {
                         id: Date.now() + Math.random(),
-                        videoId: data.video.videoId,
-                        title: data.video.title,
-                        artist: data.video.channelTitle || artist, // YouTube 검색 결과의 실제 가수명 사용
+                        videoId: data.song.videoId,
+                        title: data.song.title || title,
+                        artist: data.song.channelTitle || data.song.artist || artist,
                         requester: currentUser.tiktokId || 'Streamer',
-                        thumbnail: data.video.thumbnail,
+                        thumbnail: data.song.thumbnail,
                         isStreamer: true // 스트리머가 직접 추가한 곡
                     };
                     
