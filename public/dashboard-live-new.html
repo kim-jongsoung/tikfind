@@ -1651,8 +1651,14 @@
                 playerVars: {
                     autoplay: 0,
                     controls: 1,
-                    rel: 0,
-                    modestbranding: 1
+                    rel: 0,                    // 관련 동영상 표시 안 함
+                    modestbranding: 1,         // YouTube 로고 최소화
+                    fs: 1,                     // 전체화면 버튼 표시
+                    cc_load_policy: 0,         // 자막 기본 비활성화
+                    iv_load_policy: 3,         // 주석 표시 안 함
+                    disablekb: 0,              // 키보드 컨트롤 활성화
+                    playsinline: 1,            // 인라인 재생
+                    origin: window.location.origin  // 보안 설정
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -1669,11 +1675,18 @@
             currentVideoPlayer = youtubePlayer;
         }
 
+        // 광고 감지 타이머
+        let adCheckInterval = null;
+
         // Player 상태 변화 감지 (핵심: 다음 곡 자동 재생)
         function onPlayerStateChange(event) {
             // YT.PlayerState.ENDED = 0 (재생 종료)
             if (event.data === YT.PlayerState.ENDED) {
                 console.log('✅ 재생 완료, 다음 곡으로...');
+                if (adCheckInterval) {
+                    clearInterval(adCheckInterval);
+                    adCheckInterval = null;
+                }
                 autoPlayQueue.shift();
                 updateAutoPlayQueue();
                 playNextAutoSong();
@@ -1681,6 +1694,34 @@
             // YT.PlayerState.PLAYING = 1 (재생 중)
             else if (event.data === YT.PlayerState.PLAYING) {
                 console.log('▶️ 재생 시작');
+                
+                // 광고 감지 시작
+                if (adCheckInterval) clearInterval(adCheckInterval);
+                adCheckInterval = setInterval(() => {
+                    try {
+                        // 광고 URL 패턴 감지
+                        const playerUrl = youtubePlayer.getVideoUrl();
+                        if (playerUrl && (playerUrl.includes('/ads') || playerUrl.includes('googleads'))) {
+                            console.log('🚫 광고 감지 - 다음 곡으로 스킵');
+                            clearInterval(adCheckInterval);
+                            adCheckInterval = null;
+                            
+                            // 현재 곡 유지하고 다시 재생 시도
+                            setTimeout(() => {
+                                playNextAutoSong();
+                            }, 1000);
+                        }
+                    } catch (e) {
+                        // getVideoUrl() 호출 실패 시 무시
+                    }
+                }, 2000); // 2초마다 체크
+            }
+            // YT.PlayerState.PAUSED = 2 (일시정지)
+            else if (event.data === YT.PlayerState.PAUSED) {
+                if (adCheckInterval) {
+                    clearInterval(adCheckInterval);
+                    adCheckInterval = null;
+                }
             }
         }
 
