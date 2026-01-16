@@ -517,9 +517,19 @@ router.post('/youtube/stream', async (req, res) => {
         
         console.log('🎵 YouTube 스트림 URL 추출 시작:', videoId);
         
-        // YouTube 비디오 정보 가져오기
+        // YouTube 비디오 정보 가져오기 (옵션 추가로 안정성 개선)
         const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        const info = await ytdl.getInfo(videoUrl);
+        const info = await ytdl.getInfo(videoUrl, {
+            requestOptions: {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive'
+                }
+            }
+        });
         
         console.log('📊 사용 가능한 포맷 수:', info.formats.length);
         
@@ -530,13 +540,25 @@ router.post('/youtube/stream', async (req, res) => {
         console.log('🎬 비디오+오디오 포맷:', videoFormats.length);
         console.log('🎵 오디오 전용 포맷:', audioFormats.length);
         
-        // 최고 품질의 포맷 선택
+        // 포맷 선택 로직 개선 - 여러 품질 시도
         let selectedFormat = null;
         if (videoFormats.length > 0) {
-            // 360p 또는 480p 정도의 중간 품질 선택 (안정성)
-            selectedFormat = videoFormats.find(f => f.qualityLabel === '360p') || videoFormats[0];
+            // 낮은 품질부터 시도 (안정성 우선)
+            const qualities = ['144p', '240p', '360p', '480p'];
+            for (const quality of qualities) {
+                selectedFormat = videoFormats.find(f => f.qualityLabel === quality);
+                if (selectedFormat) break;
+            }
+            // 찾지 못하면 첫 번째 포맷 사용
+            if (!selectedFormat) selectedFormat = videoFormats[0];
         } else if (audioFormats.length > 0) {
-            selectedFormat = audioFormats[0];
+            // 오디오 포맷 중 가장 낮은 품질 선택 (안정성)
+            selectedFormat = audioFormats.sort((a, b) => 
+                (a.audioBitrate || 0) - (b.audioBitrate || 0)
+            )[0];
+        } else {
+            // 마지막 수단: 모든 포맷 중 첫 번째
+            selectedFormat = info.formats.find(f => f.url);
         }
         
         if (!selectedFormat || !selectedFormat.url) {
