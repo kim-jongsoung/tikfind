@@ -1440,19 +1440,21 @@
             let isPaused = false;
             document.getElementById('pausePlayBtn').onclick = () => {
                 const btn = document.getElementById('pausePlayBtn');
-                if (currentVideoPlayer) {
-                    if (isPaused) {
-                        currentVideoPlayer.play();
-                        btn.innerHTML = '<i class="fas fa-pause" style="margin-right: 2px;"></i>일시정지';
-                        btn.style.background = '#f59e0b';
-                        console.log('▶️ 음악 재생');
-                        isPaused = false;
-                    } else {
-                        currentVideoPlayer.pause();
+                if (youtubePlayer && isPlayerReady) {
+                    const state = youtubePlayer.getPlayerState();
+                    // 1 = 재생 중, 2 = 일시정지
+                    if (state === 1) {
+                        youtubePlayer.pauseVideo();
                         btn.innerHTML = '<i class="fas fa-play" style="margin-right: 2px;"></i>재생';
                         btn.style.background = '#10b981';
                         console.log('⏸️ 음악 일시정지');
                         isPaused = true;
+                    } else {
+                        youtubePlayer.playVideo();
+                        btn.innerHTML = '<i class="fas fa-pause" style="margin-right: 2px;"></i>일시정지';
+                        btn.style.background = '#f59e0b';
+                        console.log('▶️ 음악 재생');
+                        isPaused = false;
                     }
                 } else {
                     alert('재생 중인 곡이 없습니다.');
@@ -1625,11 +1627,86 @@
             updateAutoPlayQueue();
         };
 
+        // YouTube IFrame Player 전역 변수
+        let youtubePlayer = null;
+        let isPlayerReady = false;
+
+        // YouTube IFrame API 준비 완료 콜백
+        window.onYouTubeIframeAPIReady = function() {
+            console.log('✅ YouTube IFrame API 준비 완료');
+            initYouTubePlayer();
+        };
+
+        // YouTube Player 초기화
+        function initYouTubePlayer() {
+            const playerDiv = document.getElementById('youtubePlayer');
+            playerDiv.innerHTML = '<div id="ytPlayer"></div>';
+            
+            youtubePlayer = new YT.Player('ytPlayer', {
+                height: '100%',
+                width: '100%',
+                videoId: '',
+                playerVars: {
+                    autoplay: 0,
+                    controls: 1,
+                    rel: 0,
+                    modestbranding: 1
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
+        // Player 준비 완료
+        function onPlayerReady(event) {
+            console.log('✅ YouTube Player 준비 완료');
+            isPlayerReady = true;
+            currentVideoPlayer = youtubePlayer;
+        }
+
+        // Player 상태 변화 감지 (핵심: 다음 곡 자동 재생)
+        function onPlayerStateChange(event) {
+            // YT.PlayerState.ENDED = 0 (재생 종료)
+            if (event.data === YT.PlayerState.ENDED) {
+                console.log('✅ 재생 완료, 다음 곡으로...');
+                autoPlayQueue.shift();
+                updateAutoPlayQueue();
+                playNextAutoSong();
+            }
+            // YT.PlayerState.PLAYING = 1 (재생 중)
+            else if (event.data === YT.PlayerState.PLAYING) {
+                console.log('▶️ 재생 시작');
+            }
+        }
+
+        // Player 에러 처리
+        function onPlayerError(event) {
+            console.error('❌ YouTube Player 에러:', event.data);
+            const currentSong = autoPlayQueue[0];
+            if (currentSong) {
+                currentSong.failed = true;
+                currentSong.failReason = '재생 불가 (YouTube 에러)';
+                updateAutoPlayQueue();
+                
+                // 다음 곡으로
+                setTimeout(() => {
+                    autoPlayQueue.shift();
+                    updateAutoPlayQueue();
+                    playNextAutoSong();
+                }, 1000);
+            }
+        }
+
         // 다음 곡 자동 재생
         async function playNextAutoSong() {
             if (autoPlayQueue.length === 0) {
                 document.getElementById('nowPlaying').style.display = 'none';
-                document.getElementById('youtubePlayer').innerHTML = '<p style="color: #666; font-size: 12px;">신청곡이 없습니다</p>';
+                if (youtubePlayer) {
+                    youtubePlayer.stopVideo();
+                }
                 return;
             }
             
@@ -1655,117 +1732,36 @@
             document.getElementById('currentRequester').textContent = currentSong.requester;
             
             try {
-                // 서버에서 스트림 URL 가져오기
-                const response = await fetch('/api/youtube/stream', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ videoId: currentSong.videoId })
+                // YouTube Player가 준비되지 않았으면 초기화
+                if (!youtubePlayer || !isPlayerReady) {
+                    console.log('⏳ YouTube Player 초기화 중...');
+                    initYouTubePlayer();
+                    // Player 준비될 때까지 대기
+                    setTimeout(() => playNextAutoSong(), 1000);
+                    return;
+                }
+                
+                // YouTube IFrame Player로 재생
+                youtubePlayer.loadVideoById({
+                    videoId: currentSong.videoId,
+                    startSeconds: 0
                 });
                 
-                const data = await response.json();
-                
-                if (data.success) {
-                    // HTML5 video 태그로 재생
-                    const playerDiv = document.getElementById('youtubePlayer');
-                    playerDiv.innerHTML = `
-                        <video id="videoPlayer" style="width: 100%; height: 100%;" controls autoplay>
-                            <source src="${data.streamUrl}" type="video/mp4">
-                            브라우저가 비디오를 지원하지 않습니다.
-                        </video>
-                    `;
-                    
-                    const videoPlayer = document.getElementById('videoPlayer');
-                    currentVideoPlayer = videoPlayer;
-                    
-                    let hasStartedPlaying = false;
-                    
-                    // 10초 타임아웃 - 재생 시작 안 되면 스킵
-                    const loadTimeout = setTimeout(() => {
-                        if (!hasStartedPlaying) {
-                            console.error('⏱️ 비디오 로딩 타임아웃 (10초) - 다음 곡으로');
-                            
-                            // 재생 실패 표시 (UI에만 표시, alert 없음)
-                            currentSong.failed = true;
-                            currentSong.failReason = '재생 불가 (로딩 타임아웃)';
-                            updateAutoPlayQueue();
-                            
-                            // 조용히 다음 곡으로 (alert 제거)
-                            setTimeout(() => {
-                                autoPlayQueue.shift();
-                                updateAutoPlayQueue();
-                                playNextAutoSong();
-                            }, 1000);
-                        }
-                    }, 10000);
-                    
-                    // 재생 시작 감지
-                    videoPlayer.onloadeddata = () => {
-                        hasStartedPlaying = true;
-                        clearTimeout(loadTimeout);
-                        console.log('✅ 비디오 로딩 완료');
-                    };
-                    
-                    videoPlayer.onplaying = () => {
-                        hasStartedPlaying = true;
-                        clearTimeout(loadTimeout);
-                        console.log('▶️ 비디오 재생 시작');
-                    };
-                    
-                    // 재생 종료 시 다음 곡 재생
-                    videoPlayer.onended = () => {
-                        clearTimeout(loadTimeout);
-                        console.log('✅ 재생 완료, 다음 곡으로...');
-                        autoPlayQueue.shift();
-                        updateAutoPlayQueue();
-                        
-                        // 다음 곡이 신청곡(시청자/스트리머)이면 AI 자동재생 정지
-                        if (autoPlayQueue.length > 0) {
-                            const nextSong = autoPlayQueue[0];
-                            if (nextSong.requester !== 'AI 추천' && aiAutoPlayEnabled) {
-                                console.log('🎵 신청곡 발견 - AI 자동재생 정지');
-                                aiAutoPlayEnabled = false;
-                                const button = document.getElementById('aiAutoPlayBtn');
-                                if (button) {
-                                    button.style.background = '#9333ea';
-                                    button.innerHTML = '<i class="fas fa-robot" style="margin-right: 2px;"></i>AI 자동재생';
-                                }
-                                if (aiAutoPlayInterval) {
-                                    clearInterval(aiAutoPlayInterval);
-                                    aiAutoPlayInterval = null;
-                                }
-                            }
-                        }
-                        
-                        playNextAutoSong();
-                    };
-                    
-                    // 에러 처리
-                    videoPlayer.onerror = (e) => {
-                        clearTimeout(loadTimeout);
-                        console.error('❌ 비디오 재생 오류:', e);
-                        
-                        // 재생 실패 표시 (UI에만 표시, alert 없음)
-                        currentSong.failed = true;
-                        currentSong.failReason = '재생 불가 (재생 오류)';
-                        updateAutoPlayQueue();
-                        
-                        // 조용히 다음 곡으로 (alert 제거)
-                        setTimeout(() => {
-                            autoPlayQueue.shift();
-                            updateAutoPlayQueue();
-                            playNextAutoSong();
-                        }, 1000);
-                    };
-                    
-                    updateAutoPlayQueue();
-                } else {
-                    throw new Error(data.message);
-                }
+                console.log('✅ YouTube Player로 재생:', currentSong.videoId);
             } catch (error) {
-                console.error('❌ YouTube 스트림 로드 실패:', error);
-                autoPlayQueue.shift();
+                console.error('❌ 재생 오류:', error);
+                
+                // 재생 실패 표시
+                currentSong.failed = true;
+                currentSong.failReason = '재생 불가 (시스템 오류)';
                 updateAutoPlayQueue();
-                playNextAutoSong();
+                
+                // 다음 곡으로
+                setTimeout(() => {
+                    autoPlayQueue.shift();
+                    updateAutoPlayQueue();
+                    playNextAutoSong();
+                }, 1000);
             }
         }
 
