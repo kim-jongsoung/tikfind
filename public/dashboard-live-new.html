@@ -1427,12 +1427,14 @@
             document.getElementById('nextSongBtn').onclick = () => {
                 if (autoPlayQueue.length > 0) {
                     console.log('⏭️ 다음 곡으로 스킵');
-                    if (currentVideoPlayer) {
-                        currentVideoPlayer.pause();
+                    if (youtubePlayer && isPlayerReady) {
+                        youtubePlayer.stopVideo();
                     }
                     autoPlayQueue.shift();
                     updateAutoPlayQueue();
                     playNextAutoSong();
+                } else {
+                    alert('재생할 곡이 없습니다.');
                 }
             };
 
