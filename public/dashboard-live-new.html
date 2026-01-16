@@ -1433,7 +1433,7 @@
                         
                         // 첫 곡이면 자동 재생
                         if (autoPlayQueue.length === 1) {
-                            playNextAutoSong();
+                            await playNextAutoSong();
                         }
                         
                         console.log('✅ AI 곡 추가:', song.title, '-', song.artist);
