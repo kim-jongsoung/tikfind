@@ -1361,12 +1361,10 @@
                     button.innerHTML = '<i class="fas fa-stop" style="margin-right: 2px;"></i>자동재생 중...';
                     console.log('🤖 AI 자동재생 시작 - 장르:', genre);
                     
-                    // 큐가 비면 자동으로 곡 추가 (신청곡 없을 때만)
+                    // 큐가 비면 자동으로 AI 곡 추가
                     aiAutoPlayInterval = setInterval(async () => {
-                        // 신청곡(시청자/스트리머)이 없고 AI 자동재생이 활성화되어 있을 때만
-                        const hasUserSongs = autoPlayQueue.some(song => song.requester !== 'AI 추천');
-                        if (!hasUserSongs && autoPlayQueue.length === 0 && aiAutoPlayEnabled) {
-                            console.log('🎵 신청곡 없음 - AI 곡 자동 추가');
+                        if (autoPlayQueue.length === 0 && aiAutoPlayEnabled) {
+                            console.log('🎵 큐가 비어서 AI 곡 자동 추가');
                             await addAISong(genre);
                         }
                     }, 3000); // 3초마다 체크
@@ -1719,6 +1717,25 @@
                         console.log('✅ 재생 완료, 다음 곡으로...');
                         autoPlayQueue.shift();
                         updateAutoPlayQueue();
+                        
+                        // 다음 곡이 신청곡(시청자/스트리머)이면 AI 자동재생 정지
+                        if (autoPlayQueue.length > 0) {
+                            const nextSong = autoPlayQueue[0];
+                            if (nextSong.requester !== 'AI 추천' && aiAutoPlayEnabled) {
+                                console.log('🎵 신청곡 발견 - AI 자동재생 정지');
+                                aiAutoPlayEnabled = false;
+                                const button = document.getElementById('aiAutoPlayBtn');
+                                if (button) {
+                                    button.style.background = '#9333ea';
+                                    button.innerHTML = '<i class="fas fa-robot" style="margin-right: 2px;"></i>AI 자동재생';
+                                }
+                                if (aiAutoPlayInterval) {
+                                    clearInterval(aiAutoPlayInterval);
+                                    aiAutoPlayInterval = null;
+                                }
+                            }
+                        }
+                        
                         playNextAutoSong();
                     };
                     
