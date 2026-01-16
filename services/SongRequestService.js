@@ -40,20 +40,12 @@ class SongRequestService {
      */
     async searchSong(title, artist) {
         try {
-            // 1. 먼저 DB에서 검색 (무료, 빠름)
-            console.log('🔍 DB 검색 시작:', title, artist);
+            // 1. 먼저 DB에서 검색 (무료, 빠름) - 제목만으로 검색 (비용 절감)
+            console.log('🔍 DB 검색 시작 (제목만):', title);
             
             const dbSong = await PopularSong.findOne({
-                $or: [
-                    {
-                        title: new RegExp(title, 'i'),
-                        artist: new RegExp(artist, 'i')
-                    },
-                    {
-                        $text: { $search: `${title} ${artist}` }
-                    }
-                ]
-            });
+                title: new RegExp(title, 'i')
+            }).sort({ requestCount: -1 }); // 신청 횟수 많은 곡 우선
 
             if (dbSong) {
                 console.log('✅ DB에서 찾음 (무료):', dbSong.title);
