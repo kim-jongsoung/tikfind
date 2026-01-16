@@ -1032,7 +1032,7 @@
                         id: Date.now() + Math.random(),
                         videoId: data.video.videoId,
                         title: data.video.title,
-                        artist: artist,
+                        artist: data.video.channelTitle || artist, // YouTube 검색 결과의 실제 가수명 사용
                         requester: currentUser.tiktokId || 'Streamer',
                         thumbnail: data.video.thumbnail,
                         isStreamer: true // 스트리머가 직접 추가한 곡
