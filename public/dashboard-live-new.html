@@ -117,6 +117,7 @@
                             <h3 class="section-title" style="margin: 0;">🎵 신청곡 큐</h3>
                             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                                 <select id="genreSelect" style="padding: 4px 8px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                    <option value="" disabled selected>AI재생장르선택</option>
                                     <option value="all">전체 (0곡)</option>
                                     <option value="kpop">K-POP (0곡)</option>
                                     <option value="pop">팝 (0곡)</option>
@@ -1360,13 +1361,15 @@
                     button.innerHTML = '<i class="fas fa-stop" style="margin-right: 2px;"></i>자동재생 중...';
                     console.log('🤖 AI 자동재생 시작 - 장르:', genre);
                     
-                    // 큐가 비면 자동으로 곡 추가
+                    // 큐가 비면 자동으로 곡 추가 (신청곡 없을 때만)
                     aiAutoPlayInterval = setInterval(async () => {
-                        if (autoPlayQueue.length === 0 && aiAutoPlayEnabled) {
-                            console.log('🎵 큐가 비어서 AI 곡 자동 추가');
+                        // 신청곡(시청자/스트리머)이 없고 AI 자동재생이 활성화되어 있을 때만
+                        const hasUserSongs = autoPlayQueue.some(song => song.requester !== 'AI 추천');
+                        if (!hasUserSongs && autoPlayQueue.length === 0 && aiAutoPlayEnabled) {
+                            console.log('🎵 신청곡 없음 - AI 곡 자동 추가');
                             await addAISong(genre);
                         }
-                    }, 2000); // 2초마다 체크
+                    }, 3000); // 3초마다 체크
                     
                     // 즉시 첫 곡 추가
                     if (autoPlayQueue.length === 0) {

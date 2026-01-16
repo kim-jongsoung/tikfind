@@ -140,7 +140,12 @@ class SongRequestService {
                 }
                 
                 return {
-                    ...youtubeResult,
+                    videoId: youtubeResult.videoId,
+                    title: title,
+                    artist: artist,
+                    channelTitle: youtubeResult.channelTitle,
+                    thumbnail: youtubeResult.thumbnail,
+                    url: youtubeResult.url,
                     fromDB: false
                 };
             }
