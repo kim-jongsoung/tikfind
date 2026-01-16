@@ -38,14 +38,65 @@ class SongRequestService {
      * @param {string} title - 노래 제목
      * @param {string} artist - 가수 이름
      */
+    /**
+     * 문자열 유사도 계산 (Levenshtein Distance)
+     */
+    calculateSimilarity(str1, str2) {
+        const s1 = str1.toLowerCase();
+        const s2 = str2.toLowerCase();
+        
+        const costs = [];
+        for (let i = 0; i <= s1.length; i++) {
+            let lastValue = i;
+            for (let j = 0; j <= s2.length; j++) {
+                if (i === 0) {
+                    costs[j] = j;
+                } else if (j > 0) {
+                    let newValue = costs[j - 1];
+                    if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    }
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
+                }
+            }
+            if (i > 0) costs[s2.length] = lastValue;
+        }
+        
+        const maxLength = Math.max(s1.length, s2.length);
+        return maxLength === 0 ? 1 : 1 - costs[s2.length] / maxLength;
+    }
+
     async searchSong(title, artist) {
         try {
-            // 1. 먼저 DB에서 검색 (무료, 빠름) - 제목만으로 검색 (비용 절감)
+            // 1. 먼저 DB에서 정확히 검색 (무료, 빠름)
             console.log('🔍 DB 검색 시작 (제목만):', title);
             
-            const dbSong = await PopularSong.findOne({
+            let dbSong = await PopularSong.findOne({
                 title: new RegExp(title, 'i')
             }).sort({ requestCount: -1 }); // 신청 횟수 많은 곡 우선
+
+            // 2. 정확한 매칭 실패 시 유사도 검색 (오타 처리)
+            if (!dbSong) {
+                console.log('🔍 유사도 검색 시작 (오타 처리)');
+                const allSongs = await PopularSong.find({ isActive: true }).limit(200);
+                
+                let bestMatch = null;
+                let bestSimilarity = 0;
+                
+                for (const song of allSongs) {
+                    const similarity = this.calculateSimilarity(title, song.title);
+                    if (similarity > bestSimilarity && similarity >= 0.7) { // 70% 이상 유사
+                        bestSimilarity = similarity;
+                        bestMatch = song;
+                    }
+                }
+                
+                if (bestMatch) {
+                    console.log(`✅ 유사 곡 찾음 (${Math.round(bestSimilarity * 100)}% 일치):`, bestMatch.title);
+                    dbSong = bestMatch;
+                }
+            }
 
             if (dbSong) {
                 console.log('✅ DB에서 찾음 (무료):', dbSong.title);

@@ -192,19 +192,34 @@ async function searchYouTube(query, genre) {
         });
 
         if (response.data.items && response.data.items.length > 0) {
-            return response.data.items.map(video => ({
-                videoId: video.id.videoId,
-                title: video.snippet.title,
-                artist: video.snippet.channelTitle,
-                thumbnail: video.snippet.thumbnails.high.url,
-                genre: genre,
-                keywords: [
-                    video.snippet.title.toLowerCase(),
-                    video.snippet.channelTitle.toLowerCase()
-                ],
-                source: 'auto',
-                popularity: 100
-            }));
+            // 부정확한 제목 필터링
+            const invalidKeywords = [
+                '모음', 'mix', 'playlist', 'compilation', 
+                '인기곡', '베스트', 'best', 'top',
+                '2024', '2025', '2026', // 연도
+                'hour', 'hours', '시간',
+                'full album', '전곡'
+            ];
+            
+            return response.data.items
+                .filter(video => {
+                    const title = video.snippet.title.toLowerCase();
+                    // 부정확한 키워드 포함 시 제외
+                    return !invalidKeywords.some(keyword => title.includes(keyword));
+                })
+                .map(video => ({
+                    videoId: video.id.videoId,
+                    title: video.snippet.title,
+                    artist: video.snippet.channelTitle,
+                    thumbnail: video.snippet.thumbnails.high.url,
+                    genre: genre,
+                    keywords: [
+                        video.snippet.title.toLowerCase(),
+                        video.snippet.channelTitle.toLowerCase()
+                    ],
+                    source: 'auto',
+                    popularity: 100
+                }));
         }
 
         return [];
