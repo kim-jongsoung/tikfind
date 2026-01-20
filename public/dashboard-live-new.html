@@ -1278,15 +1278,18 @@
                     if (data.success && data.genres && data.genres.length > 0) {
                         const genreSelect = document.getElementById('genreSelect');
                         
-                        // 드롭다운 옵션 업데이트
-                        genreSelect.innerHTML = data.genres.map(genre => 
-                            `<option value="${genre._id}">${genre.name} (${genre.curatedCount || 0}곡)</option>`
-                        ).join('');
+                        // 드롭다운 옵션 업데이트 (첫 메뉴 포함)
+                        genreSelect.innerHTML = `
+                            <option value="" disabled selected>AI재생장르선택</option>
+                            ${data.genres.map(genre => 
+                                `<option value="${genre._id}">${genre.name} (${genre.curatedCount || 0}곡)</option>`
+                            ).join('')}
+                        `;
                         
                         console.log('✅ AI 큐레이션 장르 로드:', data.genres.length, '개');
                     } else {
                         const genreSelect = document.getElementById('genreSelect');
-                        genreSelect.innerHTML = '<option value="" disabled>장르를 먼저 추가하세요</option>';
+                        genreSelect.innerHTML = '<option value="" disabled selected>장르를 먼저 추가하세요</option>';
                         console.log('⚠️ 큐레이션된 장르가 없습니다');
                     }
                 } catch (error) {
