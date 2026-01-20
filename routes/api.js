@@ -916,20 +916,26 @@ router.post('/admin/genres/:id/curate', async (req, res) => {
     try {
         const { id } = req.params;
         
-        // 비동기로 큐레이션 실행 (시간이 오래 걸림)
+        console.log(`🎵 큐레이션 시작: 장르 ID = ${id}`);
+        
+        // 동기로 실행하고 결과 반환
+        const result = await AICurationService.curateGenre(id);
+        
+        console.log(`✅ 큐레이션 완료:`, result);
+        
         res.json({ 
             success: true, 
-            message: 'AI 큐레이션이 시작되었습니다. 약 1-2분 소요됩니다.' 
-        });
-        
-        // 백그라운드에서 실행
-        AICurationService.curateGenre(id).catch(error => {
-            console.error('❌ 백그라운드 큐레이션 실패:', error);
+            message: '큐레이션이 완료되었습니다!',
+            ...result
         });
         
     } catch (error) {
-        console.error('❌ 큐레이션 시작 오류:', error);
-        res.status(500).json({ success: false, message: '큐레이션 시작 실패' });
+        console.error('❌ 큐레이션 실패:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || '큐레이션 실패',
+            error: error.toString()
+        });
     }
 });
 

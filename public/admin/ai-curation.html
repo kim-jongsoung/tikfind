@@ -251,6 +251,21 @@
         async function curateGenre(id) {
             if (!confirm('AI가 이 장르의 인기곡 50곡을 자동으로 큐레이션합니다. 약 1-2분 소요됩니다. 계속하시겠습니까?')) return;
 
+            // 로딩 표시
+            const originalContent = document.body.innerHTML;
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            loadingDiv.innerHTML = `
+                <div class="bg-white rounded-lg p-8 max-w-md">
+                    <div class="text-center">
+                        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <h3 class="text-xl font-bold text-gray-800 mb-2">AI 큐레이션 진행 중...</h3>
+                        <p class="text-gray-600">약 1-2분 소요됩니다. 잠시만 기다려주세요.</p>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loadingDiv);
+
             try {
                 const response = await fetch(`/api/admin/genres/${id}/curate`, {
                     method: 'POST'
@@ -258,18 +273,22 @@
 
                 const data = await response.json();
 
+                // 로딩 제거
+                document.body.removeChild(loadingDiv);
+
                 if (data.success) {
-                    alert(data.message);
-                    // 1분 후 자동 새로고침
-                    setTimeout(() => {
-                        loadGenres();
-                    }, 60000);
+                    alert(`큐레이션 완료!\n\n✅ 저장: ${data.savedCount}곡\n⏭️ 스킵: ${data.skippedCount}곡\n❌ 오류: ${data.errorCount}곡`);
+                    loadGenres();
                 } else {
-                    alert(data.message || '큐레이션 시작 실패');
+                    alert(`큐레이션 실패\n\n${data.message}\n\n${data.error || ''}`);
                 }
             } catch (error) {
+                // 로딩 제거
+                if (document.body.contains(loadingDiv)) {
+                    document.body.removeChild(loadingDiv);
+                }
                 console.error('큐레이션 실패:', error);
-                alert('큐레이션 시작 실패');
+                alert('큐레이션 실패: ' + error.message);
             }
         }
 
