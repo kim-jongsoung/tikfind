@@ -69,37 +69,54 @@ class SongRequestService {
 
     async searchSong(title, artist) {
         try {
-            // 1. 먼저 DB에서 정확히 검색 (무료, 빠름)
-            console.log('🔍 DB 검색 시작 (제목만):', title);
+            console.log('🔍 DB 검색 시작:', title, '-', artist);
             
-            let dbSong = await PopularSong.findOne({
-                title: new RegExp(title, 'i')
-            }).sort({ requestCount: -1 }); // 신청 횟수 많은 곡 우선
-
-            // 2. 정확한 매칭 실패 시 유사도 검색 (오타 처리)
+            // 정규화 (대소문자, 공백 제거)
+            const normalizedTitle = title.toLowerCase().trim();
+            const normalizedArtist = artist ? artist.toLowerCase().trim() : '';
+            
+            // 1단계: 정확한 매칭 (제목 + 아티스트)
+            let dbSong = null;
+            
+            if (normalizedArtist) {
+                dbSong = await PopularSong.findOne({
+                    title: new RegExp(`^${this.escapeRegex(normalizedTitle)}$`, 'i'),
+                    artist: new RegExp(`^${this.escapeRegex(normalizedArtist)}$`, 'i'),
+                    isActive: true
+                }).sort({ requestCount: -1 });
+            }
+            
+            // 2단계: 제목만 정확 매칭 (아티스트 정보 없거나 매칭 실패)
             if (!dbSong) {
-                console.log('🔍 유사도 검색 시작 (오타 처리)');
-                const allSongs = await PopularSong.find({ isActive: true }).limit(200);
+                dbSong = await PopularSong.findOne({
+                    title: new RegExp(`^${this.escapeRegex(normalizedTitle)}$`, 'i'),
+                    isActive: true
+                }).sort({ requestCount: -1 });
+            }
+            
+            // 3단계: 부분 매칭 (제목 포함)
+            if (!dbSong) {
+                dbSong = await PopularSong.findOne({
+                    title: new RegExp(this.escapeRegex(normalizedTitle), 'i'),
+                    isActive: true
+                }).sort({ requestCount: -1 });
+            }
+            
+            // 4단계: 텍스트 검색 (키워드 기반)
+            if (!dbSong && normalizedTitle.length >= 3) {
+                const textSearchResults = await PopularSong.find({
+                    $text: { $search: normalizedTitle },
+                    isActive: true
+                }).limit(5).sort({ score: { $meta: 'textScore' }, requestCount: -1 });
                 
-                let bestMatch = null;
-                let bestSimilarity = 0;
-                
-                for (const song of allSongs) {
-                    const similarity = this.calculateSimilarity(title, song.title);
-                    if (similarity > bestSimilarity && similarity >= 0.7) { // 70% 이상 유사
-                        bestSimilarity = similarity;
-                        bestMatch = song;
-                    }
-                }
-                
-                if (bestMatch) {
-                    console.log(`✅ 유사 곡 찾음 (${Math.round(bestSimilarity * 100)}% 일치):`, bestMatch.title);
-                    dbSong = bestMatch;
+                if (textSearchResults.length > 0) {
+                    dbSong = textSearchResults[0];
+                    console.log('✅ 텍스트 검색으로 찾음:', dbSong.title);
                 }
             }
 
             if (dbSong) {
-                console.log('✅ DB에서 찾음 (무료):', dbSong.title);
+                console.log('✅ DB 캐시 히트 (비용 0원):', dbSong.title, '-', dbSong.artist);
                 
                 // 신청 횟수 증가
                 await dbSong.incrementRequestCount();
@@ -113,30 +130,34 @@ class SongRequestService {
                 };
             }
 
-            // 2. DB에 없으면 YouTube API 검색 (유료)
-            console.log('🔍 DB에 없음. YouTube API 검색 시작...');
+            // 5단계: DB에 없으면 YouTube API 검색 (비용 발생!)
+            console.log('⚠️ DB 캐시 미스 - YouTube API 호출 (비용 발생)');
             const youtubeResult = await this.searchYouTube(title, artist);
             
             if (youtubeResult) {
-                // 3. YouTube 검색 결과를 DB에 저장 (다음번엔 무료)
+                // YouTube 검색 결과를 DB에 저장 (다음번엔 비용 0원)
                 try {
-                    await PopularSong.create({
+                    const newSong = await PopularSong.create({
                         videoId: youtubeResult.videoId,
                         title: title,
-                        artist: artist,
+                        artist: artist || youtubeResult.channelTitle,
                         thumbnail: youtubeResult.thumbnail,
                         keywords: [
                             title.toLowerCase(),
-                            artist.toLowerCase()
+                            (artist || youtubeResult.channelTitle).toLowerCase()
                         ],
                         source: 'user',
                         popularity: 1,
                         requestCount: 1,
-                        lastRequestedAt: new Date()
+                        lastRequestedAt: new Date(),
+                        isActive: true
                     });
-                    console.log('💾 DB에 저장 완료 (다음번엔 무료)');
+                    console.log('💾 DB에 저장 완료 - 다음번엔 비용 0원:', newSong.title);
                 } catch (saveError) {
-                    console.error('⚠️ DB 저장 실패:', saveError.message);
+                    // 중복 키 에러는 무시 (동시 요청)
+                    if (saveError.code !== 11000) {
+                        console.error('⚠️ DB 저장 실패:', saveError.message);
+                    }
                 }
                 
                 return {
@@ -155,6 +176,13 @@ class SongRequestService {
             console.error('❌ 곡 검색 오류:', error.message);
             return null;
         }
+    }
+    
+    /**
+     * 정규식 특수문자 이스케이프
+     */
+    escapeRegex(string) {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     /**

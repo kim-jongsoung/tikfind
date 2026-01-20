@@ -44,7 +44,7 @@ const popularSongSchema = new mongoose.Schema({
     // 장르
     genre: {
         type: String,
-        enum: ['kpop', 'pop', 'ballad', 'dance', 'edm', 'hiphop', 'rnb', 'jpop', 'trot', 'rock', 'indie', 'tiktok_dance', 'other'],
+        enum: ['kpop', 'pop', 'ballad', 'dance', 'edm', 'hiphop', 'rnb', 'jpop', 'trot', 'rock', 'indie', 'tiktok_dance', 'tiktok_trend', 'other'],
         default: 'other',
         index: true
     },
@@ -82,10 +82,10 @@ const popularSongSchema = new mongoose.Schema({
         type: Date
     },
     
-    // 수집 방법 (manual: 수동, auto: 자동수집, user: 시청자신청)
+    // 수집 방법 (manual: 수동, auto: 자동수집, user: 시청자신청, dataset: 데이터셋)
     source: {
         type: String,
-        enum: ['manual', 'auto', 'user'],
+        enum: ['manual', 'auto', 'user', 'dataset'],
         default: 'auto'
     },
     
@@ -103,6 +103,12 @@ popularSongSchema.index({ title: 'text', artist: 'text', keywords: 'text' });
 
 // 장르별 인기도 정렬용 인덱스
 popularSongSchema.index({ genre: 1, popularity: -1 });
+
+// 신청곡 검색 최적화 인덱스 (제목 + 아티스트 복합)
+popularSongSchema.index({ title: 1, artist: 1 });
+
+// 활성 상태 + 신청 횟수 인덱스 (인기곡 우선)
+popularSongSchema.index({ isActive: 1, requestCount: -1 });
 
 // 신청 횟수 증가 메서드
 popularSongSchema.methods.incrementRequestCount = function() {

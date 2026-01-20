@@ -129,16 +129,11 @@
                                     <option value="" disabled selected>AI재생장르선택</option>
                                     <option value="all">전체 (0곡)</option>
                                     <option value="kpop">K-POP (0곡)</option>
-                                    <option value="pop">팝 (0곡)</option>
-                                    <option value="ballad">발라드 (0곡)</option>
+                                    <option value="pop">POP (0곡)</option>
+                                    <option value="hiphop">힙합/R&B (0곡)</option>
                                     <option value="dance">댄스/EDM (0곡)</option>
-                                    <option value="tiktok_dance">틱톡댄스곡 (0곡)</option>
-                                    <option value="jpop">J-POP (0곡)</option>
-                                    <option value="trot">트로트 (0곡)</option>
-                                    <option value="hiphop">힙합 (0곡)</option>
-                                    <option value="rnb">R&B (0곡)</option>
-                                    <option value="rock">록 (0곡)</option>
-                                    <option value="indie">인디 (0곡)</option>
+                                    <option value="ballad">발라드 (0곡)</option>
+                                    <option value="tiktok_trend">틱톡 트렌드 (0곡)</option>
                                 </select>
                                 <button id="aiAutoPlayBtn" class="btn-toolbar" style="background: #9333ea; color: white; padding: 4px 10px; font-size: 10px;">
                                     <i class="fas fa-robot" style="margin-right: 2px;"></i>AI 자동재생
@@ -1293,16 +1288,11 @@
                         genreSelect.innerHTML = `
                             <option value="all">전체 (${data.total}곡)</option>
                             <option value="kpop">K-POP (${genres.kpop || 0}곡)</option>
-                            <option value="pop">팝 (${genres.pop || 0}곡)</option>
-                            <option value="ballad">발라드 (${genres.ballad || 0}곡)</option>
+                            <option value="pop">POP (${genres.pop || 0}곡)</option>
+                            <option value="hiphop">힙합/R&B (${genres.hiphop || 0}곡)</option>
                             <option value="dance">댄스/EDM (${genres.dance || 0}곡)</option>
-                            <option value="tiktok_dance">틱톡댄스곡 (${genres.tiktok_dance || 0}곡)</option>
-                            <option value="jpop">J-POP (${genres.jpop || 0}곡)</option>
-                            <option value="trot">트로트 (${genres.trot || 0}곡)</option>
-                            <option value="hiphop">힙합 (${genres.hiphop || 0}곡)</option>
-                            <option value="rnb">R&B (${genres.rnb || 0}곡)</option>
-                            <option value="rock">록 (${genres.rock || 0}곡)</option>
-                            <option value="indie">인디 (${genres.indie || 0}곡)</option>
+                            <option value="ballad">발라드 (${genres.ballad || 0}곡)</option>
+                            <option value="tiktok_trend">틱톡 트렌드 (${genres.tiktok_trend || 0}곡)</option>
                         `;
                         
                         console.log('✅ 장르별 곡 수 업데이트:', data.total, '곡');
