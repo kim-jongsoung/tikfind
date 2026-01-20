@@ -1430,11 +1430,20 @@
             // 다음 곡 버튼
             document.getElementById('nextSongBtn').onclick = () => {
                 if (autoPlayQueue.length > 0) {
-                    console.log('⏭️ 다음 곡으로 스킵');
+                    console.log('⏭️ 다음 곡으로 스킵 - 현재 큐:', autoPlayQueue.length, '곡');
+                    console.log('⏭️ 현재 재생 중:', autoPlayQueue[0]?.title);
+                    
+                    // YouTube Player 정지 (onStateChange 이벤트 방지)
                     if (youtubePlayer && isPlayerReady) {
                         youtubePlayer.stopVideo();
                     }
-                    autoPlayQueue.shift();
+                    
+                    // 현재 곡 제거
+                    const removed = autoPlayQueue.shift();
+                    console.log('⏭️ 제거된 곡:', removed?.title);
+                    console.log('⏭️ shift 후 큐:', autoPlayQueue.length, '곡');
+                    console.log('⏭️ 다음 재생할 곡:', autoPlayQueue[0]?.title);
+                    
                     updateAutoPlayQueue();
                     playNextAutoSong();
                 } else {
