@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 자동재생 곡 관리 - TikFind Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">🎵 AI 자동재생 곡 관리</h1>
+            <p class="text-gray-400">장르별 50곡씩 큐레이션하여 AI 자동재생 품질을 관리하세요</p>
+        </div>
+
+        <!-- 장르 탭 -->
+        <div class="mb-6 flex gap-2 flex-wrap">
+            <button class="genre-tab px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700" data-genre="all">
+                전체
+            </button>
+            <button class="genre-tab px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600" data-genre="kpop">
+                K-POP
+            </button>
+            <button class="genre-tab px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600" data-genre="pop">
+                POP
+            </button>
+            <button class="genre-tab px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600" data-genre="hiphop">
+                힙합/R&B
+            </button>
+            <button class="genre-tab px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600" data-genre="dance">
+                댄스/EDM
+            </button>
+            <button class="genre-tab px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600" data-genre="ballad">
+                발라드
+            </button>
+            <button class="genre-tab px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600" data-genre="tiktok_trend">
+                틱톡 트렌드
+            </button>
+        </div>
+
+        <!-- 통계 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <div class="text-gray-400 text-sm">전체 곡 수</div>
+                <div class="text-2xl font-bold" id="total-songs">0</div>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <div class="text-gray-400 text-sm">큐레이션 곡</div>
+                <div class="text-2xl font-bold text-purple-400" id="curated-songs">0</div>
+            </div>
+            <div class="bg-gray-800 p-4 rounded-lg">
+                <div class="text-gray-400 text-sm">현재 장르 큐레이션</div>
+                <div class="text-2xl font-bold text-green-400" id="genre-curated">0 / 50</div>
+            </div>
+        </div>
+
+        <!-- 검색 -->
+        <div class="mb-6">
+            <div class="flex gap-2">
+                <input type="text" id="search-input" placeholder="곡 제목 또는 아티스트 검색..." 
+                    class="flex-1 px-4 py-2 bg-gray-800 rounded-lg border border-gray-700 focus:border-purple-500 focus:outline-none">
+                <button onclick="searchSongs()" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg">
+                    <i class="fas fa-search mr-2"></i>검색
+                </button>
+            </div>
+        </div>
+
+        <!-- 곡 목록 -->
+        <div class="bg-gray-800 rounded-lg overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-3 text-left">우선순위</th>
+                        <th class="px-4 py-3 text-left">썸네일</th>
+                        <th class="px-4 py-3 text-left">제목</th>
+                        <th class="px-4 py-3 text-left">아티스트</th>
+                        <th class="px-4 py-3 text-left">장르</th>
+                        <th class="px-4 py-3 text-left">신청 횟수</th>
+                        <th class="px-4 py-3 text-center">큐레이션</th>
+                        <th class="px-4 py-3 text-center">액션</th>
+                    </tr>
+                </thead>
+                <tbody id="songs-table">
+                    <tr>
+                        <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+                            로딩 중...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 페이지네이션 -->
+        <div class="mt-6 flex justify-center gap-2" id="pagination">
+        </div>
+    </div>
+
+    <script>
+        let currentGenre = 'all';
+        let currentPage = 1;
+        const pageSize = 50;
+
+        // 장르 탭 클릭
+        document.querySelectorAll('.genre-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                currentGenre = tab.dataset.genre;
+                currentPage = 1;
+                
+                // 탭 스타일 업데이트
+                document.querySelectorAll('.genre-tab').forEach(t => {
+                    t.classList.remove('bg-purple-600');
+                    t.classList.add('bg-gray-700');
+                });
+                tab.classList.remove('bg-gray-700');
+                tab.classList.add('bg-purple-600');
+                
+                loadSongs();
+            });
+        });
+
+        // 곡 목록 로드
+        async function loadSongs() {
+            try {
+                const query = new URLSearchParams({
+                    genre: currentGenre,
+                    page: currentPage,
+                    limit: pageSize
+                });
+
+                const response = await fetch(`/api/admin/songs?${query}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    renderSongs(data.songs);
+                    renderPagination(data.total);
+                    updateStats(data.stats);
+                }
+            } catch (error) {
+                console.error('곡 로드 실패:', error);
+            }
+        }
+
+        // 곡 렌더링
+        function renderSongs(songs) {
+            const tbody = document.getElementById('songs-table');
+            
+            if (songs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-8 text-center text-gray-400">곡이 없습니다</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = songs.map(song => `
+                <tr class="border-t border-gray-700 hover:bg-gray-750">
+                    <td class="px-4 py-3">
+                        ${song.isCurated ? `
+                            <input type="number" value="${song.curatedPriority || 1}" min="1" max="50" 
+                                class="w-16 px-2 py-1 bg-gray-700 rounded text-center"
+                                onchange="updatePriority('${song._id}', this.value)">
+                        ` : '-'}
+                    </td>
+                    <td class="px-4 py-3">
+                        <img src="${song.thumbnail}" alt="${song.title}" class="w-16 h-12 object-cover rounded">
+                    </td>
+                    <td class="px-4 py-3">${song.title}</td>
+                    <td class="px-4 py-3">${song.artist}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 bg-gray-700 rounded text-xs">${song.genre}</span>
+                    </td>
+                    <td class="px-4 py-3">${song.requestCount || 0}회</td>
+                    <td class="px-4 py-3 text-center">
+                        ${song.isCurated ? 
+                            '<span class="text-green-400"><i class="fas fa-check-circle"></i> 큐레이션</span>' : 
+                            '<span class="text-gray-500">-</span>'
+                        }
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        ${song.isCurated ? `
+                            <button onclick="removeCuration('${song._id}')" 
+                                class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+                                제거
+                            </button>
+                        ` : `
+                            <button onclick="addCuration('${song._id}')" 
+                                class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm">
+                                추가
+                            </button>
+                        `}
+                        <a href="https://www.youtube.com/watch?v=${song.videoId}" target="_blank"
+                            class="ml-2 px-3 py-1 bg-gray-600 hover:bg-gray-500 rounded text-sm">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 통계 업데이트
+        function updateStats(stats) {
+            document.getElementById('total-songs').textContent = stats.total.toLocaleString();
+            document.getElementById('curated-songs').textContent = stats.curated.toLocaleString();
+            document.getElementById('genre-curated').textContent = `${stats.genreCurated} / 50`;
+        }
+
+        // 페이지네이션
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / pageSize);
+            const pagination = document.getElementById('pagination');
+            
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `
+                    <button onclick="goToPage(${i})" 
+                        class="px-4 py-2 rounded ${i === currentPage ? 'bg-purple-600' : 'bg-gray-700 hover:bg-gray-600'}">
+                        ${i}
+                    </button>
+                `;
+            }
+            pagination.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            loadSongs();
+        }
+
+        // 큐레이션 추가
+        async function addCuration(songId) {
+            try {
+                const response = await fetch('/api/admin/songs/curate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ songId, action: 'add' })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('큐레이션에 추가되었습니다');
+                    loadSongs();
+                } else {
+                    alert(data.message || '추가 실패');
+                }
+            } catch (error) {
+                console.error('큐레이션 추가 실패:', error);
+                alert('추가 실패');
+            }
+        }
+
+        // 큐레이션 제거
+        async function removeCuration(songId) {
+            if (!confirm('큐레이션에서 제거하시겠습니까?')) return;
+
+            try {
+                const response = await fetch('/api/admin/songs/curate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ songId, action: 'remove' })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    alert('큐레이션에서 제거되었습니다');
+                    loadSongs();
+                } else {
+                    alert(data.message || '제거 실패');
+                }
+            } catch (error) {
+                console.error('큐레이션 제거 실패:', error);
+                alert('제거 실패');
+            }
+        }
+
+        // 우선순위 업데이트
+        async function updatePriority(songId, priority) {
+            try {
+                const response = await fetch('/api/admin/songs/priority', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ songId, priority: parseInt(priority) })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    console.log('우선순위 업데이트 완료');
+                } else {
+                    alert(data.message || '업데이트 실패');
+                    loadSongs();
+                }
+            } catch (error) {
+                console.error('우선순위 업데이트 실패:', error);
+                alert('업데이트 실패');
+                loadSongs();
+            }
+        }
+
+        // 검색
+        async function searchSongs() {
+            const keyword = document.getElementById('search-input').value;
+            if (!keyword) {
+                loadSongs();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/songs/search?keyword=${encodeURIComponent(keyword)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    renderSongs(data.songs);
+                    document.getElementById('pagination').innerHTML = '';
+                }
+            } catch (error) {
+                console.error('검색 실패:', error);
+            }
+        }
+
+        // Enter 키로 검색
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') searchSongs();
+        });
+
+        // 초기 로드
+        loadSongs();
+    </script>
+</body>
+</html>

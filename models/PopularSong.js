@@ -93,6 +93,20 @@ const popularSongSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    
+    // AI 자동재생 큐레이션 (관리자가 선정한 곡)
+    isCurated: {
+        type: Boolean,
+        default: false,
+        index: true
+    },
+    
+    // 큐레이션 우선순위 (1-50, 낮을수록 우선)
+    curatedPriority: {
+        type: Number,
+        min: 1,
+        max: 50
     }
 }, {
     timestamps: true
@@ -109,6 +123,9 @@ popularSongSchema.index({ title: 1, artist: 1 });
 
 // 활성 상태 + 신청 횟수 인덱스 (인기곡 우선)
 popularSongSchema.index({ isActive: 1, requestCount: -1 });
+
+// AI 자동재생 큐레이션 인덱스
+popularSongSchema.index({ isCurated: 1, genre: 1, curatedPriority: 1 });
 
 // 신청 횟수 증가 메서드
 popularSongSchema.methods.incrementRequestCount = function() {
