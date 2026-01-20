@@ -641,7 +641,7 @@ router.get('/popular-songs/stats', async (req, res) => {
 // AI 자동재생용 곡 가져오기 (Genre 기반)
 router.post('/popular-songs/random', async (req, res) => {
     try {
-        const { genreId, count = 20 } = req.body;
+        const { genreId, count = 1, excludeIds = [] } = req.body;
         const PopularSong = require('../models/PopularSong');
         
         if (!genreId) {
@@ -651,14 +651,53 @@ router.post('/popular-songs/random', async (req, res) => {
             });
         }
         
-        // AI 플레이리스트 곡 조회
-        const songs = await PopularSong.find({
+        console.log('🎲 랜덤 곡 조회:', { genreId, count, excludeIds: excludeIds.length });
+        
+        // AI 플레이리스트 곡 조회 (중복 제외)
+        const query = {
             genre: genreId,
             isAIPlaylist: true,
             isActive: true
-        })
-        .limit(parseInt(count))
-        .sort({ createdAt: -1 });
+        };
+        
+        // 이미 재생한 곡 제외
+        if (excludeIds && excludeIds.length > 0) {
+            query._id = { $nin: excludeIds };
+        }
+        
+        // MongoDB의 $sample을 사용한 진짜 랜덤 선택
+        const songs = await PopularSong.aggregate([
+            { $match: query },
+            { $sample: { size: parseInt(count) } }
+        ]);
+        
+        console.log('✅ 랜덤 곡 조회 결과:', songs.length, '곡');
+        
+        if (songs.length === 0) {
+            console.log('⚠️ 곡이 없음 - 제외 목록 초기화하고 재시도');
+            // 제외 목록 없이 다시 시도
+            const retryQuery = {
+                genre: genreId,
+                isAIPlaylist: true,
+                isActive: true
+            };
+            const retrySongs = await PopularSong.aggregate([
+                { $match: retryQuery },
+                { $sample: { size: parseInt(count) } }
+            ]);
+            
+            return res.json({
+                success: true,
+                songs: retrySongs.map(song => ({
+                    id: song._id,
+                    videoId: song.videoId,
+                    title: song.title,
+                    artist: song.artist,
+                    thumbnail: song.thumbnail
+                })),
+                resetExcludeList: true
+            });
+        }
         
         res.json({
             success: true,

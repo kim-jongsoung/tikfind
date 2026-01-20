@@ -1331,6 +1331,7 @@
             // AI 자동재생 상태
             let aiAutoPlayEnabled = false;
             let aiAutoPlayInterval = null;
+            let playedSongIds = []; // 이미 재생한 곡 ID 추적
             
             // AI 자동재생 버튼
             document.getElementById('aiAutoPlayBtn').onclick = () => {
@@ -1345,6 +1346,7 @@
                 
                 // 자동재생 시작
                 aiAutoPlayEnabled = true;
+                playedSongIds = []; // 재생 목록 초기화
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'block';
                 console.log('🤖 AI 자동재생 시작 - 장르 ID:', genreId);
@@ -1384,19 +1386,32 @@
             async function addAISong(genreId) {
                 try {
                     console.log('🤖 AI 곡 추가 시작 - 장르 ID:', genreId);
+                    console.log('🚫 제외할 곡 ID:', playedSongIds.length, '개');
+                    
                     const response = await fetch('/api/popular-songs/random', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ genreId: genreId, count: 1 })
+                        body: JSON.stringify({ 
+                            genreId: genreId, 
+                            count: 1,
+                            excludeIds: playedSongIds
+                        })
                     });
                     
                     const data = await response.json();
                     console.log('🤖 AI 곡 API 응답:', data);
                     
+                    // 제외 목록 초기화 필요 시
+                    if (data.resetExcludeList) {
+                        console.log('🔄 재생 목록 초기화 (모든 곡 재생 완료)');
+                        playedSongIds = [];
+                    }
+                    
                     if (data.success && data.songs.length > 0) {
                         const song = data.songs[0];
                         const newSong = {
                             id: Date.now() + Math.random(),
+                            dbId: song.id, // DB ID 저장
                             videoId: song.videoId,
                             title: song.title,
                             artist: song.artist,
@@ -1405,7 +1420,11 @@
                             isAI: true
                         };
                         
+                        // 재생 목록에 추가
+                        playedSongIds.push(song.id);
                         console.log('🤖 큐에 추가할 곡:', newSong);
+                        console.log('📝 재생 목록 업데이트:', playedSongIds.length, '개');
+                        
                         autoPlayQueue.push(newSong);
                         updateAutoPlayQueue();
                         console.log('📋 추가 후 큐 길이:', autoPlayQueue.length);
