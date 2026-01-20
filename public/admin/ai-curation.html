@@ -7,26 +7,87 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-900 text-white">
+<body class="bg-gray-100">
+    <!-- Admin Header -->
+    <header class="bg-slate-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold">TikFind Admin</h1>
+                <span class="px-3 py-1 bg-red-600 text-xs rounded-full">ADMIN</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a href="/dashboard" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
+                    <i class="fas fa-home mr-2"></i>User Dashboard
+                </a>
+                <a href="/auth/logout" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Navigation -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4">
+            <ul class="flex space-x-8 py-4">
+                <li>
+                    <a href="/admin/dashboard" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-users mr-2"></i>Users
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/subscriptions" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-credit-card mr-2"></i>Subscriptions
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/payments" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-dollar-sign mr-2"></i>Payments
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/logs" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-history mr-2"></i>Activity Logs
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/plan-limits" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-sliders-h mr-2"></i>Plan Limits
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/ai-curation" class="text-blue-600 font-semibold border-b-2 border-blue-600 pb-2">
+                        <i class="fas fa-magic mr-2"></i>AI 큐레이션
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
     <div class="container mx-auto px-4 py-8">
         <div class="mb-8">
-            <h1 class="text-3xl font-bold mb-2">🤖 AI 자동 큐레이션</h1>
-            <p class="text-gray-400">장르를 추가하고 AI가 자동으로 인기곡 50곡을 큐레이션합니다</p>
+            <h1 class="text-3xl font-bold mb-2 text-gray-800">🤖 AI 자동 큐레이션</h1>
+            <p class="text-gray-600">장르를 추가하고 AI가 자동으로 인기곡 50곡을 큐레이션합니다</p>
         </div>
 
         <!-- 장르 추가 -->
-        <div class="bg-gray-800 rounded-lg p-6 mb-6">
-            <h2 class="text-xl font-bold mb-4">➕ 새 장르 추가</h2>
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">➕ 새 장르 추가</h2>
             <div class="flex gap-4">
                 <input type="text" id="genre-name" placeholder="장르 이름 (예: 2024 K-POP Hits)" 
-                    class="flex-1 px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none">
+                    class="flex-1 px-4 py-2 bg-gray-50 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-800">
                 <input type="text" id="genre-description" placeholder="설명 (선택)" 
-                    class="flex-1 px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none">
-                <button onclick="addGenre()" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold">
+                    class="flex-1 px-4 py-2 bg-gray-50 rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-800">
+                <button onclick="addGenre()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white">
                     <i class="fas fa-plus mr-2"></i>추가
                 </button>
             </div>
-            <p class="text-sm text-gray-400 mt-2">💡 장르는 자유롭게 추가할 수 있습니다. 예: "Summer Hits 2024", "Workout Music", "Chill Vibes" 등</p>
+            <p class="text-sm text-gray-500 mt-2">💡 장르는 자유롭게 추가할 수 있습니다. 예: "Summer Hits 2024", "Workout Music", "Chill Vibes" 등</p>
         </div>
 
         <!-- 장르 목록 -->
@@ -87,23 +148,23 @@
             }
 
             container.innerHTML = genres.map(genre => `
-                <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition">
+                <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex-1">
-                            <h3 class="text-xl font-bold mb-1">${genre.name}</h3>
-                            ${genre.description ? `<p class="text-sm text-gray-400">${genre.description}</p>` : ''}
+                            <h3 class="text-xl font-bold mb-1 text-gray-800">${genre.name}</h3>
+                            ${genre.description ? `<p class="text-sm text-gray-600">${genre.description}</p>` : ''}
                         </div>
-                        <button onclick="deleteGenre('${genre._id}')" class="text-red-400 hover:text-red-300">
+                        <button onclick="deleteGenre('${genre._id}')" class="text-red-500 hover:text-red-600">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
 
                     <div class="mb-4">
-                        <div class="flex items-center justify-between text-sm text-gray-400 mb-2">
+                        <div class="flex items-center justify-between text-sm text-gray-600 mb-2">
                             <span>큐레이션된 곡</span>
-                            <span class="text-green-400 font-bold">${genre.curatedCount || 0} / 50</span>
+                            <span class="text-green-600 font-bold">${genre.curatedCount || 0} / 50</span>
                         </div>
-                        <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div class="w-full bg-gray-200 rounded-full h-2">
                             <div class="bg-green-500 h-2 rounded-full" style="width: ${Math.min((genre.curatedCount || 0) / 50 * 100, 100)}%"></div>
                         </div>
                     </div>
@@ -116,12 +177,12 @@
 
                     <div class="flex gap-2">
                         <button onclick="curateGenre('${genre._id}')" 
-                            class="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition">
+                            class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white transition">
                             <i class="fas fa-magic mr-2"></i>큐레이션하기
                         </button>
                         ${genre.curatedCount > 0 ? `
                             <button onclick="viewSongs('${genre._id}', '${genre.name}')" 
-                                class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                                class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-700">
                                 <i class="fas fa-list"></i>
                             </button>
                         ` : ''}
