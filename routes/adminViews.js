@@ -3,6 +3,14 @@ const router = express.Router();
 const path = require('path');
 const { isAuthenticated, isAdmin } = require('../middleware/adminAuth');
 
+// Admin root - redirect to dashboard or login
+router.get('/', (req, res) => {
+    if (req.session && req.session.adminId) {
+        return res.redirect('/admin/dashboard');
+    }
+    return res.redirect('/admin/login');
+});
+
 // Admin Login Page (no auth required)
 router.get('/login', (req, res) => {
     // If already logged in, redirect to dashboard
