@@ -1274,31 +1274,28 @@
                 document.getElementById('stopBtn').disabled = false;
             }
             
-            // 장르별 곡 수 업데이트
+            // 장르 목록 로드 (Genre 모델 기반)
             async function updateGenreStats() {
                 try {
-                    const response = await fetch('/api/popular-songs/stats');
+                    const response = await fetch('/api/admin/genres');
                     const data = await response.json();
                     
-                    if (data.success) {
+                    if (data.success && data.genres && data.genres.length > 0) {
                         const genreSelect = document.getElementById('genreSelect');
-                        const genres = data.genres;
                         
                         // 드롭다운 옵션 업데이트
-                        genreSelect.innerHTML = `
-                            <option value="all">전체 (${data.total}곡)</option>
-                            <option value="kpop">K-POP (${genres.kpop || 0}곡)</option>
-                            <option value="pop">POP (${genres.pop || 0}곡)</option>
-                            <option value="hiphop">힙합/R&B (${genres.hiphop || 0}곡)</option>
-                            <option value="dance">댄스/EDM (${genres.dance || 0}곡)</option>
-                            <option value="ballad">발라드 (${genres.ballad || 0}곡)</option>
-                            <option value="tiktok_trend">틱톡 트렌드 (${genres.tiktok_trend || 0}곡)</option>
-                        `;
+                        genreSelect.innerHTML = data.genres.map(genre => 
+                            `<option value="${genre._id}">${genre.name} (${genre.curatedCount || 0}곡)</option>`
+                        ).join('');
                         
-                        console.log('✅ 장르별 곡 수 업데이트:', data.total, '곡');
+                        console.log('✅ AI 큐레이션 장르 로드:', data.genres.length, '개');
+                    } else {
+                        const genreSelect = document.getElementById('genreSelect');
+                        genreSelect.innerHTML = '<option value="" disabled>장르를 먼저 추가하세요</option>';
+                        console.log('⚠️ 큐레이션된 장르가 없습니다');
                     }
                 } catch (error) {
-                    console.error('❌ 장르별 곡 수 조회 실패:', error);
+                    console.error('❌ 장르 목록 로드 실패:', error);
                 }
             }
             
@@ -1337,26 +1334,31 @@
             // AI 자동재생 버튼
             document.getElementById('aiAutoPlayBtn').onclick = () => {
                 const button = document.getElementById('aiAutoPlayBtn');
-                const genre = document.getElementById('genreSelect').value;
+                const genreId = document.getElementById('genreSelect').value;
+                
+                if (!genreId) {
+                    alert('장르를 먼저 선택하세요');
+                    return;
+                }
                 
                 if (!aiAutoPlayEnabled) {
                     // 자동재생 시작
                     aiAutoPlayEnabled = true;
                     button.style.background = '#dc2626'; // 빨간색
                     button.innerHTML = '<i class="fas fa-stop" style="margin-right: 2px;"></i>자동재생 중...';
-                    console.log('🤖 AI 자동재생 시작 - 장르:', genre);
+                    console.log('🤖 AI 자동재생 시작 - 장르 ID:', genreId);
                     
                     // 큐가 비면 자동으로 AI 곡 추가
                     aiAutoPlayInterval = setInterval(async () => {
                         if (autoPlayQueue.length === 0 && aiAutoPlayEnabled) {
                             console.log('🎵 큐가 비어서 AI 곡 자동 추가');
-                            await addAISong(genre);
+                            await addAISong(genreId);
                         }
                     }, 3000); // 3초마다 체크
                     
                     // 즉시 첫 곡 추가
                     if (autoPlayQueue.length === 0) {
-                        addAISong(genre);
+                        addAISong(genreId);
                     }
                 } else {
                     // 자동재생 중지
@@ -1373,12 +1375,12 @@
             };
             
             // AI 곡 추가 함수
-            async function addAISong(genre) {
+            async function addAISong(genreId) {
                 try {
                     const response = await fetch('/api/popular-songs/random', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ genre: genre, count: 1 })
+                        body: JSON.stringify({ genreId: genreId, count: 1 })
                     });
                     
                     const data = await response.json();
