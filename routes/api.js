@@ -638,53 +638,40 @@ router.get('/popular-songs/stats', async (req, res) => {
     }
 });
 
-// AI 자동재생용 큐레이션 곡 가져오기
+// AI 자동재생용 곡 가져오기 (Genre 기반)
 router.post('/popular-songs/random', async (req, res) => {
     try {
-        const { genre, count = 20 } = req.body;
+        const { genreId, count = 20 } = req.body;
         const PopularSong = require('../models/PopularSong');
         
-        // 큐레이션 곡 우선 조회
-        const query = { isActive: true, isCurated: true };
-        if (genre && genre !== 'all') {
-            query.genre = genre;
+        if (!genreId) {
+            return res.status(400).json({ 
+                success: false, 
+                message: '장르 ID가 필요합니다' 
+            });
         }
         
-        // 우선순위 순으로 정렬하여 가져오기
-        let songs = await PopularSong.find(query)
-            .sort({ curatedPriority: 1 })
-            .limit(parseInt(count));
-        
-        // 큐레이션 곡이 부족하면 일반 곡으로 채우기
-        if (songs.length < count) {
-            const remainingCount = count - songs.length;
-            const generalQuery = { isActive: true, isCurated: { $ne: true } };
-            if (genre && genre !== 'all') {
-                generalQuery.genre = genre;
-            }
-            
-            const additionalSongs = await PopularSong.aggregate([
-                { $match: generalQuery },
-                { $sample: { size: remainingCount } }
-            ]);
-            
-            songs = [...songs, ...additionalSongs];
-        }
+        // AI 플레이리스트 곡 조회
+        const songs = await PopularSong.find({
+            genre: genreId,
+            isAIPlaylist: true,
+            isActive: true
+        })
+        .limit(parseInt(count))
+        .sort({ createdAt: -1 });
         
         res.json({
             success: true,
             songs: songs.map(song => ({
-                id: song._id || song.id,
+                id: song._id,
                 videoId: song.videoId,
                 title: song.title,
                 artist: song.artist,
-                thumbnail: song.thumbnail,
-                genre: song.genre,
-                isCurated: song.isCurated || false
+                thumbnail: song.thumbnail
             }))
         });
     } catch (error) {
-        console.error('❌ 큐레이션 곡 조회 오류:', error);
+        console.error('❌ AI 플레이리스트 조회 오류:', error);
         res.status(500).json({ success: false, message: '곡 조회 실패' });
     }
 });
@@ -864,145 +851,110 @@ router.post('/admin/import-songs', async (req, res) => {
 
 // ==================== 관리자 API ====================
 
-// 관리자: 곡 목록 조회 (큐레이션 관리용)
-router.get('/admin/songs', async (req, res) => {
+const Genre = require('../models/Genre');
+const AICurationService = require('../services/AICurationService');
+
+// 관리자: 장르 목록 조회
+router.get('/admin/genres', async (req, res) => {
     try {
-        const { genre, page = 1, limit = 50 } = req.query;
-        const PopularSong = require('../models/PopularSong');
+        const genres = await Genre.find({ isActive: true }).sort({ createdAt: -1 });
+        res.json({ success: true, genres });
+    } catch (error) {
+        console.error('❌ 장르 조회 오류:', error);
+        res.status(500).json({ success: false, message: '장르 조회 실패' });
+    }
+});
+
+// 관리자: 장르 추가
+router.post('/admin/genres', async (req, res) => {
+    try {
+        const { name, description } = req.body;
         
-        const query = { isActive: true };
-        if (genre && genre !== 'all') {
-            query.genre = genre;
+        if (!name) {
+            return res.status(400).json({ success: false, message: '장르 이름이 필요합니다' });
         }
+        
+        // 중복 체크
+        const exists = await Genre.findOne({ name: new RegExp(`^${name}$`, 'i') });
+        if (exists) {
+            return res.status(400).json({ success: false, message: '이미 존재하는 장르입니다' });
+        }
+        
+        const genre = await Genre.create({ name, description });
+        res.json({ success: true, genre, message: '장르가 추가되었습니다' });
+    } catch (error) {
+        console.error('❌ 장르 추가 오류:', error);
+        res.status(500).json({ success: false, message: '장르 추가 실패' });
+    }
+});
+
+// 관리자: 장르 삭제
+router.delete('/admin/genres/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const genre = await Genre.findById(id);
+        if (!genre) {
+            return res.status(404).json({ success: false, message: '장르를 찾을 수 없습니다' });
+        }
+        
+        // 해당 장르의 곡들도 삭제 (선택)
+        const PopularSong = require('../models/PopularSong');
+        await PopularSong.deleteMany({ genre: id, isAIPlaylist: true });
+        
+        await Genre.findByIdAndDelete(id);
+        
+        res.json({ success: true, message: '장르가 삭제되었습니다' });
+    } catch (error) {
+        console.error('❌ 장르 삭제 오류:', error);
+        res.status(500).json({ success: false, message: '장르 삭제 실패' });
+    }
+});
+
+// 관리자: AI 자동 큐레이션 실행
+router.post('/admin/genres/:id/curate', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // 비동기로 큐레이션 실행 (시간이 오래 걸림)
+        res.json({ 
+            success: true, 
+            message: 'AI 큐레이션이 시작되었습니다. 약 1-2분 소요됩니다.' 
+        });
+        
+        // 백그라운드에서 실행
+        AICurationService.curateGenre(id).catch(error => {
+            console.error('❌ 백그라운드 큐레이션 실패:', error);
+        });
+        
+    } catch (error) {
+        console.error('❌ 큐레이션 시작 오류:', error);
+        res.status(500).json({ success: false, message: '큐레이션 시작 실패' });
+    }
+});
+
+// 관리자: 장르별 곡 목록 조회
+router.get('/admin/genres/:id/songs', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { page = 1, limit = 50 } = req.query;
+        
+        const PopularSong = require('../models/PopularSong');
         
         const skip = (parseInt(page) - 1) * parseInt(limit);
         
-        const [songs, total, curated, genreCurated] = await Promise.all([
-            PopularSong.find(query)
-                .sort({ isCurated: -1, curatedPriority: 1, requestCount: -1 })
+        const [songs, total] = await Promise.all([
+            PopularSong.find({ genre: id, isAIPlaylist: true, isActive: true })
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(parseInt(limit)),
-            PopularSong.countDocuments(query),
-            PopularSong.countDocuments({ isActive: true, isCurated: true }),
-            PopularSong.countDocuments({ ...query, isCurated: true })
+            PopularSong.countDocuments({ genre: id, isAIPlaylist: true, isActive: true })
         ]);
         
-        res.json({
-            success: true,
-            songs,
-            total,
-            stats: {
-                total,
-                curated,
-                genreCurated
-            }
-        });
+        res.json({ success: true, songs, total });
     } catch (error) {
-        console.error('❌ 관리자 곡 조회 오류:', error);
+        console.error('❌ 곡 조회 오류:', error);
         res.status(500).json({ success: false, message: '곡 조회 실패' });
-    }
-});
-
-// 관리자: 곡 검색
-router.get('/admin/songs/search', async (req, res) => {
-    try {
-        const { keyword } = req.query;
-        const PopularSong = require('../models/PopularSong');
-        
-        const songs = await PopularSong.find({
-            isActive: true,
-            $or: [
-                { title: new RegExp(keyword, 'i') },
-                { artist: new RegExp(keyword, 'i') }
-            ]
-        }).limit(50);
-        
-        res.json({ success: true, songs });
-    } catch (error) {
-        console.error('❌ 곡 검색 오류:', error);
-        res.status(500).json({ success: false, message: '검색 실패' });
-    }
-});
-
-// 관리자: 큐레이션 추가/제거
-router.post('/admin/songs/curate', async (req, res) => {
-    try {
-        const { songId, action } = req.body;
-        const PopularSong = require('../models/PopularSong');
-        
-        const song = await PopularSong.findById(songId);
-        if (!song) {
-            return res.status(404).json({ success: false, message: '곡을 찾을 수 없습니다' });
-        }
-        
-        if (action === 'add') {
-            // 해당 장르의 큐레이션 곡 수 확인
-            const genreCuratedCount = await PopularSong.countDocuments({
-                genre: song.genre,
-                isCurated: true
-            });
-            
-            if (genreCuratedCount >= 50) {
-                return res.status(400).json({ 
-                    success: false, 
-                    message: '해당 장르는 이미 50곡이 큐레이션되었습니다' 
-                });
-            }
-            
-            // 다음 우선순위 번호 찾기
-            const maxPriority = await PopularSong.findOne({
-                genre: song.genre,
-                isCurated: true
-            }).sort({ curatedPriority: -1 });
-            
-            song.isCurated = true;
-            song.curatedPriority = maxPriority ? maxPriority.curatedPriority + 1 : 1;
-            await song.save();
-            
-            res.json({ success: true, message: '큐레이션에 추가되었습니다' });
-        } else if (action === 'remove') {
-            song.isCurated = false;
-            song.curatedPriority = undefined;
-            await song.save();
-            
-            res.json({ success: true, message: '큐레이션에서 제거되었습니다' });
-        } else {
-            res.status(400).json({ success: false, message: '잘못된 액션입니다' });
-        }
-    } catch (error) {
-        console.error('❌ 큐레이션 처리 오류:', error);
-        res.status(500).json({ success: false, message: '처리 실패' });
-    }
-});
-
-// 관리자: 우선순위 업데이트
-router.post('/admin/songs/priority', async (req, res) => {
-    try {
-        const { songId, priority } = req.body;
-        const PopularSong = require('../models/PopularSong');
-        
-        if (priority < 1 || priority > 50) {
-            return res.status(400).json({ 
-                success: false, 
-                message: '우선순위는 1-50 사이여야 합니다' 
-            });
-        }
-        
-        const song = await PopularSong.findById(songId);
-        if (!song || !song.isCurated) {
-            return res.status(404).json({ 
-                success: false, 
-                message: '큐레이션된 곡을 찾을 수 없습니다' 
-            });
-        }
-        
-        song.curatedPriority = priority;
-        await song.save();
-        
-        res.json({ success: true, message: '우선순위가 업데이트되었습니다' });
-    } catch (error) {
-        console.error('❌ 우선순위 업데이트 오류:', error);
-        res.status(500).json({ success: false, message: '업데이트 실패' });
     }
 });
 

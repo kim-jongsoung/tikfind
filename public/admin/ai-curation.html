@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 자동 큐레이션 - TikFind Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">🤖 AI 자동 큐레이션</h1>
+            <p class="text-gray-400">장르를 추가하고 AI가 자동으로 인기곡 50곡을 큐레이션합니다</p>
+        </div>
+
+        <!-- 장르 추가 -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-bold mb-4">➕ 새 장르 추가</h2>
+            <div class="flex gap-4">
+                <input type="text" id="genre-name" placeholder="장르 이름 (예: 2024 K-POP Hits)" 
+                    class="flex-1 px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none">
+                <input type="text" id="genre-description" placeholder="설명 (선택)" 
+                    class="flex-1 px-4 py-2 bg-gray-700 rounded-lg border border-gray-600 focus:border-purple-500 focus:outline-none">
+                <button onclick="addGenre()" class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold">
+                    <i class="fas fa-plus mr-2"></i>추가
+                </button>
+            </div>
+            <p class="text-sm text-gray-400 mt-2">💡 장르는 자유롭게 추가할 수 있습니다. 예: "Summer Hits 2024", "Workout Music", "Chill Vibes" 등</p>
+        </div>
+
+        <!-- 장르 목록 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="genres-container">
+            <div class="text-center py-12 text-gray-400 col-span-full">
+                <i class="fas fa-music text-4xl mb-3"></i>
+                <p>로딩 중...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 곡 목록 모달 -->
+    <div id="songs-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-gray-800 rounded-lg w-full max-w-4xl max-h-[80vh] overflow-hidden">
+            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                <h2 class="text-2xl font-bold" id="modal-title">장르 곡 목록</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[60vh]" id="modal-content">
+                로딩 중...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let genres = [];
+
+        // 장르 목록 로드
+        async function loadGenres() {
+            try {
+                const response = await fetch('/api/admin/genres');
+                const data = await response.json();
+
+                if (data.success) {
+                    genres = data.genres;
+                    renderGenres();
+                }
+            } catch (error) {
+                console.error('장르 로드 실패:', error);
+            }
+        }
+
+        // 장르 렌더링
+        function renderGenres() {
+            const container = document.getElementById('genres-container');
+
+            if (genres.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-400 col-span-full">
+                        <i class="fas fa-music text-4xl mb-3"></i>
+                        <p>아직 추가된 장르가 없습니다</p>
+                        <p class="text-sm mt-2">위에서 새 장르를 추가해보세요</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = genres.map(genre => `
+                <div class="bg-gray-800 rounded-lg p-6 hover:bg-gray-750 transition">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex-1">
+                            <h3 class="text-xl font-bold mb-1">${genre.name}</h3>
+                            ${genre.description ? `<p class="text-sm text-gray-400">${genre.description}</p>` : ''}
+                        </div>
+                        <button onclick="deleteGenre('${genre._id}')" class="text-red-400 hover:text-red-300">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between text-sm text-gray-400 mb-2">
+                            <span>큐레이션된 곡</span>
+                            <span class="text-green-400 font-bold">${genre.curatedCount || 0} / 50</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: ${Math.min((genre.curatedCount || 0) / 50 * 100, 100)}%"></div>
+                        </div>
+                    </div>
+
+                    ${genre.lastCuratedAt ? `
+                        <p class="text-xs text-gray-500 mb-4">
+                            마지막 큐레이션: ${new Date(genre.lastCuratedAt).toLocaleString('ko-KR')}
+                        </p>
+                    ` : ''}
+
+                    <div class="flex gap-2">
+                        <button onclick="curateGenre('${genre._id}')" 
+                            class="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-semibold transition">
+                            <i class="fas fa-magic mr-2"></i>큐레이션하기
+                        </button>
+                        ${genre.curatedCount > 0 ? `
+                            <button onclick="viewSongs('${genre._id}', '${genre.name}')" 
+                                class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 장르 추가
+        async function addGenre() {
+            const name = document.getElementById('genre-name').value.trim();
+            const description = document.getElementById('genre-description').value.trim();
+
+            if (!name) {
+                alert('장르 이름을 입력하세요');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/genres', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, description })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('장르가 추가되었습니다');
+                    document.getElementById('genre-name').value = '';
+                    document.getElementById('genre-description').value = '';
+                    loadGenres();
+                } else {
+                    alert(data.message || '추가 실패');
+                }
+            } catch (error) {
+                console.error('장르 추가 실패:', error);
+                alert('추가 실패');
+            }
+        }
+
+        // 장르 삭제
+        async function deleteGenre(id) {
+            if (!confirm('이 장르와 관련된 모든 곡이 삭제됩니다. 계속하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`/api/admin/genres/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('장르가 삭제되었습니다');
+                    loadGenres();
+                } else {
+                    alert(data.message || '삭제 실패');
+                }
+            } catch (error) {
+                console.error('장르 삭제 실패:', error);
+                alert('삭제 실패');
+            }
+        }
+
+        // AI 큐레이션 실행
+        async function curateGenre(id) {
+            if (!confirm('AI가 이 장르의 인기곡 50곡을 자동으로 큐레이션합니다. 약 1-2분 소요됩니다. 계속하시겠습니까?')) return;
+
+            try {
+                const response = await fetch(`/api/admin/genres/${id}/curate`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    alert(data.message);
+                    // 1분 후 자동 새로고침
+                    setTimeout(() => {
+                        loadGenres();
+                    }, 60000);
+                } else {
+                    alert(data.message || '큐레이션 시작 실패');
+                }
+            } catch (error) {
+                console.error('큐레이션 실패:', error);
+                alert('큐레이션 시작 실패');
+            }
+        }
+
+        // 곡 목록 보기
+        async function viewSongs(genreId, genreName) {
+            document.getElementById('modal-title').textContent = `${genreName} - 곡 목록`;
+            document.getElementById('songs-modal').classList.remove('hidden');
+            document.getElementById('modal-content').innerHTML = '로딩 중...';
+
+            try {
+                const response = await fetch(`/api/admin/genres/${genreId}/songs`);
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.songs.length === 0) {
+                        document.getElementById('modal-content').innerHTML = `
+                            <div class="text-center py-12 text-gray-400">
+                                <i class="fas fa-music text-4xl mb-3"></i>
+                                <p>아직 큐레이션된 곡이 없습니다</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    document.getElementById('modal-content').innerHTML = `
+                        <div class="space-y-3">
+                            ${data.songs.map((song, index) => `
+                                <div class="flex items-center gap-4 p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition">
+                                    <div class="text-gray-400 font-bold w-8">#${index + 1}</div>
+                                    <img src="${song.thumbnail}" alt="${song.title}" class="w-20 h-15 object-cover rounded">
+                                    <div class="flex-1">
+                                        <div class="font-semibold">${song.title}</div>
+                                        <div class="text-sm text-gray-400">${song.artist}</div>
+                                    </div>
+                                    <a href="https://www.youtube.com/watch?v=${song.videoId}" target="_blank"
+                                        class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+                                        <i class="fab fa-youtube"></i>
+                                    </a>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('곡 목록 로드 실패:', error);
+                document.getElementById('modal-content').innerHTML = `
+                    <div class="text-center py-12 text-red-400">
+                        <i class="fas fa-exclamation-triangle text-4xl mb-3"></i>
+                        <p>곡 목록을 불러올 수 없습니다</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 모달 닫기
+        function closeModal() {
+            document.getElementById('songs-modal').classList.add('hidden');
+        }
+
+        // Enter 키로 장르 추가
+        document.getElementById('genre-name').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addGenre();
+        });
+        document.getElementById('genre-description').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addGenre();
+        });
+
+        // 초기 로드
+        loadGenres();
+
+        // 30초마다 자동 새로고침
+        setInterval(loadGenres, 30000);
+    </script>
+</body>
+</html>

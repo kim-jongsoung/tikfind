@@ -51,9 +51,9 @@ router.get('/plan-limits', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/admin/plan-limits.html'));
 });
 
-// Curated Songs (AI 자동재생 곡 관리)
-router.get('/curated-songs', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/admin/curated-songs.html'));
+// AI 자동 큐레이션
+router.get('/ai-curation', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin/ai-curation.html'));
 });
 
 module.exports = router;
