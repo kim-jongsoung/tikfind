@@ -1053,8 +1053,10 @@
                         button.textContent = '🔍 검색 & 추가';
                     }, 2000);
                 } else {
-                    // 버튼으로 피드백 (alert 제거)
+                    // 에러 메시지 표시
+                    console.error('❌ 검색 실패:', data.message);
                     button.textContent = '❌ 검색 실패';
+                    alert(data.message || '곡을 찾을 수 없습니다. 다른 검색어로 시도해주세요.');
                     setTimeout(() => {
                         button.textContent = '🔍 검색 & 추가';
                     }, 3000);
@@ -1063,7 +1065,8 @@
                 button.disabled = false;
             } catch (error) {
                 console.error('❌ 신청곡 추가 오류:', error);
-                // 버튼으로 피드백 (alert 제거)
+                alert('신청곡 추가 실패: ' + error.message);
+                // 버튼으로 피드백
                 const button = document.getElementById('streamerAddBtn');
                 if (button) {
                     button.disabled = false;

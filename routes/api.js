@@ -747,13 +747,14 @@ router.post('/song-request/search', async (req, res) => {
             });
         }
         
-        console.log('🎵 신청곡 검색:', title, artist || '');
+        console.log('🎵 신청곡 검색 시작:', { title, artist: artist || '없음', userId });
+        console.log('🔑 YouTube API 키:', process.env.YOUTUBE_API_KEY ? '설정됨' : '❌ 없음');
         
         const songRequestService = new SongRequestService();
         const song = await songRequestService.searchSong(title, artist || '');
         
         if (song) {
-            console.log('✅ 곡 찾음:', song.videoId);
+            console.log('✅ 곡 찾음:', song.videoId, '-', song.title || title);
             res.json({
                 success: true,
                 song: {
@@ -765,17 +766,18 @@ router.post('/song-request/search', async (req, res) => {
                 }
             });
         } else {
-            console.log('❌ 곡을 찾을 수 없음');
+            console.log('❌ 곡을 찾을 수 없음:', title, artist || '');
             res.json({
                 success: false,
-                message: '곡을 찾을 수 없습니다.'
+                message: `'${title}' 곡을 찾을 수 없습니다. YouTube API 키를 확인해주세요.`
             });
         }
     } catch (error) {
         console.error('❌ 신청곡 검색 오류:', error);
+        console.error('스택:', error.stack);
         res.status(500).json({ 
             success: false, 
-            message: '신청곡 검색 실패',
+            message: '신청곡 검색 실패: ' + error.message,
             error: error.message
         });
     }
