@@ -1383,6 +1383,7 @@
             // AI 곡 추가 함수
             async function addAISong(genreId) {
                 try {
+                    console.log('🤖 AI 곡 추가 시작 - 장르 ID:', genreId);
                     const response = await fetch('/api/popular-songs/random', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1390,6 +1391,7 @@
                     });
                     
                     const data = await response.json();
+                    console.log('🤖 AI 곡 API 응답:', data);
                     
                     if (data.success && data.songs.length > 0) {
                         const song = data.songs[0];
@@ -1399,20 +1401,29 @@
                             title: song.title,
                             artist: song.artist,
                             requester: 'AI 추천',
-                            thumbnail: song.thumbnail
+                            thumbnail: song.thumbnail,
+                            isAI: true
                         };
+                        
+                        console.log('🤖 큐에 추가할 곡:', newSong);
                         autoPlayQueue.push(newSong);
                         updateAutoPlayQueue();
+                        console.log('📋 추가 후 큐 길이:', autoPlayQueue.length);
                         
                         // 첫 곡이면 자동 재생
                         if (autoPlayQueue.length === 1) {
+                            console.log('🎵 첫 곡이므로 자동 재생 시작');
                             await playNextAutoSong();
+                        } else {
+                            console.log('📋 큐에 추가만 함 (현재', autoPlayQueue.length, '곡)');
                         }
                         
-                        console.log('✅ AI 곡 추가:', song.title, '-', song.artist);
+                        console.log('✅ AI 곡 추가 완료:', song.title, '-', song.artist);
+                    } else {
+                        console.log('⚠️ AI 곡 없음 - 응답:', data);
                     }
                 } catch (error) {
-                    console.error('❌ AI 곡 추가 실패:', error);
+                    console.error('❌ AI 곡 추가 오류:', error);
                 }
             }
 
@@ -1673,15 +1684,19 @@
 
         // Player 상태 변화 감지 (핵심: 다음 곡 자동 재생)
         function onPlayerStateChange(event) {
+            console.log('🎬 Player 상태 변경:', event.data, '(0=종료, 1=재생, 2=일시정지, 3=버퍼링, 5=준비)');
+            
             // YT.PlayerState.ENDED = 0 (재생 종료)
             if (event.data === YT.PlayerState.ENDED) {
                 console.log('✅ 재생 완료, 다음 곡으로...');
+                console.log('📋 현재 큐:', autoPlayQueue.length, '곡');
                 if (adCheckInterval) {
                     clearInterval(adCheckInterval);
                     adCheckInterval = null;
                 }
                 autoPlayQueue.shift();
                 updateAutoPlayQueue();
+                console.log('📋 shift 후 큐:', autoPlayQueue.length, '곡');
                 playNextAutoSong();
             }
             // YT.PlayerState.PLAYING = 1 (재생 중)
