@@ -958,4 +958,31 @@ router.get('/admin/genres/:id/songs', async (req, res) => {
     }
 });
 
+// 관리자: 곡 삭제
+router.delete('/admin/songs/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const PopularSong = require('../models/PopularSong');
+        
+        const song = await PopularSong.findById(id);
+        if (!song) {
+            return res.status(404).json({ success: false, message: '곡을 찾을 수 없습니다' });
+        }
+        
+        // 장르의 curatedCount 감소
+        if (song.genre) {
+            await Genre.findByIdAndUpdate(song.genre, {
+                $inc: { curatedCount: -1 }
+            });
+        }
+        
+        await PopularSong.findByIdAndDelete(id);
+        
+        res.json({ success: true, message: '곡이 삭제되었습니다' });
+    } catch (error) {
+        console.error('❌ 곡 삭제 오류:', error);
+        res.status(500).json({ success: false, message: '곡 삭제 실패' });
+    }
+});
+
 module.exports = router;
