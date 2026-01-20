@@ -197,38 +197,50 @@ class SongRequestService {
                 return null;
             }
 
-            const query = `${title} ${artist} official music video`;
             const url = 'https://www.googleapis.com/youtube/v3/search';
+            
+            // 여러 검색 전략 시도
+            const queries = [
+                `${title} ${artist}`, // 기본 검색
+                `${title} ${artist} official`, // official 추가
+                `${title} ${artist} MV`, // MV 추가
+                `${artist} ${title}`, // 순서 변경
+            ];
 
-            console.log('🔍 YouTube 검색 시작:', query);
-            console.log('🔑 API 키:', this.youtubeApiKey ? '설정됨' : '없음');
+            for (const query of queries) {
+                console.log('🔍 YouTube 검색 시도:', query);
 
-            const response = await axios.get(url, {
-                params: {
-                    key: this.youtubeApiKey,
-                    q: query,
-                    part: 'snippet',
-                    type: 'video',
-                    maxResults: 1,
-                    videoCategoryId: '10' // Music category
+                const response = await axios.get(url, {
+                    params: {
+                        key: this.youtubeApiKey,
+                        q: query,
+                        part: 'snippet',
+                        type: 'video',
+                        maxResults: 5, // 여러 결과 확인
+                        videoCategoryId: '10' // Music category
+                    }
+                });
+
+                console.log('✅ YouTube API 응답:', response.data.items?.length || 0, '개 결과');
+
+                if (response.data.items && response.data.items.length > 0) {
+                    // 첫 번째 결과 사용
+                    const video = response.data.items[0];
+                    const result = {
+                        videoId: video.id.videoId,
+                        url: `https://www.youtube.com/watch?v=${video.id.videoId}`,
+                        thumbnail: video.snippet.thumbnails.high.url,
+                        channelTitle: video.snippet.channelTitle,
+                        title: video.snippet.title
+                    };
+                    console.log('✅ YouTube 검색 성공:', result.videoId, '-', video.snippet.title);
+                    return result;
                 }
-            });
-
-            console.log('✅ YouTube API 응답:', response.data.items?.length || 0, '개 결과');
-
-            if (response.data.items && response.data.items.length > 0) {
-                const video = response.data.items[0];
-                const result = {
-                    videoId: video.id.videoId,
-                    url: `https://www.youtube.com/watch?v=${video.id.videoId}`,
-                    thumbnail: video.snippet.thumbnails.high.url,
-                    channelTitle: video.snippet.channelTitle
-                };
-                console.log('✅ YouTube 검색 성공:', result.videoId, '-', video.snippet.title);
-                return result;
+                
+                console.log('⚠️ 이 쿼리로는 결과 없음, 다음 전략 시도...');
             }
 
-            console.log('❌ YouTube 검색 결과 없음:', query);
+            console.log('❌ 모든 검색 전략 실패:', title, artist);
             return null;
         } catch (error) {
             console.error('❌ YouTube 검색 오류:', error.message);
