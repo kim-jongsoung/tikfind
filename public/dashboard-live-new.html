@@ -114,7 +114,7 @@
                             <!-- 시청자 신청곡 안내 -->
                             <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; margin-top: 8px;">
                                 <i class="fas fa-music" style="color: white; font-size: 12px;"></i>
-                                <span style="font-size: 10px; color: white; flex: 1;">신청곡신청은 #노래제목#가수이름 으로 신청해주세요.</span>
+                                <span style="font-size: 10px; color: white; flex: 1;">신청곡 신청은 #노래제목#가수이름 채팅창에 남겨주세요.</span>
                                 <button id="copyGuideBtn" onclick="copyRequestGuide()" style="padding: 4px 8px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; font-size: 9px; cursor: pointer; transition: all 0.2s;">
                                     <i class="fas fa-copy" style="margin-right: 2px;"></i>복사
                                 </button>
@@ -127,22 +127,12 @@
                             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                                 <select id="genreSelect" style="padding: 4px 8px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
                                     <option value="" disabled selected>AI재생장르선택</option>
-                                    <option value="all">전체 (0곡)</option>
-                                    <option value="kpop">K-POP (0곡)</option>
-                                    <option value="pop">POP (0곡)</option>
-                                    <option value="hiphop">힙합/R&B (0곡)</option>
-                                    <option value="dance">댄스/EDM (0곡)</option>
-                                    <option value="ballad">발라드 (0곡)</option>
-                                    <option value="tiktok_trend">틱톡 트렌드 (0곡)</option>
                                 </select>
                                 <button id="aiAutoPlayBtn" class="btn-toolbar" style="background: #9333ea; color: white; padding: 4px 10px; font-size: 10px;">
                                     <i class="fas fa-robot" style="margin-right: 2px;"></i>AI 자동재생
                                 </button>
-                                <button id="nextSongBtn" class="btn-toolbar" style="background: #2563eb; color: white; padding: 4px 10px; font-size: 10px;">
-                                    <i class="fas fa-forward" style="margin-right: 2px;"></i>다음곡
-                                </button>
-                                <button id="pausePlayBtn" class="btn-toolbar" style="background: #f59e0b; color: white; padding: 4px 10px; font-size: 10px;">
-                                    <i class="fas fa-pause" style="margin-right: 2px;"></i>일시정지
+                                <button id="aiAutoPlayStopBtn" class="btn-toolbar" style="background: #dc2626; color: white; padding: 4px 10px; font-size: 10px; display: none;">
+                                    <i class="fas fa-stop" style="margin-right: 2px;"></i>AI자동재생멈춤
                                 </button>
                             </div>
                         </div>
@@ -173,9 +163,14 @@
                             <div class="toolbar-left">
                                 <span class="song-count" id="songCount">총 0곡</span>
                             </div>
-                            <div class="toolbar-right">
+                            <div class="toolbar-right" style="display: flex; gap: 6px;">
+                                <button id="nextSongBtn" class="btn-toolbar" style="background: #2563eb; color: white; padding: 4px 10px; font-size: 10px;">
+                                    <i class="fas fa-forward" style="margin-right: 2px;"></i>다음곡
+                                </button>
+                                <button id="pausePlayBtn" class="btn-toolbar" style="background: #f59e0b; color: white; padding: 4px 10px; font-size: 10px;">
+                                    <i class="fas fa-pause" style="margin-right: 2px;"></i>일시정지
+                                </button>
                                 <button class="btn-toolbar" onclick="clearAllSongs()" title="전체 삭제">🗑️ 전체삭제</button>
-                                <button class="btn-toolbar" onclick="exportPlaylist()" title="목록 저장">💾 저장</button>
                             </div>
                         </div>
                         
@@ -1333,7 +1328,8 @@
             
             // AI 자동재생 버튼
             document.getElementById('aiAutoPlayBtn').onclick = () => {
-                const button = document.getElementById('aiAutoPlayBtn');
+                const startBtn = document.getElementById('aiAutoPlayBtn');
+                const stopBtn = document.getElementById('aiAutoPlayStopBtn');
                 const genreId = document.getElementById('genreSelect').value;
                 
                 if (!genreId) {
@@ -1341,36 +1337,40 @@
                     return;
                 }
                 
-                if (!aiAutoPlayEnabled) {
-                    // 자동재생 시작
-                    aiAutoPlayEnabled = true;
-                    button.style.background = '#dc2626'; // 빨간색
-                    button.innerHTML = '<i class="fas fa-stop" style="margin-right: 2px;"></i>자동재생 중...';
-                    console.log('🤖 AI 자동재생 시작 - 장르 ID:', genreId);
-                    
-                    // 큐가 비면 자동으로 AI 곡 추가
-                    aiAutoPlayInterval = setInterval(async () => {
-                        if (autoPlayQueue.length === 0 && aiAutoPlayEnabled) {
-                            console.log('🎵 큐가 비어서 AI 곡 자동 추가');
-                            await addAISong(genreId);
-                        }
-                    }, 3000); // 3초마다 체크
-                    
-                    // 즉시 첫 곡 추가
-                    if (autoPlayQueue.length === 0) {
-                        addAISong(genreId);
+                // 자동재생 시작
+                aiAutoPlayEnabled = true;
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'block';
+                console.log('🤖 AI 자동재생 시작 - 장르 ID:', genreId);
+                
+                // 큐가 비면 자동으로 AI 곡 추가
+                aiAutoPlayInterval = setInterval(async () => {
+                    if (autoPlayQueue.length === 0 && aiAutoPlayEnabled) {
+                        console.log('🎵 큐가 비어서 AI 곡 자동 추가');
+                        await addAISong(genreId);
                     }
-                } else {
-                    // 자동재생 중지
-                    aiAutoPlayEnabled = false;
-                    button.style.background = '#9333ea'; // 보라색
-                    button.innerHTML = '<i class="fas fa-robot" style="margin-right: 2px;"></i>AI 자동재생';
-                    console.log('🛑 AI 자동재생 중지');
-                    
-                    if (aiAutoPlayInterval) {
-                        clearInterval(aiAutoPlayInterval);
-                        aiAutoPlayInterval = null;
-                    }
+                }, 3000); // 3초마다 체크
+                
+                // 즉시 첫 곡 추가
+                if (autoPlayQueue.length === 0) {
+                    addAISong(genreId);
+                }
+            };
+            
+            // AI 자동재생 멈춤 버튼
+            document.getElementById('aiAutoPlayStopBtn').onclick = () => {
+                const startBtn = document.getElementById('aiAutoPlayBtn');
+                const stopBtn = document.getElementById('aiAutoPlayStopBtn');
+                
+                // 자동재생 중지
+                aiAutoPlayEnabled = false;
+                startBtn.style.display = 'block';
+                stopBtn.style.display = 'none';
+                console.log('🛑 AI 자동재생 중지');
+                
+                if (aiAutoPlayInterval) {
+                    clearInterval(aiAutoPlayInterval);
+                    aiAutoPlayInterval = null;
                 }
             };
             
@@ -1499,7 +1499,7 @@
 
         // 신청곡 안내 복사 기능
         function copyRequestGuide() {
-            const guideText = '신청곡신청은 #노래제목#가수이름 예시: #Dynamite#BTS';
+            const guideText = '신청곡 신청은 #노래제목#가수이름 채팅창에 남겨주세요. 예시: #Dynamite#BTS';
             
             navigator.clipboard.writeText(guideText).then(() => {
                 const btn = document.getElementById('copyGuideBtn');
