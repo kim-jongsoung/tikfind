@@ -1452,7 +1452,34 @@
                         // 첫 곡이면 자동 재생
                         if (autoPlayQueue.length === 1) {
                             console.log('🎵 첫 곡이므로 자동 재생 시작');
-                            await playNextAutoSong();
+                            console.log('🎵 YouTube Player 상태:', {
+                                exists: !!youtubePlayer,
+                                ready: isPlayerReady
+                            });
+                            
+                            // YouTube Player가 준비될 때까지 대기
+                            if (!youtubePlayer || !isPlayerReady) {
+                                console.log('⏳ YouTube Player 초기화 대기 중...');
+                                const checkPlayer = setInterval(() => {
+                                    if (youtubePlayer && isPlayerReady) {
+                                        console.log('✅ YouTube Player 준비 완료, 재생 시작');
+                                        clearInterval(checkPlayer);
+                                        playNextAutoSong();
+                                    }
+                                }, 500);
+                                
+                                // 5초 후에도 준비 안되면 강제 초기화
+                                setTimeout(() => {
+                                    if (!youtubePlayer || !isPlayerReady) {
+                                        console.log('⚠️ YouTube Player 초기화 타임아웃, 강제 초기화');
+                                        clearInterval(checkPlayer);
+                                        initYouTubePlayer();
+                                        setTimeout(() => playNextAutoSong(), 2000);
+                                    }
+                                }, 5000);
+                            } else {
+                                await playNextAutoSong();
+                            }
                         } else {
                             console.log('📋 큐에 추가만 함 (현재', autoPlayQueue.length, '곡)');
                         }
