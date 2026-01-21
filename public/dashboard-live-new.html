@@ -1373,20 +1373,21 @@
                 }, 3000); // 3초마다 체크
                 
                 // 즉시 첫 곡 추가
-                if (autoPlayQueue.length === 0) {
-                    addAISong(genreId);
-                }
+                console.log('🎵 즉시 첫 곡 추가 시작');
+                addAISong(genreId);
             };
             
             // AI 자동재생 멈춤 버튼
             document.getElementById('aiAutoPlayStopBtn').onclick = () => {
                 const startBtn = document.getElementById('aiAutoPlayBtn');
                 const stopBtn = document.getElementById('aiAutoPlayStopBtn');
+                const aiCurrentSong = document.getElementById('aiCurrentSong');
                 
                 // 자동재생 중지
                 aiAutoPlayEnabled = false;
                 startBtn.style.display = 'block';
                 stopBtn.style.display = 'none';
+                aiCurrentSong.style.display = 'none';
                 console.log('🛑 AI 자동재생 중지');
                 
                 if (aiAutoPlayInterval) {
@@ -1442,6 +1443,12 @@
                         updateAutoPlayQueue();
                         console.log('📋 추가 후 큐 길이:', autoPlayQueue.length);
                         
+                        // AI 현재 재생곡 UI 업데이트
+                        const aiCurrentSong = document.getElementById('aiCurrentSong');
+                        const aiSongTitle = document.getElementById('aiSongTitle');
+                        aiCurrentSong.style.display = 'block';
+                        aiSongTitle.textContent = `${song.title} - ${song.artist}`;
+                        
                         // 첫 곡이면 자동 재생
                         if (autoPlayQueue.length === 1) {
                             console.log('🎵 첫 곡이므로 자동 재생 시작');
@@ -1458,6 +1465,19 @@
                     console.error('❌ AI 곡 추가 오류:', error);
                 }
             }
+
+            // AI 자동재생 곡 스킵
+            window.skipAISong = () => {
+                console.log('⏭️ AI 곡 스킵');
+                if (youtubePlayer && isPlayerReady) {
+                    youtubePlayer.stopVideo();
+                }
+                if (autoPlayQueue.length > 0 && autoPlayQueue[0].isAI) {
+                    autoPlayQueue.shift();
+                    updateAutoPlayQueue();
+                    playNextAutoSong();
+                }
+            };
 
             // 다음 곡 버튼
             document.getElementById('nextSongBtn').onclick = () => {
