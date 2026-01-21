@@ -125,6 +125,8 @@ class SongRequestService {
                     videoId: dbSong.videoId,
                     url: `https://www.youtube.com/watch?v=${dbSong.videoId}`,
                     thumbnail: dbSong.thumbnail,
+                    title: dbSong.title,
+                    artist: dbSong.artist,
                     channelTitle: dbSong.artist,
                     fromDB: true
                 };
