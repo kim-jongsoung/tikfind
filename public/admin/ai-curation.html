@@ -71,8 +71,8 @@
 
     <div class="container mx-auto px-4 py-8">
         <div class="mb-8">
-            <h1 class="text-3xl font-bold mb-2 text-gray-800">🤖 AI 자동 큐레이션</h1>
-            <p class="text-gray-600">장르를 추가하고 AI가 자동으로 인기곡 50곡을 큐레이션합니다</p>
+            <h1 class="text-3xl font-bold mb-2 text-gray-800">🎵 곡 큐레이션 관리</h1>
+            <p class="text-gray-600">장르를 추가하고 직접 곡을 검색하여 큐레이션하세요</p>
         </div>
 
         <!-- 장르 추가 -->
@@ -95,6 +95,42 @@
             <div class="text-center py-12 text-gray-400 col-span-full">
                 <i class="fas fa-music text-4xl mb-3"></i>
                 <p>로딩 중...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 곡 추가 모달 -->
+    <div id="add-song-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg w-full max-w-2xl overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-2xl font-bold text-gray-800" id="add-song-modal-title">곡 추가</h2>
+                <button onclick="closeAddSongModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+            <div class="p-6 bg-gray-50">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">노래 제목 *</label>
+                        <input type="text" id="song-title" placeholder="예: Dynamite" 
+                            class="w-full px-4 py-2 bg-white rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-800">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">가수 이름</label>
+                        <input type="text" id="song-artist" placeholder="예: BTS" 
+                            class="w-full px-4 py-2 bg-white rounded-lg border border-gray-300 focus:border-blue-500 focus:outline-none text-gray-800">
+                    </div>
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <strong>팁:</strong> 제목과 가수를 함께 입력하면 더 정확한 검색 결과를 얻을 수 있습니다.
+                        </p>
+                    </div>
+                    <button onclick="addSongToGenre()" 
+                        class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white transition">
+                        <i class="fas fa-search mr-2"></i>검색 후 추가
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -176,9 +212,9 @@
                     ` : ''}
 
                     <div class="flex gap-2">
-                        <button onclick="curateGenre('${genre._id}')" 
+                        <button onclick="showAddSongModal('${genre._id}', '${genre.name}')" 
                             class="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold text-white transition">
-                            <i class="fas fa-magic mr-2"></i>큐레이션하기
+                            <i class="fas fa-plus mr-2"></i>곡 추가
                         </button>
                         ${genre.curatedCount > 0 ? `
                             <button onclick="viewSongs('${genre._id}', '${genre.name}')" 
@@ -247,48 +283,63 @@
             }
         }
 
-        // AI 큐레이션 실행
-        async function curateGenre(id) {
-            if (!confirm('AI가 이 장르의 인기곡 50곡을 자동으로 큐레이션합니다. 약 1-2분 소요됩니다. 계속하시겠습니까?')) return;
+        let currentGenreId = null;
+        let currentGenreName = null;
 
-            // 로딩 표시
-            const originalContent = document.body.innerHTML;
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            loadingDiv.innerHTML = `
-                <div class="bg-white rounded-lg p-8 max-w-md">
-                    <div class="text-center">
-                        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                        <h3 class="text-xl font-bold text-gray-800 mb-2">AI 큐레이션 진행 중...</h3>
-                        <p class="text-gray-600">약 1-2분 소요됩니다. 잠시만 기다려주세요.</p>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(loadingDiv);
+        // 곡 추가 모달 열기
+        function showAddSongModal(genreId, genreName) {
+            currentGenreId = genreId;
+            currentGenreName = genreName;
+            document.getElementById('add-song-modal-title').textContent = `${genreName} - 곡 추가`;
+            document.getElementById('song-title').value = '';
+            document.getElementById('song-artist').value = '';
+            document.getElementById('add-song-modal').classList.remove('hidden');
+            document.getElementById('song-title').focus();
+        }
+
+        // 곡 추가 모달 닫기
+        function closeAddSongModal() {
+            document.getElementById('add-song-modal').classList.add('hidden');
+            currentGenreId = null;
+            currentGenreName = null;
+        }
+
+        // 장르에 곡 추가
+        async function addSongToGenre() {
+            const title = document.getElementById('song-title').value.trim();
+            const artist = document.getElementById('song-artist').value.trim();
+
+            if (!title) {
+                alert('노래 제목을 입력하세요');
+                return;
+            }
+
+            const button = event.target;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>검색 중...';
 
             try {
-                const response = await fetch(`/api/admin/genres/${id}/curate`, {
-                    method: 'POST'
+                const response = await fetch(`/api/admin/genres/${currentGenreId}/add-song`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, artist })
                 });
 
                 const data = await response.json();
 
-                // 로딩 제거
-                document.body.removeChild(loadingDiv);
-
                 if (data.success) {
-                    alert(`큐레이션 완료!\n\n✅ 저장: ${data.savedCount}곡\n⏭️ 스킵: ${data.skippedCount}곡\n❌ 오류: ${data.errorCount}곡`);
+                    alert(`곡이 추가되었습니다!\n\n🎵 ${data.song.title}\n🎤 ${data.song.artist}`);
+                    closeAddSongModal();
                     loadGenres();
                 } else {
-                    alert(`큐레이션 실패\n\n${data.message}\n\n${data.error || ''}`);
+                    alert(data.message || '곡 추가 실패');
                 }
             } catch (error) {
-                // 로딩 제거
-                if (document.body.contains(loadingDiv)) {
-                    document.body.removeChild(loadingDiv);
-                }
-                console.error('큐레이션 실패:', error);
-                alert('큐레이션 실패: ' + error.message);
+                console.error('곡 추가 실패:', error);
+                alert('곡 추가 실패: ' + error.message);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-search mr-2"></i>검색 후 추가';
             }
         }
 
@@ -384,6 +435,13 @@
         });
         document.getElementById('genre-description').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') addGenre();
+        });
+
+        // Enter 키로 곡 추가
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('add-song-modal').classList.contains('hidden')) {
+                addSongToGenre();
+            }
         });
 
         // 초기 로드

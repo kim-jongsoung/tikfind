@@ -1005,6 +1005,95 @@ router.get('/admin/genres/:id/songs', async (req, res) => {
     }
 });
 
+// 관리자: 직접 곡 추가 (제목 + 가수명)
+router.post('/admin/genres/:id/add-song', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, artist } = req.body;
+        
+        if (!title) {
+            return res.status(400).json({ 
+                success: false, 
+                message: '제목을 입력하세요' 
+            });
+        }
+        
+        console.log('🎵 곡 추가 시작:', { genreId: id, title, artist });
+        
+        // SongRequestService로 YouTube 검색
+        const SongRequestService = require('../services/SongRequestService');
+        const songService = new SongRequestService();
+        const youtubeResult = await songService.searchYouTube(title, artist || '');
+        
+        if (!youtubeResult) {
+            return res.status(404).json({ 
+                success: false, 
+                message: '곡을 찾을 수 없습니다. 다른 검색어로 시도해주세요.' 
+            });
+        }
+        
+        console.log('✅ YouTube 검색 성공:', youtubeResult);
+        
+        // DB에 저장
+        const PopularSong = require('../models/PopularSong');
+        const Genre = require('../models/Genre');
+        
+        // 중복 체크
+        const existing = await PopularSong.findOne({ 
+            videoId: youtubeResult.videoId,
+            genre: id 
+        });
+        
+        if (existing) {
+            return res.status(400).json({ 
+                success: false, 
+                message: '이미 추가된 곡입니다' 
+            });
+        }
+        
+        // 곡 저장
+        const newSong = await PopularSong.create({
+            videoId: youtubeResult.videoId,
+            title: youtubeResult.title || title,
+            artist: artist || youtubeResult.channelTitle,
+            thumbnail: youtubeResult.thumbnail,
+            genre: id,
+            isAIPlaylist: true,
+            isActive: true,
+            popularity: 0,
+            requestCount: 0,
+            source: 'manual'
+        });
+        
+        // 장르의 curatedCount 증가
+        await Genre.findByIdAndUpdate(id, {
+            $inc: { curatedCount: 1 },
+            lastCuratedAt: new Date()
+        });
+        
+        console.log('✅ 곡 저장 완료:', newSong._id);
+        
+        res.json({ 
+            success: true, 
+            message: '곡이 추가되었습니다',
+            song: {
+                _id: newSong._id,
+                videoId: newSong.videoId,
+                title: newSong.title,
+                artist: newSong.artist,
+                thumbnail: newSong.thumbnail
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ 곡 추가 오류:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: '곡 추가 실패: ' + error.message 
+        });
+    }
+});
+
 // 관리자: 곡 삭제
 router.delete('/admin/songs/:id', async (req, res) => {
     try {
