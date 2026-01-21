@@ -118,8 +118,12 @@ class SongRequestService {
             if (dbSong) {
                 console.log('✅ DB 캐시 히트 (비용 0원):', dbSong.title, '-', dbSong.artist);
                 
-                // 신청 횟수 증가
-                await dbSong.incrementRequestCount();
+                // 신청 횟수 증가 (실패해도 검색 결과는 반환)
+                try {
+                    await dbSong.incrementRequestCount();
+                } catch (countError) {
+                    console.warn('⚠️ 신청 횟수 증가 실패 (무시):', countError.message);
+                }
                 
                 return {
                     videoId: dbSong.videoId,
