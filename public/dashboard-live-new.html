@@ -175,8 +175,9 @@
                         </div>
                         
                         <!-- 스트리머 신청곡 추가 -->
-                        <div class="streamer-add-song">
-                            <input type="text" id="streamerSongInput" placeholder="노래 제목 + 가수 (예: Dynamite BTS)" class="song-input">
+                        <div class="streamer-add-song" style="display: flex; gap: 8px; margin-bottom: 12px;">
+                            <input type="text" id="streamerSongTitle" placeholder="노래 제목 (예: Dynamite)" class="song-input" style="flex: 2;">
+                            <input type="text" id="streamerSongArtist" placeholder="가수 (예: BTS)" class="song-input" style="flex: 1;">
                             <button id="streamerAddBtn" class="btn-add-song" onclick="streamerAddSong()">🔍 검색 & 추가</button>
                         </div>
                         
@@ -980,17 +981,15 @@
                 return;
             }
             
-            const input = document.getElementById('streamerSongInput');
-            const query = input.value.trim();
+            const titleInput = document.getElementById('streamerSongTitle');
+            const artistInput = document.getElementById('streamerSongArtist');
+            const title = titleInput.value.trim();
+            const artist = artistInput.value.trim();
             
-            if (!query) {
-                alert('노래 제목과 가수를 입력해주세요.');
+            if (!title) {
+                alert('노래 제목을 입력해주세요.');
                 return;
             }
-            
-            // 전체 쿼리를 제목으로 사용 (순서 무관)
-            const title = query;
-            const artist = ''; // 빈 문자열로 전달
             
             try {
                 const userId = String(currentUser._id || currentUser.id);
@@ -1045,7 +1044,8 @@
                         playNextAutoSong();
                     }
                     
-                    input.value = '';
+                    titleInput.value = '';
+                    artistInput.value = '';
                     console.log('✅ 신청곡 추가:', title, '-', artist);
                     // 버튼으로 피드백 (alert 제거)
                     button.textContent = '✅ 추가 완료!';
