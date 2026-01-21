@@ -189,6 +189,7 @@
                         <div class="flex-1">
                             <h3 class="text-xl font-bold mb-1 text-gray-800">${genre.name}</h3>
                             ${genre.description ? `<p class="text-sm text-gray-600">${genre.description}</p>` : ''}
+                            <p class="text-xs text-gray-400 mt-1 font-mono">ID: ${genre._id}</p>
                         </div>
                         <button onclick="deleteGenre('${genre._id}')" class="text-red-500 hover:text-red-600">
                             <i class="fas fa-trash"></i>
@@ -247,7 +248,15 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    alert('장르가 추가되었습니다');
+                    const genreId = data.genre._id;
+                    const genreName = data.genre.name;
+                    
+                    console.log('✅ 장르 생성 완료:', {
+                        이름: genreName,
+                        ID: genreId
+                    });
+                    
+                    alert(`장르가 추가되었습니다!\n\n📁 장르명: ${genreName}\n🆔 장르 ID: ${genreId}\n\n※ 장르 ID가 콘솔에 출력되었습니다 (F12)`);
                     document.getElementById('genre-name').value = '';
                     document.getElementById('genre-description').value = '';
                     loadGenres();
