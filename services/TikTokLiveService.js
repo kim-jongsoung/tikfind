@@ -135,7 +135,17 @@ class TikTokLiveService {
      * 신청곡 정보 파싱
      */
     parseSongInfo(songInfo) {
-        // "아이유 - 좋은날" 형식
+        // 1. "#제목#가수" 형식 (우선순위 높음)
+        const hashPattern = /#([^#]+)#([^#]+)/;
+        const hashMatch = songInfo.match(hashPattern);
+        if (hashMatch) {
+            return {
+                title: hashMatch[1].trim(),
+                artist: hashMatch[2].trim()
+            };
+        }
+        
+        // 2. "아이유 - 좋은날" 형식
         const parts = songInfo.split(/[-–—]/);
         if (parts.length >= 2) {
             return {
@@ -144,7 +154,7 @@ class TikTokLiveService {
             };
         }
         
-        // 제목만 있는 경우
+        // 3. 제목만 있는 경우
         return {
             artist: '',
             title: songInfo.trim()
