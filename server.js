@@ -755,6 +755,115 @@ const aiService = new AIService();
 const pronunciationCoach = new PronunciationCoachService();
 const songRequestService = new SongRequestService();
 
+// ===== 채팅 메시지 공통 처리 함수 (TikTokLiveService + /api/live/chat 공유) =====
+async function processChatMessage(chatData) {
+    const { userId, username, message, uniqueId, nickname, badges, userBadges,
+            followRole, isModerator, isSubscriber, topGifterRank, teamMemberLevel, timestamp } = chatData;
+
+    const User = require('./models/User');
+    const UsageLog = require('./models/UsageLog');
+    const PlanLimit = require('./models/PlanLimit');
+
+    const user = await User.findById(userId);
+    const streamerLanguage = user?.preferredLanguage || 'ko';
+
+    // 1. 언어 감지 + AI 발음코치
+    const messageLanguage = await pronunciationCoach.detectLanguage(message);
+    let pronunciationGuide = null;
+
+    if (messageLanguage !== streamerLanguage && messageLanguage !== 'unknown') {
+        const textOnly = message.replace(/[\s\p{Emoji}\p{P}\p{S}]/gu, '');
+        const shouldProcess = textOnly.length >= 2 && !/^\d+$/.test(message.trim());
+
+        if (shouldProcess) {
+            const today = new Date().toISOString().split('T')[0];
+            let usageLog = await UsageLog.findOneAndUpdate(
+                { userId, date: today },
+                { $setOnInsert: { songRequestCount: 0, gptAiCount: 0, pronunciationCoachCount: 0 } },
+                { upsert: true, new: true }
+            );
+            const planLimit = await PlanLimit.findOne({ planName: user?.plan || 'free' });
+            const limit = planLimit?.pronunciationCoachLimit ?? 10;
+            const currentUsage = usageLog.pronunciationCoachCount || 0;
+
+            if (limit === -1 || currentUsage < limit) {
+                pronunciationGuide = pronunciationCoach.getQuickResponse(message, messageLanguage, streamerLanguage);
+                if (!pronunciationGuide) {
+                    pronunciationGuide = await pronunciationCoach.generatePronunciationGuide(message, messageLanguage, streamerLanguage);
+                }
+                if (pronunciationGuide) {
+                    await UsageLog.updateOne({ userId, date: today }, { $inc: { pronunciationCoachCount: 1 } });
+                }
+            } else {
+                pronunciationGuide = { limitExceeded: true, currentUsage, limit, message: '일일 AI 발음 코치 한도를 초과했습니다.' };
+            }
+        }
+    }
+
+    // 2. 신청곡 파싱
+    const songData = songRequestService.parseSongRequest(message);
+    let songRequest = null;
+    const requesterFollowRole = Number(followRole) || 0;
+    const songSettings = songRequestService.getSettings(userId);
+
+    if (songData && requesterFollowRole >= 1 && songSettings.isAccepting) {
+        const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
+        const elapsed = lastTime ? (Date.now() - lastTime) / 1000 / 60 : Infinity;
+        const cooldownOk = songSettings.cooldownMinutes === 0 || elapsed >= songSettings.cooldownMinutes;
+
+        if (cooldownOk) {
+            const today = new Date().toISOString().split('T')[0];
+            let usageLog = await UsageLog.findOneAndUpdate(
+                { userId, date: today },
+                { $setOnInsert: { songRequestCount: 0, gptAiCount: 0, pronunciationCoachCount: 0 } },
+                { upsert: true, new: true }
+            );
+            const planLimit = await PlanLimit.findOne({ planName: user?.plan || 'free' });
+            const limit = planLimit?.songRequestLimit || 5;
+            const currentUsage = usageLog.songRequestCount || 0;
+
+            if (limit === -1 || currentUsage < limit) {
+                const result = await songRequestService.addSongRequest(userId, songData, {
+                    username, uniqueId: uniqueId || username, badges: badges || [], isVIP: false, level: 1
+                });
+                if (result.success) {
+                    songRequest = result.song;
+                    songRequestService.setLastRequestTime(userId, uniqueId || username, Date.now());
+                    await UsageLog.updateOne({ userId, date: today }, { $inc: { songRequestCount: 1 } });
+                    emitQueueUpdate(userId);
+                }
+            }
+        }
+    }
+
+    // 3. 사용량 조회
+    const currentUsage = await getUserDailyUsage(userId, user?.timezone || 'UTC');
+    const planLimit = await PlanLimit.findOne({ planName: user?.plan || 'free' });
+
+    // 4. 클라이언트 전송
+    io.to(userId).emit('chat-message', {
+        username,
+        uniqueId: uniqueId || username,
+        nickname: nickname || username,
+        message,
+        messageLanguage,
+        pronunciationGuide,
+        songRequest,
+        userBadges: userBadges || [],
+        followRole: followRole || 0,
+        isModerator: isModerator || false,
+        isSubscriber: isSubscriber || false,
+        topGifterRank: topGifterRank || null,
+        teamMemberLevel: teamMemberLevel || null,
+        timestamp: timestamp || Date.now(),
+        usage: {
+            songRequest: { used: currentUsage.songRequestCount, limit: planLimit?.songRequestLimit || 5 },
+            gptAi: { used: currentUsage.gptAiCount, limit: planLimit?.gptAiLimit || 20 },
+            pronunciationCoach: { used: currentUsage.pronunciationCoachCount, limit: planLimit?.pronunciationCoachLimit || 10 }
+        }
+    });
+}
+
 // Live 상태 업데이트
 app.post('/api/live/status', checkSubscription, async (req, res) => {
     try {
@@ -778,6 +887,20 @@ app.post('/api/live/status', checkSubscription, async (req, res) => {
 
 // 채팅 메시지 수신 (TTS 무료 서비스 - 구독 확인 없음)
 app.post('/api/live/chat', async (req, res) => {
+    try {
+        const { userId, username, message, timestamp, uniqueId, nickname, badges, userBadges, followRole, isModerator, isSubscriber, topGifterRank, teamMemberLevel } = req.body;
+        
+        console.log(`💬 [${username}]: ${message} (userId: ${userId})`);
+        await processChatMessage({ userId, username, message, timestamp, uniqueId, nickname, badges, userBadges, followRole, isModerator, isSubscriber, topGifterRank, teamMemberLevel });
+        return res.json({ success: true });
+    } catch (error) {
+        console.error('❌ 채팅 메시지 처리 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 채팅 메시지 수신 (구버전 - 하위 호환용)
+app.post('/api/live/chat_legacy', async (req, res) => {
     try {
         const { userId, username, message, timestamp, uniqueId, nickname, badges, userBadges, followRole, isModerator, isSubscriber, topGifterRank, teamMemberLevel } = req.body;
         
@@ -1444,24 +1567,49 @@ io.on('connection', (socket) => {
         console.log(`✅ live-status 전송 완료 (룸: ${userId})`);
     });
     
-    // 웹 → Desktop App: 라이브 시작 명령
+    // 웹 → 서버 직접 TikTok Live 연결
     socket.on('start-live', async (data) => {
         const { userId, tiktokId } = data;
-        console.log(`🎥 라이브 시작 명령: ${userId}, TikTok: ${tiktokId}`);
-        
-        // Desktop App으로 명령 전송
-        io.to(userId).emit('start-live', { tiktokId });
+        console.log(`🎥 라이브 시작 요청: userId=${userId}, tiktokId=${tiktokId}`);
+
+        // 이미 연결 중이면 먼저 종료
+        if (liveConnections.has(userId)) {
+            try {
+                liveConnections.get(userId).disconnect();
+            } catch(e) {}
+            liveConnections.delete(userId);
+        }
+
+        try {
+            socket.join(userId);
+
+            const liveService = new TikTokLiveService(tiktokId, userId, io, processChatMessage);
+            await liveService.connect();
+            liveConnections.set(userId, liveService);
+
+            liveStatusMap.set(userId, { isLive: true, tiktokId });
+            io.to(userId).emit('live-status', { isLive: true, tiktokId });
+            console.log(`✅ TikTok Live 연결 성공: ${tiktokId} (User: ${userId})`);
+        } catch (error) {
+            console.error(`❌ TikTok Live 연결 실패: ${error.message}`);
+            liveStatusMap.set(userId, { isLive: false });
+            socket.emit('live-error', { message: error.message });
+            io.to(userId).emit('live-status', { isLive: false });
+        }
     });
-    
-    // 웹 → Desktop App: 라이브 종료 명령
+
+    // 웹 → 서버 직접 TikTok Live 종료
     socket.on('stop-live', (data) => {
         const { userId } = data;
-        console.log(`⏹️ 라이브 종료 명령: ${userId}`);
-        
-        // Desktop App으로 명령 전송
-        io.to(userId).emit('stop-live');
-        
-        // 웹에도 즉시 상태 업데이트
+        console.log(`⏹️ 라이브 종료 요청: ${userId}`);
+
+        const liveService = liveConnections.get(userId);
+        if (liveService) {
+            try { liveService.disconnect(); } catch(e) {}
+            liveConnections.delete(userId);
+        }
+
+        liveStatusMap.set(userId, { isLive: false });
         io.to(userId).emit('live-status', { isLive: false });
     });
     

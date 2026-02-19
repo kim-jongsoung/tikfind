@@ -2,10 +2,11 @@ const { WebcastPushConnection } = require('tiktok-live-connector');
 const AIService = require('./AIService');
 
 class TikTokLiveService {
-    constructor(username, userId, io) {
+    constructor(username, userId, io, processChatMessage) {
         this.username = username;
         this.userId = userId;
         this.io = io;
+        this.processChatMessage = processChatMessage || null;
         this.connection = null;
         this.aiService = new AIService();
         
@@ -128,23 +129,28 @@ class TikTokLiveService {
             timestamp: Date.now()
         };
 
-        // 1. 신청곡 파싱 (팔로워 이상만 가능)
-        const requesterFollowRole = Number(data.followRole) || 0;
-        const song = await this.parseSongRequest(message);
-        if (song && requesterFollowRole >= 1) {
-            await this.addToQueue(song, username);
-        } else if (song && requesterFollowRole < 1) {
-            console.log(`🚫 신청곡 거부 (팔로워 아님): ${username} followRole=${requesterFollowRole}`);
+        // AI 발음코치 + 신청곡 처리 후 클라이언트 전송
+        if (this.processChatMessage) {
+            // server.js의 공통 처리 함수 사용 (AI 발음코치 + 신청곡 포함)
+            await this.processChatMessage({
+                userId: this.userId,
+                username,
+                message,
+                uniqueId: data.uniqueId,
+                nickname: data.nickname || data.uniqueId,
+                badges: data.badges || [],
+                userBadges: data.userBadges || [],
+                followRole: data.followRole || 0,
+                isModerator: data.isModerator || false,
+                isSubscriber: data.isSubscriber || false,
+                topGifterRank: data.topGifterRank || null,
+                teamMemberLevel: data.teamMemberLevel || null,
+                timestamp: Date.now()
+            });
+        } else {
+            // 폴백: 기본 emit (AI 발음코치 없음)
+            this.io.to(this.userId).emit('chat-message', chatData);
         }
-
-        // 2. AI 자동응답 (비동기)
-        this.generateAIResponse(message, username).catch(err => {
-            console.error('AI 응답 실패:', err);
-        });
-
-        // 3. 클라이언트에 메시지 전송 (tiktok-data 소켓 핸들러로 라우팅하여 AI 발음코치 처리)
-        // server.js의 tiktok-data 핸들러를 재사용하기 위해 직접 emit 대신 내부 처리
-        this.io.to(this.userId).emit('chat-message', chatData);
     }
 
     /**
@@ -265,10 +271,13 @@ class TikTokLiveService {
     emitStatus() {
         this.io.to(this.userId).emit('live-status', {
             isLive: this.isLive,
+            tiktokId: this.username,
             viewerCount: this.viewerCount,
-            username: this.username,
             stats: this.stats
         });
+        if (this.viewerCount > 0) {
+            this.io.to(this.userId).emit('viewer-update', { viewerCount: this.viewerCount });
+        }
     }
 
     /**
