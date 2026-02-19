@@ -54,6 +54,11 @@ router.get('/mypage', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/mypage.html'));
 });
 
+// 설치 가이드 (공개)
+router.get('/install-guide', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/install-guide.html'));
+});
+
 // 퍼블릭 페이지
 router.get('/features', (req, res) => {
     res.render('features', { title: '기능 소개 - TikFind', user: req.user });

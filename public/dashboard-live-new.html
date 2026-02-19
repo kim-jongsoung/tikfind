@@ -266,35 +266,23 @@
         </div>
     </footer>
 
-    <!-- Desktop App 안내 모달 -->
-    <div id="desktopAppModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
-        <div style="background: white; padding: 32px; border-radius: 16px; max-width: 600px; text-align: left;">
-            <h2 style="color: #333; margin-bottom: 16px; text-align: center;">⚠️ Desktop App이 실행되지 않았습니다</h2>
-            <p style="color: #666; margin-bottom: 24px; line-height: 1.6; text-align: center;">
-                TikTok Live 데이터를 수집하려면 Desktop App이 실행되어 있어야 합니다.
-            </p>
-            
-            <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
-                <h3 style="color: #333; font-size: 14px; margin-bottom: 12px;">📋 Desktop App 실행 방법:</h3>
-                <ol style="color: #666; font-size: 14px; line-height: 1.8; margin-left: 20px;">
-                    <li>다운로드한 <strong>TikFind Setup.exe</strong> 파일을 실행</li>
-                    <li>설치 완료 후 자동으로 Desktop App 실행됨</li>
-                    <li>시스템 트레이(화면 오른쪽 하단)에 TikFind 아이콘 확인</li>
-                    <li>이 페이지에서 <strong>"시작"</strong> 버튼 클릭</li>
-                </ol>
-                <p style="color: #999; font-size: 12px; margin-top: 12px; margin-bottom: 0;">
-                    💡 PC 재부팅 시에도 Desktop App이 자동으로 실행됩니다.
-                </p>
+    <!-- 라이브 연결 오류 모달 -->
+    <div id="liveErrorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: #1a1a2e; padding: 32px; border-radius: 16px; max-width: 500px; text-align: center; border: 1px solid #333;">
+            <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+            <h2 style="color: #fff; margin-bottom: 12px;">TikTok Live 연결 실패</h2>
+            <p id="liveErrorMessage" style="color: #999; margin-bottom: 24px; line-height: 1.6;">연결에 실패했습니다.</p>
+            <div style="background: #0a0a1a; padding: 16px; border-radius: 8px; margin-bottom: 24px; text-align: left;">
+                <p style="color: #aaa; font-size: 13px; margin-bottom: 8px;">� 확인 사항:</p>
+                <ul style="color: #888; font-size: 13px; line-height: 1.8; margin-left: 16px;">
+                    <li>TikTok ID가 올바른지 확인하세요</li>
+                    <li>현재 TikTok Live 방송 중인지 확인하세요</li>
+                    <li>잠시 후 다시 시도해보세요</li>
+                </ul>
             </div>
-            
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button onclick="closeModal()" style="padding: 12px 24px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                    ✅ 확인 (Desktop App 실행 후 다시 시도)
-                </button>
-                <a id="downloadAppLink" href="/api/desktop-app/download" style="padding: 12px 24px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; text-decoration: none; display: block; text-align: center;">
-                    📥 Desktop App 다운로드
-                </a>
-            </div>
+            <button onclick="closeLiveErrorModal()" style="padding: 12px 32px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 15px;">
+                확인
+            </button>
         </div>
     </div>
 
@@ -309,7 +297,7 @@
         let likeCount = 0;
         let processedMessageIds = new Set();
         let limitExceededShown = false;
-        let desktopAppConnected = false;
+        let isLive = false;
 
         // 사용자 정보 로드
         async function loadUserInfo() {
@@ -336,12 +324,6 @@
                     
                     // 플랜 정보 표시
                     updatePlanBadge(currentUser.subscription);
-                    
-                    // 다운로드 링크에 User ID 포함
-                    const downloadLink = document.getElementById('downloadAppLink');
-                    if (downloadLink) {
-                        downloadLink.href = `/api/desktop-app/download?userId=${userId}`;
-                    }
                     
                     console.log('✅ 사용자 로드:', currentUser);
                     
@@ -491,15 +473,9 @@
             languageBadge.textContent = `🌐 ${languageName}`;
         }
 
-        // 모달 제어
-        function showDesktopAppModal() {
-            const modal = document.getElementById('desktopAppModal');
-            modal.style.display = 'flex';
-        }
-
-        function closeModal() {
-            const modal = document.getElementById('desktopAppModal');
-            modal.style.display = 'none';
+        // 오류 모달 제어
+        function closeLiveErrorModal() {
+            document.getElementById('liveErrorModal').style.display = 'none';
         }
 
         // Socket.io 연결
@@ -524,18 +500,16 @@
             updateStatus('연결 끊김', false);
         });
 
-        // Desktop App 연결 상태
-        socket.on('desktop-app-connected', (data) => {
-            desktopAppConnected = true;
-            console.log('✅ Desktop App 연결됨');
-        });
-
-        socket.on('desktop-app-disconnected', (data) => {
-            desktopAppConnected = false;
-            console.log('❌ Desktop App 연결 끊김');
-            if (isLive) {
-                updateStatus('Desktop App 연결 끊김', false);
-            }
+        // 라이브 연결 오류
+        socket.on('live-error', (data) => {
+            console.error('❌ 라이브 연결 오류:', data.message);
+            document.getElementById('liveErrorMessage').textContent = data.message || '연결에 실패했습니다.';
+            document.getElementById('liveErrorModal').style.display = 'flex';
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('startBtn').textContent = '시작';
+            document.getElementById('stopBtn').disabled = true;
+            updateStatus('연결 실패', false);
         });
 
         // 라이브 상태
@@ -545,7 +519,7 @@
             localStorage.setItem('tikfind_live_state', isLive ? 'true' : 'false');
             
             if (data.isLive) {
-                desktopAppConnected = true;
+                isLive = true;
                 updateStatus('방송 중', true);
                 document.getElementById('startBtn').disabled = true;
                 document.getElementById('startBtn').textContent = '방송 중';

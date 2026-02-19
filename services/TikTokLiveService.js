@@ -1,5 +1,7 @@
 const { WebcastPushConnection } = require('tiktok-live-connector');
 const AIService = require('./AIService');
+const PronunciationCoachService = require('./PronunciationCoachService');
+const SongRequestService = require('./SongRequestService');
 
 class TikTokLiveService {
     constructor(username, userId, io) {
@@ -8,6 +10,8 @@ class TikTokLiveService {
         this.io = io;
         this.connection = null;
         this.aiService = new AIService();
+        this.pronunciationCoach = new PronunciationCoachService();
+        this.songRequestService = new SongRequestService();
         
         // 상태
         this.isLive = false;
@@ -55,6 +59,28 @@ class TikTokLiveService {
                 await this.handleChatMessage(data);
             });
 
+            // 선물 수신
+            this.connection.on('gift', (data) => {
+                const giftName = data.giftName || data.describe || '선물';
+                const giftUsername = data.uniqueId || 'unknown';
+                console.log(`🎁 선물: ${giftName} (from ${giftUsername})`);
+                this.io.to(this.userId).emit('gift-received', {
+                    giftName,
+                    username: giftUsername,
+                    count: data.repeatCount || 1,
+                    timestamp: Date.now()
+                });
+            });
+
+            // 좋아요
+            this.connection.on('like', (data) => {
+                this.io.to(this.userId).emit('like-received', {
+                    count: data.likeCount || 1,
+                    username: data.uniqueId || 'unknown',
+                    timestamp: Date.now()
+                });
+            });
+
             // 연결 종료
             this.connection.on('disconnected', () => {
                 console.log(`❌ TikTok Live 연결 종료: @${this.username}`);
@@ -84,27 +110,70 @@ class TikTokLiveService {
         
         const message = data.comment;
         const username = data.uniqueId;
-        const userId = data.userId;
+        const badges = data.userBadges || [];
 
         console.log(`💬 [${username}]: ${message}`);
 
-        // 1. 신청곡 파싱 (정규식 먼저 시도)
-        const song = await this.parseSongRequest(message);
-        if (song) {
-            await this.addToQueue(song, username);
+        try {
+            const User = require('../models/User');
+            const user = await User.findById(this.userId);
+            const streamerLanguage = user?.preferredLanguage || 'ko';
+            const hasSubscription = user && ['trial', 'active'].includes(user.subscriptionStatus);
+
+            // 1. 언어 감지
+            const messageLanguage = await this.pronunciationCoach.detectLanguage(message);
+
+            // 2. AI 발음 코치 (유료)
+            let pronunciationGuide = null;
+            if (hasSubscription && messageLanguage !== streamerLanguage) {
+                const textOnly = message.replace(/[\s\p{Emoji}\p{P}\p{S}]/gu, '');
+                if (textOnly.length >= 2 && !/^\d+$/.test(message.trim())) {
+                    pronunciationGuide = this.pronunciationCoach.getQuickResponse(message, messageLanguage, streamerLanguage);
+                    if (!pronunciationGuide) {
+                        pronunciationGuide = await this.pronunciationCoach.generatePronunciationGuide(
+                            message, messageLanguage, streamerLanguage
+                        );
+                    }
+                }
+            }
+
+            // 3. 신청곡 파싱 (유료)
+            let songRequest = null;
+            if (hasSubscription) {
+                const songData = this.songRequestService.parseSongRequest(message);
+                if (songData) {
+                    const result = await this.songRequestService.addSongRequest(
+                        this.userId,
+                        songData,
+                        { username, uniqueId: username, badges }
+                    );
+                    if (result.success) {
+                        songRequest = result.song;
+                        this.io.to(this.userId).emit('song-queue-update', {
+                            queue: this.songRequestService.getQueue(this.userId)
+                        });
+                    }
+                }
+            }
+
+            // 4. 웹으로 전송
+            this.io.to(this.userId).emit('chat-message', {
+                username,
+                message,
+                messageLanguage,
+                pronunciationGuide,
+                songRequest,
+                timestamp: Date.now()
+            });
+
+        } catch (err) {
+            console.error('❌ 채팅 처리 오류:', err.message);
+            this.io.to(this.userId).emit('chat-message', {
+                username,
+                message,
+                timestamp: Date.now()
+            });
         }
-
-        // 2. AI 자동응답 (비동기)
-        this.generateAIResponse(message, username).catch(err => {
-            console.error('AI 응답 실패:', err);
-        });
-
-        // 3. 클라이언트에 메시지 전송
-        this.io.to(this.userId).emit('chat-message', {
-            username,
-            message,
-            timestamp: Date.now()
-        });
     }
 
     /**
