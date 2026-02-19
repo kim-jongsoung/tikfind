@@ -779,7 +779,7 @@ app.post('/api/live/status', checkSubscription, async (req, res) => {
 // 채팅 메시지 수신 (TTS 무료 서비스 - 구독 확인 없음)
 app.post('/api/live/chat', async (req, res) => {
     try {
-        const { userId, username, message, timestamp, uniqueId, badges } = req.body;
+        const { userId, username, message, timestamp, uniqueId, nickname, badges, userBadges, followRole, isModerator, isSubscriber, topGifterRank, teamMemberLevel } = req.body;
         
         console.log(`💬 [${username}]: ${message} (userId: ${userId})`);
         
@@ -794,9 +794,9 @@ app.post('/api/live/chat', async (req, res) => {
         // 1. 언어 감지
         const messageLanguage = await pronunciationCoach.detectLanguage(message);
         
-        // 2. AI 발음 코치 (유료 기능 - 구독 필요)
+        // 2. AI 발음 코치 (플랜 한도 기반)
         let pronunciationGuide = null;
-        if (hasSubscription && messageLanguage !== streamerLanguage) {
+        if (messageLanguage !== streamerLanguage) {
             // 메시지 필터링: 이모티콘, 숫자만, 특수문자만 있는 메시지는 AI 호출 안 함
             const shouldProcessMessage = (msg) => {
                 // 숫자만 있는 경우
@@ -881,7 +881,7 @@ app.post('/api/live/chat', async (req, res) => {
         const songData = songRequestService.parseSongRequest(message);
         let songRequest = null;
         
-        if (hasSubscription && songData) {
+        if (songData) {
             // 사용량 체크
             const UsageLog = require('./models/UsageLog');
             const PlanLimit = require('./models/PlanLimit');
@@ -939,10 +939,18 @@ app.post('/api/live/chat', async (req, res) => {
         // 4. Socket.io로 전송 (사용량 정보 포함)
         io.to(userId).emit('chat-message', {
             username,
+            uniqueId: uniqueId || username,
+            nickname: nickname || username,
             message,
             messageLanguage,
             pronunciationGuide,
             songRequest,
+            userBadges: userBadges || [],
+            followRole: followRole || 0,
+            isModerator: isModerator || false,
+            isSubscriber: isSubscriber || false,
+            topGifterRank: topGifterRank || null,
+            teamMemberLevel: teamMemberLevel || null,
             timestamp: timestamp || Date.now(),
             usage: {
                 songRequest: {
