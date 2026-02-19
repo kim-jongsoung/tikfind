@@ -137,7 +137,16 @@
         });
 
         socket.on('song-queue', (queue) => {
-            nextQueue = queue || [];
+            const all = queue || [];
+            // 현재 재생 중인 곡은 큐에서 제외 (currentSong과 id 또는 title로 매칭)
+            if (currentSong) {
+                nextQueue = all.filter(s =>
+                    s.id !== currentSong.id &&
+                    !(s.title === currentSong.title && s.requester === currentSong.requester)
+                );
+            } else {
+                nextQueue = all;
+            }
             buildText();
         });
     </script>
