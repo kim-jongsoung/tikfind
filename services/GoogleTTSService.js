@@ -59,7 +59,7 @@ class GoogleTTSService {
 
             if (chirpVoice && CHIRP3_HD_VOICES.includes(chirpVoice)) {
                 voiceConfig = {
-                    languageCodes: ['ko-KR'],
+                    languageCode: 'ko-KR',
                     name: `ko-KR-Chirp3-HD-${chirpVoice}`
                 };
                 console.log(`🎙️ Chirp3 HD: ${chirpVoice} | @${uniqueId}`);

@@ -56,7 +56,7 @@ class TTSService {
 
                 let voiceConfig;
                 if (vipSetting?.chirpVoice) {
-                    voiceConfig = { languageCodes: ['ko-KR'], name: `ko-KR-Chirp3-HD-${vipSetting.chirpVoice}` };
+                    voiceConfig = { languageCode: 'ko-KR', name: `ko-KR-Chirp3-HD-${vipSetting.chirpVoice}` };
                     console.log(`🎙️ Chirp3 HD: ${vipSetting.chirpVoice} | @${uniqueId}`);
                 } else {
                     const waveNetVoice = this.getAutoWaveNetVoice(uniqueId);
