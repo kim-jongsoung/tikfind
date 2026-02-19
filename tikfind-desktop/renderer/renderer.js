@@ -30,25 +30,65 @@ async function initApp() {
     // 번역 로드
     const { locale, translations } = await window.tikfind.getTranslations();
     i18n = { locale, translations };
-    
     console.log(`🌍 언어: ${locale}`);
-    
-    // UI 업데이트
     updateUILanguage();
-    
-    // 저장된 User ID 불러오기
-    loadSavedUserId();
+
+    // 1순위: 서버 세션 자동 확인 (웹에서 로그인했으면 자동 연동)
+    const autoLoaded = await autoLoadFromSession();
+
+    // 2순위: localStorage 저장값 (세션 없을 때 폴백)
+    if (!autoLoaded) {
+        loadSavedUserId();
+    }
 }
 
-// 저장된 User ID 불러오기
+// 서버 세션으로 자동 로그인 (웹 로그인 연동)
+async function autoLoadFromSession() {
+    try {
+        const res = await fetch('https://tikfind.kr/auth/current_user', {
+            credentials: 'include'
+        });
+        const data = await res.json();
+
+        if (data.success && data.user) {
+            const user = data.user;
+            console.log('✅ 웹 세션 자동 연동:', user.email || user._id);
+
+            const userId = (user._id || user.id || '').toString();
+            if (!userId) return false;
+
+            // UI 자동 입력
+            userIdInput.value = userId;
+            if (user.tiktokId) usernameInput.value = user.tiktokId;
+
+            // localStorage 갱신
+            localStorage.setItem('tikfind_userId', userId);
+            if (user.tiktokId) localStorage.setItem('tikfind_tiktokId', user.tiktokId);
+
+            // 플랜 정보 표시
+            if (user.plan) {
+                updatePlanDisplay(user.plan, user.plan.toUpperCase(), null, null);
+            }
+
+            // user-config.json 갱신 (main 프로세스)
+            window.tikfind.loginDone({ userId, tiktokId: user.tiktokId || '' });
+
+            return true;
+        }
+    } catch (e) {
+        console.log('⚠️ 세션 자동 확인 실패 (오프라인이거나 미로그인):', e.message);
+    }
+    return false;
+}
+
+// 저장된 User ID 불러오기 (폴백)
 function loadSavedUserId() {
     const savedUserId = localStorage.getItem('tikfind_userId');
-    
     if (savedUserId) {
-        console.log('✅ 저장된 User ID 로드:', savedUserId);
+        console.log('✅ localStorage User ID 로드:', savedUserId);
         userIdInput.value = savedUserId;
-        
-        // 서버에서 TikTok ID 자동 로드
+        const savedTiktokId = localStorage.getItem('tikfind_tiktokId');
+        if (savedTiktokId) usernameInput.value = savedTiktokId;
         fetchUserInfo(savedUserId);
     }
 }

@@ -115,9 +115,9 @@ ipcMain.handle('open-browser', (event, url) => {
     });
 });
 
-// 로그인 완료 후 index.html로 이동
+// 로그인 완료 후 index.html로 이동 (또는 user-config.json만 갱신)
 ipcMain.on('login-done', (event, userData) => {
-    console.log('✅ 로그인 완료, 메인 화면으로 이동:', userData);
+    console.log('✅ 로그인 완료:', userData);
     // user-config.json 저장
     if (userData && userData.userId) {
         const configPath = path.join(__dirname, 'user-config.json');
@@ -126,12 +126,20 @@ ipcMain.on('login-done', (event, userData) => {
             tiktokId: userData.tiktokId || '',
             serverUrl: 'https://tikfind.kr'
         };
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-        userConfig = config;
-        console.log('💾 user-config.json 저장 완료');
+        try {
+            fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+            userConfig = config;
+            console.log('💾 user-config.json 저장 완료');
+        } catch (e) {
+            console.error('❌ user-config.json 저장 실패:', e);
+        }
     }
+    // 현재 login.html인 경우에만 index.html로 이동 (index.html에서 호출 시 무한루프 방지)
     if (mainWindow) {
-        mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+        const currentUrl = mainWindow.webContents.getURL();
+        if (currentUrl.includes('login.html')) {
+            mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+        }
     }
 });
 
