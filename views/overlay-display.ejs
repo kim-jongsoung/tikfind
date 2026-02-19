@@ -131,10 +131,10 @@
                 });
             }
 
-            // 항목이 없으면 대기 메시지
-            const text = parts.length > 0
-                ? parts.join('　　　　')
-                : '신청곡을 기다리고 있습니다... 팔로우 후 #노래제목 #가수명 으로 신청해주세요 🎵';
+            // 신청 안내 문구는 항상 포함
+            parts.push('팔로우 후 채팅창에 #노래제목 #가수명 으로 신청해주세요 🎵');
+
+            const text = parts.join('　　　　');
 
             // 2벌 복사 → translateX(-50%) 무한 반복
             const sep = '　　　　　　';
