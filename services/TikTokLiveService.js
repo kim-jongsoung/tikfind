@@ -107,7 +107,26 @@ class TikTokLiveService {
         const message = data.comment;
         const username = data.uniqueId;
 
+        // 원본 데이터 로그 (팀/배지 확인용)
         console.log(`💬 [${username}]: ${message}`);
+        console.log(`📦 userBadges:`, JSON.stringify(data.userBadges));
+        console.log(`📦 teamMemberLevel:`, data.teamMemberLevel);
+        console.log(`📦 followRole:`, data.followRole);
+
+        const chatData = {
+            username,
+            uniqueId: data.uniqueId,
+            nickname: data.nickname || data.uniqueId,
+            message,
+            userBadges: data.userBadges || [],
+            badges: data.badges || [],
+            followRole: data.followRole || 0,
+            isModerator: data.isModerator || false,
+            isSubscriber: data.isSubscriber || false,
+            topGifterRank: data.topGifterRank || null,
+            teamMemberLevel: data.teamMemberLevel || null,
+            timestamp: Date.now()
+        };
 
         // 1. 신청곡 파싱 (정규식 먼저 시도)
         const song = await this.parseSongRequest(message);
@@ -120,12 +139,9 @@ class TikTokLiveService {
             console.error('AI 응답 실패:', err);
         });
 
-        // 3. 클라이언트에 메시지 전송
-        this.io.to(this.userId).emit('chat-message', {
-            username,
-            message,
-            timestamp: Date.now()
-        });
+        // 3. 클라이언트에 메시지 전송 (tiktok-data 소켓 핸들러로 라우팅하여 AI 발음코치 처리)
+        // server.js의 tiktok-data 핸들러를 재사용하기 위해 직접 emit 대신 내부 처리
+        this.io.to(this.userId).emit('chat-message', chatData);
     }
 
     /**
