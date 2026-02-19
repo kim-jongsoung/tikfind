@@ -883,56 +883,89 @@ app.post('/api/live/chat', async (req, res) => {
             }
         }
         
-        // 3. 신청곡 파싱 (팔로워 이상만 가능)
+        // 3. 신청곡 파싱 (팔로워 이상 + 받기 상태 + 중복신청 제한)
         const songData = songRequestService.parseSongRequest(message);
         let songRequest = null;
         const requesterFollowRole = Number(followRole) || 0;
+        const songSettings = songRequestService.getSettings(userId);
         
-        if (songData && requesterFollowRole >= 1) {
-            // 사용량 체크
-            const UsageLog = require('./models/UsageLog');
-            const PlanLimit = require('./models/PlanLimit');
-            
-            const today = new Date().toISOString().split('T')[0];
-            let usageLog = await UsageLog.findOne({ userId, date: today });
-            
-            if (!usageLog) {
-                usageLog = await UsageLog.create({
-                    userId,
-                    date: today,
-                    songRequestCount: 0,
-                    gptAiCount: 0,
-                    pronunciationCoachCount: 0
-                });
+        // 신청곡 받기 상태 체크
+        if (songData && !songSettings.isAccepting) {
+            console.log(`🚫 신청곡 안받기 상태 - 무시: ${username}`);
+        }
+        // 팔로워 이상 체크
+        else if (songData && requesterFollowRole < 1) {
+            console.log(`🚫 신청곡 거부 (팔로워 아님): ${username}`);
+        }
+        // 중복신청 제한 체크
+        else if (songData && songSettings.cooldownMinutes > 0) {
+            const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
+            const now = Date.now();
+            const elapsed = (now - lastTime) / 1000 / 60; // 분
+            if (lastTime && elapsed < songSettings.cooldownMinutes) {
+                const remaining = Math.ceil(songSettings.cooldownMinutes - elapsed);
+                console.log(`⏱ 중복신청 제한: ${username} (${remaining}분 후 가능)`);
+            } else if (songData && requesterFollowRole >= 1) {
+                songRequestService.setLastRequestTime(userId, uniqueId || username, now);
             }
-            
-            const planLimit = await PlanLimit.findOne({ planName: user.plan || 'free' });
-            const limit = planLimit?.songRequestLimit || 5;
-            const currentUsage = usageLog.songRequestCount || 0;
-            
-            // 제한 체크 (무제한은 -1)
-            if (limit === -1 || currentUsage < limit) {
-                const requesterInfo = {
-                    username: username,
-                    uniqueId: uniqueId || username,
-                    badges: badges || [],
-                    isVIP: false, // 나중에 구현
-                    level: 1 // 나중에 구현
-                };
-                
-                const result = await songRequestService.addSongRequest(userId, songData, requesterInfo);
-                if (result.success) {
-                    songRequest = result.song;
-                    
-                    // 사용량 증가
-                    usageLog.songRequestCount = (usageLog.songRequestCount || 0) + 1;
-                    await usageLog.save();
-                    
-                    // 신청곡 큐 업데이트 전송
-                    emitQueueUpdate(userId);
-                }
+        }
+
+        if (songData && requesterFollowRole >= 1 && songSettings.isAccepting) {
+            // 중복신청 재확인
+            const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
+            const now = Date.now();
+            const elapsed = lastTime ? (now - lastTime) / 1000 / 60 : Infinity;
+            const cooldownOk = songSettings.cooldownMinutes === 0 || elapsed >= songSettings.cooldownMinutes;
+
+            if (!cooldownOk) {
+                // 중복신청 제한 - 건너뜀 (위에서 이미 로그)
             } else {
-                console.log(`⚠️ 신청곡 제한 초과: ${currentUsage}/${limit}`);
+                // 사용량 체크
+                const UsageLog = require('./models/UsageLog');
+                const PlanLimit = require('./models/PlanLimit');
+                
+                const today = new Date().toISOString().split('T')[0];
+                let usageLog = await UsageLog.findOne({ userId, date: today });
+                
+                if (!usageLog) {
+                    usageLog = await UsageLog.create({
+                        userId,
+                        date: today,
+                        songRequestCount: 0,
+                        gptAiCount: 0,
+                        pronunciationCoachCount: 0
+                    });
+                }
+                
+                const planLimit = await PlanLimit.findOne({ planName: user.plan || 'free' });
+                const limit = planLimit?.songRequestLimit || 5;
+                const currentUsage = usageLog.songRequestCount || 0;
+                
+                // 제한 체크 (무제한은 -1)
+                if (limit === -1 || currentUsage < limit) {
+                    const requesterInfo = {
+                        username: username,
+                        uniqueId: uniqueId || username,
+                        badges: badges || [],
+                        isVIP: false,
+                        level: 1
+                    };
+                    
+                    const result = await songRequestService.addSongRequest(userId, songData, requesterInfo);
+                    if (result.success) {
+                        songRequest = result.song;
+                        songRequestService.setLastRequestTime(userId, uniqueId || username, Date.now());
+                        
+                        // 사용량 증가
+                        usageLog.songRequestCount = (usageLog.songRequestCount || 0) + 1;
+                        await usageLog.save();
+                        
+                        // 신청곡 큐 업데이트 전송
+                        emitQueueUpdate(userId);
+                    }
+                } else {
+                    console.log(`⚠️ 신청곡 제한 초과: ${currentUsage}/${limit}`);
+                }
             }
         }
         
@@ -1060,6 +1093,34 @@ app.post('/api/song-queue/played', (req, res) => {
         res.json({ success });
     } catch (error) {
         console.error('❌ 신청곡 재생 완료 처리 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 신청곡 설정 업데이트 (받기/안받기, 중복신청 제한)
+app.post('/api/song-queue/settings', (req, res) => {
+    try {
+        const { userId, isAccepting, cooldownMinutes } = req.body;
+        const update = {};
+        if (isAccepting !== undefined) update.isAccepting = isAccepting;
+        if (cooldownMinutes !== undefined) update.cooldownMinutes = Number(cooldownMinutes);
+        songRequestService.setSettings(userId, update);
+        console.log(`⚙️ 신청곡 설정 업데이트: ${userId}`, update);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 신청곡 전체 삭제
+app.post('/api/song-queue/clear', (req, res) => {
+    try {
+        const { userId } = req.body;
+        songRequestService.clearQueue(userId);
+        emitQueueUpdate(userId);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ 신청곡 전체 삭제 오류:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });

@@ -11,6 +11,25 @@ class SongRequestService {
     constructor() {
         this.youtubeApiKey = process.env.YOUTUBE_API_KEY;
         this.songQueue = new Map(); // userId -> 신청곡 배열
+        this.settings = new Map(); // userId -> { isAccepting, cooldownMinutes }
+        this.lastRequestTime = new Map(); // `${userId}:${uniqueId}` -> timestamp
+    }
+
+    getSettings(userId) {
+        return this.settings.get(userId) || { isAccepting: true, cooldownMinutes: 30 };
+    }
+
+    setSettings(userId, settings) {
+        const current = this.getSettings(userId);
+        this.settings.set(userId, { ...current, ...settings });
+    }
+
+    getLastRequestTime(userId, uniqueId) {
+        return this.lastRequestTime.get(`${userId}:${uniqueId}`) || 0;
+    }
+
+    setLastRequestTime(userId, uniqueId, timestamp) {
+        this.lastRequestTime.set(`${userId}:${uniqueId}`, timestamp);
     }
 
     /**
@@ -433,6 +452,15 @@ class SongRequestService {
      */
     getQueue(userId) {
         return this.songQueue.get(userId) || [];
+    }
+
+    /**
+     * 신청곡 큐 전체 삭제
+     * @param {string} userId - 스트리머 ID
+     */
+    clearQueue(userId) {
+        this.songQueue.set(userId, []);
+        console.log(`🗑️ 신청곡 큐 전체 삭제: ${userId}`);
     }
 
     /**

@@ -121,30 +121,6 @@
                             </div>
                         </div>
                         
-                        <!-- AI 자동재생 섹션 -->
-                        <div style="margin-bottom: 12px; padding: 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px;">
-                            <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 6px;">
-                                <select id="genreSelect" style="padding: 4px 8px; font-size: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; flex: 1;">
-                                    <option value="" disabled selected>AI재생장르선택</option>
-                                </select>
-                                <button id="aiAutoPlayBtn" class="btn-toolbar" style="background: rgba(255,255,255,0.2); color: white; padding: 4px 10px; font-size: 10px; border: 1px solid rgba(255,255,255,0.3);">
-                                    <i class="fas fa-robot" style="margin-right: 2px;"></i>AI 자동재생
-                                </button>
-                                <button id="aiAutoPlayStopBtn" class="btn-toolbar" style="background: #dc2626; color: white; padding: 4px 10px; font-size: 10px; display: none;">
-                                    <i class="fas fa-stop" style="margin-right: 2px;"></i>멈춤
-                                </button>
-                            </div>
-                            <div id="aiCurrentSong" style="display: none; padding: 6px 8px; background: rgba(0,0,0,0.3); border-radius: 4px; font-size: 11px; color: white;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <i class="fas fa-music" style="color: #a78bfa;"></i>
-                                    <span id="aiSongTitle" style="flex: 1;">-</span>
-                                    <button onclick="skipAISong()" style="padding: 2px 6px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; font-size: 10px; cursor: pointer;">
-                                        <i class="fas fa-forward"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
                         <!-- 신청곡 큐 헤더 -->
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <h3 class="section-title" style="margin: 0;">🎵 신청곡 큐</h3>
@@ -1072,9 +1048,12 @@
                         isStreamer: true // 스트리머가 직접 추가한 곡
                     };
                     
-                    autoPlayQueue.push(newSong);
-                    updateAutoPlayQueue();
-                    
+                    // 서버 큐에 추가 (socket emit)
+                    socket.emit('add-song-request', {
+                        userId: String(currentUser._id || currentUser.id),
+                        songData: newSong
+                    });
+
                     // 1일 사용량 카운팅
                     try {
                         await fetch('/api/usage/increment', {
@@ -1087,11 +1066,6 @@
                         });
                     } catch (err) {
                         console.error('사용량 카운팅 오류:', err);
-                    }
-                    
-                    // 첫 곡이면 자동 재생
-                    if (autoPlayQueue.length === 1) {
-                        playNextAutoSong();
                     }
                     
                     titleInput.value = '';
@@ -1312,8 +1286,24 @@
 
             currentPlayingSongId = null;
 
-            // 다음 곡 자동재생 (큐 업데이트 후 첫 번째 곡)
+            // 다음 곡 자동재생 (부재자 자동패스 포함)
             setTimeout(() => {
+                // 부재자 자동패스: 스트리머 직접 추가 곡 제외
+                let nextSong = currentSongQueue[0];
+                if (autoSkipAbsentSetting && nextSong) {
+                    while (nextSong && !nextSong.isStreamer && !currentViewers.has(nextSong.requester)) {
+                        console.log(`⏭ 부재자 자동패스: @${nextSong.requester}`);
+                        // 서버에서 제거
+                        fetch('/api/song-queue/played', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ userId, songId: nextSong.id })
+                        }).catch(() => {});
+                        currentSongQueue.shift();
+                        nextSong = currentSongQueue[0];
+                    }
+                }
+
                 if (currentSongQueue.length > 0) {
                     playSong(currentSongQueue[0].id);
                 } else {
@@ -1350,25 +1340,23 @@
         // 전체 삭제
         function clearAllSongs() {
             if (!confirm('모든 신청곡을 삭제하시겠습니까?')) return;
-            
-            // autoPlayQueue 초기화
-            autoPlayQueue = [];
-            
-            // localStorage에서 삭제
-            localStorage.removeItem('tikfind_song_queue');
-            
-            // UI 업데이트
-            updateAutoPlayQueue();
-            
-            // 재생 중인 비디오 정지
-            if (currentVideoPlayer) {
-                currentVideoPlayer.pause();
-                currentVideoPlayer = null;
+            if (!currentUser) return;
+
+            const userId = String(currentUser._id || currentUser.id);
+            fetch('/api/song-queue/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            }).catch(e => console.error('전체삭제 오류:', e));
+
+            // 재생 중인 플레이어 정지
+            if (ytPlayer && typeof ytPlayer.stopVideo === 'function') {
+                ytPlayer.stopVideo();
+                ytPlayer = null;
             }
-            
-            document.getElementById('youtubePlayer').innerHTML = '<p style="color: #666; font-size: 12px;">신청곡이 없습니다</p>';
+            document.getElementById('youtubePlayer').innerHTML = '<p style="color:#666;font-size:11px;text-align:center;padding:20px;">신청곡이 없습니다</p>';
             document.getElementById('nowPlaying').style.display = 'none';
-            
+            currentPlayingSongId = null;
             console.log('🗑️ 전체 삭제 완료');
         }
 
@@ -1378,18 +1366,16 @@
             alert('목록 저장 기능은 추후 구현 예정입니다.');
         }
 
-        // ========== YouTube 자동재생 시스템 (ytdl-core) ==========
-        let autoPlayQueue = [];
-        let currentVideoPlayer = null;
-        let isRequestAccepting = true; // 신청곡 받기 상태
-        let requestCooldownMinutes = 30; // 신청 시간 제한 (분)
-        let autoSkipAbsentSetting = true; // 부재자 자동 패스
-        let lastRequestTime = {}; // 마지막 신청 시간 기록
+        // ========== 신청곡 설정 ==========
+        let isRequestAccepting = true;
+        let requestCooldownMinutes = 30;
+        let autoSkipAbsentSetting = true;
+        let lastRequestTime = {};
 
         // 페이지 로드 시 상태는 서버(liveStatusMap)에서 자동 복원됨 (join-room 후 live-status 수신)
         window.addEventListener('DOMContentLoaded', () => {
             
-            // 장르 목록 로드 (Genre 모델 기반)
+            // 장르 목록 로드 (더미 - AI 자동재생 제거됨)
             async function updateGenreStats() {
                 try {
                     const response = await fetch('/api/admin/genres');
@@ -1417,218 +1403,44 @@
                 }
             }
             
-            // 장르별 곡 수 업데이트
-            updateGenreStats();
-            
-            // 저장된 노래 큐 복원
-            loadQueueFromStorage();
-            
-            // 초기 쿨다운 설정 전달
-            (async () => {
+            // 신청곡 설정 서버 전송 헬퍼
+            async function updateSongSettings(patch) {
+                if (!currentUser) return;
                 try {
-                    const response = await fetch('/api/song-cooldown/update', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            cooldownMinutes: requestCooldownMinutes
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    if (data.success) {
-                        console.log('✅ 초기 쿨다운 설정:', requestCooldownMinutes, '분');
-                    }
-                } catch (error) {
-                    console.error('❌ 초기 쿨다운 설정 오류:', error);
-                }
-            })();
-            
-            // AI 자동재생 상태
-            let aiAutoPlayEnabled = false;
-            let aiAutoPlayInterval = null;
-            let playedSongIds = []; // 이미 재생한 곡 ID 추적
-            
-            // AI 자동재생 버튼
-            document.getElementById('aiAutoPlayBtn').onclick = () => {
-                const startBtn = document.getElementById('aiAutoPlayBtn');
-                const stopBtn = document.getElementById('aiAutoPlayStopBtn');
-                const genreId = document.getElementById('genreSelect').value;
-                
-                if (!genreId) {
-                    alert('장르를 먼저 선택하세요');
-                    return;
-                }
-                
-                // 자동재생 시작
-                aiAutoPlayEnabled = true;
-                playedSongIds = []; // 재생 목록 초기화
-                startBtn.style.display = 'none';
-                stopBtn.style.display = 'block';
-                console.log('🤖 AI 자동재생 시작 - 장르 ID:', genreId);
-                
-                // 큐가 비면 자동으로 AI 곡 추가
-                aiAutoPlayInterval = setInterval(async () => {
-                    if (autoPlayQueue.length === 0 && aiAutoPlayEnabled) {
-                        console.log('🎵 큐가 비어서 AI 곡 자동 추가');
-                        await addAISong(genreId);
-                    }
-                }, 3000); // 3초마다 체크
-                
-                // 즉시 첫 곡 추가
-                console.log('🎵 즉시 첫 곡 추가 시작');
-                addAISong(genreId);
-            };
-            
-            // AI 자동재생 멈춤 버튼
-            document.getElementById('aiAutoPlayStopBtn').onclick = () => {
-                const startBtn = document.getElementById('aiAutoPlayBtn');
-                const stopBtn = document.getElementById('aiAutoPlayStopBtn');
-                const aiCurrentSong = document.getElementById('aiCurrentSong');
-                
-                // 자동재생 중지
-                aiAutoPlayEnabled = false;
-                startBtn.style.display = 'block';
-                stopBtn.style.display = 'none';
-                aiCurrentSong.style.display = 'none';
-                console.log('🛑 AI 자동재생 중지');
-                
-                if (aiAutoPlayInterval) {
-                    clearInterval(aiAutoPlayInterval);
-                    aiAutoPlayInterval = null;
-                }
-            };
-            
-            // AI 곡 추가 함수
-            async function addAISong(genreId) {
-                try {
-                    console.log('🤖 AI 곡 추가 시작 - 장르 ID:', genreId);
-                    console.log('🚫 제외할 곡 ID:', playedSongIds.length, '개');
-                    
-                    const response = await fetch('/api/popular-songs/random', {
+                    await fetch('/api/song-queue/settings', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            genreId: genreId, 
-                            count: 1,
-                            excludeIds: playedSongIds
-                        })
+                        body: JSON.stringify({ userId: String(currentUser._id || currentUser.id), ...patch })
                     });
-                    
-                    const data = await response.json();
-                    console.log('🤖 AI 곡 API 응답:', data);
-                    
-                    // 제외 목록 초기화 필요 시
-                    if (data.resetExcludeList) {
-                        console.log('🔄 재생 목록 초기화 (모든 곡 재생 완료)');
-                        playedSongIds = [];
-                    }
-                    
-                    if (data.success && data.songs.length > 0) {
-                        const song = data.songs[0];
-                        const newSong = {
-                            id: Date.now() + Math.random(),
-                            dbId: song.id, // DB ID 저장
-                            videoId: song.videoId,
-                            title: song.title,
-                            artist: song.artist,
-                            requester: 'AI 추천',
-                            thumbnail: song.thumbnail,
-                            isAI: true
-                        };
-                        
-                        // 재생 목록에 추가
-                        playedSongIds.push(song.id);
-                        console.log('🤖 큐에 추가할 곡:', newSong);
-                        console.log('📝 재생 목록 업데이트:', playedSongIds.length, '개');
-                        
-                        autoPlayQueue.push(newSong);
-                        updateAutoPlayQueue();
-                        console.log('📋 추가 후 큐 길이:', autoPlayQueue.length);
-                        
-                        // AI 현재 재생곡 UI 업데이트
-                        const aiCurrentSong = document.getElementById('aiCurrentSong');
-                        const aiSongTitle = document.getElementById('aiSongTitle');
-                        aiCurrentSong.style.display = 'block';
-                        aiSongTitle.textContent = `${song.title} - ${song.artist}`;
-                        
-                        // 첫 곡이면 자동 재생
-                        if (autoPlayQueue.length === 1) {
-                            console.log('🎵 첫 곡이므로 자동 재생 시작');
-                            console.log('🎵 YouTube Player 상태:', {
-                                exists: !!youtubePlayer,
-                                ready: isPlayerReady
-                            });
-                            
-                            // YouTube Player가 준비될 때까지 대기
-                            if (!youtubePlayer || !isPlayerReady) {
-                                console.log('⏳ YouTube Player 초기화 대기 중...');
-                                const checkPlayer = setInterval(() => {
-                                    if (youtubePlayer && isPlayerReady) {
-                                        console.log('✅ YouTube Player 준비 완료, 재생 시작');
-                                        clearInterval(checkPlayer);
-                                        playNextAutoSong();
-                                    }
-                                }, 500);
-                                
-                                // 5초 후에도 준비 안되면 강제 초기화
-                                setTimeout(() => {
-                                    if (!youtubePlayer || !isPlayerReady) {
-                                        console.log('⚠️ YouTube Player 초기화 타임아웃, 강제 초기화');
-                                        clearInterval(checkPlayer);
-                                        initYouTubePlayer();
-                                        setTimeout(() => playNextAutoSong(), 2000);
-                                    }
-                                }, 5000);
-                            } else {
-                                await playNextAutoSong();
-                            }
-                        } else {
-                            console.log('📋 큐에 추가만 함 (현재', autoPlayQueue.length, '곡)');
-                        }
-                        
-                        console.log('✅ AI 곡 추가 완료:', song.title, '-', song.artist);
-                    } else {
-                        console.log('⚠️ AI 곡 없음 - 응답:', data);
-                    }
-                } catch (error) {
-                    console.error('❌ AI 곡 추가 오류:', error);
-                }
+                } catch(e) { console.error('설정 전송 오류:', e); }
             }
 
-            // AI 자동재생 곡 스킵
-            window.skipAISong = () => {
-                console.log('⏭️ AI 곡 스킵');
-                if (youtubePlayer && isPlayerReady) {
-                    youtubePlayer.stopVideo();
-                }
-                if (autoPlayQueue.length > 0 && autoPlayQueue[0].isAI) {
-                    autoPlayQueue.shift();
-                    updateAutoPlayQueue();
-                    playNextAutoSong();
-                }
-            };
+            // 신청곡 받기/안받기
+            document.getElementById('requestAcceptSelect').addEventListener('change', (e) => {
+                isRequestAccepting = e.target.value === 'accept';
+                updateSongSettings({ isAccepting: isRequestAccepting });
+                console.log('🎵 신청곡 받기 상태:', isRequestAccepting ? '받기' : '안받기');
+            });
 
-            // 다음 곡 버튼
+            // 중복신청 제한
+            document.getElementById('requestCooldown').addEventListener('change', (e) => {
+                requestCooldownMinutes = parseInt(e.target.value) || 0;
+                updateSongSettings({ cooldownMinutes: requestCooldownMinutes });
+                console.log('⏱ 중복신청 제한:', requestCooldownMinutes, '분');
+            });
+
+            // 부재자 자동패스 (클라이언트 측 처리 - onSongEnded에서 체크)
+            document.getElementById('autoSkipAbsent').addEventListener('change', (e) => {
+                autoSkipAbsentSetting = e.target.checked;
+                console.log('👤 부재자 자동패스:', autoSkipAbsentSetting);
+            });
+
+            // 다음 곡 버튼 (현재 재생 중인 곡 종료 → 다음 곡 자동재생)
             document.getElementById('nextSongBtn').onclick = () => {
-                if (autoPlayQueue.length > 0) {
-                    console.log('⏭️ 다음 곡으로 스킵 - 현재 큐:', autoPlayQueue.length, '곡');
-                    console.log('⏭️ 현재 재생 중:', autoPlayQueue[0]?.title);
-                    
-                    // YouTube Player 정지 (onStateChange 이벤트 방지)
-                    if (youtubePlayer && isPlayerReady) {
-                        youtubePlayer.stopVideo();
-                    }
-                    
-                    // 현재 곡 제거
-                    const removed = autoPlayQueue.shift();
-                    console.log('⏭️ 제거된 곡:', removed?.title);
-                    console.log('⏭️ shift 후 큐:', autoPlayQueue.length, '곡');
-                    console.log('⏭️ 다음 재생할 곡:', autoPlayQueue[0]?.title);
-                    
-                    updateAutoPlayQueue();
-                    playNextAutoSong();
+                if (currentPlayingSongId) {
+                    onSongEnded(currentPlayingSongId);
+                } else if (currentSongQueue.length > 0) {
+                    playSong(currentSongQueue[0].id);
                 } else {
                     alert('재생할 곡이 없습니다.');
                 }
@@ -1638,72 +1450,22 @@
             let isPaused = false;
             document.getElementById('pausePlayBtn').onclick = () => {
                 const btn = document.getElementById('pausePlayBtn');
-                if (youtubePlayer && isPlayerReady) {
-                    const state = youtubePlayer.getPlayerState();
-                    // 1 = 재생 중, 2 = 일시정지
+                if (ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+                    const state = ytPlayer.getPlayerState();
                     if (state === 1) {
-                        youtubePlayer.pauseVideo();
+                        ytPlayer.pauseVideo();
                         btn.innerHTML = '<i class="fas fa-play" style="margin-right: 2px;"></i>재생';
                         btn.style.background = '#10b981';
-                        console.log('⏸️ 음악 일시정지');
-                        isPaused = true;
                     } else {
-                        youtubePlayer.playVideo();
+                        ytPlayer.playVideo();
                         btn.innerHTML = '<i class="fas fa-pause" style="margin-right: 2px;"></i>일시정지';
                         btn.style.background = '#f59e0b';
-                        console.log('▶️ 음악 재생');
-                        isPaused = false;
                     }
                 } else {
                     alert('재생 중인 곡이 없습니다.');
                 }
             };
 
-            // 신청곡 받기/안받기 드롭다운
-            document.getElementById('requestAcceptSelect').onchange = (e) => {
-                const value = e.target.value;
-                if (value === 'accept') {
-                    isRequestAccepting = true;
-                    console.log('✅ 신청곡 받기 시작');
-                } else {
-                    isRequestAccepting = false;
-                    console.log('❌ 신청곡 안받기');
-                }
-            };
-
-            // 시간 제한 설정
-            document.getElementById('requestCooldown').onchange = async (e) => {
-                requestCooldownMinutes = parseInt(e.target.value);
-                console.log('⏱️ 신청 시간 제한:', requestCooldownMinutes, '분');
-                
-                // 서버에 쿨다운 설정 전달
-                try {
-                    const response = await fetch('/api/song-cooldown/update', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            cooldownMinutes: requestCooldownMinutes
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    if (data.success) {
-                        console.log('✅ 서버 쿨다운 설정 업데이트:', requestCooldownMinutes, '분');
-                    } else {
-                        console.error('❌ 쿨다운 설정 실패:', data.message);
-                    }
-                } catch (error) {
-                    console.error('❌ 쿨다운 설정 오류:', error);
-                }
-            };
-
-            // 부재자 자동 패스 설정
-            document.getElementById('autoSkipAbsent').onchange = (e) => {
-                autoSkipAbsentSetting = e.target.checked;
-                console.log('👤 부재자 자동 패스:', autoSkipAbsentSetting ? '활성화' : '비활성화');
-            };
         });
 
         // 신청곡 안내 복사 기능
@@ -1732,281 +1494,6 @@
         window.addEventListener('beforeunload', () => {
             // 라이브 상태 유지 (localStorage에 저장됨)
         });
-
-        // localStorage에 큐 저장
-        function saveQueueToStorage() {
-            try {
-                localStorage.setItem('tikfind_song_queue', JSON.stringify(autoPlayQueue));
-                console.log('💾 노래 큐 저장:', autoPlayQueue.length, '곡');
-            } catch (error) {
-                console.error('❌ 큐 저장 실패:', error);
-            }
-        }
-
-        // localStorage에서 큐 복원
-        function loadQueueFromStorage() {
-            try {
-                const savedQueue = localStorage.getItem('tikfind_song_queue');
-                if (savedQueue) {
-                    autoPlayQueue = JSON.parse(savedQueue);
-                    console.log('✅ 노래 큐 복원:', autoPlayQueue.length, '곡');
-                    updateAutoPlayQueue();
-                    
-                    // 첫 곡이 있으면 자동 재생
-                    if (autoPlayQueue.length > 0) {
-                        playNextAutoSong();
-                    }
-                }
-            } catch (error) {
-                console.error('❌ 큐 복원 실패:', error);
-                autoPlayQueue = [];
-            }
-        }
-
-        // 자동재생 큐 업데이트
-        function updateAutoPlayQueue() {
-            const queueList = document.getElementById('songQueueList');
-            const songCount = document.getElementById('songCount');
-            
-            songCount.textContent = `총 ${autoPlayQueue.length}곡`;
-            
-            // localStorage에 저장
-            saveQueueToStorage();
-            
-            if (autoPlayQueue.length === 0) {
-                queueList.innerHTML = '<p class="empty-message">신청곡이 여기에 표시됩니다...</p>';
-                return;
-            }
-            
-            queueList.innerHTML = autoPlayQueue.map((song, index) => {
-                const isPlaying = index === 0;
-                const isStreamerSong = song.isStreamer === true;
-                const isAISong = song.requester === 'AI 추천';
-                // 스트리머 직접 등록 또는 AI 추천 또는 시청자 재실 중
-                const isPresent = isStreamerSong || isAISong || currentViewers.has(song.requester);
-                const isFailed = song.failed || false;
-                
-                let statusBadges = '';
-                // 스트리머 직접 등록 곡 표시
-                if (isStreamerSong) {
-                    statusBadges += '<span style="font-size: 9px; color: #9333ea; background: rgba(147, 51, 234, 0.2); padding: 2px 6px; border-radius: 3px; margin-left: 4px;">🎤 스트리머</span>';
-                }
-                // 부재 표시 (스트리머/AI 제외)
-                if (!isPresent && !isStreamerSong && !isAISong) {
-                    statusBadges += '<span style="font-size: 9px; color: #ef4444; background: rgba(239, 68, 68, 0.2); padding: 2px 6px; border-radius: 3px; margin-left: 4px;">부재</span>';
-                }
-                if (isFailed) {
-                    statusBadges += '<span style="font-size: 9px; color: #f59e0b; background: rgba(245, 158, 11, 0.2); padding: 2px 6px; border-radius: 3px; margin-left: 4px;">⚠️ 재생불가</span>';
-                }
-                
-                return `
-                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: ${isPlaying ? 'rgba(147, 51, 234, 0.2)' : (isFailed ? 'rgba(245, 158, 11, 0.1)' : (!isPresent ? 'rgba(239, 68, 68, 0.1)' : '#1a1a1a'))}; border-radius: 4px; margin-bottom: 4px; ${!isPresent || isFailed ? 'opacity: 0.7;' : ''}">
-                        <div style="width: 20px; text-align: center; font-size: 11px; color: ${isPlaying ? '#9333ea' : '#666'};">
-                            ${isPlaying ? '▶' : index + 1}
-                        </div>
-                        <img src="${song.thumbnail}" style="width: 48px; height: 36px; border-radius: 4px; object-fit: cover;">
-                        <div style="flex: 1; min-width: 0;">
-                            <p style="font-size: 12px; font-weight: 600; color: white; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${song.title}</p>
-                            <p style="font-size: 10px; color: #999; margin: 2px 0 0 0;">${song.artist}</p>
-                            <p style="font-size: 10px; color: #666; margin: 2px 0 0 0; display: flex; align-items: center;">
-                                신청: ${song.requester}${statusBadges}
-                            </p>
-                            ${isFailed ? `<p style="font-size: 9px; color: #f59e0b; margin: 2px 0 0 0;">💬 시청자에게 다른 곡 신청 요청</p>` : ''}
-                        </div>
-                        ${isPlaying ? '<div style="width: 16px; height: 16px; border: 2px solid #9333ea; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>' : `<button onclick="removeAutoSong(${song.id})" style="padding: 4px 8px; background: #dc2626; color: white; border: none; border-radius: 4px; font-size: 10px; cursor: pointer;">삭제</button>`}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        // 자동재생 큐에서 삭제
-        window.removeAutoSong = (songId) => {
-            autoPlayQueue = autoPlayQueue.filter(s => s.id !== songId);
-            updateAutoPlayQueue();
-        };
-
-        // YouTube IFrame Player 전역 변수
-        let youtubePlayer = null;
-        let isPlayerReady = false;
-
-        // YouTube IFrame API 준비 완료 콜백
-        window.onYouTubeIframeAPIReady = function() {
-            console.log('✅ YouTube IFrame API 준비 완료');
-            initYouTubePlayer();
-        };
-
-        // YouTube Player 초기화
-        function initYouTubePlayer() {
-            const playerDiv = document.getElementById('youtubePlayer');
-            playerDiv.innerHTML = '<div id="ytPlayer"></div>';
-            
-            youtubePlayer = new YT.Player('ytPlayer', {
-                height: '100%',
-                width: '100%',
-                videoId: '',
-                playerVars: {
-                    autoplay: 0,
-                    controls: 1,
-                    rel: 0,                    // 관련 동영상 표시 안 함
-                    modestbranding: 1,         // YouTube 로고 최소화
-                    fs: 1,                     // 전체화면 버튼 표시
-                    cc_load_policy: 0,         // 자막 기본 비활성화
-                    iv_load_policy: 3,         // 주석 표시 안 함
-                    disablekb: 0,              // 키보드 컨트롤 활성화
-                    playsinline: 1,            // 인라인 재생
-                    origin: window.location.origin  // 보안 설정
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange,
-                    'onError': onPlayerError
-                }
-            });
-        }
-
-        // Player 준비 완료
-        function onPlayerReady(event) {
-            console.log('✅ YouTube Player 준비 완료');
-            isPlayerReady = true;
-            currentVideoPlayer = youtubePlayer;
-        }
-
-        // 광고 감지 타이머
-        let adCheckInterval = null;
-
-        // Player 상태 변화 감지 (핵심: 다음 곡 자동 재생)
-        function onPlayerStateChange(event) {
-            console.log('🎬 Player 상태 변경:', event.data, '(0=종료, 1=재생, 2=일시정지, 3=버퍼링, 5=준비)');
-            
-            // YT.PlayerState.ENDED = 0 (재생 종료)
-            if (event.data === YT.PlayerState.ENDED) {
-                console.log('✅ 재생 완료, 다음 곡으로...');
-                console.log('📋 현재 큐:', autoPlayQueue.length, '곡');
-                if (adCheckInterval) {
-                    clearInterval(adCheckInterval);
-                    adCheckInterval = null;
-                }
-                autoPlayQueue.shift();
-                updateAutoPlayQueue();
-                console.log('📋 shift 후 큐:', autoPlayQueue.length, '곡');
-                playNextAutoSong();
-            }
-            // YT.PlayerState.PLAYING = 1 (재생 중)
-            else if (event.data === YT.PlayerState.PLAYING) {
-                console.log('▶️ 재생 시작');
-                
-                // 광고 감지 시작
-                if (adCheckInterval) clearInterval(adCheckInterval);
-                adCheckInterval = setInterval(() => {
-                    try {
-                        // 광고 URL 패턴 감지
-                        const playerUrl = youtubePlayer.getVideoUrl();
-                        if (playerUrl && (playerUrl.includes('/ads') || playerUrl.includes('googleads'))) {
-                            console.log('🚫 광고 감지 - 다음 곡으로 스킵');
-                            clearInterval(adCheckInterval);
-                            adCheckInterval = null;
-                            
-                            // 현재 곡 유지하고 다시 재생 시도
-                            setTimeout(() => {
-                                playNextAutoSong();
-                            }, 1000);
-                        }
-                    } catch (e) {
-                        // getVideoUrl() 호출 실패 시 무시
-                    }
-                }, 2000); // 2초마다 체크
-            }
-            // YT.PlayerState.PAUSED = 2 (일시정지)
-            else if (event.data === YT.PlayerState.PAUSED) {
-                if (adCheckInterval) {
-                    clearInterval(adCheckInterval);
-                    adCheckInterval = null;
-                }
-            }
-        }
-
-        // Player 에러 처리
-        function onPlayerError(event) {
-            console.error('❌ YouTube Player 에러:', event.data);
-            const currentSong = autoPlayQueue[0];
-            if (currentSong) {
-                currentSong.failed = true;
-                currentSong.failReason = '재생 불가 (YouTube 에러)';
-                updateAutoPlayQueue();
-                
-                // 다음 곡으로
-                setTimeout(() => {
-                    autoPlayQueue.shift();
-                    updateAutoPlayQueue();
-                    playNextAutoSong();
-                }, 1000);
-            }
-        }
-
-        // 다음 곡 자동 재생
-        async function playNextAutoSong() {
-            if (autoPlayQueue.length === 0) {
-                document.getElementById('nowPlaying').style.display = 'none';
-                if (youtubePlayer) {
-                    youtubePlayer.stopVideo();
-                }
-                return;
-            }
-            
-            const currentSong = autoPlayQueue[0];
-            
-            // 부재자 자동 패스 체크 (AI 추천, 스트리머 직접 등록 제외)
-            if (autoSkipAbsentSetting && 
-                currentSong.requester !== 'AI 추천' && 
-                !currentSong.isStreamer &&
-                !currentViewers.has(currentSong.requester)) {
-                console.log('⏭️ 부재자 자동 패스:', currentSong.requester);
-                autoPlayQueue.shift();
-                updateAutoPlayQueue();
-                playNextAutoSong();
-                return;
-            }
-            
-            console.log('🎵 재생 시작:', currentSong);
-            
-            // 현재 재생 중 정보 표시
-            document.getElementById('nowPlaying').style.display = 'block';
-            document.getElementById('currentSongTitle').textContent = currentSong.title;
-            document.getElementById('currentRequester').textContent = currentSong.requester;
-            
-            try {
-                // YouTube Player가 준비되지 않았으면 초기화
-                if (!youtubePlayer || !isPlayerReady) {
-                    console.log('⏳ YouTube Player 초기화 중...');
-                    initYouTubePlayer();
-                    // Player 준비될 때까지 대기
-                    setTimeout(() => playNextAutoSong(), 1000);
-                    return;
-                }
-                
-                // YouTube IFrame Player로 재생
-                youtubePlayer.loadVideoById({
-                    videoId: currentSong.videoId,
-                    startSeconds: 0
-                });
-                
-                console.log('✅ YouTube Player로 재생:', currentSong.videoId);
-            } catch (error) {
-                console.error('❌ 재생 오류:', error);
-                
-                // 재생 실패 표시
-                currentSong.failed = true;
-                currentSong.failReason = '재생 불가 (시스템 오류)';
-                updateAutoPlayQueue();
-                
-                // 다음 곡으로
-                setTimeout(() => {
-                    autoPlayQueue.shift();
-                    updateAutoPlayQueue();
-                    playNextAutoSong();
-                }, 1000);
-            }
-        }
 
         // CSS 애니메이션 추가
         const style = document.createElement('style');
