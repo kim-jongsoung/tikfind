@@ -83,6 +83,16 @@ router.get('/download-app', async (req, res) => {
     }
 });
 
+// 현재 로그인 유저 정보 (Desktop App 연결용)
+router.get('/user/me', requireAuth, (req, res) => {
+    res.json({
+        userId: req.user._id.toString(),
+        tiktokId: req.user.tiktokId || '',
+        name: req.user.name || '',
+        email: req.user.email || ''
+    });
+});
+
 // User 플랜 조회
 router.get('/user/plan', requireAuth, (req, res) => {
     const plan = req.user.plan || 'free'; // 실제 플랜 (free, pro)

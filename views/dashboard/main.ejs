@@ -44,35 +44,46 @@
                     </div>
                 </div>
 
-                <!-- Desktop App 다운로드 -->
+                <!-- Desktop App -->
                 <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-4">
-                            <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-desktop text-gray-600 text-xl"></i>
+                    <h3 class="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fas fa-desktop text-gray-500"></i>
+                        TikFind Desktop App
+                        <span class="text-xs font-normal text-gray-400 ml-1">TikTok Live 데이터 수집용</span>
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <!-- STEP 1: 설치 -->
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-6 h-6 bg-gray-800 text-white rounded-full text-xs flex items-center justify-center font-bold">1</span>
+                                <span class="font-semibold text-gray-700 text-sm">앱 설치</span>
                             </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-800">TikFind Desktop App</h3>
-                                <p class="text-sm text-gray-500">PC에 설치하면 TikTok Live 데이터를 수집할 수 있습니다</p>
+                            <p class="text-xs text-gray-500 mb-3">아직 설치하지 않았다면 먼저 다운로드하세요</p>
+                            <div class="flex items-center gap-2">
+                                <a href="/api/download-app" class="flex items-center gap-1.5 px-3 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition text-xs font-semibold">
+                                    <i class="fas fa-download"></i>Windows 다운로드
+                                </a>
+                                <a href="/install-guide" target="_blank" class="text-xs text-blue-500 hover:underline">
+                                    설치 가이드
+                                </a>
                             </div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <a href="/install-guide" target="_blank" class="text-sm text-blue-500 hover:underline">
-                                <i class="fas fa-question-circle mr-1"></i>설치 가이드
-                            </a>
-                            <a href="/api/download-app" class="flex items-center gap-2 px-5 py-2.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition font-semibold text-sm">
-                                <i class="fas fa-download"></i>
-                                Windows 다운로드
-                            </a>
+                        <!-- STEP 2: 연결 -->
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="w-6 h-6 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center font-bold">2</span>
+                                <span class="font-semibold text-gray-700 text-sm">앱 연결</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-3">설치 후 아래 버튼으로 내 계정과 연결하세요</p>
+                            <button onclick="connectDesktopApp()" class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs font-semibold">
+                                <i class="fas fa-link"></i>내 계정으로 연결
+                            </button>
                         </div>
                     </div>
-                    <div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
-                        <span class="text-xs text-gray-400"><i class="fas fa-shield-alt mr-1"></i>v1.0.6</span>
-                        <span class="text-xs text-gray-300">|</span>
-                        <span class="text-xs text-gray-400">Windows 10/11 64bit</span>
-                        <span class="text-xs text-gray-300">|</span>
-                        <span class="text-xs text-gray-400">설치 시 Windows 보안 경고가 뜨면 "추가 정보" → "실행" 클릭</span>
-                    </div>
+                    <p class="text-xs text-gray-400 mt-3">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        설치 시 Windows 보안 경고가 뜨면 <strong>"추가 정보"</strong> → <strong>"실행"</strong> 클릭
+                    </p>
                 </div>
 
                 <!-- 플랜 정보 -->
@@ -240,6 +251,27 @@
     <script src="/js/i18n.js"></script>
     <script src="/js/layout.js"></script>
     <script>
+        // Desktop App 연결 - tikfind:// 프로토콜로 계정 정보 전달
+        function connectDesktopApp() {
+            fetch('/api/user/me')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.userId) {
+                        alert('로그인 정보를 불러올 수 없습니다. 새로고침 후 다시 시도해주세요.');
+                        return;
+                    }
+                    const params = new URLSearchParams({
+                        userId: data.userId,
+                        tiktokId: data.tiktokId || '',
+                        serverUrl: 'https://tikfind.kr'
+                    });
+                    window.location.href = `tikfind://start?${params.toString()}`;
+                })
+                .catch(() => {
+                    alert('오류가 발생했습니다. 새로고침 후 다시 시도해주세요.');
+                });
+        }
+
         // 구독 정지 함수
         function cancelSubscription() {
             if (confirm('구독을 정지하시겠습니까?\n\n다음 결제 예정일 전날까지 UNIVERSE 플랜을 계속 이용할 수 있으며, 결제일부터 FREE 플랜으로 자동 전환됩니다.')) {

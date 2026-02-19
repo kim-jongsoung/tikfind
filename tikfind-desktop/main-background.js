@@ -1,5 +1,4 @@
 const { app, Tray, Menu, nativeImage } = require('electron');
-const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 const io = require('socket.io-client');
@@ -13,7 +12,6 @@ let userConfig = null;
 
 // 로그 설정
 log.transports.file.level = 'info';
-autoUpdater.logger = log;
 
 // User 설정 파일 로드
 function loadUserConfig() {
@@ -302,50 +300,6 @@ function stopLive() {
     }
 }
 
-// 자동 업데이트 설정
-function setupAutoUpdater() {
-    autoUpdater.setFeedURL({
-        provider: 'generic',
-        url: process.env.UPDATE_SERVER_URL || 'https://tikfind.kr/updates'
-    });
-    
-    autoUpdater.on('checking-for-update', () => {
-        log.info('🔍 업데이트 확인 중...');
-    });
-    
-    autoUpdater.on('update-available', (info) => {
-        log.info('✅ 새 업데이트 발견:', info.version);
-    });
-    
-    autoUpdater.on('update-not-available', (info) => {
-        log.info('✅ 최신 버전입니다:', info.version);
-    });
-    
-    autoUpdater.on('download-progress', (progressObj) => {
-        log.info(`📥 다운로드 진행: ${progressObj.percent}%`);
-    });
-    
-    autoUpdater.on('update-downloaded', (info) => {
-        log.info('✅ 업데이트 다운로드 완료:', info.version);
-        
-        // 5초 후 자동 재시작
-        setTimeout(() => {
-            autoUpdater.quitAndInstall();
-        }, 5000);
-    });
-    
-    autoUpdater.on('error', (err) => {
-        log.error('❌ 업데이트 오류:', err);
-    });
-    
-    // 개발 모드가 아닐 때만 업데이트 확인
-    if (!process.env.NODE_ENV || process.env.NODE_ENV !== 'development') {
-        setTimeout(() => {
-            autoUpdater.checkForUpdates();
-        }, 3000);
-    }
-}
-
 // Windows 시작 프로그램 등록
 function setAutoLaunch() {
     app.setLoginItemSettings({
@@ -377,8 +331,6 @@ app.whenReady().then(() => {
         updateTrayMenu('설정 필요');
     }
     
-    // 자동 업데이트 설정
-    setupAutoUpdater();
 });
 
 // 앱 종료 방지 (백그라운드 서비스)
