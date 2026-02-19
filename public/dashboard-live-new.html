@@ -1216,38 +1216,113 @@
             });
         }
 
+        // YouTube IFrame Player 인스턴스
+        let ytPlayer = null;
+        let currentPlayingSongId = null;
+
+        // YouTube IFrame API 준비 완료 콜백
+        window.onYouTubeIframeAPIReady = function() {
+            console.log('✅ YouTube IFrame API 준비 완료');
+        };
+
         // 신청곡 재생
         async function playSong(songId) {
             if (!currentUser) return;
             
-            // 현재 큐에서 해당 곡 찾기
             const song = currentSongQueue.find(s => s.id === songId);
             if (!song) {
                 console.error('❌ 신청곡을 찾을 수 없습니다:', songId);
                 return;
             }
-            
-            console.log('✅ 신청곡 재생:', song.title, '-', song.artist);
-            
-            // 서버에 재생 완료 알림
-            const userId = String(currentUser._id || currentUser.id);
-            fetch('/api/song-queue/played', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId, songId })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    // 재생 완료 후 삭제
-                    setTimeout(() => removeSong(songId), 1000);
-                }
-            })
-            .catch(error => {
-                console.error('❌ 신청곡 재생 오류:', error);
+
+            if (!song.videoId) {
+                console.error('❌ videoId 없음:', song.title);
+                alert('이 곡은 YouTube 영상 정보가 없습니다.');
+                return;
+            }
+
+            console.log('▶ 재생:', song.title, '-', song.artist, '| videoId:', song.videoId);
+            currentPlayingSongId = songId;
+
+            // nowPlaying 표시
+            const nowPlayingEl = document.getElementById('nowPlaying');
+            if (nowPlayingEl) {
+                nowPlayingEl.style.display = 'block';
+                nowPlayingEl.innerHTML = `
+                    <p style="font-size:10px;color:#aaa;margin:0 0 2px 0;">▶ 재생 중</p>
+                    <p style="font-size:12px;color:#fff;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                        🎵 ${escapeHtml(song.title)} - ${escapeHtml(song.artist)}
+                        <span style="color:#888;font-size:10px;"> | 신청: @${escapeHtml(song.requester || '')}</span>
+                    </p>
+                `;
+            }
+
+            const playerDiv = document.getElementById('youtubePlayer');
+
+            // 기존 플레이어 있으면 교체, 없으면 생성
+            if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+                ytPlayer.loadVideoById(song.videoId);
+            } else {
+                playerDiv.innerHTML = '';
+                const iframeContainer = document.createElement('div');
+                iframeContainer.id = 'yt-iframe-inner';
+                playerDiv.appendChild(iframeContainer);
+
+                ytPlayer = new YT.Player('yt-iframe-inner', {
+                    height: '180',
+                    width: '100%',
+                    videoId: song.videoId,
+                    playerVars: { autoplay: 1, controls: 1, rel: 0 },
+                    events: {
+                        onReady: (e) => { e.target.playVideo(); },
+                        onStateChange: (e) => {
+                            // 재생 종료(0) 시 다음 곡 자동재생
+                            if (e.data === YT.PlayerState.ENDED) {
+                                console.log('⏭ 곡 종료 → 다음 곡 자동재생');
+                                onSongEnded(currentPlayingSongId);
+                            }
+                        }
+                    }
+                });
+            }
+
+            // 오버레이로 현재 재생 곡 전송
+            socket.emit('overlay-now-playing', {
+                userId: String(currentUser._id || currentUser.id),
+                title: song.title,
+                artist: song.artist,
+                requester: song.requester,
+                thumbnail: song.thumbnail
             });
-            
-            // 자동재생은 YouTube Player의 onStateChange 이벤트에서 처리
+        }
+
+        // 곡 종료 시 처리 (큐에서 제거 + 다음 곡 재생)
+        async function onSongEnded(songId) {
+            if (!currentUser || !songId) return;
+            const userId = String(currentUser._id || currentUser.id);
+
+            // 서버 큐에서 제거
+            try {
+                await fetch('/api/song-queue/played', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, songId })
+                });
+            } catch(e) { console.error('played 처리 오류:', e); }
+
+            currentPlayingSongId = null;
+
+            // 다음 곡 자동재생 (큐 업데이트 후 첫 번째 곡)
+            setTimeout(() => {
+                if (currentSongQueue.length > 0) {
+                    playSong(currentSongQueue[0].id);
+                } else {
+                    const nowPlayingEl = document.getElementById('nowPlaying');
+                    if (nowPlayingEl) nowPlayingEl.style.display = 'none';
+                    document.getElementById('youtubePlayer').innerHTML = '<p style="color:#666;font-size:11px;text-align:center;padding:20px;">신청곡이 없습니다</p>';
+                    ytPlayer = null;
+                }
+            }, 1000);
         }
 
         // 신청곡 삭제

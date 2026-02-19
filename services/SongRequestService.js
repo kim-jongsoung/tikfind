@@ -351,8 +351,8 @@ class SongRequestService {
     async addSongRequest(userId, songData, requester) {
         const { title, artist } = songData;
 
-        // YouTube 검색
-        const youtubeData = await this.searchYouTube(title, artist);
+        // DB 캐시 우선 → 없으면 YouTube API (비용 최소화)
+        const youtubeData = await this.searchSong(title, artist);
 
         if (!youtubeData) {
             return {

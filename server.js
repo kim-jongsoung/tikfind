@@ -929,9 +929,7 @@ app.post('/api/live/chat', async (req, res) => {
                     await usageLog.save();
                     
                     // 신청곡 큐 업데이트 전송
-                    io.to(userId).emit('song-queue-update', {
-                        queue: songRequestService.getQueue(userId)
-                    });
+                    emitQueueUpdate(userId);
                 }
             } else {
                 console.log(`⚠️ 신청곡 제한 초과: ${currentUsage}/${limit}`);
@@ -1039,10 +1037,7 @@ app.post('/api/song-queue/remove', (req, res) => {
         const success = songRequestService.removeSong(userId, songId);
         
         if (success) {
-            // 업데이트된 큐 전송
-            io.to(userId).emit('song-queue-update', {
-                queue: songRequestService.getQueue(userId)
-            });
+            emitQueueUpdate(userId);
         }
         
         res.json({ success });
@@ -1059,10 +1054,7 @@ app.post('/api/song-queue/played', (req, res) => {
         const success = songRequestService.markAsPlayed(userId, songId);
         
         if (success) {
-            // 업데이트된 큐 전송
-            io.to(userId).emit('song-queue-update', {
-                queue: songRequestService.getQueue(userId)
-            });
+            emitQueueUpdate(userId);
         }
         
         res.json({ success });
@@ -1079,10 +1071,7 @@ app.post('/api/song-queue/move', (req, res) => {
         const success = songRequestService.moveSong(userId, songId, newPosition);
         
         if (success) {
-            // 업데이트된 큐 전송
-            io.to(userId).emit('song-queue-update', {
-                queue: songRequestService.getQueue(userId)
-            });
+            emitQueueUpdate(userId);
         }
         
         res.json({ success });
@@ -1108,6 +1097,17 @@ app.use((err, req, res, next) => {
     });
 });
 
+// 신청곡 큐 업데이트 헬퍼 - 대시보드 + 오버레이 동시 전송
+function emitQueueUpdate(userId) {
+    const queue = songRequestService.getQueue(userId);
+    io.to(userId).emit('song-queue-update', { queue });
+    io.to(`overlay-${userId}`).emit('song-queue', queue.map(s => ({
+        title: s.title,
+        artist: s.artist,
+        requester: s.requester
+    })));
+}
+
 // ==================== Socket.io 이벤트 ====================
 io.on('connection', (socket) => {
     console.log('🔌 클라이언트 연결:', socket.id);
@@ -1117,6 +1117,37 @@ io.on('connection', (socket) => {
     const userId = socket.handshake.auth.userId;
     
     console.log(`📱 클라이언트 타입: ${clientType}, User ID: ${userId}`);
+
+    // 오버레이 룸 참가 (TikTok Live Studio 브라우저 소스)
+    socket.on('join-overlay', (overlayUserId) => {
+        const overlayRoom = `overlay-${overlayUserId}`;
+        socket.join(overlayRoom);
+        console.log(`🎬 오버레이 룸 참가: ${overlayRoom}`);
+        
+        // 현재 큐 즉시 전송
+        const currentQueue = songRequestService.getQueue(overlayUserId);
+        socket.emit('song-queue', currentQueue.map(s => ({
+            title: s.title,
+            artist: s.artist,
+            requester: s.requester
+        })));
+    });
+
+    // 대시보드 → 오버레이: 현재 재생 곡 전송
+    socket.on('overlay-now-playing', (data) => {
+        const { userId: targetUserId, title, artist, requester, thumbnail } = data;
+        const overlayRoom = `overlay-${targetUserId}`;
+        console.log(`🎬 오버레이 현재 재생 곡 전송: ${title} - ${artist}`);
+        io.to(overlayRoom).emit('current-song', { title, artist, requester, thumbnail });
+
+        // 큐도 함께 전송
+        const currentQueue = songRequestService.getQueue(targetUserId);
+        io.to(overlayRoom).emit('song-queue', currentQueue.map(s => ({
+            title: s.title,
+            artist: s.artist,
+            requester: s.requester
+        })));
+    });
 
     // 사용자 룸 참가
     socket.on('join-room', (roomUserId) => {
@@ -1382,10 +1413,7 @@ io.on('connection', (socket) => {
             
             if (result.success) {
                 console.log('✅ 스트리머 신청곡 추가 성공:', result.song.title);
-                // 신청곡 큐 업데이트 전송
-                io.to(userId).emit('song-queue-update', {
-                    queue: songRequestService.getQueue(userId)
-                });
+                emitQueueUpdate(userId);
             }
         } catch (error) {
             console.error('❌ 스트리머 신청곡 추가 오류:', error);
