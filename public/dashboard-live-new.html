@@ -612,60 +612,74 @@
             
             const allMessageEl = document.createElement('div');
             allMessageEl.className = 'chat-message';
-            allMessageEl.style.cssText = 'padding: 4px 0; margin-bottom: 4px; display: flex; align-items: flex-start; gap: 4px; flex-wrap: wrap;';
-            
-            // 배지/레벨/팀 아이콘 생성
+            allMessageEl.style.cssText = 'padding: 8px 10px; margin-bottom: 6px; background: #1e1e2e; border-radius: 8px; border-left: 3px solid #7c3aed; border-bottom: 1px solid #2a2a3e;';
+
+            // ── 1줄: 레벨 / 아이디 / 팀뱃지 / 닉네임 ──
             let badgeHtml = '';
-            
-            // 모더레이터 배지
-            if (data.isModerator) {
-                badgeHtml += `<span style="background:#5865f2;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;font-weight:bold;">MOD</span>`;
-            }
-            
-            // 팀 멤버 레벨 (팀 가입 아이콘)
-            if (data.teamMemberLevel && data.teamMemberLevel > 0) {
-                badgeHtml += `<span style="background:#ff6b35;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;font-weight:bold;">팀 Lv.${data.teamMemberLevel}</span>`;
-            }
-            
-            // 구독자 배지
-            if (data.isSubscriber) {
-                badgeHtml += `<span style="background:#ff0050;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;font-weight:bold;">구독</span>`;
-            }
-            
-            // 팔로우 역할 (0=일반, 1=팔로워, 2=친구)
-            if (data.followRole === 2) {
-                badgeHtml += `<span style="background:#00c9a7;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;">친구</span>`;
-            } else if (data.followRole === 1) {
-                badgeHtml += `<span style="background:#555;color:#ccc;font-size:9px;padding:1px 4px;border-radius:3px;">팔로워</span>`;
-            }
-            
-            // 상위 선물자 순위
+
+            // 상위 선물자 순위 (가장 앞)
             if (data.topGifterRank && data.topGifterRank <= 3) {
                 const rankEmoji = ['🥇','🥈','🥉'][data.topGifterRank - 1];
-                badgeHtml += `<span style="font-size:11px;">${rankEmoji}</span>`;
+                badgeHtml += `<span style="font-size:13px;line-height:1;">${rankEmoji}</span>`;
             }
-            
-            // userBadges (tiktok-live-connector 제공 배지)
+
+            // userBadges privilege → 레벨 표시
+            let privilegeLevel = null;
             if (data.userBadges && data.userBadges.length > 0) {
                 data.userBadges.forEach(badge => {
-                    if (badge.type === 'image' && badge.url) {
-                        badgeHtml += `<img src="${badge.url}" style="width:14px;height:14px;vertical-align:middle;" onerror="this.remove()">`;
-                    } else if (badge.type === 'privilege') {
-                        badgeHtml += `<span style="background:#f59e0b;color:#000;font-size:9px;padding:1px 4px;border-radius:3px;font-weight:bold;">Lv.${badge.level || ''}</span>`;
+                    if (badge.type === 'privilege' && badge.level) {
+                        privilegeLevel = badge.level;
                     }
                 });
             }
-            
+            if (privilegeLevel !== null) {
+                badgeHtml += `<span style="background:#f59e0b;color:#000;font-size:10px;padding:2px 5px;border-radius:4px;font-weight:bold;">Lv.${privilegeLevel}</span>`;
+            }
+
+            // 팀 멤버 레벨 (눈에 띄게 강조)
+            if (data.teamMemberLevel && data.teamMemberLevel > 0) {
+                badgeHtml += `<span style="background:linear-gradient(135deg,#ff6b35,#f59e0b);color:#fff;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:bold;box-shadow:0 0 6px rgba(255,107,53,0.6);">🏅팀 Lv.${data.teamMemberLevel}</span>`;
+            }
+
+            // 모더레이터 배지
+            if (data.isModerator) {
+                badgeHtml += `<span style="background:#5865f2;color:#fff;font-size:10px;padding:2px 5px;border-radius:4px;font-weight:bold;">MOD</span>`;
+            }
+
+            // 구독자 배지
+            if (data.isSubscriber) {
+                badgeHtml += `<span style="background:#ff0050;color:#fff;font-size:10px;padding:2px 5px;border-radius:4px;font-weight:bold;">구독</span>`;
+            }
+
+            // 팔로우 역할
+            if (data.followRole === 2) {
+                badgeHtml += `<span style="background:#00c9a7;color:#fff;font-size:10px;padding:2px 5px;border-radius:4px;">친구</span>`;
+            } else if (data.followRole === 1) {
+                badgeHtml += `<span style="background:#444;color:#aaa;font-size:10px;padding:2px 5px;border-radius:4px;">팔로워</span>`;
+            }
+
+            // userBadges 이미지
+            if (data.userBadges && data.userBadges.length > 0) {
+                data.userBadges.forEach(badge => {
+                    if (badge.type === 'image' && badge.url) {
+                        badgeHtml += `<img src="${badge.url}" style="width:16px;height:16px;vertical-align:middle;" onerror="this.remove()">`;
+                    }
+                });
+            }
+
             // 닉네임 색상 (팔로워/친구/일반)
             const nicknameColor = data.followRole === 2 ? '#00c9a7' : data.followRole === 1 ? '#fe7f9c' : '#fe2c55';
-            const displayName = data.nickname || data.username;
-            
+            const uniqueId = data.uniqueId || data.username || '';
+            const displayName = data.nickname || data.username || '';
+            const showBoth = displayName && uniqueId && displayName !== uniqueId;
+
             allMessageEl.innerHTML = `
-                <div style="display:flex;align-items:center;gap:3px;flex-wrap:wrap;line-height:1.5;">
+                <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:5px;">
                     ${badgeHtml}
-                    <span style="color:${nicknameColor};font-size:12px;font-weight:600;">${escapeHtml(displayName)}</span>
-                    <span style="color:#e0e0e0;font-size:12px;">${escapeHtml(data.message)}</span>
+                    <span style="color:#aaa;font-size:11px;font-weight:500;">@${escapeHtml(uniqueId)}</span>
+                    ${showBoth ? `<span style="color:${nicknameColor};font-size:12px;font-weight:700;">${escapeHtml(displayName)}</span>` : ''}
                 </div>
+                <div style="color:#f0f0f0;font-size:20px;font-weight:500;line-height:1.4;word-break:break-all;">${escapeHtml(data.message)}</div>
             `;
             
             nativeDiv.appendChild(allMessageEl);
