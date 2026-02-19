@@ -873,6 +873,36 @@ async function processChatMessage(chatData) {
             pronunciationCoach: { used: currentUsage.pronunciationCoachCount, limit: planLimit?.pronunciationCoachLimit || 10 }
         }
     });
+
+    // 4. Google TTS 처리 (활성화된 경우)
+    if (user?.ttsSettings?.useGoogleTTS) {
+        try {
+            const googleTTSService = require('./services/GoogleTTSService');
+            const VoiceSettings = require('./models/VoiceSettings');
+            const chatUniqueId = uniqueId || username;
+
+            // VIP 목소리 설정 조회
+            const voiceSetting = await VoiceSettings.findOne({ userId, tiktokUniqueId: chatUniqueId });
+            const chirpVoice = voiceSetting?.chirpVoice || null;
+            const speed = voiceSetting?.speed || user.ttsSettings.defaultSpeed || 1.0;
+
+            // Google TTS 합성
+            const audioBuffer = await googleTTSService.synthesize(message, chatUniqueId, chirpVoice, speed);
+
+            if (audioBuffer) {
+                // Desktop App으로 오디오 전송 (base64)
+                const desktopSocketId = desktopSocketMap.get(userId);
+                if (desktopSocketId) {
+                    io.to(desktopSocketId).emit('google-tts-audio', {
+                        audio: audioBuffer.toString('base64'),
+                        uniqueId: chatUniqueId
+                    });
+                }
+            }
+        } catch (ttsError) {
+            console.error('❌ Google TTS 처리 오류:', ttsError.message);
+        }
+    }
 }
 
 // Live 상태 업데이트
@@ -1327,6 +1357,70 @@ app.post('/api/song-queue/test', async (req, res) => {
         console.error('❌ 신청곡 테스트 오류:', error);
         res.status(500).json({ success: false, message: error.message });
     }
+});
+
+// ===== Google TTS API =====
+const googleTTS = require('./services/GoogleTTSService');
+const VoiceSettings = require('./models/VoiceSettings');
+
+// VIP 목소리 설정 목록 조회
+app.get('/api/tts/voice-settings/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const settings = await VoiceSettings.find({ userId }).sort({ createdAt: -1 });
+        res.json({ success: true, settings });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// VIP 목소리 설정 저장/수정
+app.post('/api/tts/voice-settings', async (req, res) => {
+    try {
+        const { userId, tiktokUniqueId, chirpVoice, speed, memo } = req.body;
+        if (!userId || !tiktokUniqueId || !chirpVoice) {
+            return res.status(400).json({ success: false, message: 'userId, tiktokUniqueId, chirpVoice 필수' });
+        }
+        const setting = await VoiceSettings.findOneAndUpdate(
+            { userId, tiktokUniqueId },
+            { chirpVoice, speed: speed || 1.0, memo: memo || '' },
+            { upsert: true, new: true }
+        );
+        res.json({ success: true, setting });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// VIP 목소리 설정 삭제
+app.delete('/api/tts/voice-settings/:userId/:tiktokUniqueId', async (req, res) => {
+    try {
+        const { userId, tiktokUniqueId } = req.params;
+        await VoiceSettings.deleteOne({ userId, tiktokUniqueId });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Google TTS 활성화 설정 저장
+app.post('/api/tts/settings', async (req, res) => {
+    try {
+        const { userId, useGoogleTTS, defaultSpeed } = req.body;
+        const User = require('./models/User');
+        await User.findByIdAndUpdate(userId, {
+            'ttsSettings.useGoogleTTS': useGoogleTTS,
+            'ttsSettings.defaultSpeed': defaultSpeed || 1.0
+        });
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Chirp3 HD 목소리 목록 조회
+app.get('/api/tts/voices', (req, res) => {
+    res.json({ success: true, voices: googleTTS.getChirp3Voices() });
 });
 
 // 404 처리

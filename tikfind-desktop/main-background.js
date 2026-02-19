@@ -217,6 +217,36 @@ function connectToServer() {
         log.info(`📤 라이브 상태 전송: ${isLive}`);
     });
     
+    // Google TTS 오디오 수신 및 재생
+    socket.on('google-tts-audio', async (data) => {
+        try {
+            const { audio } = data;
+            if (!audio) return;
+
+            const { app: electronApp } = require('electron');
+            const path = require('path');
+            const fs = require('fs');
+            const { exec } = require('child_process');
+
+            // 임시 MP3 파일로 저장
+            const tmpDir = electronApp.getPath('temp');
+            const tmpFile = path.join(tmpDir, `tikfind_tts_${Date.now()}.mp3`);
+            fs.writeFileSync(tmpFile, Buffer.from(audio, 'base64'));
+
+            // PowerShell로 MP3 재생
+            const psCommand = `(New-Object Media.SoundPlayer).Stop(); Add-Type -AssemblyName presentationCore; $player = New-Object System.Windows.Media.MediaPlayer; $player.Open([uri]'${tmpFile}'); $player.Play(); Start-Sleep -Milliseconds 5000; $player.Close()`;
+            exec(`powershell -Command "${psCommand}"`, (err) => {
+                // 재생 후 임시 파일 삭제
+                setTimeout(() => {
+                    try { fs.unlinkSync(tmpFile); } catch (e) {}
+                }, 10000);
+                if (err) log.error('❌ Google TTS 재생 오류:', err.message);
+            });
+        } catch (error) {
+            log.error('❌ Google TTS 오디오 처리 오류:', error.message);
+        }
+    });
+
     socket.on('error', (error) => {
         log.error('❌ Socket.io 오류:', error);
     });

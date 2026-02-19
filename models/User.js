@@ -182,6 +182,18 @@ const userSchema = new mongoose.Schema({
             type: Date
         }
     },
+    ttsSettings: {
+        useGoogleTTS: {
+            type: Boolean,
+            default: false
+        },
+        defaultSpeed: {
+            type: Number,
+            default: 1.0,
+            min: 0.25,
+            max: 4.0
+        }
+    },
     isActive: {
         type: Boolean,
         default: true
