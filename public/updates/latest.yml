@@ -3,5 +3,5 @@ files:
   - url: https://github.com/kim-jongsoung/tikfind/releases/download/v1.0.8/TikFind.Setup.1.0.8.exe
     sha512: placeholder
     size: 0
-path: TikFind-Setup.exe
-releaseDate: '2026-01-04T13:53:00.000Z'
+path: TikFind.Setup.1.0.8.exe
+releaseDate: '2026-02-19T12:21:00.000Z'
