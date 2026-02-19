@@ -194,11 +194,16 @@ function connectToServer() {
         stopLive();
     });
     
-    // TTS 설정 업데이트
+    // TTS 설정 업데이트 (방송 중 실시간 반영)
     socket.on('tts-settings', (settings) => {
-        log.info('🔊 TTS 설정 업데이트:', settings);
+        log.info('🔊 TTS 설정 업데이트');
         if (collector) {
             collector.updateTTSSettings(settings);
+            // Google TTS 설정도 실시간 반영
+            if (settings.googleTTS) {
+                collector.tts.updateGoogleTTSSettings(settings.googleTTS);
+                log.info(`🔊 Google TTS 실시간 업데이트: ${settings.googleTTS.enabled ? '활성화' : '비활성화'} | VIP ${(settings.googleTTS.voiceSettings || []).length}명`);
+            }
         }
     });
     

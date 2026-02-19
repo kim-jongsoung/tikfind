@@ -230,6 +230,90 @@
             });
         }
 
+        const USER_ID = '<%= user._id %>';
+
+        async function loadVoices() {
+            const res = await fetch('/api/tts/voices');
+            const data = await res.json();
+            if (data.success) {
+                const sel = document.getElementById('vipChirpVoice');
+                data.voices.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v; opt.textContent = v;
+                    sel.appendChild(opt);
+                });
+            }
+        }
+
+        async function loadVoiceSettings() {
+            const res = await fetch(`/api/tts/voice-settings/${USER_ID}`);
+            const data = await res.json();
+            const list = document.getElementById('voiceSettingsList');
+            const empty = document.getElementById('voiceSettingsEmpty');
+            list.querySelectorAll('.voice-item').forEach(el => el.remove());
+            if (data.settings && data.settings.length > 0) {
+                empty.classList.add('hidden');
+                data.settings.forEach(s => {
+                    const item = document.createElement('div');
+                    item.className = 'voice-item flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200';
+                    item.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <i class="fas fa-user-circle text-indigo-400"></i>
+                            <div>
+                                <p class="font-medium text-sm text-gray-800">@${s.tiktokUniqueId}</p>
+                                <p class="text-xs text-gray-500">${s.chirpVoice} · ${s.speed}x 속도</p>
+                            </div>
+                        </div>
+                        <button onclick="deleteVoiceSetting('${s.tiktokUniqueId}')" class="text-red-400 hover:text-red-600 text-sm px-2 py-1">
+                            <i class="fas fa-trash"></i>
+                        </button>`;
+                    list.appendChild(item);
+                });
+            } else {
+                empty.classList.remove('hidden');
+            }
+        }
+
+        async function saveTTSSettings() {
+            const useGoogleTTS = document.getElementById('useGoogleTTS').checked;
+            const defaultSpeed = parseFloat(document.getElementById('ttsDefaultSpeed').value);
+            const res = await fetch('/api/tts/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: USER_ID, useGoogleTTS, defaultSpeed })
+            });
+            const data = await res.json();
+            alert(data.success ? 'TTS 설정이 저장되었습니다!' : '저장 실패: ' + data.message);
+        }
+
+        async function addVoiceSetting() {
+            const tiktokUniqueId = document.getElementById('vipUniqueId').value.trim().replace('@', '');
+            const chirpVoice = document.getElementById('vipChirpVoice').value;
+            const speed = parseFloat(document.getElementById('vipSpeed').value) || 1.0;
+            if (!tiktokUniqueId || !chirpVoice) { alert('아이디와 목소리를 모두 입력하세요.'); return; }
+            const res = await fetch('/api/tts/voice-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: USER_ID, tiktokUniqueId, chirpVoice, speed })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('vipUniqueId').value = '';
+                document.getElementById('vipChirpVoice').value = '';
+                document.getElementById('vipSpeed').value = '1.0';
+                await loadVoiceSettings();
+            } else { alert('추가 실패: ' + data.message); }
+        }
+
+        async function deleteVoiceSetting(tiktokUniqueId) {
+            if (!confirm(`@${tiktokUniqueId} 목소리 설정을 삭제할까요?`)) return;
+            await fetch(`/api/tts/voice-settings/${USER_ID}/${tiktokUniqueId}`, { method: 'DELETE' });
+            await loadVoiceSettings();
+        }
+
+        loadVoices();
+        loadVoiceSettings();
+
         function saveSettings() {
             const settings = {
                 nickname: document.getElementById('user-nickname').value.trim(),

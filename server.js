@@ -1738,16 +1738,43 @@ io.on('connection', (socket) => {
     });
     
     // TTS 설정 (웹 → Desktop App)
-    socket.on('tts-settings', (settings) => {
+    socket.on('tts-settings', async (settings) => {
         console.log('🔊 TTS 설정 수신:', settings);
         const targetUserId = settings.userId || userId;
-        
-        // 주 Desktop App 소켓 하나에만 전송
         const desktopSocketId = desktopSocketMap.get(targetUserId);
-        if (desktopSocketId) {
-            io.to(desktopSocketId).emit('tts-settings', settings);
-        } else {
-            io.to(targetUserId).emit('tts-settings', settings);
+
+        // Google TTS 실시간 업데이트 - VIP 목소리 설정 최신화
+        try {
+            const User = require('./models/User');
+            const VoiceSettings = require('./models/VoiceSettings');
+            const user = await User.findById(targetUserId).select('ttsSettings');
+            const voiceSettings = await VoiceSettings.find({ userId: targetUserId });
+
+            const googleTTSUpdate = {
+                enabled: user?.ttsSettings?.useGoogleTTS || false,
+                apiKey: process.env.GOOGLE_TTS_API_KEY || '',
+                defaultSpeed: user?.ttsSettings?.defaultSpeed || 1.0,
+                voiceSettings: voiceSettings.map(v => ({
+                    tiktokUniqueId: v.tiktokUniqueId,
+                    chirpVoice: v.chirpVoice,
+                    speed: v.speed
+                }))
+            };
+
+            const payload = { ...settings, googleTTS: googleTTSUpdate };
+
+            if (desktopSocketId) {
+                io.to(desktopSocketId).emit('tts-settings', payload);
+            } else {
+                io.to(targetUserId).emit('tts-settings', payload);
+            }
+            console.log(`🔊 TTS 설정 + Google TTS VIP ${voiceSettings.length}명 전달`);
+        } catch (e) {
+            if (desktopSocketId) {
+                io.to(desktopSocketId).emit('tts-settings', settings);
+            } else {
+                io.to(targetUserId).emit('tts-settings', settings);
+            }
         }
     });
 
