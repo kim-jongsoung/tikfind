@@ -3,6 +3,14 @@
  */
 
 const say = require('say');
+const https = require('https');
+
+const WAVENET_VOICES = [
+    'ko-KR-Wavenet-A', // 여성
+    'ko-KR-Wavenet-B', // 여성
+    'ko-KR-Wavenet-C', // 남성
+    'ko-KR-Wavenet-D'  // 남성
+];
 
 class TTSService {
     constructor() {
@@ -12,6 +20,99 @@ class TTSService {
         this.speed = 1.0;
         this.queue = [];
         this.isPlaying = false;
+        // Google TTS 설정
+        this.googleTTS = {
+            enabled: false,
+            apiKey: '',
+            defaultSpeed: 1.0,
+            voiceSettings: [] // [{ tiktokUniqueId, chirpVoice, speed }]
+        };
+    }
+
+    updateGoogleTTSSettings(googleTTS) {
+        if (!googleTTS) return;
+        this.googleTTS.enabled = googleTTS.enabled || false;
+        this.googleTTS.apiKey = googleTTS.apiKey || '';
+        this.googleTTS.defaultSpeed = googleTTS.defaultSpeed || 1.0;
+        this.googleTTS.voiceSettings = googleTTS.voiceSettings || [];
+        console.log(`🔊 Google TTS ${this.googleTTS.enabled ? '활성화' : '비활성화'} | VIP ${this.googleTTS.voiceSettings.length}명`);
+    }
+
+    getAutoWaveNetVoice(uniqueId) {
+        let hash = 0;
+        const str = uniqueId || 'default';
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return WAVENET_VOICES[Math.abs(hash) % WAVENET_VOICES.length];
+    }
+
+    async speakWithGoogleTTS(text, uniqueId) {
+        return new Promise((resolve) => {
+            try {
+                const vipSetting = this.googleTTS.voiceSettings.find(v => v.tiktokUniqueId === uniqueId);
+                const speed = vipSetting?.speed || this.googleTTS.defaultSpeed || 1.0;
+
+                let voiceConfig;
+                if (vipSetting?.chirpVoice) {
+                    voiceConfig = { languageCodes: ['ko-KR'], name: `ko-KR-Chirp3-HD-${vipSetting.chirpVoice}` };
+                    console.log(`🎙️ Chirp3 HD: ${vipSetting.chirpVoice} | @${uniqueId}`);
+                } else {
+                    const waveNetVoice = this.getAutoWaveNetVoice(uniqueId);
+                    voiceConfig = { languageCode: 'ko-KR', name: waveNetVoice };
+                    console.log(`🔊 WaveNet: ${waveNetVoice} | @${uniqueId}`);
+                }
+
+                const body = JSON.stringify({
+                    input: { text },
+                    voice: voiceConfig,
+                    audioConfig: { audioEncoding: 'MP3', speakingRate: Math.min(Math.max(speed, 0.25), 4.0) }
+                });
+
+                const options = {
+                    hostname: 'texttospeech.googleapis.com',
+                    path: `/v1/text:synthesize?key=${this.googleTTS.apiKey}`,
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+                };
+
+                const req = https.request(options, (res) => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => {
+                        try {
+                            const json = JSON.parse(data);
+                            if (json.audioContent) {
+                                this.playMp3Buffer(Buffer.from(json.audioContent, 'base64'), resolve);
+                            } else {
+                                console.error('❌ Google TTS 응답 오류:', json.error?.message);
+                                resolve();
+                            }
+                        } catch (e) { resolve(); }
+                    });
+                });
+                req.on('error', (e) => { console.error('❌ Google TTS 요청 오류:', e.message); resolve(); });
+                req.write(body);
+                req.end();
+            } catch (e) { console.error('❌ Google TTS 오류:', e.message); resolve(); }
+        });
+    }
+
+    playMp3Buffer(buffer, callback) {
+        const fs = require('fs');
+        const path = require('path');
+        const { exec } = require('child_process');
+        const os = require('os');
+
+        const tmpFile = path.join(os.tmpdir(), `tikfind_tts_${Date.now()}.mp3`);
+        fs.writeFileSync(tmpFile, buffer);
+
+        const psCommand = `Add-Type -AssemblyName presentationCore; $p = New-Object System.Windows.Media.MediaPlayer; $p.Open([uri]'${tmpFile}'); $p.Play(); Start-Sleep -Milliseconds 8000; $p.Close()`;
+        exec(`powershell -Command "${psCommand}"`, () => {
+            setTimeout(() => { try { fs.unlinkSync(tmpFile); } catch (e) {} }, 12000);
+            if (callback) callback();
+        });
     }
     
     updateSettings(settings) {
@@ -73,7 +174,7 @@ class TTSService {
         return cleaned;
     }
     
-    speak(text) {
+    speak(text, uniqueId) {
         if (!this.enabled) return;
         
         // 텍스트 정제
@@ -85,8 +186,8 @@ class TTSService {
             return;
         }
         
-        // 큐에 추가
-        this.queue.push(cleanedText);
+        // 큐에 추가 (uniqueId 포함)
+        this.queue.push({ text: cleanedText, uniqueId: uniqueId || 'unknown' });
         
         // 재생 중이 아니면 시작
         if (!this.isPlaying) {
@@ -101,10 +202,14 @@ class TTSService {
         }
         
         this.isPlaying = true;
-        const text = this.queue.shift();
+        const item = this.queue.shift();
         
         try {
-            await this.speakText(text);
+            if (this.googleTTS.enabled && this.googleTTS.apiKey) {
+                await this.speakWithGoogleTTS(item.text, item.uniqueId);
+            } else {
+                await this.speakText(item.text);
+            }
         } catch (error) {
             console.error('❌ TTS 오류:', error);
         }

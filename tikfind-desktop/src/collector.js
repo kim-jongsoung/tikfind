@@ -131,7 +131,7 @@ class TikTokCollector extends EventEmitter {
             this.emit('stats', this.stats);
             
             // TTS로 읽기 (비동기) - 대화 내용만
-            this.tts.speak(chatData.message);
+            this.tts.speak(chatData.message, chatData.uniqueId);
         });
         
         // 시청자 수

@@ -184,8 +184,8 @@ function connectToServer() {
     
     // 라이브 시작 명령
     socket.on('start-live', async (data) => {
-        log.info('🎥 라이브 시작 명령 수신:', data);
-        await startLive(data.tiktokId);
+        log.info('🎥 라이브 시작 명령 수신:', data.tiktokId);
+        await startLive(data.tiktokId, data.googleTTS);
     });
     
     // 라이브 종료 명령
@@ -253,7 +253,7 @@ function connectToServer() {
 }
 
 // 라이브 시작
-async function startLive(tiktokId) {
+async function startLive(tiktokId, googleTTS) {
     try {
         if (collector) {
             log.warn('⚠️ 이미 라이브 연결 중입니다.');
@@ -265,6 +265,12 @@ async function startLive(tiktokId) {
         
         const serverUrl = userConfig.serverUrl || process.env.SERVER_URL || 'https://tikfind.kr';
         collector = new TikTokCollector(tiktokId, userConfig.userId, serverUrl);
+
+        // Google TTS 설정 전달
+        if (googleTTS) {
+            collector.tts.updateGoogleTTSSettings(googleTTS);
+            log.info(`🔊 Google TTS ${googleTTS.enabled ? '활성화' : '비활성화'} | VIP ${(googleTTS.voiceSettings || []).length}명`);
+        }
         
         collector.on('connected', () => {
             log.info('✅ TikTok Live 연결 성공');

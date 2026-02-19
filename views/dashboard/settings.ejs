@@ -113,6 +113,69 @@
                     </div>
                 </div>
 
+                <!-- Google TTS 설정 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-1 flex items-center">
+                        <i class="fas fa-microphone-alt mr-2 text-green-600"></i>
+                        Google TTS 설정
+                        <span class="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">UNIVERSE</span>
+                    </h3>
+                    <p class="text-sm text-gray-500 mb-4">시청자 아이디별로 다양한 목소리를 자동 배정합니다</p>
+
+                    <!-- Google TTS 활성화 토글 -->
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-4">
+                        <div>
+                            <p class="font-medium text-gray-800">Google TTS 사용</p>
+                            <p class="text-xs text-gray-500">활성화 시 Windows 내장 TTS 대신 Google TTS 사용</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="useGoogleTTS" class="sr-only peer" <%= (user.ttsSettings && user.ttsSettings.useGoogleTTS) ? 'checked' : '' %>>
+                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                    </div>
+
+                    <!-- 기본 속도 -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">기본 속도</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="ttsDefaultSpeed" min="0.5" max="2.0" step="0.1"
+                                value="<%= (user.ttsSettings && user.ttsSettings.defaultSpeed) ? user.ttsSettings.defaultSpeed : 1.0 %>"
+                                class="flex-1" oninput="document.getElementById('ttsSpeedVal').textContent = parseFloat(this.value).toFixed(1) + 'x'">
+                            <span id="ttsSpeedVal" class="text-sm font-medium w-10"><%= (user.ttsSettings && user.ttsSettings.defaultSpeed) ? user.ttsSettings.defaultSpeed.toFixed(1) : '1.0' %>x</span>
+                        </div>
+                    </div>
+
+                    <button onclick="saveTTSSettings()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm mb-6">
+                        <i class="fas fa-save mr-1"></i>TTS 기본 설정 저장
+                    </button>
+
+                    <hr class="mb-6">
+
+                    <!-- VIP 아이디별 목소리 지정 -->
+                    <h4 class="font-semibold text-gray-700 mb-3 flex items-center">
+                        <i class="fas fa-star mr-2 text-yellow-500"></i>
+                        VIP 아이디 목소리 지정 (Chirp 3 HD)
+                    </h4>
+                    <p class="text-xs text-gray-500 mb-4">지정된 아이디는 고품질 Chirp 3 HD 목소리로 읽힙니다. 나머지는 WaveNet 자동 배정.</p>
+
+                    <!-- 추가 폼 -->
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="vipUniqueId" placeholder="TikTok 아이디 (예: user123)" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500">
+                        <select id="vipChirpVoice" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500">
+                            <option value="">목소리 선택</option>
+                        </select>
+                        <input type="number" id="vipSpeed" value="1.0" min="0.5" max="2.0" step="0.1" placeholder="속도" class="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <button onclick="addVoiceSetting()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm">
+                            <i class="fas fa-plus mr-1"></i>추가
+                        </button>
+                    </div>
+
+                    <!-- VIP 목록 -->
+                    <div id="voiceSettingsList" class="space-y-2">
+                        <p class="text-sm text-gray-400 text-center py-4" id="voiceSettingsEmpty">설정된 VIP 아이디가 없습니다</p>
+                    </div>
+                </div>
+
                 <!-- 저장 버튼 -->
                 <div class="flex justify-end space-x-4">
                     <button onclick="window.location.reload()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">

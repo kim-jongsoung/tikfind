@@ -874,35 +874,6 @@ async function processChatMessage(chatData) {
         }
     });
 
-    // 4. Google TTS 처리 (활성화된 경우)
-    if (user?.ttsSettings?.useGoogleTTS) {
-        try {
-            const googleTTSService = require('./services/GoogleTTSService');
-            const VoiceSettings = require('./models/VoiceSettings');
-            const chatUniqueId = uniqueId || username;
-
-            // VIP 목소리 설정 조회
-            const voiceSetting = await VoiceSettings.findOne({ userId, tiktokUniqueId: chatUniqueId });
-            const chirpVoice = voiceSetting?.chirpVoice || null;
-            const speed = voiceSetting?.speed || user.ttsSettings.defaultSpeed || 1.0;
-
-            // Google TTS 합성
-            const audioBuffer = await googleTTSService.synthesize(message, chatUniqueId, chirpVoice, speed);
-
-            if (audioBuffer) {
-                // Desktop App으로 오디오 전송 (base64)
-                const desktopSocketId = desktopSocketMap.get(userId);
-                if (desktopSocketId) {
-                    io.to(desktopSocketId).emit('google-tts-audio', {
-                        audio: audioBuffer.toString('base64'),
-                        uniqueId: chatUniqueId
-                    });
-                }
-            }
-        } catch (ttsError) {
-            console.error('❌ Google TTS 처리 오류:', ttsError.message);
-        }
-    }
 }
 
 // Live 상태 업데이트
@@ -1715,8 +1686,29 @@ io.on('connection', (socket) => {
             socket.emit('live-error', { message: 'Desktop App이 연결되어 있지 않습니다. TikFind 앱을 실행한 후 다시 시도해주세요.' });
             io.to(userId).emit('live-status', { isLive: false });
         } else {
-            // 주 Desktop App 소켓 하나에만 전달 (다른 앱은 수신 안 함)
-            io.to(desktopSocketId).emit('start-live', { tiktokId });
+            // VIP 목소리 설정 + Google TTS API 키 조회 후 전달
+            try {
+                const User = require('./models/User');
+                const VoiceSettings = require('./models/VoiceSettings');
+                const user = await User.findById(userId).select('ttsSettings');
+                const voiceSettings = await VoiceSettings.find({ userId });
+
+                io.to(desktopSocketId).emit('start-live', {
+                    tiktokId,
+                    googleTTS: {
+                        enabled: user?.ttsSettings?.useGoogleTTS || false,
+                        apiKey: process.env.GOOGLE_TTS_API_KEY || '',
+                        defaultSpeed: user?.ttsSettings?.defaultSpeed || 1.0,
+                        voiceSettings: voiceSettings.map(v => ({
+                            tiktokUniqueId: v.tiktokUniqueId,
+                            chirpVoice: v.chirpVoice,
+                            speed: v.speed
+                        }))
+                    }
+                });
+            } catch (e) {
+                io.to(desktopSocketId).emit('start-live', { tiktokId });
+            }
             console.log(`📲 주 Desktop App(${desktopSocketId})으로 start-live 전달`);
         }
     });
