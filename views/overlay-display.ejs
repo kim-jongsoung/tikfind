@@ -12,43 +12,55 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
+            position: relative;
         }
 
-        /* 마퀴 바 */
+        /* 마퀴 바 - 오른쪽 30% 영역에 고정 */
         .marquee-bar {
-            width: 40%;
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 30%;
             overflow: hidden;
             white-space: nowrap;
             display: flex;
             align-items: center;
-            padding: 0 0 0 8px;
             background: rgba(0, 0, 0, 0.55);
             height: 36px;
-            border-radius: 6px;
+            border-radius: 6px 0 0 6px;
             gap: 0;
         }
 
-        /* 신청곡 뱃지 */
+        /* 신청곡 뱃지 - 고정 영역 (마퀴 텍스트가 이 위로 지나가지 않음) */
         .song-badge {
             flex-shrink: 0;
             background: linear-gradient(135deg, #ec4899, #8b5cf6);
             color: #fff;
             font-size: 0.75em;
             font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 4px;
-            margin-right: 8px;
+            padding: 2px 8px 2px 10px;
+            border-radius: 6px 0 0 6px;
             letter-spacing: 0.03em;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            height: 100%;
+            z-index: 2;
+        }
+
+        /* 마퀴 텍스트 영역 - 뱃지 오른쪽에서만 흐름 */
+        .marquee-scroll-area {
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            align-items: center;
         }
 
         .marquee-track {
             display: inline-block;
             white-space: nowrap;
-            /* duration은 JS에서 설정 */
             animation: marquee-scroll 20s linear infinite;
         }
 
@@ -67,13 +79,17 @@
 </head>
 <body>
     <div class="marquee-bar" id="marqueeBar">
-        <span class="song-badge">♪ 신청곡</span>
-        <div class="marquee-track" id="marqueeTrack">
-            <!-- 동일 내용 2벌 → 끊김 없는 무한 반복 -->
-            <span class="marquee-text" id="marqueeText1">신청곡을 기다리고 있습니다...</span>
-            <span style="display:inline;margin:0 40px;opacity:0.4;">|</span>
-            <span class="marquee-text" id="marqueeText2">신청곡을 기다리고 있습니다...</span>
-            <span style="display:inline;margin:0 40px;opacity:0.4;">|</span>
+        <span class="song-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+            신청곡
+        </span>
+        <div class="marquee-scroll-area">
+            <div class="marquee-track" id="marqueeTrack">
+                <span class="marquee-text" id="marqueeText1">신청곡을 기다리고 있습니다...</span>
+                <span style="display:inline;margin:0 40px;opacity:0.3;">✦</span>
+                <span class="marquee-text" id="marqueeText2">신청곡을 기다리고 있습니다...</span>
+                <span style="display:inline;margin:0 40px;opacity:0.3;">✦</span>
+            </div>
         </div>
     </div>
 
