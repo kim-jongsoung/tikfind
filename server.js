@@ -793,10 +793,11 @@ app.post('/api/live/chat', async (req, res) => {
         
         // 1. 언어 감지
         const messageLanguage = await pronunciationCoach.detectLanguage(message);
+        console.log(`🔍 언어감지: "${message}" → ${messageLanguage} (스트리머: ${streamerLanguage})`);
         
         // 2. AI 발음 코치 (플랜 한도 기반)
         let pronunciationGuide = null;
-        if (messageLanguage !== streamerLanguage) {
+        if (messageLanguage !== streamerLanguage && messageLanguage !== 'unknown') {
             // 메시지 필터링: 이모티콘, 숫자만, 특수문자만 있는 메시지는 AI 호출 안 함
             const shouldProcessMessage = (msg) => {
                 // 숫자만 있는 경우
@@ -842,8 +843,9 @@ app.post('/api/live/chat', async (req, res) => {
                 }
                 
                 const planLimit = await PlanLimit.findOne({ planName: user.plan || 'free' });
-                const limit = planLimit?.pronunciationCoachLimit || 10;
+                const limit = planLimit?.pronunciationCoachLimit ?? 10;
                 const currentUsage = usageLog.pronunciationCoachCount || 0;
+                console.log(`📊 발음코치 사용량: ${currentUsage}/${limit} (플랜: ${user.plan || 'free'})`);
                 
                 // 제한 체크 (무제한은 -1)
                 if (limit === -1 || currentUsage < limit) {
@@ -852,11 +854,15 @@ app.post('/api/live/chat', async (req, res) => {
                     
                     // 없으면 AI로 생성
                     if (!pronunciationGuide) {
+                        console.log(`🤖 AI 발음코치 호출: "${message}" (${messageLanguage} → ${streamerLanguage})`);
                         pronunciationGuide = await pronunciationCoach.generatePronunciationGuide(
                             message, 
                             messageLanguage, 
                             streamerLanguage
                         );
+                        console.log(`✅ AI 발음코치 결과:`, pronunciationGuide ? '성공' : '실패(null)');
+                    } else {
+                        console.log(`⚡ 빠른응답 사용:`, pronunciationGuide.response);
                     }
                     
                     // 사용량 증가
