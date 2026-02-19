@@ -93,12 +93,31 @@ class TikTokCollector extends EventEmitter {
                 this.broadcastStatus(true);
             }
             
+            // 원본 데이터 필드 확인 (개발용)
+            console.log('📦 TikTok 채팅 원본 데이터 키:', Object.keys(data));
+            console.log('📦 badges:', JSON.stringify(data.badges));
+            console.log('📦 userBadges:', JSON.stringify(data.userBadges));
+            console.log('📦 teamMemberLevel:', data.teamMemberLevel);
+            console.log('📦 userDetails:', JSON.stringify(data.userDetails));
+            console.log('📦 followRole:', data.followRole);
+            console.log('📦 isModerator:', data.isModerator);
+            console.log('📦 isSubscriber:', data.isSubscriber);
+            console.log('📦 topGifterRank:', data.topGifterRank);
+            
             const chatData = {
                 userId: this.userId,
                 username: data.uniqueId || data.nickname,
+                nickname: data.nickname || data.uniqueId,
                 uniqueId: data.uniqueId,
                 message: data.comment,
                 badges: data.badges || [],
+                userBadges: data.userBadges || [],
+                followRole: data.followRole || 0,
+                isModerator: data.isModerator || false,
+                isSubscriber: data.isSubscriber || false,
+                topGifterRank: data.topGifterRank || null,
+                teamMemberLevel: data.teamMemberLevel || null,
+                userDetails: data.userDetails || null,
                 timestamp: Date.now()
             };
             
