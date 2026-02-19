@@ -45,25 +45,50 @@ function saveUserConfig(config) {
     }
 }
 
+// 트레이용 아이콘 생성 - 보라색 배경 + 흰색 "Tik" 픽셀 패턴 (외부 모듈 불필요)
+function createTrayIcon() {
+    const W = 16, H = 16;
+    // RGBA 버퍼: 보라색 배경 (#7c3aed)
+    const buf = Buffer.alloc(W * H * 4);
+    const bg = [124, 58, 237, 255]; // 보라색
+    const fg = [255, 255, 255, 255]; // 흰색
+
+    // 배경 채우기
+    for (let i = 0; i < W * H; i++) {
+        buf[i * 4]     = bg[0];
+        buf[i * 4 + 1] = bg[1];
+        buf[i * 4 + 2] = bg[2];
+        buf[i * 4 + 3] = bg[3];
+    }
+
+    // 픽셀 찍기 헬퍼
+    function px(x, y) {
+        if (x < 0 || x >= W || y < 0 || y >= H) return;
+        const i = (y * W + x) * 4;
+        buf[i] = fg[0]; buf[i+1] = fg[1]; buf[i+2] = fg[2]; buf[i+3] = fg[3];
+    }
+
+    // "T" (x:1~5, y:3~11)
+    for (let x = 1; x <= 5; x++) px(x, 3); // 가로획
+    px(3, 4); px(3, 5); px(3, 6); px(3, 7); px(3, 8); px(3, 9); px(3, 10); px(3, 11);
+
+    // "i" (x:7, y:3~11)
+    px(7, 3); // 점
+    px(7, 5); px(7, 6); px(7, 7); px(7, 8); px(7, 9); px(7, 10); px(7, 11);
+
+    // "k" (x:9~13, y:3~11)
+    px(9, 3); px(9, 4); px(9, 5); px(9, 6); px(9, 7); px(9, 8); px(9, 9); px(9, 10); px(9, 11);
+    px(10, 7); px(11, 6); px(12, 5); px(13, 4); px(13, 3); // 위 대각
+    px(10, 8); px(11, 9); px(12, 10); px(13, 11);           // 아래 대각
+
+    return nativeImage.createFromBuffer(buf, { width: W, height: H });
+}
+
 // 시스템 트레이 생성
 function createTray() {
-    // ico 파일 우선 사용 (Windows 트레이에 최적화)
-    const icoPath = path.join(__dirname, 'build', 'icon.ico');
-    const pngPath = path.join(__dirname, 'build', 'icon.png');
-    let trayIcon;
-    
-    if (fs.existsSync(icoPath)) {
-        trayIcon = nativeImage.createFromPath(icoPath);
-    } else if (fs.existsSync(pngPath)) {
-        trayIcon = nativeImage.createFromPath(pngPath);
-        trayIcon = trayIcon.resize({ width: 16, height: 16 });
-    } else {
-        trayIcon = nativeImage.createEmpty();
-    }
-    
+    const trayIcon = createTrayIcon();
     tray = new Tray(trayIcon);
     updateTrayMenu('대기 중');
-    
     tray.setToolTip('TikFind Desktop App');
     log.info('✅ 시스템 트레이 생성 완료');
 }
