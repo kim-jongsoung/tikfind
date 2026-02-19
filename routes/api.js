@@ -63,19 +63,19 @@ const checkSongCooldown = (req, res, next) => {
     next();
 };
 
-// Desktop App 다운로드 - 서버에서 직접 파일 제공
+// Desktop App 다운로드
 router.get('/download-app', async (req, res) => {
     try {
+        // 1순위: 서버에 파일이 있으면 직접 제공
         const exePath = path.join(__dirname, '../public/downloads/TikFind-Setup.exe');
-        
         if (fs.existsSync(exePath)) {
             res.setHeader('Content-Disposition', 'attachment; filename="TikFind-Setup.exe"');
             res.setHeader('Content-Type', 'application/octet-stream');
             return res.sendFile(exePath);
         }
         
-        // 파일이 없으면 GitHub Releases로 리디렉션 (fallback)
-        return res.redirect('https://github.com/kim-jongsoung/tikfind/releases/latest');
+        // 2순위: GitHub Releases 직접 다운로드 링크
+        return res.redirect('https://github.com/kim-jongsoung/tikfind/releases/download/v1.0.6/TikFind.Setup.1.0.6.exe');
 
     } catch (error) {
         console.error('Desktop App 다운로드 오류:', error);
