@@ -1175,13 +1175,72 @@ io.on('connection', (socket) => {
     });
     
     // Desktop App → 웹: TikTok 데이터 전송
-    socket.on('tiktok-data', (data) => {
+    socket.on('tiktok-data', async (data) => {
         const { userId, type, data: tiktokData } = data;
         console.log(`📡 TikTok 데이터 수신 (${type}):`, userId);
         
-        // 해당 사용자의 웹 대시보드로 전송
         if (type === 'chat') {
-            io.to(userId).emit('chat-message', tiktokData);
+            try {
+                const User = require('./models/User');
+                const user = await User.findById(userId);
+                const streamerLanguage = user?.preferredLanguage || 'ko';
+
+                // 언어 감지
+                const messageLanguage = await pronunciationCoach.detectLanguage(tiktokData.message);
+                console.log(`🔍 언어감지: "${tiktokData.message}" → ${messageLanguage} (스트리머: ${streamerLanguage})`);
+
+                let pronunciationGuide = null;
+
+                if (messageLanguage !== streamerLanguage && messageLanguage !== 'unknown') {
+                    const shouldProcess = (msg) => {
+                        if (/^\d+$/.test(msg.trim())) return false;
+                        const textOnly = msg.replace(/[\s\p{Emoji}\p{P}\p{S}]/gu, '');
+                        if (textOnly.length < 2) return false;
+                        return true;
+                    };
+
+                    if (shouldProcess(tiktokData.message)) {
+                        const UsageLog = require('./models/UsageLog');
+                        const PlanLimit = require('./models/PlanLimit');
+                        const today = new Date().toISOString().split('T')[0];
+                        let usageLog = await UsageLog.findOne({ userId, date: today });
+                        if (!usageLog) {
+                            usageLog = await UsageLog.create({ userId, date: today, songRequestCount: 0, gptAiCount: 0, pronunciationCoachCount: 0 });
+                        }
+                        const planLimit = await PlanLimit.findOne({ planName: user?.plan || 'free' });
+                        const limit = planLimit?.pronunciationCoachLimit ?? 10;
+                        const currentUsage = usageLog.pronunciationCoachCount || 0;
+                        console.log(`📊 발음코치 사용량: ${currentUsage}/${limit} (플랜: ${user?.plan || 'free'})`);
+
+                        if (limit === -1 || currentUsage < limit) {
+                            pronunciationGuide = pronunciationCoach.getQuickResponse(tiktokData.message, messageLanguage, streamerLanguage);
+                            if (!pronunciationGuide) {
+                                console.log(`🤖 AI 발음코치 호출: "${tiktokData.message}" (${messageLanguage} → ${streamerLanguage})`);
+                                pronunciationGuide = await pronunciationCoach.generatePronunciationGuide(tiktokData.message, messageLanguage, streamerLanguage);
+                                console.log(`✅ AI 발음코치 결과:`, pronunciationGuide ? '성공' : '실패(null)');
+                            } else {
+                                console.log(`⚡ 빠른응답 사용:`, pronunciationGuide.response);
+                            }
+                            if (pronunciationGuide) {
+                                usageLog.pronunciationCoachCount = currentUsage + 1;
+                                await usageLog.save();
+                            }
+                        } else {
+                            console.log(`⚠️ AI 발음 코치 제한 초과: ${currentUsage}/${limit}`);
+                            pronunciationGuide = { limitExceeded: true, currentUsage, limit, message: '일일 AI 발음 코치 한도를 초과했습니다.' };
+                        }
+                    }
+                }
+
+                io.to(userId).emit('chat-message', {
+                    ...tiktokData,
+                    messageLanguage,
+                    pronunciationGuide
+                });
+            } catch (err) {
+                console.error('❌ tiktok-data chat 처리 오류:', err);
+                io.to(userId).emit('chat-message', tiktokData);
+            }
         } else if (type === 'stats') {
             io.to(userId).emit('viewer-update', tiktokData);
         } else if (type === 'gift') {
