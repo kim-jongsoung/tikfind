@@ -806,10 +806,15 @@ async function processChatMessage(chatData) {
     const requesterFollowRole = Number(followRole) || 0;
     const songSettings = songRequestService.getSettings(userId);
 
+    if (songData) {
+        console.log(`🎵 신청곡 감지: "${songData.title}" - "${songData.artist}" | followRole=${requesterFollowRole} | isAccepting=${songSettings.isAccepting}`);
+    }
+
     if (songData && songSettings.isAccepting && requesterFollowRole >= 1) {
         const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
         const elapsed = lastTime ? (Date.now() - lastTime) / 1000 / 60 : Infinity;
         const cooldownOk = songSettings.cooldownMinutes === 0 || elapsed >= songSettings.cooldownMinutes;
+        console.log(`🎵 쿨다운 체크: elapsed=${elapsed.toFixed(1)}분, cooldown=${songSettings.cooldownMinutes}분, ok=${cooldownOk}`);
 
         if (cooldownOk) {
             const today = new Date().toISOString().split('T')[0];
@@ -821,19 +826,25 @@ async function processChatMessage(chatData) {
             const planLimit = await PlanLimit.findOne({ planName: user?.plan || 'free' });
             const limit = planLimit?.songRequestLimit || 5;
             const currentUsage = usageLog.songRequestCount || 0;
+            console.log(`🎵 사용량 체크: ${currentUsage}/${limit}`);
 
             if (limit === -1 || currentUsage < limit) {
                 const result = await songRequestService.addSongRequest(userId, songData, {
                     username, uniqueId: uniqueId || username, badges: badges || [], isVIP: false, level: 1
                 });
+                console.log(`🎵 addSongRequest 결과:`, result.success, result.message || '');
                 if (result.success) {
                     songRequest = result.song;
                     songRequestService.setLastRequestTime(userId, uniqueId || username, Date.now());
                     await UsageLog.updateOne({ userId, date: today }, { $inc: { songRequestCount: 1 } });
                     emitQueueUpdate(userId);
                 }
+            } else {
+                console.log(`🎵 사용량 초과: ${currentUsage}/${limit}`);
             }
         }
+    } else if (songData) {
+        console.log(`🎵 신청곡 거부: isAccepting=${songSettings.isAccepting}, followRole=${requesterFollowRole}`);
     }
 
     // 3. 사용량 조회
