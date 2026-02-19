@@ -1345,6 +1345,9 @@ function emitQueueUpdate(userId) {
     })));
 }
 
+// userId별 Desktop App 소켓 ID 추적 (첫 번째 연결된 앱만 명령 수신)
+const desktopSocketMap = new Map();
+
 // ==================== Socket.io 이벤트 ====================
 io.on('connection', (socket) => {
     console.log('🔌 클라이언트 연결:', socket.id);
@@ -1394,6 +1397,13 @@ io.on('connection', (socket) => {
         
         // Desktop App이 룸에 참가한 후 웹에 알림
         if (clientType === 'desktop-app') {
+            // 이미 등록된 Desktop App이 없으면 이 소켓을 주 Desktop App으로 등록
+            if (!desktopSocketMap.has(targetUserId)) {
+                desktopSocketMap.set(targetUserId, socket.id);
+                console.log(`📱 주 Desktop App 등록: ${targetUserId} → ${socket.id}`);
+            } else {
+                console.log(`⚠️ 추가 Desktop App 연결 감지 (명령 수신 안 함): ${targetUserId} → ${socket.id}`);
+            }
             io.to(targetUserId).emit('desktop-app-connected', { userId: targetUserId });
             console.log(`📱 Desktop App 연결 알림 전송: ${targetUserId}`);
         }
@@ -1437,9 +1447,28 @@ io.on('connection', (socket) => {
         
         // Desktop App 연결 해제 시 웹에 알림 + 라이브 상태 초기화
         if (clientType === 'desktop-app' && userId) {
-            liveStatusMap.delete(userId);
-            io.to(userId).emit('desktop-app-disconnected', { userId });
-            io.to(userId).emit('live-status', { isLive: false });
+            // 주 Desktop App이 끊기면 맵에서 제거
+            if (desktopSocketMap.get(userId) === socket.id) {
+                desktopSocketMap.delete(userId);
+                console.log(`📱 주 Desktop App 해제: ${userId}`);
+                // 같은 룸에 다른 Desktop App이 있으면 그걸 주 앱으로 승격
+                const room = io.sockets.adapter.rooms.get(userId);
+                if (room) {
+                    for (const sid of room) {
+                        const s = io.sockets.sockets.get(sid);
+                        if (s && s.handshake.auth.type === 'desktop-app') {
+                            desktopSocketMap.set(userId, sid);
+                            console.log(`📱 새 주 Desktop App 승격: ${userId} → ${sid}`);
+                            break;
+                        }
+                    }
+                }
+            }
+            if (!desktopSocketMap.has(userId)) {
+                liveStatusMap.delete(userId);
+                io.to(userId).emit('desktop-app-disconnected', { userId });
+                io.to(userId).emit('live-status', { isLive: false });
+            }
         }
     });
     
@@ -1574,15 +1603,16 @@ io.on('connection', (socket) => {
         const roomSize = room ? room.size : 0;
         console.log(`📡 룸 ${userId} 연결 수: ${roomSize}`);
 
-        if (roomSize <= 1) {
+        const desktopSocketId = desktopSocketMap.get(userId);
+        if (!desktopSocketId) {
             // Desktop App 미연결 - 에러 반환 (서버 직접 연결 금지)
             console.log(`⚠️ Desktop App 미연결 상태 - 방송시작 불가`);
             socket.emit('live-error', { message: 'Desktop App이 연결되어 있지 않습니다. TikFind 앱을 실행한 후 다시 시도해주세요.' });
             io.to(userId).emit('live-status', { isLive: false });
         } else {
-            // Desktop App이 연결되어 있으면 전달
-            io.to(userId).emit('start-live', { tiktokId });
-            console.log(`📲 Desktop App으로 start-live 전달`);
+            // 주 Desktop App 소켓 하나에만 전달 (다른 앱은 수신 안 함)
+            io.to(desktopSocketId).emit('start-live', { tiktokId });
+            console.log(`📲 주 Desktop App(${desktopSocketId})으로 start-live 전달`);
         }
     });
 
@@ -1591,8 +1621,13 @@ io.on('connection', (socket) => {
         const { userId } = data;
         console.log(`⏹️ 라이브 종료 명령: ${userId}`);
 
-        // Desktop App으로 전달
-        io.to(userId).emit('stop-live');
+        // 주 Desktop App 소켓 하나에만 전달
+        const desktopSocketId = desktopSocketMap.get(userId);
+        if (desktopSocketId) {
+            io.to(desktopSocketId).emit('stop-live');
+        } else {
+            io.to(userId).emit('stop-live');
+        }
 
         // 서버 직접 연결도 종료
         const liveService = liveConnections.get(userId);
@@ -1610,8 +1645,13 @@ io.on('connection', (socket) => {
         console.log('🔊 TTS 설정 수신:', settings);
         const targetUserId = settings.userId || userId;
         
-        // Desktop App으로 전송
-        io.to(targetUserId).emit('tts-settings', settings);
+        // 주 Desktop App 소켓 하나에만 전송
+        const desktopSocketId = desktopSocketMap.get(targetUserId);
+        if (desktopSocketId) {
+            io.to(desktopSocketId).emit('tts-settings', settings);
+        } else {
+            io.to(targetUserId).emit('tts-settings', settings);
+        }
     });
 
     // TikTok Live 시작
