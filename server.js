@@ -1142,6 +1142,62 @@ app.post('/api/song-queue/move', (req, res) => {
     }
 });
 
+// ===== 신청곡 테스트 API (라이브 없이 시뮬레이션) =====
+app.post('/api/song-queue/test', async (req, res) => {
+    try {
+        const { userId, message, username, followRole } = req.body;
+        // message 예: "#Dynamite #BTS" 또는 "#Dynamite#BTS"
+
+        if (!userId || !message) {
+            return res.status(400).json({ success: false, message: 'userId, message 필수' });
+        }
+
+        // 1. 파싱
+        const songData = songRequestService.parseSongRequest(message);
+        if (!songData) {
+            return res.json({ success: false, message: '신청곡 패턴 인식 실패. 형식: #노래제목 #가수명' });
+        }
+
+        // 2. 팔로워 체크 (테스트에서는 followRole 파라미터로 제어, 기본 1)
+        const role = Number(followRole ?? 1);
+        if (role < 1) {
+            return res.json({ success: false, message: '팔로워 아님 (followRole < 1)' });
+        }
+
+        // 3. 설정 체크
+        const settings = songRequestService.getSettings(userId);
+        if (!settings.isAccepting) {
+            return res.json({ success: false, message: '신청곡 안받기 상태' });
+        }
+
+        // 4. 큐 추가
+        const requesterInfo = {
+            username: username || 'test_user',
+            uniqueId: username || 'test_user',
+            badges: ['follower'],
+            isVIP: false,
+            level: 1
+        };
+
+        const result = await songRequestService.addSongRequest(userId, songData, requesterInfo);
+        if (result.success) {
+            emitQueueUpdate(userId);
+            return res.json({
+                success: true,
+                parsed: songData,
+                song: result.song,
+                queuePosition: result.queuePosition,
+                totalQueue: result.totalQueue
+            });
+        } else {
+            return res.json({ success: false, message: result.message });
+        }
+    } catch (error) {
+        console.error('❌ 신청곡 테스트 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // 404 처리
 app.use((req, res) => {
     res.status(404).render('404', { 
