@@ -338,10 +338,11 @@
                         checkAndShowLimitExceeded(data.usage);
                     }
                     
-                    // Socket이 이미 연결되어 있으면 join-room 호출
+                    // Socket이 이미 연결되어 있으면 join-room 호출 (새로고침 시 currentUser 로드 후)
                     if (socket.connected) {
                         socket.emit('join-room', userId);
                         console.log('👤 사용자 룸 참가:', userId);
+                        // 서버가 liveStatusMap에서 방송 중 상태를 자동으로 전달
                     }
                     
                     // 신청곡 큐 복원
@@ -482,17 +483,13 @@
         socket.on('connect', () => {
             console.log('✅ Socket.io 연결');
             
+            // currentUser가 이미 로드된 경우 즉시 join-room
             if (currentUser) {
                 const userId = String(currentUser._id || currentUser.id);
                 socket.emit('join-room', userId);
-                
-                // 저장된 라이브 상태 복원
-                const savedLiveState = localStorage.getItem('tikfind_live_state');
-                if (savedLiveState === 'true') {
-                    // 서버에 현재 상태 요청
-                    socket.emit('get-live-status', { userId });
-                }
+                // 서버가 liveStatusMap에서 상태를 자동으로 전달해줌
             }
+            // currentUser가 아직 없으면 loadUserInfo() 완료 후 join-room 전송됨
         });
 
         socket.on('disconnect', () => {
@@ -516,7 +513,6 @@
         socket.on('live-status', (data) => {
             console.log('📱 live-status 수신:', data);
             isLive = data.isLive;
-            localStorage.setItem('tikfind_live_state', isLive ? 'true' : 'false');
             
             if (data.isLive) {
                 isLive = true;
@@ -846,7 +842,6 @@
             
             // 상태 초기화
             isLive = false;
-            localStorage.setItem('tikfind_live_state', 'false');
             
             // 버튼 상태 변경
             document.getElementById('startBtn').disabled = false;
@@ -1300,16 +1295,8 @@
         let autoSkipAbsentSetting = true; // 부재자 자동 패스
         let lastRequestTime = {}; // 마지막 신청 시간 기록
 
-        // 페이지 로드 시 이전 상태 복원
+        // 페이지 로드 시 상태는 서버(liveStatusMap)에서 자동 복원됨 (join-room 후 live-status 수신)
         window.addEventListener('DOMContentLoaded', () => {
-            const savedLiveState = localStorage.getItem('tikfind_live_state');
-            if (savedLiveState === 'true') {
-                isLive = true;
-                updateStatus('방송 중 (복원됨)', true);
-                document.getElementById('startBtn').disabled = true;
-                document.getElementById('startBtn').textContent = '방송 중';
-                document.getElementById('stopBtn').disabled = false;
-            }
             
             // 장르 목록 로드 (Genre 모델 기반)
             async function updateGenreStats() {
