@@ -132,9 +132,6 @@ class TikTokCollector extends EventEmitter {
             
             // TTS로 읽기 (비동기) - 대화 내용만
             this.tts.speak(chatData.message);
-            
-            // 서버 전송 (비동기, 백그라운드)
-            this.sendToServer('/api/live/chat', chatData);
         });
         
         // 시청자 수
