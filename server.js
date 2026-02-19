@@ -806,7 +806,7 @@ async function processChatMessage(chatData) {
     const requesterFollowRole = Number(followRole) || 0;
     const songSettings = songRequestService.getSettings(userId);
 
-    if (songData && songSettings.isAccepting) {
+    if (songData && songSettings.isAccepting && requesterFollowRole >= 1) {
         const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
         const elapsed = lastTime ? (Date.now() - lastTime) / 1000 / 60 : Infinity;
         const cooldownOk = songSettings.cooldownMinutes === 0 || elapsed >= songSettings.cooldownMinutes;
