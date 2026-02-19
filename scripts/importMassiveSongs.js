@@ -1,11 +1,16 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
 const axios = require('axios');
 
-const MONGODB_URI = process.env.MONGODB_URI || process.env.DATABASE_URL;
+const MONGODB_URI = process.env.DATABASE_URL || process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-    console.error('❌ MONGODB_URI 환경 변수가 설정되지 않았습니다.');
+    console.error('❌ DATABASE_URL 또는 MONGODB_URI 환경 변수가 설정되지 않았습니다.');
+    console.error('현재 환경 변수:', {
+        DATABASE_URL: process.env.DATABASE_URL ? '설정됨' : '없음',
+        MONGODB_URI: process.env.MONGODB_URI ? '설정됨' : '없음'
+    });
     process.exit(1);
 }
 
