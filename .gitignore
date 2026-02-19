@@ -13,4 +13,4 @@ temp/
 
 # Desktop App 빌드 파일 (용량이 커서 GitHub에 업로드하지 않음)
 tikfind-desktop/dist/
-public/downloads/*.exe
+# public/downloads/*.exe 는 배포용으로 포함
