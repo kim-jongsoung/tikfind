@@ -127,34 +127,34 @@
 
         function songLabel(song) {
             if (!song) return '';
-            let label = '🎵 ' + song.title;
+            let label = song.title;
             if (song.artist)    label += ' - ' + song.artist;
-            if (song.requester) label += '  (@' + song.requester + ')';
+            if (song.requester) label += ' (@' + song.requester + ')';
             return label;
         }
 
         function buildText() {
             let parts = [];
             if (currentSong) {
-                parts.push('현재곡: ' + songLabel(currentSong));
+                parts.push('▶ 현재곡 ' + songLabel(currentSong));
             }
             if (nextQueue.length > 0) {
-                parts.push('다음곡: ' + songLabel(nextQueue[0]));
+                parts.push('⏭ 다음곡 ' + songLabel(nextQueue[0]));
             }
             if (nextQueue.length > 1) {
                 nextQueue.slice(1, 4).forEach((s, i) => {
-                    parts.push('대기' + (i + 2) + ': ' + songLabel(s));
+                    parts.push('🎶 대기' + (i + 2) + ' ' + songLabel(s));
                 });
             }
 
             // 신청 안내 문구는 항상 포함
-            parts.push('팔로우 후 채팅창에 #노래제목 #가수명 으로 신청해주세요 🎵');
+            parts.push('💬 #노래제목 #가수명 으로 신청하세요');
 
-            const text = parts.join('　　　　');
+            // 이모티콘으로 구분, 여백 없이
+            const text = parts.join(' ✦ ');
 
             // 2벌 복사 → translateX(-50%) 무한 반복
-            const sep = '　　　　　　';
-            const full = text + sep;
+            const full = text + ' ✦ ';
             document.getElementById('marqueeText1').textContent = full;
             document.getElementById('marqueeText2').textContent = full;
             setSpeed(full);
