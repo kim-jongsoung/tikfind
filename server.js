@@ -23,6 +23,9 @@ const PORT = process.env.PORT || 3001;
 // TikTok Live 연결 관리
 const liveConnections = new Map();
 
+// 라이브 상태 저장 (userId → { isLive, tiktokId })
+const liveStatusMap = new Map();
+
 // AI 발음 코치 캐시 시스템
 const pronunciationCache = new Map();
 const MAX_CACHE_SIZE = 10000; // 최대 10,000개 캐시
@@ -1108,19 +1111,25 @@ io.on('connection', (socket) => {
         
         // Desktop App이 룸에 참가한 후 웹에 알림
         if (clientType === 'desktop-app') {
-            // 같은 룸의 모든 클라이언트(웹 포함)에게 알림
             io.to(targetUserId).emit('desktop-app-connected', { userId: targetUserId });
             console.log(`📱 Desktop App 연결 알림 전송: ${targetUserId}`);
         }
         
-        // 웹 클라이언트가 룸에 참가할 때 Desktop App이 이미 연결되어 있는지 확인
+        // 웹 클라이언트가 룸에 참가할 때
         if (clientType === 'web') {
+            // 1. 저장된 라이브 상태가 있으면 즉시 전달 (핵심 버그 수정)
+            const savedStatus = liveStatusMap.get(targetUserId);
+            if (savedStatus) {
+                socket.emit('live-status', savedStatus);
+                console.log(`📤 저장된 라이브 상태 전달: ${targetUserId}, isLive: ${savedStatus.isLive}`);
+            }
+            
+            // 2. Desktop App이 이미 연결되어 있으면 알림
             const roomSockets = io.sockets.adapter.rooms.get(targetUserId);
             if (roomSockets) {
                 for (const socketId of roomSockets) {
                     const clientSocket = io.sockets.sockets.get(socketId);
                     if (clientSocket && clientSocket.handshake.auth.type === 'desktop-app') {
-                        // Desktop App이 이미 연결되어 있음을 웹에 알림
                         socket.emit('desktop-app-connected', { userId: targetUserId });
                         console.log(`📱 기존 Desktop App 연결 알림: ${targetUserId}`);
                         break;
@@ -1143,9 +1152,11 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log('❌ 클라이언트 연결 해제:', socket.id);
         
-        // Desktop App 연결 해제 시 웹에 알림
+        // Desktop App 연결 해제 시 웹에 알림 + 라이브 상태 초기화
         if (clientType === 'desktop-app' && userId) {
+            liveStatusMap.delete(userId);
             io.to(userId).emit('desktop-app-disconnected', { userId });
+            io.to(userId).emit('live-status', { isLive: false });
         }
     });
     
@@ -1170,67 +1181,37 @@ io.on('connection', (socket) => {
     socket.on('live-status', (data) => {
         const { userId, isLive, tiktokId } = data;
         console.log(`🎥 라이브 상태 업데이트: ${userId}, Live: ${isLive}, TikTok: ${tiktokId}`);
-        console.log(`📤 웹으로 live-status 전송 시도 (룸: ${userId})`);
         
-        // 룸에 있는 클라이언트 확인
-        const roomSockets = io.sockets.adapter.rooms.get(userId);
-        if (roomSockets) {
-            console.log(`✅ 룸 ${userId}에 ${roomSockets.size}개 클라이언트 존재`);
-            roomSockets.forEach(socketId => {
-                const clientSocket = io.sockets.sockets.get(socketId);
-                if (clientSocket) {
-                    const clientType = clientSocket.handshake.auth.type || 'unknown';
-                    console.log(`  - Socket ${socketId}: ${clientType}`);
-                }
-            });
+        // 상태 저장 (나중에 웹이 접속해도 받을 수 있도록)
+        if (isLive) {
+            liveStatusMap.set(userId, { isLive, tiktokId });
         } else {
-            console.log(`❌ 룸 ${userId}에 클라이언트 없음`);
+            liveStatusMap.delete(userId);
         }
         
         // 웹 대시보드로 전송
         io.to(userId).emit('live-status', { isLive, tiktokId });
-        console.log(`✅ live-status 전송 완료`);
+        console.log(`✅ live-status 전송 완료 (룸: ${userId})`);
     });
     
-    // 웹 → 서버: 라이브 시작 명령 (서버에서 직접 TikTok 연결)
+    // 웹 → Desktop App: 라이브 시작 명령
     socket.on('start-live', async (data) => {
         const { userId, tiktokId } = data;
-        console.log(`🎥 라이브 시작 명령 (서버 직접 연결): ${userId}, TikTok: ${tiktokId}`);
+        console.log(`🎥 라이브 시작 명령: ${userId}, TikTok: ${tiktokId}`);
         
-        // 이미 연결되어 있으면 재사용
-        if (liveConnections.has(userId)) {
-            console.log('⚠️ 이미 연결된 사용자:', userId);
-            socket.emit('live-status', { isLive: true, tiktokId });
-            return;
-        }
-
-        try {
-            // 서버에서 직접 TikTok Live 연결
-            const liveService = new TikTokLiveService(tiktokId, userId, io);
-            await liveService.connect();
-            liveConnections.set(userId, liveService);
-            
-            console.log(`✅ 서버에서 TikTok Live 연결 성공: ${tiktokId} (User: ${userId})`);
-            io.to(userId).emit('live-status', { isLive: true, tiktokId });
-        } catch (error) {
-            console.error('❌ TikTok Live 연결 실패:', error);
-            socket.emit('live-error', { message: error.message });
-            socket.emit('live-status', { isLive: false, tiktokId });
-        }
+        // Desktop App으로 명령 전송
+        io.to(userId).emit('start-live', { tiktokId });
     });
     
-    // 웹 → 서버: 라이브 종료 명령
+    // 웹 → Desktop App: 라이브 종료 명령
     socket.on('stop-live', (data) => {
         const { userId } = data;
         console.log(`⏹️ 라이브 종료 명령: ${userId}`);
         
-        const liveService = liveConnections.get(userId);
-        if (liveService) {
-            liveService.disconnect();
-            liveConnections.delete(userId);
-            console.log(`✅ TikTok Live 종료: ${userId}`);
-        }
+        // Desktop App으로 명령 전송
+        io.to(userId).emit('stop-live');
         
+        // 웹에도 즉시 상태 업데이트
         io.to(userId).emit('live-status', { isLive: false });
     });
     
