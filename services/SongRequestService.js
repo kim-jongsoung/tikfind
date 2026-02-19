@@ -38,23 +38,23 @@ class SongRequestService {
      * @returns {object|null} - { title, artist } 또는 null
      */
     parseSongRequest(message) {
-        // 패턴1: #노래제목#가수이름 (붙어있는 형식)
-        const pattern1 = /#([^#\s][^#]*)#([^#]+)/;
-        const match1 = message.match(pattern1);
-        if (match1) {
-            return {
-                title: match1[1].trim(),
-                artist: match1[2].trim()
-            };
+        // # 기호가 2개 이상 있어야 신청곡으로 인식
+        const hashCount = (message.match(/#/g) || []).length;
+        if (hashCount < 2) return null;
+
+        // 모든 # 위치 찾기
+        const parts = [];
+        const regex = /#([^#]+)/g;
+        let m;
+        while ((m = regex.exec(message)) !== null) {
+            const val = m[1].trim();
+            if (val) parts.push(val);
         }
 
-        // 패턴2: #노래제목 #가수이름 (공백으로 구분된 형식)
-        const pattern2 = /#([^#]+?)\s+#([^#\s]+(?:\s+[^#\s]+)*)/;
-        const match2 = message.match(pattern2);
-        if (match2) {
+        if (parts.length >= 2) {
             return {
-                title: match2[1].trim(),
-                artist: match2[2].trim()
+                title: parts[0],
+                artist: parts[1]
             };
         }
 
