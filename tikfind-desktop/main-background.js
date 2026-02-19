@@ -10,12 +10,6 @@ let socket = null;
 let collector = null;
 let userConfig = null;
 
-// Windows에서 tikfind:// 프로토콜 수신을 위해 single instance lock 필요
-const gotLock = app.requestSingleInstanceLock();
-if (!gotLock) {
-    app.quit();
-}
-
 // 로그 설정
 log.transports.file.level = 'info';
 
@@ -425,63 +419,34 @@ app.setAsDefaultProtocolClient('tikfind');
 app.on('open-url', (event, url) => {
     event.preventDefault();
     log.info('🔗 Custom URL 수신:', url);
-    handleProtocolUrl(url);
-});
-
-// Windows에서는 second-instance 이벤트로 URL 수신
-app.on('second-instance', (event, argv) => {
-    const url = argv.find(arg => arg.startsWith('tikfind://'));
-    if (url) {
-        log.info('🔗 second-instance URL 수신:', url);
-        handleProtocolUrl(url);
+    
+    // tikfind://start?userId=xxx&tiktokId=yyy&serverUrl=zzz
+    const urlObj = new URL(url);
+    
+    if (urlObj.hostname === 'start') {
+        const userId = urlObj.searchParams.get('userId');
+        const tiktokId = urlObj.searchParams.get('tiktokId');
+        const serverUrl = urlObj.searchParams.get('serverUrl');
+        
+        if (userId && tiktokId) {
+            // User 설정 저장
+            userConfig = { userId, tiktokId };
+            saveUserConfig(userConfig);
+            
+            // 서버 URL 설정
+            if (serverUrl) {
+                process.env.SERVER_URL = serverUrl;
+            }
+            
+            // 서버 연결 (아직 연결 안 되어 있으면)
+            if (!socket || !socket.connected) {
+                connectToServer();
+            }
+            
+            // 라이브 시작
+            setTimeout(() => {
+                startLive(tiktokId);
+            }, 1000);
+        }
     }
 });
-
-async function handleProtocolUrl(url) {
-    try {
-        const urlObj = new URL(url);
-
-        // tikfind://connect?token=xxx&server=https://tikfind.kr
-        if (urlObj.hostname === 'connect') {
-            const token = urlObj.searchParams.get('token');
-            const serverUrl = urlObj.searchParams.get('server') || 'https://tikfind.kr';
-            if (!token) return;
-
-            log.info('🔑 토큰으로 userId 조회 중...');
-            updateTrayMenu('계정 연결 중...');
-            try {
-                const res = await fetch(`${serverUrl}/api/desktop/token/${token}`);
-                const data = await res.json();
-                if (data.success && data.userId) {
-                    userConfig = { userId: data.userId, tiktokId: data.tiktokId || '', serverUrl };
-                    saveUserConfig(userConfig);
-                    log.info('✅ 계정 연결 완료:', data.userId);
-                    // 소켓 재연결
-                    if (socket) { try { socket.disconnect(); } catch(e) {} }
-                    connectToServer();
-                } else {
-                    log.warn('⚠️ 토큰 조회 실패:', data.message);
-                    updateTrayMenu('연결 실패 - 다시 시도');
-                }
-            } catch (e) {
-                log.error('❌ 토큰 조회 오류:', e.message);
-                updateTrayMenu('연결 실패 - 다시 시도');
-            }
-        }
-
-        // tikfind://start?userId=xxx&tiktokId=yyy&serverUrl=zzz (기존 방식 유지)
-        if (urlObj.hostname === 'start') {
-            const userId = urlObj.searchParams.get('userId');
-            const tiktokId = urlObj.searchParams.get('tiktokId');
-            const serverUrl = urlObj.searchParams.get('serverUrl');
-            if (userId && tiktokId) {
-                userConfig = { userId, tiktokId, serverUrl: serverUrl || 'https://tikfind.kr' };
-                saveUserConfig(userConfig);
-                if (!socket || !socket.connected) connectToServer();
-                setTimeout(() => startLive(tiktokId), 1000);
-            }
-        }
-    } catch (e) {
-        log.error('❌ URL 파싱 오류:', e.message);
-    }
-}
