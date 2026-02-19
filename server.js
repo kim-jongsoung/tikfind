@@ -1400,13 +1400,36 @@ app.get('/api/tts/preview', async (req, res) => {
         const { voice, text = '안녕하세요, 반갑습니다!', speed = 1.0 } = req.query;
         if (!voice) return res.status(400).json({ success: false, message: 'voice 파라미터 필요' });
 
-        const audioBuffer = await googleTTS.synthesize(text, 'preview', voice, parseFloat(speed));
-        if (!audioBuffer) return res.status(500).json({ success: false, message: 'TTS 생성 실패' });
+        const apiKey = process.env.GOOGLE_TTS_API_KEY;
+        if (!apiKey) return res.status(500).json({ success: false, message: 'GOOGLE_TTS_API_KEY 환경변수 없음' });
 
+        // axios 직접 호출해서 오류 상세 확인
+        const axios = require('axios');
+        let voiceConfig;
+        const CHIRP3 = ['Achernar','Aoede','Autonoe','Callirrhoe','Despina','Enceladus','Erinome','Fenrir','Gacrux','Iocaste','Laomedeia','Leda','Orus','Pulcherrima','Schedar','Sulafat','Umbriel','Vindemiatrix','Zephyr','Zubenelgenubi'];
+        if (CHIRP3.includes(voice)) {
+            voiceConfig = { languageCodes: ['ko-KR'], name: `ko-KR-Chirp3-HD-${voice}` };
+        } else {
+            voiceConfig = { languageCode: 'ko-KR', name: voice };
+        }
+
+        const response = await axios.post(
+            `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+            { input: { text }, voice: voiceConfig, audioConfig: { audioEncoding: 'MP3', speakingRate: parseFloat(speed) } },
+            { timeout: 10000 }
+        );
+
+        if (!response.data?.audioContent) {
+            return res.status(500).json({ success: false, message: 'audioContent 없음', raw: response.data });
+        }
+
+        const audioBuffer = Buffer.from(response.data.audioContent, 'base64');
         res.set({ 'Content-Type': 'audio/mpeg', 'Content-Length': audioBuffer.length });
         res.send(audioBuffer);
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        const detail = error.response?.data || error.message;
+        console.error('❌ TTS 미리 듣기 오류:', detail);
+        res.status(500).json({ success: false, message: 'TTS 오류', detail });
     }
 });
 
