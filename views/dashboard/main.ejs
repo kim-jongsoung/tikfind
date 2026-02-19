@@ -60,7 +60,7 @@
                                 <a href="/api/download-app" class="flex flex-col items-center gap-1.5 px-5 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition font-semibold text-sm text-center">
                                     <i class="fas fa-download text-lg"></i>
                                     <span>Windows 다운로드</span>
-                                    <span class="text-xs opacity-70">v1.0.9 · 64bit</span>
+                                    <span class="text-xs opacity-70">v1.1.0 · 64bit</span>
                                 </a>
                             </div>
                             <!-- 설치 안내 -->
@@ -91,10 +91,22 @@
                                         <span>설치 완료 후 PC를 켤 때마다 <strong>자동 실행</strong>됩니다</span>
                                     </li>
                                     <li class="flex items-start gap-2">
+                                        <span class="flex-shrink-0 w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-700">4</span>
+                                        <span>설치 완료 후 PC를 켤 때마다 <strong>자동 실행</strong>됩니다</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
                                         <span class="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700">5</span>
-                                        <span>이후 <strong>방송 시작 버튼</strong>만 누르면 자동으로 연결됩니다</span>
+                                        <span>설치 후 아래 <strong>"앱 연결하기"</strong> 버튼을 클릭하면 계정이 자동 연결됩니다</span>
                                     </li>
                                 </ol>
+                                <!-- 앱 연결 버튼 -->
+                                <div class="mt-3">
+                                    <button onclick="connectDesktopApp()" id="connectAppBtn" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold text-sm">
+                                        <i class="fas fa-link"></i>
+                                        앱 연결하기 (설치 후 클릭)
+                                    </button>
+                                    <p id="connectAppStatus" class="text-xs text-center mt-1 text-gray-500 hidden"></p>
+                                </div>
                                 <!-- 경고 박스 -->
                                 <div class="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                                     <i class="fas fa-shield-alt text-amber-500 mt-0.5 flex-shrink-0"></i>
@@ -274,25 +286,30 @@
     <script src="/js/i18n.js"></script>
     <script src="/js/layout.js"></script>
     <script>
-        // Desktop App 연결 - tikfind:// 프로토콜로 계정 정보 전달
-        function connectDesktopApp() {
-            fetch('/api/user/me')
-                .then(res => res.json())
-                .then(data => {
-                    if (!data.userId) {
-                        alert('로그인 정보를 불러올 수 없습니다. 새로고침 후 다시 시도해주세요.');
-                        return;
-                    }
-                    const params = new URLSearchParams({
-                        userId: data.userId,
-                        tiktokId: data.tiktokId || '',
-                        serverUrl: 'https://tikfind.kr'
-                    });
-                    window.location.href = `tikfind://start?${params.toString()}`;
-                })
-                .catch(() => {
-                    alert('오류가 발생했습니다. 새로고침 후 다시 시도해주세요.');
-                });
+        // Desktop App 연결 - 토큰 방식 (tikfind://connect)
+        async function connectDesktopApp() {
+            const btn = document.getElementById('connectAppBtn');
+            const status = document.getElementById('connectAppStatus');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 연결 중...';
+            status.classList.remove('hidden');
+            status.textContent = '앱 연결 토큰 생성 중...';
+            try {
+                const res = await fetch('/api/desktop/token', { method: 'POST' });
+                const data = await res.json();
+                if (!data.success) throw new Error('토큰 생성 실패');
+                window.location.href = `tikfind://connect?token=${data.token}&server=https://tikfind.kr`;
+                status.textContent = '✅ 앱이 열리면 자동으로 연결됩니다. 앱이 없으면 먼저 설치해주세요.';
+                status.className = 'text-xs text-center mt-1 text-green-600';
+            } catch (e) {
+                status.textContent = '❌ 오류가 발생했습니다. 다시 시도해주세요.';
+                status.className = 'text-xs text-center mt-1 text-red-500';
+            } finally {
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-link"></i> 앱 연결하기 (설치 후 클릭)';
+                }, 3000);
+            }
         }
 
         // 구독 정지 함수
@@ -360,10 +377,34 @@
             })
             .catch(err => {
                 console.error('플랜 정보 로드 오류:', err);
-                // 오류 시 무료 플랜 표시
                 document.getElementById('freePlanContent').classList.remove('hidden');
                 document.getElementById('universePlanContent').classList.add('hidden');
             });
+
+    async function connectDesktopApp() {
+        const btn = document.getElementById('connectAppBtn');
+        const status = document.getElementById('connectAppStatus');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 연결 중...';
+        status.classList.remove('hidden');
+        status.textContent = '앱 연결 토큰 생성 중...';
+        try {
+            const res = await fetch('/api/desktop/token', { method: 'POST' });
+            const data = await res.json();
+            if (!data.success) throw new Error('토큰 생성 실패');
+            window.location.href = `tikfind://connect?token=${data.token}&server=https://tikfind.kr`;
+            status.textContent = '✅ 앱이 열리면 자동으로 연결됩니다. 앱이 없으면 먼저 설치해주세요.';
+            status.className = 'text-xs text-center mt-1 text-green-600';
+        } catch (e) {
+            status.textContent = '❌ 오류가 발생했습니다. 다시 시도해주세요.';
+            status.className = 'text-xs text-center mt-1 text-red-500';
+        } finally {
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-link"></i> 앱 연결하기 (설치 후 클릭)';
+            }, 3000);
+        }
+    }
     </script>
 </body>
 </html>

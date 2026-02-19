@@ -63,10 +63,31 @@ const checkSongCooldown = (req, res, next) => {
     next();
 };
 
+// Desktop App 연결용 1회용 토큰 (메모리 저장, 5분 유효)
+const desktopTokens = new Map();
+
+// 토큰 생성 (웹 로그인 후 대시보드에서 호출)
+router.post('/desktop/token', requireAuth, (req, res) => {
+    const userId = req.user._id.toString();
+    const tiktokId = req.user.tiktokId || '';
+    const token = require('crypto').randomBytes(32).toString('hex');
+    desktopTokens.set(token, { userId, tiktokId, createdAt: Date.now() });
+    setTimeout(() => desktopTokens.delete(token), 5 * 60 * 1000);
+    res.json({ success: true, token });
+});
+
+// 토큰으로 userId 조회 (Desktop App에서 호출 - 인증 불필요)
+router.get('/desktop/token/:token', (req, res) => {
+    const data = desktopTokens.get(req.params.token);
+    if (!data) return res.status(404).json({ success: false, message: '유효하지 않거나 만료된 토큰입니다.' });
+    desktopTokens.delete(req.params.token);
+    res.json({ success: true, userId: data.userId, tiktokId: data.tiktokId });
+});
+
 // Desktop App 다운로드 - GitHub Releases로 리다이렉트 (신뢰도 높음)
 router.get('/download-app', (req, res) => {
     // GitHub Releases는 브라우저 신뢰도가 높아 SmartScreen 차단 최소화
-    res.redirect('https://github.com/kim-jongsoung/tikfind/releases/download/v1.0.9/TikFind.Setup.1.0.9.exe');
+    res.redirect('https://github.com/kim-jongsoung/tikfind/releases/download/v1.1.0/TikFind.Setup.1.1.0.exe');
 });
 
 // 현재 로그인 유저 정보 (Desktop App 연결용)
