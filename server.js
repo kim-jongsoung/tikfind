@@ -1181,6 +1181,11 @@ io.on('connection', (socket) => {
         
         if (type === 'chat') {
             try {
+                // 팀/배지 확인용 로그
+                console.log(`📦 userBadges:`, JSON.stringify(tiktokData.userBadges));
+                console.log(`📦 teamMemberLevel:`, tiktokData.teamMemberLevel);
+                console.log(`📦 followRole:`, tiktokData.followRole);
+
                 const User = require('./models/User');
                 const user = await User.findById(userId);
                 const streamerLanguage = user?.preferredLanguage || 'ko';
