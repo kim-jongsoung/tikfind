@@ -52,9 +52,17 @@ class SongRequestService {
         }
 
         if (parts.length >= 2) {
+            // 가수명 뒤에 붙는 불필요한 텍스트 제거 (예: "박종훈 해주세요" → "박종훈")
+            // 한글 조사/부탁말이 붙은 경우 첫 번째 단어만 사용
+            let artist = parts[1];
+            const artistWords = artist.split(/\s+/);
+            const koreanSuffixes = ['해주세요', '신청해요', '틀어주세요', '부탁해요', '부탁드려요', '해주세용', '틀어줘요', '플리즈', '제발'];
+            if (artistWords.length > 1 && koreanSuffixes.some(s => artist.includes(s))) {
+                artist = artistWords[0];
+            }
             return {
                 title: parts[0],
-                artist: parts[1]
+                artist: artist
             };
         }
 
