@@ -652,10 +652,11 @@
                 badgeHtml += `<span style="background:#ff0050;color:#fff;font-size:10px;padding:2px 5px;border-radius:4px;font-weight:bold;">구독</span>`;
             }
 
-            // 팔로우 역할
-            if (data.followRole === 2) {
+            // 팔로우 역할 (string/number 모두 처리)
+            const _followRole = Number(data.followRole) || 0;
+            if (_followRole === 2) {
                 badgeHtml += `<span style="background:#00c9a7;color:#fff;font-size:10px;padding:2px 5px;border-radius:4px;">친구</span>`;
-            } else if (data.followRole === 1) {
+            } else if (_followRole === 1) {
                 badgeHtml += `<span style="background:#444;color:#aaa;font-size:10px;padding:2px 5px;border-radius:4px;">팔로워</span>`;
             }
 
@@ -668,8 +669,9 @@
                 });
             }
 
-            // 닉네임 색상 (팔로워/친구/일반)
-            const nicknameColor = data.followRole === 2 ? '#00c9a7' : data.followRole === 1 ? '#fe7f9c' : '#fe2c55';
+            // 닉네임 색상 (팔로워/친구/일반) - string/number 모두 처리
+            const followRoleNum = Number(data.followRole) || 0;
+            const nicknameColor = followRoleNum === 2 ? '#00c9a7' : followRoleNum === 1 ? '#fe7f9c' : '#fe2c55';
             const uniqueId = data.uniqueId || data.username || '';
             const displayName = data.nickname || data.username || '';
 
