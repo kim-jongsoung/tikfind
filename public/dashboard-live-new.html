@@ -111,6 +111,26 @@
                                 </div>
                             </div>
                             
+                            <!-- 방송 중 VIP 목소리 변경 -->
+                            <div id="vipVoicePanel" style="margin-top: 6px; padding: 6px 8px; background: #0d1a0d; border: 1px solid #1a3a1a; border-radius: 4px; display: none;">
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="font-size: 10px; color: #4ade80; font-weight: bold;">🎙️ VIP 목소리 (방송 중 변경)</span>
+                                    <button onclick="toggleVipPanel()" style="font-size: 9px; color: #666; background: none; border: none; cursor: pointer;">닫기</button>
+                                </div>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    <input type="text" id="liveVipId" placeholder="TikTok 아이디" style="flex: 1; padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                    <select id="liveVipVoice" style="padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                        <option value="">목소리</option>
+                                    </select>
+                                    <button onclick="previewLiveVoice()" style="padding: 3px 6px; font-size: 10px; background: #1a3a1a; color: #4ade80; border: 1px solid #1a3a1a; border-radius: 4px; cursor: pointer;">▶</button>
+                                    <input type="number" id="liveVipSpeed" value="1.0" min="0.5" max="2.0" step="0.1" style="width: 44px; padding: 3px 4px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                    <button onclick="applyLiveVipVoice()" style="padding: 3px 8px; font-size: 10px; background: #4ade80; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">적용</button>
+                                </div>
+                            </div>
+                            <button onclick="toggleVipPanel()" style="width: 100%; margin-top: 4px; padding: 4px; font-size: 9px; background: #0d1a0d; color: #4ade80; border: 1px solid #1a3a1a; border-radius: 4px; cursor: pointer;">
+                                🎙️ VIP 목소리 변경
+                            </button>
+
                             <!-- 시청자 신청곡 안내 -->
                             <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; margin-top: 8px;">
                                 <i class="fas fa-music" style="color: white; font-size: 12px;"></i>
@@ -861,6 +881,63 @@
             socket.emit('tts-settings', settings);
             console.log('🔊 TTS 설정 전송:', settings);
         }
+
+        // VIP 목소리 패널 토글
+        function toggleVipPanel() {
+            const panel = document.getElementById('vipVoicePanel');
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // VIP 목소리 목록 로드 (방송 대시보드용)
+        async function loadLiveVoiceList() {
+            const res = await fetch('/api/tts/voices');
+            const data = await res.json();
+            if (data.success) {
+                const sel = document.getElementById('liveVipVoice');
+                data.voices.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v; opt.textContent = v;
+                    sel.appendChild(opt);
+                });
+            }
+        }
+
+        // 방송 중 목소리 미리 듣기
+        let livePreviewAudio = null;
+        function previewLiveVoice() {
+            const v = document.getElementById('liveVipVoice').value;
+            const s = document.getElementById('liveVipSpeed').value || 1.0;
+            if (!v) { alert('목소리를 선택하세요.'); return; }
+            if (livePreviewAudio) { livePreviewAudio.pause(); livePreviewAudio = null; }
+            const url = `/api/tts/preview?voice=${encodeURIComponent(v)}&speed=${s}&text=${encodeURIComponent('안녕하세요! 저는 ' + v + ' 목소리입니다.')}`;
+            livePreviewAudio = new Audio(url);
+            livePreviewAudio.play().catch(e => alert('미리 듣기 실패: ' + e.message));
+        }
+
+        // 방송 중 VIP 목소리 적용 → DB 저장 + Desktop App 즉시 전달
+        async function applyLiveVipVoice() {
+            if (!currentUser) return;
+            const tiktokUniqueId = document.getElementById('liveVipId').value.trim().replace('@', '');
+            const chirpVoice = document.getElementById('liveVipVoice').value;
+            const speed = parseFloat(document.getElementById('liveVipSpeed').value) || 1.0;
+            if (!tiktokUniqueId || !chirpVoice) { alert('아이디와 목소리를 입력하세요.'); return; }
+
+            // DB 저장
+            const res = await fetch('/api/tts/voice-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: String(currentUser._id || currentUser.id), tiktokUniqueId, chirpVoice, speed })
+            });
+            const data = await res.json();
+            if (!data.success) { alert('저장 실패: ' + data.message); return; }
+
+            // Desktop App으로 즉시 전달 (tts-settings 소켓으로 최신 VIP 설정 전송)
+            sendTTSSettings();
+            alert(`@${tiktokUniqueId} → ${chirpVoice} 적용 완료!`);
+            document.getElementById('liveVipId').value = '';
+        }
+
+        loadLiveVoiceList();
 
         // 신청곡 큐 로드
         async function loadSongQueue(userId) {

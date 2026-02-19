@@ -1394,6 +1394,22 @@ app.get('/api/tts/voices', (req, res) => {
     res.json({ success: true, voices: googleTTS.getChirp3Voices() });
 });
 
+// TTS 미리 듣기 - 브라우저에서 MP3 스트리밍
+app.get('/api/tts/preview', async (req, res) => {
+    try {
+        const { voice, text = '안녕하세요, 반갑습니다!', speed = 1.0 } = req.query;
+        if (!voice) return res.status(400).json({ success: false, message: 'voice 파라미터 필요' });
+
+        const audioBuffer = await googleTTS.synthesize(text, 'preview', voice, parseFloat(speed));
+        if (!audioBuffer) return res.status(500).json({ success: false, message: 'TTS 생성 실패' });
+
+        res.set({ 'Content-Type': 'audio/mpeg', 'Content-Length': audioBuffer.length });
+        res.send(audioBuffer);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // 404 처리
 app.use((req, res) => {
     res.status(404).render('404', { 
