@@ -806,7 +806,7 @@ async function processChatMessage(chatData) {
     const requesterFollowRole = Number(followRole) || 0;
     const songSettings = songRequestService.getSettings(userId);
 
-    if (songData && requesterFollowRole >= 1 && songSettings.isAccepting) {
+    if (songData && songSettings.isAccepting) {
         const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
         const elapsed = lastTime ? (Date.now() - lastTime) / 1000 / 60 : Infinity;
         const cooldownOk = songSettings.cooldownMinutes === 0 || elapsed >= songSettings.cooldownMinutes;
@@ -1017,9 +1017,6 @@ app.post('/api/live/chat_legacy', async (req, res) => {
             console.log(`🚫 신청곡 안받기 상태 - 무시: ${username}`);
         }
         // 팔로워 이상 체크
-        else if (songData && requesterFollowRole < 1) {
-            console.log(`🚫 신청곡 거부 (팔로워 아님): ${username}`);
-        }
         // 중복신청 제한 체크
         else if (songData && songSettings.cooldownMinutes > 0) {
             const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
@@ -1028,12 +1025,12 @@ app.post('/api/live/chat_legacy', async (req, res) => {
             if (lastTime && elapsed < songSettings.cooldownMinutes) {
                 const remaining = Math.ceil(songSettings.cooldownMinutes - elapsed);
                 console.log(`⏱ 중복신청 제한: ${username} (${remaining}분 후 가능)`);
-            } else if (songData && requesterFollowRole >= 1) {
+            } else if (songData) {
                 songRequestService.setLastRequestTime(userId, uniqueId || username, now);
             }
         }
 
-        if (songData && requesterFollowRole >= 1 && songSettings.isAccepting) {
+        if (songData && songSettings.isAccepting) {
             // 중복신청 재확인
             const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
             const now = Date.now();
@@ -1578,26 +1575,10 @@ io.on('connection', (socket) => {
         console.log(`📡 룸 ${userId} 연결 수: ${roomSize}`);
 
         if (roomSize <= 1) {
-            // 웹 소켓만 있고 Desktop App이 없는 경우 (웹 자신 포함 1개)
-            console.log(`⚠️ Desktop App 미연결 상태 - 직접 연결 시도`);
-            // Desktop App 없으면 서버 직접 연결로 폴백
-            try {
-                if (liveConnections.has(userId)) {
-                    try { liveConnections.get(userId).disconnect(); } catch(e) {}
-                    liveConnections.delete(userId);
-                }
-                const liveService = new TikTokLiveService(tiktokId, userId, io, processChatMessage);
-                await liveService.connect();
-                liveConnections.set(userId, liveService);
-                liveStatusMap.set(userId, { isLive: true, tiktokId });
-                io.to(userId).emit('live-status', { isLive: true, tiktokId });
-                console.log(`✅ 서버 직접 TikTok Live 연결: ${tiktokId}`);
-            } catch (error) {
-                console.error(`❌ TikTok Live 연결 실패: ${error.message}`);
-                liveStatusMap.set(userId, { isLive: false });
-                socket.emit('live-error', { message: error.message });
-                io.to(userId).emit('live-status', { isLive: false });
-            }
+            // Desktop App 미연결 - 에러 반환 (서버 직접 연결 금지)
+            console.log(`⚠️ Desktop App 미연결 상태 - 방송시작 불가`);
+            socket.emit('live-error', { message: 'Desktop App이 연결되어 있지 않습니다. TikFind 앱을 실행한 후 다시 시도해주세요.' });
+            io.to(userId).emit('live-status', { isLive: false });
         } else {
             // Desktop App이 연결되어 있으면 전달
             io.to(userId).emit('start-live', { tiktokId });
