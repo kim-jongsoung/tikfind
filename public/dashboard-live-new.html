@@ -551,6 +551,7 @@
             
             messageCount++;
             document.getElementById('messageCount').textContent = messageCount;
+            console.log(`👤 [${data.uniqueId}] followRole:`, data.followRole, '| type:', typeof data.followRole);
             addChatMessage(data);
             
             // 시청자 재실 여부 추적
