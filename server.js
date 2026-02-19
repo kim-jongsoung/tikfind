@@ -1408,7 +1408,7 @@ app.get('/api/tts/preview', async (req, res) => {
         let voiceConfig;
         const CHIRP3 = ['Achernar','Aoede','Autonoe','Callirrhoe','Despina','Enceladus','Erinome','Fenrir','Gacrux','Iocaste','Laomedeia','Leda','Orus','Pulcherrima','Schedar','Sulafat','Umbriel','Vindemiatrix','Zephyr','Zubenelgenubi'];
         if (CHIRP3.includes(voice)) {
-            voiceConfig = { languageCodes: ['ko-KR'], name: `ko-KR-Chirp3-HD-${voice}` };
+            voiceConfig = { languageCode: 'ko-KR', name: `ko-KR-Chirp3-HD-${voice}` };
         } else {
             voiceConfig = { languageCode: 'ko-KR', name: voice };
         }
