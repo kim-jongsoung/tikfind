@@ -76,10 +76,11 @@
         const socket = io();
 
         // URL 파라미터로 스타일 설정
-        const params = new URLSearchParams(location.search);
-        const bgColor  = params.get('bg')   || 'rgba(0,0,0,0.55)';
-        const txtColor = params.get('color')|| '#ffffff';
-        const fontSize = params.get('size') || '16';
+        const params   = new URLSearchParams(location.search);
+        const bgColor  = decodeURIComponent(params.get('bg')    || 'rgba(0,0,0,0.55)');
+        const txtColor = params.get('color') || '#ffffff';
+        const fontSize = params.get('size')  || '16';
+        const speed    = parseFloat(params.get('speed') || '1.0'); // 1.0 = 기본, 0.5 = 느림, 2.0 = 빠름
 
         const bar   = document.getElementById('marqueeBar');
         const track = document.getElementById('marqueeTrack');
@@ -89,9 +90,10 @@
         bar.style.fontSize    = fontSize + 'px';
         bar.style.height      = (parseInt(fontSize) * 2.4) + 'px';
 
-        // 마퀴 속도: 글자 수에 따라 동적 조정
+        // 마퀴 속도: 글자 수 기반 + speed 배율 적용
         function setSpeed(text) {
-            const duration = Math.max(10, text.length * 0.35);
+            const base = Math.max(10, text.length * 0.35);
+            const duration = base / speed;  // speed 높을수록 빠름
             track.style.animationDuration = duration + 's';
         }
 
@@ -99,18 +101,30 @@
         let currentSong = null;
         let nextQueue   = [];
 
+        function songLabel(song) {
+            if (!song) return '';
+            let label = song.title;
+            if (song.artist)    label += ' - ' + song.artist;
+            if (song.requester) label += ' (신청: @' + song.requester + ')';
+            return label;
+        }
+
         function buildText() {
             let parts = [];
             if (currentSong) {
-                parts.push(`♪ 현재곡: ${currentSong.title}${currentSong.artist ? ' - ' + currentSong.artist : ''}`);
+                parts.push('♪ 현재곡: ' + songLabel(currentSong));
             }
             if (nextQueue.length > 0) {
-                parts.push(`♪ 다음곡: ${nextQueue[0].title}${nextQueue[0].artist ? ' - ' + nextQueue[0].artist : ''}`);
+                parts.push('♪ 다음곡: ' + songLabel(nextQueue[0]));
             }
             if (nextQueue.length > 1) {
-                parts.push(`♪ 대기: ${nextQueue.slice(1, 4).map(s => s.title).join(' / ')}`);
+                const rest = nextQueue.slice(1, 4).map(s => s.title + (s.requester ? ' (@' + s.requester + ')' : '')).join('  /  ');
+                parts.push('♪ 대기: ' + rest);
             }
-            const text = parts.length > 0 ? parts.join('　　　') : '신청곡을 기다리고 있습니다...';
+            // 텍스트가 없으면 대기 메시지, 있으면 앞뒤 여백 추가해 자연스럽게 반복
+            const text = parts.length > 0
+                ? parts.join('　　　　　')
+                : '신청곡을 기다리고 있습니다...';
             document.getElementById('marqueeText').textContent = text;
             setSpeed(text);
         }

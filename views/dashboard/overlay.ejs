@@ -45,7 +45,7 @@
                 <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                     <i class="fas fa-palette text-purple-500"></i> 스타일 설정
                 </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-600 mb-2">배경색 &amp; 투명도</label>
                         <div class="flex items-center gap-3">
@@ -73,6 +73,23 @@
                             class="w-full"
                             oninput="document.getElementById('sizeLabel').textContent=this.value; updateAll()">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-2">
+                            흐르는 속도: <span id="speedLabel">1.0</span>x
+                        </label>
+                        <input type="range" id="mqSpeed" min="0.3" max="3.0" step="0.1" value="1.0"
+                            class="w-full"
+                            oninput="document.getElementById('speedLabel').textContent=parseFloat(this.value).toFixed(1); updateAll()">
+                        <div class="flex justify-between text-xs text-gray-400 mt-0.5">
+                            <span>느림</span><span>빠름</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 flex justify-end">
+                    <button onclick="saveSettings()"
+                        class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm flex items-center gap-2">
+                        <i class="fas fa-save"></i> 설정 저장
+                    </button>
                 </div>
             </div>
 
@@ -129,35 +146,6 @@
             return `rgba(${r},${g},${b},${alpha})`;
         }
 
-        function updateAll() {
-            const hex     = document.getElementById('bgColor').value;
-            const opacity = parseInt(document.getElementById('bgOpacity').value);
-            const color   = document.getElementById('txtColor').value;
-            const size    = parseInt(document.getElementById('fontSize').value);
-
-            document.getElementById('opacityLabel').textContent = opacity + '%';
-
-            const alpha = (opacity / 100).toFixed(2);
-            const bg    = hexToRgba(hex, alpha);
-
-            // 미리보기 업데이트
-            const bar = document.getElementById('previewBar');
-            bar.style.background = bg;
-            bar.style.color      = color;
-            bar.style.fontSize   = size + 'px';
-            bar.style.height     = (size * 2.4) + 'px';
-
-            // 설정 적용된 URL 업데이트
-            const params = new URLSearchParams();
-            params.set('bg',    encodeURIComponent(bg));
-            params.set('color', color);
-            params.set('size',  size);
-            const finalUrl = BASE_URL + '?' + params.toString();
-
-            document.getElementById('finalUrl').textContent = finalUrl;
-            document.getElementById('previewLink').href = '/overlay/<%= user._id %>?' + params.toString();
-        }
-
         function copyUrl(elId, btnId) {
             const text = document.getElementById(elId).textContent.trim();
             navigator.clipboard.writeText(text).then(() => {
@@ -174,7 +162,89 @@
             });
         }
 
+        const STORAGE_KEY = 'overlaySettings_<%= user._id %>';
+
+        function saveSettings() {
+            const s = {
+                bgColor:   document.getElementById('bgColor').value,
+                bgOpacity: document.getElementById('bgOpacity').value,
+                txtColor:  document.getElementById('txtColor').value,
+                fontSize:  document.getElementById('fontSize').value,
+                mqSpeed:   document.getElementById('mqSpeed').value
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+            const btn = event.currentTarget;
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> 저장됨!';
+            btn.classList.replace('bg-indigo-600','bg-green-600');
+            btn.classList.replace('hover:bg-indigo-700','hover:bg-green-700');
+            setTimeout(() => {
+                btn.innerHTML = orig;
+                btn.classList.replace('bg-green-600','bg-indigo-600');
+                btn.classList.replace('hover:bg-green-700','hover:bg-indigo-700');
+            }, 2000);
+        }
+
+        function loadSettings() {
+            try {
+                const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+                if (!s) return;
+                if (s.bgColor)   document.getElementById('bgColor').value   = s.bgColor;
+                if (s.bgOpacity) document.getElementById('bgOpacity').value = s.bgOpacity;
+                if (s.txtColor)  document.getElementById('txtColor').value  = s.txtColor;
+                if (s.fontSize) {
+                    document.getElementById('fontSize').value = s.fontSize;
+                    document.getElementById('sizeLabel').textContent = s.fontSize;
+                }
+                if (s.mqSpeed) {
+                    document.getElementById('mqSpeed').value = s.mqSpeed;
+                    document.getElementById('speedLabel').textContent = parseFloat(s.mqSpeed).toFixed(1);
+                }
+            } catch(e) {}
+        }
+
+        // 미리보기 마퀴 속도 반영
+        function applyPreviewSpeed() {
+            const speed = parseFloat(document.getElementById('mqSpeed').value);
+            const text  = document.getElementById('previewText').textContent;
+            const base  = Math.max(10, text.length * 0.35);
+            const dur   = base / speed;
+            document.querySelector('.mq-track').style.animationDuration = dur + 's';
+        }
+
+        function updateAll() {
+            const hex     = document.getElementById('bgColor').value;
+            const opacity = parseInt(document.getElementById('bgOpacity').value);
+            const color   = document.getElementById('txtColor').value;
+            const size    = parseInt(document.getElementById('fontSize').value);
+            const speed   = parseFloat(document.getElementById('mqSpeed').value);
+
+            document.getElementById('opacityLabel').textContent = opacity + '%';
+
+            const alpha = (opacity / 100).toFixed(2);
+            const bg    = hexToRgba(hex, alpha);
+
+            const bar = document.getElementById('previewBar');
+            bar.style.background = bg;
+            bar.style.color      = color;
+            bar.style.fontSize   = size + 'px';
+            bar.style.height     = (size * 2.4) + 'px';
+
+            applyPreviewSpeed();
+
+            const p = new URLSearchParams();
+            p.set('bg',    encodeURIComponent(bg));
+            p.set('color', color);
+            p.set('size',  size);
+            p.set('speed', speed.toFixed(1));
+            const finalUrl = BASE_URL + '?' + p.toString();
+
+            document.getElementById('finalUrl').textContent = finalUrl;
+            document.getElementById('previewLink').href = '/overlay/<%= user._id %>?' + p.toString();
+        }
+
         // 초기 실행
+        loadSettings();
         updateAll();
     </script>
 </body>
