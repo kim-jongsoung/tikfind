@@ -671,13 +671,12 @@
             const nicknameColor = data.followRole === 2 ? '#00c9a7' : data.followRole === 1 ? '#fe7f9c' : '#fe2c55';
             const uniqueId = data.uniqueId || data.username || '';
             const displayName = data.nickname || data.username || '';
-            const showBoth = displayName && uniqueId && displayName !== uniqueId;
 
             allMessageEl.innerHTML = `
                 <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:5px;">
                     ${badgeHtml}
-                    <span style="color:#aaa;font-size:11px;font-weight:500;">@${escapeHtml(uniqueId)}</span>
-                    ${showBoth ? `<span style="color:${nicknameColor};font-size:12px;font-weight:700;">${escapeHtml(displayName)}</span>` : ''}
+                    <span style="color:#888;font-size:11px;font-weight:400;">@${escapeHtml(uniqueId)}</span>
+                    <span style="color:${nicknameColor};font-size:12px;font-weight:700;">${escapeHtml(displayName)}</span>
                 </div>
                 <div style="color:#f0f0f0;font-size:20px;font-weight:500;line-height:1.4;word-break:break-all;">${escapeHtml(data.message)}</div>
             `;
