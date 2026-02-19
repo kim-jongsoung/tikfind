@@ -22,5 +22,11 @@ contextBridge.exposeInMainWorld('tikfind', {
     onAuthWindowClosed: (callback) => ipcRenderer.on('auth-window-closed', () => callback()),
     
     // YouTube 외부 브라우저 열기
-    openYouTube: (url) => ipcRenderer.send('open-youtube', url)
+    openYouTube: (url) => ipcRenderer.send('open-youtube', url),
+
+    // 브라우저 창 열기 (OAuth)
+    openBrowser: (url) => ipcRenderer.invoke('open-browser', url),
+
+    // 로그인 완료 → main 프로세스에 알림 + index.html 이동
+    loginDone: (userData) => ipcRenderer.send('login-done', userData)
 });

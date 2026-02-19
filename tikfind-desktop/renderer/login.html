@@ -125,45 +125,58 @@
     </div>
 
     <script>
-        const { ipcRenderer } = require('electron');
-        
         const googleLoginBtn = document.getElementById('googleLoginBtn');
         const loading = document.getElementById('loading');
         const errorMessage = document.getElementById('errorMessage');
-        
+
         // Google 로그인 버튼 클릭
         googleLoginBtn.addEventListener('click', async () => {
             googleLoginBtn.disabled = true;
             loading.classList.add('active');
             errorMessage.classList.remove('active');
-            
+
             try {
-                // 브라우저에서 Google OAuth 페이지 열기
-                const authUrl = 'https://tikfind.kr/auth/google';
-                await ipcRenderer.invoke('open-browser', authUrl);
-                
-                // 로그인 완료 대기
-                ipcRenderer.on('login-success', (event, userData) => {
-                    console.log('로그인 성공:', userData);
-                    // 메인 화면으로 이동
-                    window.location.href = 'index.html';
-                });
-                
-                ipcRenderer.on('login-failed', (event, error) => {
-                    console.error('로그인 실패:', error);
-                    errorMessage.textContent = error.message || '로그인에 실패했습니다.';
-                    errorMessage.classList.add('active');
-                    loading.classList.remove('active');
-                    googleLoginBtn.disabled = false;
-                });
-                
+                await window.tikfind.openBrowser('https://tikfind.kr/auth/google?desktop=true');
             } catch (error) {
                 console.error('로그인 오류:', error);
-                errorMessage.classList.add('active');
-                loading.classList.remove('active');
-                googleLoginBtn.disabled = false;
+                showError('로그인 실패. 다시 시도해주세요.');
             }
         });
+
+        // OAuth 창 닫힌 → 서버에서 세션 확인
+        window.tikfind.onAuthWindowClosed(async () => {
+            console.log('🔒 OAuth 창 닫힐, 세션 확인 중...');
+            loading.textContent = '로그인 확인 중...';
+
+            try {
+                // 서버에서 세션 확인
+                const res = await fetch('https://tikfind.kr/auth/current_user', {
+                    credentials: 'include'
+                });
+                const data = await res.json();
+
+                if (data.success && data.user) {
+                    console.log('✅ 로그인 성공:', data.user);
+                    window.tikfind.loginDone({
+                        userId:   data.user._id || data.user.id,
+                        tiktokId: data.user.tiktokId || ''
+                    });
+                } else {
+                    showError('로그인이 완료되지 않았습니다. 다시 시도해주세요.');
+                }
+            } catch (err) {
+                console.error('세션 확인 실패:', err);
+                showError('서버 연결 실패. 인터넷을 확인해주세요.');
+            }
+        });
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.classList.add('active');
+            loading.classList.remove('active');
+            loading.textContent = '로그인 중...';
+            googleLoginBtn.disabled = false;
+        }
     </script>
 </body>
 </html>

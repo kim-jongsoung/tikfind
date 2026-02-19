@@ -43,15 +43,21 @@ function createWindow() {
             webviewTag: true,
             nodeIntegrationInSubFrames: true,
             allowRunningInsecureContent: true,
-            webSecurity: false // YouTube iframe 재생을 위해 필요
+            webSecurity: false
         },
         resizable: true,
         icon: path.join(__dirname, 'build', 'icon.png')
     });
     
-    mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+    // user-config.json 없으면 로그인 화면 먼저
+    if (userConfig && userConfig.userId) {
+        mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+        console.log('✅ 자동 로그인: userId =', userConfig.userId);
+    } else {
+        mainWindow.loadFile(path.join(__dirname, 'renderer', 'login.html'));
+        console.log('⚠️ user-config 없음 → 로그인 화면');
+    }
     
-    // 개발 모드에서만 개발자 도구 열기
     if (process.env.NODE_ENV === 'development') {
         mainWindow.webContents.openDevTools();
     }
@@ -75,6 +81,58 @@ app.whenReady().then(() => {
 // User 설정 정보 요청
 ipcMain.handle('get-user-config', () => {
     return userConfig;
+});
+
+// 브라우저(OAuth) 창 열기 - login.html에서 호출
+ipcMain.handle('open-browser', (event, url) => {
+    const authWindow = new BrowserWindow({
+        width: 500,
+        height: 650,
+        parent: mainWindow,
+        webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: true,
+            partition: 'persist:tikfind',
+            preload: path.join(__dirname, 'preload-auth.js')
+        }
+    });
+    authWindow.loadURL(url);
+
+    authWindow.on('closed', () => {
+        if (mainWindow) mainWindow.webContents.send('auth-window-closed');
+    });
+
+    authWindow.webContents.on('did-navigate', (e, navUrl) => {
+        if (navUrl.includes('callback') || navUrl.includes('dashboard')) {
+            authWindow.webContents.once('did-finish-load', () => {
+                authWindow.webContents.executeJavaScript('document.body.innerText').then(text => {
+                    if (text.includes('로그인 완료') || text.includes('Desktop App') || text.includes('dashboard')) {
+                        setTimeout(() => authWindow.close(), 1200);
+                    }
+                });
+            });
+        }
+    });
+});
+
+// 로그인 완료 후 index.html로 이동
+ipcMain.on('login-done', (event, userData) => {
+    console.log('✅ 로그인 완료, 메인 화면으로 이동:', userData);
+    // user-config.json 저장
+    if (userData && userData.userId) {
+        const configPath = path.join(__dirname, 'user-config.json');
+        const config = {
+            userId: userData.userId,
+            tiktokId: userData.tiktokId || '',
+            serverUrl: 'https://tikfind.kr'
+        };
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+        userConfig = config;
+        console.log('💾 user-config.json 저장 완료');
+    }
+    if (mainWindow) {
+        mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+    }
 });
 
 app.on('window-all-closed', () => {
