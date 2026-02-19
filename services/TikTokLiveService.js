@@ -128,10 +128,13 @@ class TikTokLiveService {
             timestamp: Date.now()
         };
 
-        // 1. 신청곡 파싱 (정규식 먼저 시도)
+        // 1. 신청곡 파싱 (팔로워 이상만 가능)
+        const requesterFollowRole = Number(data.followRole) || 0;
         const song = await this.parseSongRequest(message);
-        if (song) {
+        if (song && requesterFollowRole >= 1) {
             await this.addToQueue(song, username);
+        } else if (song && requesterFollowRole < 1) {
+            console.log(`🚫 신청곡 거부 (팔로워 아님): ${username} followRole=${requesterFollowRole}`);
         }
 
         // 2. AI 자동응답 (비동기)

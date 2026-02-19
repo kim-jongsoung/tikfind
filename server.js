@@ -883,11 +883,12 @@ app.post('/api/live/chat', async (req, res) => {
             }
         }
         
-        // 3. 신청곡 파싱 (유료 기능 - 구독 필요)
+        // 3. 신청곡 파싱 (팔로워 이상만 가능)
         const songData = songRequestService.parseSongRequest(message);
         let songRequest = null;
+        const requesterFollowRole = Number(followRole) || 0;
         
-        if (songData) {
+        if (songData && requesterFollowRole >= 1) {
             // 사용량 체크
             const UsageLog = require('./models/UsageLog');
             const PlanLimit = require('./models/PlanLimit');
