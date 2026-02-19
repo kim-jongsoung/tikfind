@@ -24,7 +24,7 @@
                                     <i class="fas fa-broadcast-tower mr-2"></i>
                                     TikTok Live 방송 시작
                                 </h3>
-                                <p class="mb-4 opacity-90">지금 바로 웹에서 TikTok Live를 시작하세요. 별도 앱 설치 없이 바로 사용 가능합니다.</p>
+                                <p class="mb-4 opacity-90">아래에서 Desktop App을 설치한 후, 방송 시작 버튼을 클릭하면 자동으로 연결됩니다.</p>
                                 <div class="flex flex-wrap gap-2 text-sm mb-4">
                                     <span class="bg-white bg-opacity-20 px-3 py-1 rounded-full">
                                         <i class="fas fa-check-circle mr-1"></i>실시간 채팅 수집
@@ -46,44 +46,59 @@
 
                 <!-- Desktop App -->
                 <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-                    <h3 class="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <div class="flex items-center gap-2 mb-4">
                         <i class="fas fa-desktop text-gray-500"></i>
-                        TikFind Desktop App
-                        <span class="text-xs font-normal text-gray-400 ml-1">TikTok Live 데이터 수집용</span>
-                    </h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- STEP 1: 설치 -->
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="w-6 h-6 bg-gray-800 text-white rounded-full text-xs flex items-center justify-center font-bold">1</span>
-                                <span class="font-semibold text-gray-700 text-sm">앱 설치</span>
-                            </div>
-                            <p class="text-xs text-gray-500 mb-3">아직 설치하지 않았다면 먼저 다운로드하세요</p>
-                            <div class="flex items-center gap-2">
-                                <a href="/api/download-app" class="flex items-center gap-1.5 px-3 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition text-xs font-semibold">
-                                    <i class="fas fa-download"></i>Windows 다운로드
-                                </a>
-                                <a href="/install-guide" target="_blank" class="text-xs text-blue-500 hover:underline">
-                                    설치 가이드
+                        <h3 class="text-base font-semibold text-gray-800">TikFind Desktop App</h3>
+                        <span class="text-xs font-normal text-gray-400">TikTok Live 데이터 수집용 · 최초 1회만 설치</span>
+                    </div>
+
+                    <!-- 설치 단계 -->
+                    <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div class="flex items-start gap-4">
+                            <!-- 다운로드 버튼 -->
+                            <div class="flex-shrink-0">
+                                <a href="/api/download-app" class="flex flex-col items-center gap-1.5 px-5 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition font-semibold text-sm text-center">
+                                    <i class="fas fa-download text-lg"></i>
+                                    <span>Windows 다운로드</span>
+                                    <span class="text-xs opacity-70">v1.0.7 · 64bit</span>
                                 </a>
                             </div>
-                        </div>
-                        <!-- STEP 2: 연결 -->
-                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                            <div class="flex items-center gap-2 mb-2">
-                                <span class="w-6 h-6 bg-blue-600 text-white rounded-full text-xs flex items-center justify-center font-bold">2</span>
-                                <span class="font-semibold text-gray-700 text-sm">앱 연결</span>
+                            <!-- 설치 안내 -->
+                            <div class="flex-1">
+                                <p class="text-sm font-semibold text-gray-700 mb-2">설치 방법</p>
+                                <ol class="space-y-2 text-xs text-gray-600">
+                                    <li class="flex items-start gap-2">
+                                        <span class="flex-shrink-0 w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-700">1</span>
+                                        <span>위 버튼을 눌러 <strong>TikFind-Setup.exe</strong> 다운로드</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="flex-shrink-0 w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center font-bold text-amber-700">2</span>
+                                        <span>
+                                            Windows 보안 경고가 뜨면 <strong class="text-amber-600">정상입니다</strong> —
+                                            <strong>"추가 정보"</strong> 클릭 후 <strong>"실행"</strong> 클릭
+                                        </span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="flex-shrink-0 w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center font-bold text-gray-700">3</span>
+                                        <span>설치 완료 후 PC를 켤 때마다 <strong>자동 실행</strong>됩니다</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <span class="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center font-bold text-green-700">4</span>
+                                        <span>이후 <strong>방송 시작 버튼</strong>만 누르면 자동으로 연결됩니다</span>
+                                    </li>
+                                </ol>
+                                <!-- 경고 박스 -->
+                                <div class="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                    <i class="fas fa-shield-alt text-amber-500 mt-0.5 flex-shrink-0"></i>
+                                    <p class="text-xs text-amber-700">
+                                        <strong>Windows SmartScreen 경고는 정상입니다.</strong>
+                                        TikFind는 안전한 앱이지만 아직 Microsoft 인증서가 없어 경고가 표시됩니다.
+                                        <a href="/install-guide" target="_blank" class="underline font-semibold ml-1">자세한 설치 가이드 →</a>
+                                    </p>
+                                </div>
                             </div>
-                            <p class="text-xs text-gray-500 mb-3">설치 후 아래 버튼으로 내 계정과 연결하세요</p>
-                            <button onclick="connectDesktopApp()" class="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs font-semibold">
-                                <i class="fas fa-link"></i>내 계정으로 연결
-                            </button>
                         </div>
                     </div>
-                    <p class="text-xs text-gray-400 mt-3">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        설치 시 Windows 보안 경고가 뜨면 <strong>"추가 정보"</strong> → <strong>"실행"</strong> 클릭
-                    </p>
                 </div>
 
                 <!-- 플랜 정보 -->
