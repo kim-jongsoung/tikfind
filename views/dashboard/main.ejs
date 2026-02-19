@@ -100,10 +100,16 @@
                                     </li>
                                 </ol>
                                 <!-- 앱 연결 버튼 -->
-                                <div class="mt-3">
+                                <div class="mt-3 bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 mb-2">
+                                    <p class="text-xs text-purple-700">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <strong>설치 완료 후 아래 버튼을 1회만 클릭</strong>하면 계정이 자동으로 연결됩니다. 이후에는 PC를 켤 때마다 자동으로 연결되므로 다시 클릭할 필요가 없습니다.
+                                    </p>
+                                </div>
+                                <div class="mt-1">
                                     <button onclick="connectDesktopApp()" id="connectAppBtn" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-semibold text-sm">
                                         <i class="fas fa-link"></i>
-                                        앱 연결하기 (설치 후 클릭)
+                                        앱 연결하기 (설치 후 1회만 클릭)
                                     </button>
                                     <p id="connectAppStatus" class="text-xs text-center mt-1 text-gray-500 hidden"></p>
                                 </div>
