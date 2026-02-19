@@ -821,6 +821,12 @@
 
             console.log('🎥 라이브 시작 명령 전송:', { userId, tiktokId });
             
+            // 중복 실행 방지: 기존 연결 먼저 종료
+            socket.emit('stop-live', { userId });
+            
+            // 잠깐 대기 후 시작 (기존 연결 정리 시간)
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
             // 버튼 상태 변경
             updateStatus('연결 중...', false);
             document.getElementById('startBtn').disabled = true;
@@ -841,7 +847,6 @@
             // 상태 초기화
             isLive = false;
             localStorage.setItem('tikfind_live_state', 'false');
-            updateStatus('연결 안 됨', false);
             
             // 버튼 상태 변경
             document.getElementById('startBtn').disabled = false;

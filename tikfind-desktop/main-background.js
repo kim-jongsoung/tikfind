@@ -47,11 +47,15 @@ function saveUserConfig(config) {
 
 // 시스템 트레이 생성
 function createTray() {
-    const iconPath = path.join(__dirname, 'build', 'icon.png');
+    // ico 파일 우선 사용 (Windows 트레이에 최적화)
+    const icoPath = path.join(__dirname, 'build', 'icon.ico');
+    const pngPath = path.join(__dirname, 'build', 'icon.png');
     let trayIcon;
     
-    if (fs.existsSync(iconPath)) {
-        trayIcon = nativeImage.createFromPath(iconPath);
+    if (fs.existsSync(icoPath)) {
+        trayIcon = nativeImage.createFromPath(icoPath);
+    } else if (fs.existsSync(pngPath)) {
+        trayIcon = nativeImage.createFromPath(pngPath);
         trayIcon = trayIcon.resize({ width: 16, height: 16 });
     } else {
         trayIcon = nativeImage.createEmpty();
