@@ -105,7 +105,7 @@ function connectToServer() {
         return;
     }
     
-    const serverUrl = process.env.SERVER_URL || 'http://localhost:3001';
+    const serverUrl = userConfig.serverUrl || process.env.SERVER_URL || 'https://tikfind.kr';
     
     log.info('🔌 서버 연결 시도:', serverUrl);
     
@@ -200,7 +200,7 @@ async function startLive(tiktokId) {
         log.info('📡 TikTok Live 연결 시작:', tiktokId);
         updateTrayMenu('연결 중...', tiktokId);
         
-        const serverUrl = process.env.SERVER_URL || 'http://localhost:3001';
+        const serverUrl = userConfig.serverUrl || process.env.SERVER_URL || 'https://tikfind.kr';
         collector = new TikTokCollector(tiktokId, userConfig.userId, serverUrl);
         
         collector.on('connected', () => {

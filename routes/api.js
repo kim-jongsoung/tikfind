@@ -63,27 +63,22 @@ const checkSongCooldown = (req, res, next) => {
     next();
 };
 
-// Desktop App 다운로드 - GitHub Releases로 리디렉션
-router.get('/download-app', requireAuth, async (req, res) => {
+// Desktop App 다운로드 - 서버에서 직접 파일 제공
+router.get('/download-app', async (req, res) => {
     try {
-        // latest.yml에서 최신 버전 정보 가져오기
-        const latestYmlPath = path.join(__dirname, '../public/updates/latest.yml');
+        const exePath = path.join(__dirname, '../public/downloads/TikFind-Setup.exe');
         
-        if (fs.existsSync(latestYmlPath)) {
-            const yaml = require('js-yaml');
-            const latestYml = yaml.load(fs.readFileSync(latestYmlPath, 'utf8'));
-            const downloadUrl = latestYml.files[0].url;
-            
-            // GitHub Releases로 리디렉션
-            return res.redirect(downloadUrl);
+        if (fs.existsSync(exePath)) {
+            res.setHeader('Content-Disposition', 'attachment; filename="TikFind-Setup.exe"');
+            res.setHeader('Content-Type', 'application/octet-stream');
+            return res.sendFile(exePath);
         }
         
-        // latest.yml이 없으면 기본 URL로 리디렉션
+        // 파일이 없으면 GitHub Releases로 리디렉션 (fallback)
         return res.redirect('https://github.com/kim-jongsoung/tikfind/releases/latest');
 
     } catch (error) {
         console.error('Desktop App 다운로드 오류:', error);
-        // 오류 발생 시에도 GitHub Releases로 리디렉션
         res.redirect('https://github.com/kim-jongsoung/tikfind/releases/latest');
     }
 });
