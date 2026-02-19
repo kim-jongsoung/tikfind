@@ -66,7 +66,7 @@ const checkSongCooldown = (req, res, next) => {
 // Desktop App 다운로드 - GitHub Releases로 리다이렉트 (신뢰도 높음)
 router.get('/download-app', (req, res) => {
     // GitHub Releases는 브라우저 신뢰도가 높아 SmartScreen 차단 최소화
-    res.redirect('https://github.com/kim-jongsoung/tikfind/releases/download/v1.0.9/TikFind%20Setup%201.0.9.exe');
+    res.redirect('https://github.com/kim-jongsoung/tikfind/releases/download/v1.0.9/TikFind.Setup.1.0.9.exe');
 });
 
 // 현재 로그인 유저 정보 (Desktop App 연결용)
