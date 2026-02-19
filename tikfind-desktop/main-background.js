@@ -339,8 +339,32 @@ function setAutoLaunch() {
     log.info('✅ Windows 시작 프로그램 등록 완료');
 }
 
+// 서버 세션으로 userId 자동 조회 (웹 로그인 연동)
+async function fetchUserIdFromSession() {
+    try {
+        const serverUrl = 'https://tikfind.kr';
+        const response = await fetch(`${serverUrl}/auth/current_user`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+        if (data.success && data.user) {
+            const userId = (data.user._id || data.user.id || '').toString();
+            const tiktokId = data.user.tiktokId || '';
+            if (userId) {
+                const config = { userId, tiktokId, serverUrl };
+                saveUserConfig(config);
+                log.info('✅ 웹 세션으로 userId 자동 연동:', userId);
+                return config;
+            }
+        }
+    } catch (e) {
+        log.warn('⚠️ 세션 자동 확인 실패 (오프라인이거나 미로그인):', e.message);
+    }
+    return null;
+}
+
 // 앱 시작
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
     log.info('🚀 TikFind Desktop App (Background Service) 시작');
     
     // User 설정 로드
@@ -352,12 +376,19 @@ app.whenReady().then(() => {
     // Windows 시작 프로그램 등록
     setAutoLaunch();
     
+    // user-config 없으면 웹 세션에서 자동 조회
+    if (!userConfig || !userConfig.userId) {
+        log.info('🔍 user-config 없음 → 웹 세션 자동 확인 시도...');
+        updateTrayMenu('로그인 확인 중...');
+        userConfig = await fetchUserIdFromSession();
+    }
+
     // 서버 연결
-    if (userConfig) {
+    if (userConfig && userConfig.userId) {
         connectToServer();
     } else {
-        log.warn('⚠️ User 설정이 없습니다. 웹에서 설정을 완료해주세요.');
-        updateTrayMenu('설정 필요');
+        log.warn('⚠️ User 설정이 없습니다. tikfind.kr 에서 로그인 후 앱을 재시작하세요.');
+        updateTrayMenu('로그인 필요 - tikfind.kr');
     }
     
 });
