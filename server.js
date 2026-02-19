@@ -1232,10 +1232,33 @@ io.on('connection', (socket) => {
                     }
                 }
 
+                // 사용량 정보 조회 후 emit에 포함
+                const UsageLogFinal = require('./models/UsageLog');
+                const PlanLimitFinal = require('./models/PlanLimit');
+                const todayFinal = new Date().toISOString().split('T')[0];
+                const usageLogFinal = await UsageLogFinal.findOne({ userId, date: todayFinal });
+                const planLimitFinal = await PlanLimitFinal.findOne({ planName: user?.plan || 'free' });
+
+                const usageInfo = {
+                    pronunciationCoach: {
+                        used: usageLogFinal?.pronunciationCoachCount || 0,
+                        limit: planLimitFinal?.pronunciationCoachLimit ?? 10
+                    },
+                    songRequest: {
+                        used: usageLogFinal?.songRequestCount || 0,
+                        limit: planLimitFinal?.songRequestLimit ?? 50
+                    },
+                    gptAi: {
+                        used: usageLogFinal?.gptAiCount || 0,
+                        limit: planLimitFinal?.gptAiLimit ?? -1
+                    }
+                };
+
                 io.to(userId).emit('chat-message', {
                     ...tiktokData,
                     messageLanguage,
-                    pronunciationGuide
+                    pronunciationGuide,
+                    usage: usageInfo
                 });
             } catch (err) {
                 console.error('❌ tiktok-data chat 처리 오류:', err);
