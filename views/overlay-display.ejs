@@ -24,28 +24,37 @@
             white-space: nowrap;
             display: flex;
             align-items: center;
-            padding: 0 10px;
-            /* 기본값 - JS에서 덮어씀 */
+            padding: 0 0 0 8px;
             background: rgba(0, 0, 0, 0.55);
             height: 36px;
             border-radius: 6px;
+            gap: 0;
         }
 
-        .marquee-icon {
+        /* 신청곡 뱃지 */
+        .song-badge {
             flex-shrink: 0;
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            color: #fff;
+            font-size: 0.75em;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 4px;
             margin-right: 8px;
-            font-size: inherit;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
         }
 
         .marquee-track {
             display: inline-block;
             white-space: nowrap;
-            animation: marquee-scroll 18s linear infinite;
+            /* duration은 JS에서 설정 */
+            animation: marquee-scroll 20s linear infinite;
         }
 
         @keyframes marquee-scroll {
-            0%   { transform: translateX(100vw); }
-            100% { transform: translateX(-100%); }
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
         }
 
         .marquee-text {
@@ -54,19 +63,17 @@
             font-weight: 600;
             letter-spacing: 0.02em;
         }
-
-        .sep {
-            display: inline;
-            margin: 0 18px;
-            opacity: 0.5;
-        }
     </style>
 </head>
 <body>
     <div class="marquee-bar" id="marqueeBar">
-        <span class="marquee-icon">♪</span>
+        <span class="song-badge">♪ 신청곡</span>
         <div class="marquee-track" id="marqueeTrack">
-            <span class="marquee-text" id="marqueeText">신청곡을 기다리고 있습니다...</span>
+            <!-- 동일 내용 2벌 → 끊김 없는 무한 반복 -->
+            <span class="marquee-text" id="marqueeText1">신청곡을 기다리고 있습니다...</span>
+            <span style="display:inline;margin:0 40px;opacity:0.4;">|</span>
+            <span class="marquee-text" id="marqueeText2">신청곡을 기다리고 있습니다...</span>
+            <span style="display:inline;margin:0 40px;opacity:0.4;">|</span>
         </div>
     </div>
 
@@ -80,7 +87,7 @@
         const bgColor  = decodeURIComponent(params.get('bg')    || 'rgba(0,0,0,0.55)');
         const txtColor = params.get('color') || '#ffffff';
         const fontSize = params.get('size')  || '16';
-        const speed    = parseFloat(params.get('speed') || '1.0'); // 1.0 = 기본, 0.5 = 느림, 2.0 = 빠름
+        const speed    = parseFloat(params.get('speed') || '1.0');
 
         const bar   = document.getElementById('marqueeBar');
         const track = document.getElementById('marqueeTrack');
@@ -90,10 +97,11 @@
         bar.style.fontSize    = fontSize + 'px';
         bar.style.height      = (parseInt(fontSize) * 2.4) + 'px';
 
-        // 마퀴 속도: 글자 수 기반 + speed 배율 적용
+        // 마퀴 속도: 글자 수 기반 + speed 배율
+        // translateX(-50%) 방식이므로 전체 길이 기준으로 계산
         function setSpeed(text) {
-            const base = Math.max(10, text.length * 0.35);
-            const duration = base / speed;  // speed 높을수록 빠름
+            const base = Math.max(12, text.length * 0.3);
+            const duration = base / speed;
             track.style.animationDuration = duration + 's';
         }
 
@@ -103,30 +111,37 @@
 
         function songLabel(song) {
             if (!song) return '';
-            let label = song.title;
+            let label = '🎵 ' + song.title;
             if (song.artist)    label += ' - ' + song.artist;
-            if (song.requester) label += ' (신청: @' + song.requester + ')';
+            if (song.requester) label += '  (@' + song.requester + ')';
             return label;
         }
 
         function buildText() {
             let parts = [];
             if (currentSong) {
-                parts.push('♪ 현재곡: ' + songLabel(currentSong));
+                parts.push('현재곡: ' + songLabel(currentSong));
             }
             if (nextQueue.length > 0) {
-                parts.push('♪ 다음곡: ' + songLabel(nextQueue[0]));
+                parts.push('다음곡: ' + songLabel(nextQueue[0]));
             }
             if (nextQueue.length > 1) {
-                const rest = nextQueue.slice(1, 4).map(s => s.title + (s.requester ? ' (@' + s.requester + ')' : '')).join('  /  ');
-                parts.push('♪ 대기: ' + rest);
+                nextQueue.slice(1, 4).forEach((s, i) => {
+                    parts.push('대기' + (i + 2) + ': ' + songLabel(s));
+                });
             }
-            // 텍스트가 없으면 대기 메시지, 있으면 앞뒤 여백 추가해 자연스럽게 반복
+
+            // 항목이 없으면 대기 메시지
             const text = parts.length > 0
-                ? parts.join('　　　　　')
-                : '신청곡을 기다리고 있습니다...';
-            document.getElementById('marqueeText').textContent = text;
-            setSpeed(text);
+                ? parts.join('　　　　')
+                : '신청곡을 기다리고 있습니다... 팔로우 후 #노래제목 #가수명 으로 신청해주세요 🎵';
+
+            // 2벌 복사 → translateX(-50%) 무한 반복
+            const sep = '　　　　　　';
+            const full = text + sep;
+            document.getElementById('marqueeText1').textContent = full;
+            document.getElementById('marqueeText2').textContent = full;
+            setSpeed(full);
         }
 
         socket.emit('join-overlay', userId);
