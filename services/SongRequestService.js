@@ -16,7 +16,7 @@ class SongRequestService {
     }
 
     getSettings(userId) {
-        return this.settings.get(userId) || { isAccepting: true, cooldownMinutes: 30 };
+        return this.settings.get(userId) || { isAccepting: true, cooldownMinutes: 0, minFollowRole: 0 };
     }
 
     setSettings(userId, settings) {

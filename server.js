@@ -810,7 +810,8 @@ async function processChatMessage(chatData) {
         console.log(`🎵 신청곡 감지: "${songData.title}" - "${songData.artist}" | followRole=${requesterFollowRole} | isAccepting=${songSettings.isAccepting}`);
     }
 
-    if (songData && songSettings.isAccepting) {
+    const minRole = songSettings.minFollowRole ?? 0;
+    if (songData && songSettings.isAccepting && (requesterFollowRole >= minRole || isModerator)) {
         const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
         const elapsed = lastTime ? (Date.now() - lastTime) / 1000 / 60 : Infinity;
         const cooldownOk = songSettings.cooldownMinutes === 0 || elapsed >= songSettings.cooldownMinutes;
@@ -1055,7 +1056,8 @@ app.post('/api/live/chat_legacy', async (req, res) => {
             }
         }
 
-        if (songData && songSettings.isAccepting) {
+        const minRole2 = songSettings.minFollowRole ?? 0;
+        if (songData && songSettings.isAccepting && (requesterFollowRole >= minRole2 || isModerator)) {
             // 중복신청 재확인
             const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
             const now = Date.now();
@@ -1245,10 +1247,11 @@ app.post('/api/song-queue/played', (req, res) => {
 // 신청곡 설정 업데이트 (받기/안받기, 중복신청 제한)
 app.post('/api/song-queue/settings', (req, res) => {
     try {
-        const { userId, isAccepting, cooldownMinutes } = req.body;
+        const { userId, isAccepting, cooldownMinutes, minFollowRole } = req.body;
         const update = {};
         if (isAccepting !== undefined) update.isAccepting = isAccepting;
         if (cooldownMinutes !== undefined) update.cooldownMinutes = Number(cooldownMinutes);
+        if (minFollowRole !== undefined) update.minFollowRole = Number(minFollowRole);
         songRequestService.setSettings(userId, update);
         console.log(`⚙️ 신청곡 설정 업데이트: ${userId}`, update);
         res.json({ success: true });

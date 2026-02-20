@@ -131,7 +131,7 @@
                             <!-- 시청자 신청곡 안내 -->
                             <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; margin-top: 8px;">
                                 <i class="fas fa-music" style="color: white; font-size: 12px;"></i>
-                                <span style="font-size: 10px; color: white; flex: 1;">팔로우 후 채팅창에 #노래제목 #가수명 으로 신청해주세요 🎵</span>
+                                <span style="font-size: 10px; color: white; flex: 1;" id="songRequestGuide">채팅창에 #노래제목 #가수명 으로 신청해주세요 🎵</span>
                                 <button id="copyGuideBtn" onclick="copyRequestGuide()" style="padding: 4px 8px; background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 4px; font-size: 9px; cursor: pointer; transition: all 0.2s;">
                                     <i class="fas fa-copy" style="margin-right: 2px;"></i>복사
                                 </button>
@@ -150,12 +150,17 @@
                                 <option value="accept">받기</option>
                                 <option value="reject">안받기</option>
                             </select>
+                            <span style="font-size: 10px; color: #999;">신청자격:</span>
+                            <select id="requestFollowRole" style="padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                <option value="0" selected>아무나</option>
+                                <option value="1">팔로워만</option>
+                            </select>
                             <span style="font-size: 10px; color: #999;">중복신청제한:</span>
                             <select id="requestCooldown" style="padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
-                                <option value="0">제한없음</option>
-                                <option value="10">10분에 1곡 가능</option>
-                                <option value="20">20분에 1곡 가능</option>
-                                <option value="30" selected>30분에 1곡 가능</option>
+                                <option value="0" selected>제한없음</option>
+                                <option value="10">10분에 1곡</option>
+                                <option value="20">20분에 1곡</option>
+                                <option value="30">30분에 1곡</option>
                             </select>
                             <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: #999; margin-left: auto;">
                                 <input type="checkbox" id="autoSkipAbsent" checked style="width: 14px; height: 14px;">
@@ -1442,7 +1447,8 @@
 
         // ========== 신청곡 설정 ==========
         let isRequestAccepting = true;
-        let requestCooldownMinutes = 30;
+        let requestCooldownMinutes = 0;
+        let minFollowRole = 0;
         let autoSkipAbsentSetting = true;
         let lastRequestTime = {};
 
@@ -1494,6 +1500,17 @@
                 isRequestAccepting = e.target.value === 'accept';
                 updateSongSettings({ isAccepting: isRequestAccepting });
                 console.log('🎵 신청곡 받기 상태:', isRequestAccepting ? '받기' : '안받기');
+            });
+
+            // 신청자격 (아무나/팔로워만)
+            document.getElementById('requestFollowRole').addEventListener('change', (e) => {
+                minFollowRole = parseInt(e.target.value) || 0;
+                updateSongSettings({ minFollowRole });
+                const guide = document.getElementById('songRequestGuide');
+                if (guide) guide.textContent = minFollowRole >= 1
+                    ? '팔로우 후 채팅창에 #노래제목 #가수명 으로 신청해주세요 🎵'
+                    : '채팅창에 #노래제목 #가수명 으로 신청해주세요 🎵';
+                console.log('👤 신청자격:', minFollowRole === 0 ? '아무나' : '팔로워만');
             });
 
             // 중복신청 제한
