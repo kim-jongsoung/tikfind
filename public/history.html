@@ -75,8 +75,9 @@
             try {
                 const res = await fetch('/auth/current_user');
                 const data = await res.json();
-                if (!data || !data._id) { window.location.href = '/'; return; }
-                currentUser = data;
+                const user = data?.user || data;
+                if (!user || (!user._id && !user.id)) { window.location.href = '/'; return; }
+                currentUser = user;
                 loadHistory();
             } catch(e) {
                 window.location.href = '/';
