@@ -22,7 +22,7 @@ log.transports.file.level = 'info';
 // User 설정 파일 로드
 function loadUserConfig() {
     try {
-        const configPath = path.join(__dirname, 'user-config.json');
+        const configPath = path.join(app.getPath('userData'), 'user-config.json');
         if (fs.existsSync(configPath)) {
             const configData = fs.readFileSync(configPath, 'utf8');
             userConfig = JSON.parse(configData);
@@ -41,7 +41,7 @@ function loadUserConfig() {
 // User 설정 파일 저장
 function saveUserConfig(config) {
     try {
-        const configPath = path.join(__dirname, 'user-config.json');
+        const configPath = path.join(app.getPath('userData'), 'user-config.json');
         fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8');
         log.info('✅ User 설정 저장 완료:', config.userId);
         return true;
