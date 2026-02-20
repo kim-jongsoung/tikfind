@@ -810,7 +810,7 @@ async function processChatMessage(chatData) {
         console.log(`🎵 신청곡 감지: "${songData.title}" - "${songData.artist}" | followRole=${requesterFollowRole} | isAccepting=${songSettings.isAccepting}`);
     }
 
-    if (songData && songSettings.isAccepting && (requesterFollowRole >= 1 || isModerator)) {
+    if (songData && songSettings.isAccepting) {
         const lastTime = songRequestService.getLastRequestTime(userId, uniqueId || username);
         const elapsed = lastTime ? (Date.now() - lastTime) / 1000 / 60 : Infinity;
         const cooldownOk = songSettings.cooldownMinutes === 0 || elapsed >= songSettings.cooldownMinutes;
