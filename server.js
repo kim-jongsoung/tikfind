@@ -1387,6 +1387,22 @@ app.delete('/api/tts/voice-settings/:userId/:tiktokUniqueId', async (req, res) =
     }
 });
 
+// 디버그: useGoogleTTS DB 값 확인
+app.get('/debug/tts-settings/:userId', async (req, res) => {
+    try {
+        const User = require('./models/User');
+        const user = await User.findById(req.params.userId).select('ttsSettings');
+        const desktopSocketId = desktopSocketMap.get(req.params.userId);
+        res.json({
+            ttsSettings: user?.ttsSettings,
+            desktopSocketId: desktopSocketId || '미등록',
+            googleApiKey: process.env.GOOGLE_TTS_API_KEY ? '있음' : '없음'
+        });
+    } catch (e) {
+        res.json({ error: e.message });
+    }
+});
+
 // Google TTS 활성화 설정 저장
 app.post('/api/tts/settings', async (req, res) => {
     try {
@@ -1475,6 +1491,16 @@ function emitQueueUpdate(userId) {
 
 // userId별 Desktop App 소켓 ID 추적 (첫 번째 연결된 앱만 명령 수신)
 const desktopSocketMap = new Map();
+
+// 디버그: Desktop App 등록 상태 확인
+app.get('/debug/desktop-status', (req, res) => {
+    const status = {};
+    for (const [uid, sid] of desktopSocketMap.entries()) {
+        const sock = io.sockets.sockets.get(sid);
+        status[uid] = { socketId: sid, connected: sock ? sock.connected : false };
+    }
+    res.json({ desktopSocketMap: status, totalConnected: io.sockets.sockets.size });
+});
 
 // ==================== Socket.io 이벤트 ====================
 io.on('connection', (socket) => {
