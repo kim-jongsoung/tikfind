@@ -1551,12 +1551,13 @@ io.on('connection', (socket) => {
         
         // Desktop App이 룸에 참가한 후 웹에 알림
         if (clientType === 'desktop-app') {
-            // 이미 등록된 Desktop App이 없으면 이 소켓을 주 Desktop App으로 등록
-            if (!desktopSocketMap.has(targetUserId)) {
-                desktopSocketMap.set(targetUserId, socket.id);
-                console.log(`📱 주 Desktop App 등록: ${targetUserId} → ${socket.id}`);
+            // 항상 최신 소켓으로 업데이트 (재연결 시에도 정상 작동)
+            const prevSocketId = desktopSocketMap.get(targetUserId);
+            desktopSocketMap.set(targetUserId, socket.id);
+            if (prevSocketId && prevSocketId !== socket.id) {
+                console.log(`📱 Desktop App 소켓 갱신: ${targetUserId} | ${prevSocketId} → ${socket.id}`);
             } else {
-                console.log(`⚠️ 추가 Desktop App 연결 감지 (명령 수신 안 함): ${targetUserId} → ${socket.id}`);
+                console.log(`📱 주 Desktop App 등록: ${targetUserId} → ${socket.id}`);
             }
             io.to(targetUserId).emit('desktop-app-connected', { userId: targetUserId });
             console.log(`📱 Desktop App 연결 알림 전송: ${targetUserId}`);
