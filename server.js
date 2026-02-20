@@ -1717,6 +1717,16 @@ io.on('connection', (socket) => {
                     pronunciationGuide,
                     usage: usageInfo
                 });
+
+                // Desktop App TTS 실행 명령
+                const desktopSid = desktopSocketMap.get(userId);
+                if (desktopSid && tiktokData.message) {
+                    io.to(desktopSid).emit('tts-speak', {
+                        text: tiktokData.message,
+                        uniqueId: tiktokData.uniqueId || tiktokData.username
+                    });
+                    console.log(`🔊 tts-speak 전송 → ${desktopSid} | "${tiktokData.message}"`);
+                }
             } catch (err) {
                 console.error('❌ tiktok-data chat 처리 오류:', err);
                 io.to(userId).emit('chat-message', tiktokData);
