@@ -831,7 +831,7 @@ async function processChatMessage(chatData) {
 
             if (limit === -1 || currentUsage < limit) {
                 const result = await songRequestService.addSongRequest(userId, songData, {
-                    username, uniqueId: uniqueId || username, badges: badges || [], isVIP: false, level: 1
+                    username, uniqueId: uniqueId || username, nickname: nickname || username, badges: badges || [], isVIP: false, level: 1
                 });
                 console.log(`🎵 addSongRequest 결과:`, result.success, result.message || '');
                 if (result.success) {
@@ -1228,13 +1228,40 @@ app.post('/api/song-queue/remove', (req, res) => {
 });
 
 // 신청곡 재생 완료
-app.post('/api/song-queue/played', (req, res) => {
+app.post('/api/song-queue/played', async (req, res) => {
     try {
         const { userId, songId } = req.body;
+        
+        // 재생 완료 전 곡 정보 가져오기 (DB 저장용)
+        const queue = songRequestService.getQueue(userId);
+        const song = queue.find(s => s.id === songId);
+        
         const success = songRequestService.markAsPlayed(userId, songId);
         
         if (success) {
             emitQueueUpdate(userId);
+            
+            // SongHistory DB 저장
+            if (song) {
+                try {
+                    const SongHistory = require('./models/SongHistory');
+                    await SongHistory.create({
+                        userId,
+                        title: song.title,
+                        artist: song.artist,
+                        videoId: song.videoId,
+                        thumbnail: song.thumbnail,
+                        youtubeUrl: song.youtubeUrl,
+                        requester: song.requester,
+                        requesterNickname: song.requesterNickname || song.requester,
+                        isStreamer: song.isStreamer || false,
+                        playedAt: new Date()
+                    });
+                    console.log(`📚 히스토리 저장: ${song.title} - ${song.artist} (신청: ${song.requester})`);
+                } catch (dbErr) {
+                    console.error('❌ 히스토리 저장 오류:', dbErr.message);
+                }
+            }
         }
         
         res.json({ success });
@@ -1256,6 +1283,69 @@ app.post('/api/song-queue/settings', (req, res) => {
         console.log(`⚙️ 신청곡 설정 업데이트: ${userId}`, update);
         res.json({ success: true });
     } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 신청곡 히스토리 조회
+app.get('/api/song-history/:userId', async (req, res) => {
+    try {
+        const SongHistory = require('./models/SongHistory');
+        const { userId } = req.params;
+        const { search, date, limit = 100 } = req.query;
+
+        const query = { userId };
+        if (date) {
+            const start = new Date(date);
+            const end = new Date(date);
+            end.setDate(end.getDate() + 1);
+            query.playedAt = { $gte: start, $lt: end };
+        }
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { artist: { $regex: search, $options: 'i' } },
+                { requester: { $regex: search, $options: 'i' } },
+                { requesterNickname: { $regex: search, $options: 'i' } }
+            ];
+        }
+
+        const history = await SongHistory.find(query)
+            .sort({ playedAt: -1 })
+            .limit(parseInt(limit));
+
+        res.json({ success: true, history });
+    } catch (error) {
+        console.error('❌ 히스토리 조회 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 히스토리에서 큐로 추가 (방송 전 미리 담기)
+app.post('/api/song-history/add-to-queue', async (req, res) => {
+    try {
+        const { userId, historyId } = req.body;
+        const SongHistory = require('./models/SongHistory');
+        const song = await SongHistory.findById(historyId);
+        if (!song) return res.json({ success: false, message: '히스토리를 찾을 수 없습니다' });
+
+        const User = require('./models/User');
+        const user = await User.findById(userId);
+
+        const result = await songRequestService.addSongRequest(userId, { title: song.title, artist: song.artist }, {
+            username: user?.tiktokId || 'Streamer',
+            uniqueId: user?.tiktokId || 'Streamer',
+            nickname: user?.tiktokId || 'Streamer',
+            badges: [],
+            isVIP: false,
+            isStreamer: true,
+            level: 1
+        });
+
+        if (result.success) emitQueueUpdate(userId);
+        res.json(result);
+    } catch (error) {
+        console.error('❌ 히스토리→큐 추가 오류:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });

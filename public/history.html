@@ -3,9 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikFind - 히스토리</title>
+    <title>TikFind - 신청곡 히스토리</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .add-btn { transition: all 0.2s; }
+        .add-btn:hover { transform: scale(1.05); }
+        .add-btn.added { background: #22c55e !important; }
+        .thumbnail-img { width: 64px; height: 48px; object-fit: cover; border-radius: 4px; }
+    </style>
 </head>
 <body class="bg-gray-50">
     <div id="sidebar-container"></div>
@@ -13,37 +19,45 @@
     
     <main class="ml-64 mt-16 p-8">
         <div class="max-w-7xl mx-auto">
-            <div class="mb-8">
-                <h2 class="text-3xl font-bold text-gray-800">신청곡 히스토리</h2>
-                <p class="text-gray-600 mt-2">과거에 재생된 모든 신청곡을 확인하세요</p>
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">🎵 신청곡 히스토리</h2>
+                    <p class="text-gray-500 mt-1 text-sm">재생된 신청곡 목록 · 큐에 추가해 방송 전 미리 준비하세요</p>
+                </div>
+                <span id="totalCount" class="text-sm text-gray-400"></span>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <div class="flex flex-wrap items-center gap-4">
-                    <input type="date" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                    <input type="text" placeholder="곡명 또는 신청자 검색..." class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
-                    <button class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                        <i class="fas fa-search mr-2"></i>검색
+            <!-- 검색 필터 -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+                <div class="flex flex-wrap items-center gap-3">
+                    <input type="date" id="filterDate" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <input type="text" id="filterSearch" placeholder="곡명, 가수, 닉네임, @아이디 검색..." class="flex-1 min-w-48 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <button onclick="loadHistory()" class="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition font-medium">
+                        <i class="fas fa-search mr-1"></i>검색
+                    </button>
+                    <button onclick="clearFilter()" class="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition">
+                        초기화
                     </button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <!-- 히스토리 테이블 -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <table class="w-full">
-                    <thead class="bg-gray-50">
+                    <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">재생 시간</th>
-                            <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">곡명</th>
-                            <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">아티스트</th>
-                            <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">신청자</th>
-                            <th class="text-left py-4 px-6 text-sm font-semibold text-gray-700">상태</th>
+                            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide w-16"></th>
+                            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">곡명 / 아티스트</th>
+                            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">신청자</th>
+                            <th class="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">재생 시간</th>
+                            <th class="text-center py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">큐 추가</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="historyTableBody">
                         <tr>
-                            <td colspan="5" class="text-center py-12 text-gray-500">
-                                <i class="fas fa-history text-4xl mb-3 text-gray-300"></i>
-                                <p>아직 재생된 곡이 없습니다</p>
+                            <td colspan="5" class="text-center py-16 text-gray-400">
+                                <i class="fas fa-spinner fa-spin text-3xl mb-3"></i>
+                                <p class="text-sm">불러오는 중...</p>
                             </td>
                         </tr>
                     </tbody>
@@ -54,5 +68,155 @@
 
     <script src="/js/i18n.js"></script>
     <script src="/js/layout.js"></script>
+    <script>
+        let currentUser = null;
+
+        async function init() {
+            try {
+                const res = await fetch('/auth/current_user');
+                const data = await res.json();
+                if (!data || !data._id) { window.location.href = '/'; return; }
+                currentUser = data;
+                loadHistory();
+            } catch(e) {
+                window.location.href = '/';
+            }
+        }
+
+        async function loadHistory() {
+            if (!currentUser) return;
+            const userId = String(currentUser._id || currentUser.id);
+            const search = document.getElementById('filterSearch').value.trim();
+            const date = document.getElementById('filterDate').value;
+
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-16 text-gray-400"><i class="fas fa-spinner fa-spin text-3xl mb-3"></i><p class="text-sm">불러오는 중...</p></td></tr>`;
+
+            try {
+                let url = `/api/song-history/${userId}?limit=200`;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
+                if (date) url += `&date=${date}`;
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                if (!data.success || !data.history || data.history.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-16 text-gray-400"><i class="fas fa-music text-4xl mb-3 text-gray-300"></i><p class="text-sm mt-2">아직 재생된 신청곡이 없습니다</p><p class="text-xs text-gray-400 mt-1">방송 중 신청곡을 재생하면 여기에 기록됩니다</p></td></tr>`;
+                    document.getElementById('totalCount').textContent = '';
+                    return;
+                }
+
+                document.getElementById('totalCount').textContent = `총 ${data.history.length}곡`;
+                tbody.innerHTML = data.history.map(song => renderRow(song)).join('');
+            } catch(e) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-red-400"><i class="fas fa-exclamation-circle mr-2"></i>불러오기 실패</td></tr>`;
+            }
+        }
+
+        function renderRow(song) {
+            const playedAt = new Date(song.playedAt);
+            const dateStr = playedAt.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' });
+            const timeStr = playedAt.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+
+            const thumbnail = song.thumbnail
+                ? `<img src="${escHtml(song.thumbnail)}" class="thumbnail-img" onerror="this.style.display='none'">`
+                : `<div class="thumbnail-img bg-gray-100 flex items-center justify-center"><i class="fas fa-music text-gray-400 text-xs"></i></div>`;
+
+            // 신청자: 닉네임 + @아이디 함께 표시
+            let requesterHtml = '';
+            if (song.isStreamer) {
+                requesterHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium"><i class="fas fa-crown text-xs"></i>직접선곡</span>`;
+            } else {
+                const nickname = song.requesterNickname && song.requesterNickname !== song.requester
+                    ? `<span class="font-medium text-gray-800">${escHtml(song.requesterNickname)}</span>`
+                    : '';
+                const uniqueId = song.requester
+                    ? `<span class="text-gray-400 text-xs">@${escHtml(song.requester)}</span>`
+                    : '';
+                requesterHtml = `<div class="flex flex-col gap-0.5">${nickname}${uniqueId}</div>`;
+            }
+
+            const youtubeLink = song.videoId
+                ? `<a href="https://www.youtube.com/watch?v=${escHtml(song.videoId)}" target="_blank" class="text-gray-400 hover:text-red-500 transition ml-2" title="YouTube에서 보기"><i class="fab fa-youtube"></i></a>`
+                : '';
+
+            return `
+            <tr class="border-b border-gray-100 hover:bg-gray-50 transition">
+                <td class="py-3 px-4">${thumbnail}</td>
+                <td class="py-3 px-4">
+                    <div class="flex items-center gap-1">
+                        <div>
+                            <div class="font-medium text-gray-800 text-sm">${escHtml(song.title)}</div>
+                            <div class="text-gray-400 text-xs">${escHtml(song.artist)}</div>
+                        </div>
+                        ${youtubeLink}
+                    </div>
+                </td>
+                <td class="py-3 px-4">${requesterHtml}</td>
+                <td class="py-3 px-4">
+                    <div class="text-sm text-gray-700">${dateStr}</div>
+                    <div class="text-xs text-gray-400">${timeStr}</div>
+                </td>
+                <td class="py-3 px-4 text-center">
+                    <button id="addbtn_${escHtml(song._id)}" onclick="addToQueue('${escHtml(song._id)}')"
+                        class="add-btn px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700">
+                        <i class="fas fa-plus mr-1"></i>큐 추가
+                    </button>
+                </td>
+            </tr>`;
+        }
+
+        async function addToQueue(historyId) {
+            if (!currentUser) return;
+            const userId = String(currentUser._id || currentUser.id);
+            const btn = document.getElementById(`addbtn_${historyId}`);
+            if (!btn) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>추가 중...';
+
+            try {
+                const res = await fetch('/api/song-history/add-to-queue', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, historyId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    btn.classList.add('added');
+                    btn.innerHTML = '<i class="fas fa-check mr-1"></i>추가됨';
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.classList.remove('added');
+                        btn.innerHTML = '<i class="fas fa-plus mr-1"></i>큐 추가';
+                    }, 3000);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-plus mr-1"></i>큐 추가';
+                    alert(data.message || '추가 실패');
+                }
+            } catch(e) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plus mr-1"></i>큐 추가';
+            }
+        }
+
+        function clearFilter() {
+            document.getElementById('filterSearch').value = '';
+            document.getElementById('filterDate').value = '';
+            loadHistory();
+        }
+
+        function escHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        }
+
+        document.getElementById('filterSearch').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') loadHistory();
+        });
+
+        init();
+    </script>
 </body>
 </html>

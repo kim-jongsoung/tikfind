@@ -993,14 +993,17 @@
                 const isStreamerSong = song.requester === (currentUser?.tiktokId || 'Streamer') || 
                                       song.badges?.includes('streamer');
                 
-                // 신청자 표시 텍스트
+                // 신청자 표시 텍스트 (닉네임 + @아이디)
                 let requesterText = '';
                 if (isStreamerSong) {
-                    requesterText = '직접선곡';
+                    requesterText = '<span style="color:#a78bfa;font-size:10px;">👑 직접선곡</span>';
                 } else {
                     const isPresent = currentViewers.has(song.requester);
                     const presenceText = isPresent ? '' : ' <span style="color: #ef4444; font-size: 9px;">(방에 없음)</span>';
-                    requesterText = `@${escapeHtml(song.requester)}${presenceText}`;
+                    const nickname = song.requesterNickname && song.requesterNickname !== song.requester
+                        ? `<span style="color:#fff;font-size:11px;font-weight:bold;">${escapeHtml(song.requesterNickname)}</span> `
+                        : '';
+                    requesterText = `${nickname}<span style="color:#888;font-size:10px;">@${escapeHtml(song.requester)}</span>${presenceText}`;
                 }
                 
                 return `
@@ -1030,8 +1033,9 @@
                     <!-- 노래 정보 -->
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 12px; font-weight: bold; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            ${escapeHtml(song.title)} - ${escapeHtml(song.artist)} | 신청: ${requesterText}
+                            ${escapeHtml(song.title)} - ${escapeHtml(song.artist)}
                         </div>
+                        <div style="font-size: 11px; margin-top: 2px;">신청: ${requesterText}</div>
                     </div>
                     
                     <!-- 순서 변경 버튼 -->
