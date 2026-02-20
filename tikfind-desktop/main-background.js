@@ -3,12 +3,14 @@ const path = require('path');
 const fs = require('fs');
 const io = require('socket.io-client');
 const TikTokCollector = require('./src/collector');
+const TTSService = require('./src/tts');
 const log = require('electron-log');
 
 let tray = null;
 let socket = null;
 let collector = null;
 let userConfig = null;
+const standaloneTTS = new TTSService(); // collector 없을 때 사용
 
 // Windows에서 tikfind:// 프로토콜 수신을 위해 single instance lock 필요
 const gotLock = app.requestSingleInstanceLock();
@@ -185,6 +187,11 @@ function connectToServer() {
     // 라이브 시작 명령
     socket.on('start-live', async (data) => {
         log.info('🎥 라이브 시작 명령 수신:', data.tiktokId);
+        // standaloneTTS에도 Google TTS 설정 전달
+        if (data.googleTTS) {
+            standaloneTTS.updateGoogleTTSSettings(data.googleTTS);
+            log.info(`🔊 standaloneTTS Google TTS: ${data.googleTTS.enabled ? '활성화' : '비활성화'} | apiKey=${data.googleTTS.apiKey ? '있음' : '없음'}`);
+        }
         await startLive(data.tiktokId, data.googleTTS);
     });
     
@@ -196,15 +203,20 @@ function connectToServer() {
     
     // 서버 → Desktop App: TTS 실행 명령 (서버가 TikTok 직접 연결 시)
     socket.on('tts-speak', (data) => {
-        if (collector && data.text) {
-            collector.tts.speak(data.text, data.uniqueId);
-            log.info(`🔊 tts-speak 수신: "${data.text}" | @${data.uniqueId}`);
-        }
+        if (!data.text) return;
+        log.info(`🔊 tts-speak 수신: "${data.text}" | @${data.uniqueId}`);
+        const ttsInstance = collector ? collector.tts : standaloneTTS;
+        ttsInstance.speak(data.text, data.uniqueId);
     });
 
     // TTS 설정 업데이트 (방송 중 실시간 반영)
     socket.on('tts-settings', (settings) => {
         log.info('🔊 TTS 설정 업데이트');
+        // standaloneTTS에도 항상 반영
+        if (settings.googleTTS) {
+            standaloneTTS.updateGoogleTTSSettings(settings.googleTTS);
+        }
+        if (settings.enabled !== undefined) standaloneTTS.enabled = settings.enabled;
         if (collector) {
             collector.updateTTSSettings(settings);
             // Google TTS 설정도 실시간 반영
