@@ -105,12 +105,26 @@ class TTSService {
         const { exec } = require('child_process');
         const os = require('os');
 
-        const tmpFile = path.join(os.tmpdir(), `tikfind_tts_${Date.now()}.mp3`);
+        const tmpFile = path.join(os.tmpdir(), `tikfind_tts_${Date.now()}.mp3`).replace(/\\/g, '/');
         fs.writeFileSync(tmpFile, buffer);
 
-        const psCommand = `Add-Type -AssemblyName presentationCore; $p = New-Object System.Windows.Media.MediaPlayer; $p.Open([uri]'${tmpFile}'); $p.Play(); Start-Sleep -Milliseconds 8000; $p.Close()`;
-        exec(`powershell -Command "${psCommand}"`, () => {
-            setTimeout(() => { try { fs.unlinkSync(tmpFile); } catch (e) {} }, 12000);
+        // MP3 실제 재생 완료까지 대기 (NaturalDuration 사용)
+        const psCommand = [
+            'Add-Type -AssemblyName presentationCore;',
+            '$p = New-Object System.Windows.Media.MediaPlayer;',
+            `$p.Open([uri]'${tmpFile}');`,
+            '$p.Play();',
+            'Start-Sleep -Milliseconds 500;',
+            '$dur = $p.NaturalDuration.TimeSpan.TotalMilliseconds;',
+            'if ($dur -gt 0) { Start-Sleep -Milliseconds $dur } else { Start-Sleep -Milliseconds 6000 };',
+            '$p.Close();'
+        ].join(' ');
+
+        console.log(`🎵 MP3 재생 시작: ${tmpFile} (${buffer.length} bytes)`);
+        exec(`powershell -Command "${psCommand}"`, (err) => {
+            if (err) console.error('❌ MP3 재생 오류:', err.message);
+            else console.log('✅ MP3 재생 완료');
+            setTimeout(() => { try { fs.unlinkSync(tmpFile); } catch (e) {} }, 3000);
             if (callback) callback();
         });
     }
@@ -205,9 +219,12 @@ class TTSService {
         const item = this.queue.shift();
         
         try {
+            console.log(`🔊 TTS 처리: "${item.text}" | googleTTS.enabled=${this.googleTTS.enabled} | apiKey=${this.googleTTS.apiKey ? '있음' : '없음(빈값)'}`);
             if (this.googleTTS.enabled && this.googleTTS.apiKey) {
+                console.log(`🎙️ Google TTS 사용 | @${item.uniqueId}`);
                 await this.speakWithGoogleTTS(item.text, item.uniqueId);
             } else {
+                console.log(`🔈 기본 TTS 사용 (Google TTS 비활성 또는 API키 없음)`);
                 await this.speakText(item.text);
             }
         } catch (error) {
