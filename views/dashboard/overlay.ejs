@@ -31,18 +31,13 @@
                 <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                     <i class="fas fa-link text-indigo-500"></i> 오버레이 URL
                 </h3>
-                <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 mb-3">
+                <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
                     <code class="text-sm text-gray-700 flex-1 break-all" id="baseUrl">https://tikfind.kr/overlay/<%= user._id %></code>
                     <button onclick="copyUrl('baseUrl','copyBtn')" id="copyBtn"
                         class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm whitespace-nowrap">
                         <i class="fas fa-copy mr-1"></i>복사
                     </button>
                 </div>
-                <p class="text-xs text-gray-500 bg-yellow-50 border-l-4 border-yellow-400 p-3 rounded">
-                    <strong>TikTok Live Studio / OBS:</strong> 레이어 추가 → 웹페이지 → 위 URL 붙여넣기 → 배경 투명 체크<br>
-                    레이어 <strong>너비</strong>를 원하는 크기로 설정하면 마퀴 바가 자동으로 꽉 채워집니다.<br>
-                    <span class="text-gray-400">예) 휴대폰 화면 전체 가로의 30% → 너비만 조절, 높이는 글자 크기에 자동 맞춤</span>
-                </p>
             </div>
 
             <!-- 스타일 설정 카드 -->
@@ -120,23 +115,67 @@
                 <p class="text-xs text-gray-400 mt-2">* 실제 방송에서는 현재 재생 중인 곡과 다음 곡이 자동으로 표시됩니다.</p>
             </div>
 
-            <!-- 설정 적용된 URL 카드 -->
+            <!-- 설정 적용된 URL + TikTok Live Studio 안내 카드 -->
             <div class="bg-white rounded-xl shadow p-6">
                 <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <i class="fas fa-code text-gray-500"></i> 설정 적용된 URL (방송 소프트웨어에 이 URL 사용)
+                    <i class="fas fa-code text-gray-500"></i> 설정 적용된 URL
                 </h3>
-                <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
+                <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 mb-4">
                     <code class="text-xs text-gray-600 flex-1 break-all" id="finalUrl">https://tikfind.kr/overlay/<%= user._id %></code>
                     <button onclick="copyUrl('finalUrl','copyFinalBtn')" id="copyFinalBtn"
                         class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm whitespace-nowrap">
                         <i class="fas fa-copy mr-1"></i>복사
                     </button>
                 </div>
-                <div class="mt-3">
+                <div class="mb-4">
                     <a href="/overlay/<%= user._id %>" target="_blank" id="previewLink"
                         class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition text-sm">
                         <i class="fas fa-external-link-alt"></i> 새 창에서 미리보기
                     </a>
+                </div>
+
+                <!-- TikTok Live Studio 설정 안내 -->
+                <div class="border-t border-gray-100 pt-4">
+                    <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2 text-sm">
+                        <i class="fas fa-tv text-pink-500"></i> TikTok Live Studio 소스 추가 방법
+                    </h4>
+                    <ol class="space-y-3">
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
+                            <div class="text-sm text-gray-600">
+                                TikTok Live Studio 실행 후 <strong class="text-gray-800">소스 패널</strong>에서 <strong class="text-gray-800">+ 추가</strong> 클릭
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
+                            <div class="text-sm text-gray-600">
+                                <strong class="text-gray-800">웹페이지 (Browser Source)</strong> 선택
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
+                            <div class="text-sm text-gray-600">
+                                URL 입력란에 위 <strong class="text-gray-800">설정 적용된 URL</strong> 붙여넣기
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                            <div class="text-sm text-gray-600">
+                                <strong class="text-gray-800">사용자 지정 해상도</strong> 설정:
+                                <span class="inline-flex items-center gap-1 ml-1 px-2 py-0.5 bg-gray-100 rounded text-xs font-mono font-bold text-gray-700">너비 400 × 높이 100</span>
+                            </div>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">5</span>
+                            <div class="text-sm text-gray-600">
+                                확인 후 화면에서 <strong class="text-gray-800">크기와 위치</strong>를 드래그로 자유롭게 조절하세요
+                            </div>
+                        </li>
+                    </ol>
+                    <div class="mt-4 p-3 bg-pink-50 border-l-4 border-pink-400 rounded text-xs text-pink-700">
+                        <i class="fas fa-lightbulb mr-1"></i>
+                        <strong>팁:</strong> 해상도를 400×100으로 설정한 뒤, 화면에서 소스를 선택하고 모서리를 드래그해 원하는 크기로 조절하세요. 배경 투명도는 위 스타일 설정에서 조절할 수 있습니다.
+                    </div>
                 </div>
             </div>
 
