@@ -107,12 +107,18 @@ class PronunciationCoachService {
 2. 답변: (${messageLangName}로 적절한 답변)
 3. 답변의미: (답변의 한국어 의미)
 4. 발음: (답변을 한글로 발음 표기)
+5. 재질문: (대화를 이어갈 수 있는 ${messageLangName} 질문 1개, 짧게)
+6. 재질문발음: (재질문을 한글로 발음 표기)
+7. 재질문의미: (재질문의 한국어 의미)
 
 예시:
 원본의미: 안녕하세요
 답변: Nice to meet you
 답변의미: 만나서 반가워요
 발음: 나이스 투 밋 유
+재질문: How are you?
+재질문발음: 하우 아 유
+재질문의미: 요즘 어때요?
 `;
         } else if (streamerLanguage === 'en') {
             return `
@@ -126,12 +132,18 @@ Please provide:
 2. Response: (Appropriate response in ${messageLangName})
 3. Response Meaning: (English translation of the response)
 4. Pronunciation: (Romanized pronunciation of the response)
+5. Follow-up: (A short follow-up question in ${messageLangName} to continue the conversation)
+6. Follow-up Pronunciation: (Romanized pronunciation of the follow-up)
+7. Follow-up Meaning: (English translation of the follow-up)
 
 Example:
 Original Meaning: Hello
 Response: 안녕하세요
 Response Meaning: Nice to meet you
 Pronunciation: An-nyeong-ha-se-yo
+Follow-up: 요즘 어때요?
+Follow-up Pronunciation: Yo-jeum eo-ttae-yo
+Follow-up Meaning: How are you lately?
 `;
         } else {
             return `
@@ -159,32 +171,43 @@ Provide:
         let responseMeaning = '';
         let pronunciation = '';
 
+        let followUpQuestion = '';
+        let followUpPronunciation = '';
+        let followUpMeaning = '';
+
         for (const line of lines) {
             if (line.includes('원본의미:') || line.includes('Original Meaning:')) {
                 originalMeaning = line.split(':')[1]?.trim() || '';
-            } else if (line.includes('의미:') && !line.includes('원본의미:') && !line.includes('답변의미:')) {
-                // 구버전 호환성
+            } else if (line.includes('의미:') && !line.includes('원본의미:') && !line.includes('답변의미:') && !line.includes('재질문의미:') && !line.includes('Follow-up Meaning:')) {
                 originalMeaning = line.split(':')[1]?.trim() || '';
-            } else if (line.includes('Meaning:') && !line.includes('Original Meaning:') && !line.includes('Response Meaning:')) {
-                // 구버전 호환성
+            } else if (line.includes('Meaning:') && !line.includes('Original Meaning:') && !line.includes('Response Meaning:') && !line.includes('Follow-up Meaning:')) {
                 originalMeaning = line.split(':')[1]?.trim() || '';
-            } else if (line.includes('답변:') || line.includes('Response:')) {
-                response = line.split(':')[1]?.trim() || '';
+            } else if ((line.includes('답변:') || line.includes('Response:')) && !line.includes('Response Meaning:') && !line.includes('답변의미:')) {
+                response = line.split(':').slice(1).join(':').trim() || '';
             } else if (line.includes('답변의미:') || line.includes('Response Meaning:')) {
-                responseMeaning = line.split(':')[1]?.trim() || '';
-            } else if (line.includes('발음:') || line.includes('Pronunciation:')) {
-                pronunciation = line.split(':')[1]?.trim() || '';
+                responseMeaning = line.split(':').slice(1).join(':').trim() || '';
+            } else if ((line.includes('발음:') || line.includes('Pronunciation:')) && !line.includes('재질문발음:') && !line.includes('Follow-up Pronunciation:')) {
+                pronunciation = line.split(':').slice(1).join(':').trim() || '';
+            } else if (line.includes('재질문:') || line.includes('Follow-up:')) {
+                followUpQuestion = line.split(':').slice(1).join(':').trim() || '';
+            } else if (line.includes('재질문발음:') || line.includes('Follow-up Pronunciation:')) {
+                followUpPronunciation = line.split(':').slice(1).join(':').trim() || '';
+            } else if (line.includes('재질문의미:') || line.includes('Follow-up Meaning:')) {
+                followUpMeaning = line.split(':').slice(1).join(':').trim() || '';
             }
         }
 
         return {
             original: originalMessage,
             originalLanguage: messageLanguage,
-            originalMeaning: originalMeaning,  // 원본 메시지의 의미 (스트리머 언어로)
-            meaning: originalMeaning,  // 하위 호환성
+            originalMeaning: originalMeaning,
+            meaning: originalMeaning,
             response: response,
-            responseMeaning: responseMeaning,  // 답변의 의미 (스트리머 언어로)
+            responseMeaning: responseMeaning,
             pronunciation: pronunciation,
+            followUpQuestion: followUpQuestion,
+            followUpPronunciation: followUpPronunciation,
+            followUpMeaning: followUpMeaning,
             timestamp: Date.now()
         };
     }
