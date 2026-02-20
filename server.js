@@ -1721,11 +1721,23 @@ io.on('connection', (socket) => {
                 // Desktop App TTS 실행 명령
                 const desktopSid = desktopSocketMap.get(userId);
                 if (desktopSid && tiktokData.message) {
+                    const VoiceSettingsModel = require('./models/VoiceSettings');
+                    const voiceSettings = await VoiceSettingsModel.find({ userId });
                     io.to(desktopSid).emit('tts-speak', {
                         text: tiktokData.message,
-                        uniqueId: tiktokData.uniqueId || tiktokData.username
+                        uniqueId: tiktokData.uniqueId || tiktokData.username,
+                        googleTTS: {
+                            enabled: user?.ttsSettings?.useGoogleTTS || false,
+                            apiKey: process.env.GOOGLE_TTS_API_KEY || '',
+                            defaultSpeed: user?.ttsSettings?.defaultSpeed || 1.0,
+                            voiceSettings: voiceSettings.map(v => ({
+                                tiktokUniqueId: v.tiktokUniqueId,
+                                chirpVoice: v.chirpVoice,
+                                speed: v.speed
+                            }))
+                        }
                     });
-                    console.log(`🔊 tts-speak 전송 → ${desktopSid} | "${tiktokData.message}"`);
+                    console.log(`🔊 tts-speak 전송 → ${desktopSid} | "${tiktokData.message}" | googleTTS=${user?.ttsSettings?.useGoogleTTS}`);
                 }
             } catch (err) {
                 console.error('❌ tiktok-data chat 처리 오류:', err);

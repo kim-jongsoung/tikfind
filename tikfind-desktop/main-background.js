@@ -201,11 +201,16 @@ function connectToServer() {
         stopLive();
     });
     
-    // 서버 → Desktop App: TTS 실행 명령 (서버가 TikTok 직접 연결 시)
+    // 서버 → Desktop App: TTS 실행 명령
     socket.on('tts-speak', (data) => {
         if (!data.text) return;
         log.info(`🔊 tts-speak 수신: "${data.text}" | @${data.uniqueId}`);
         const ttsInstance = collector ? collector.tts : standaloneTTS;
+        // 매번 최신 Google TTS 설정 적용
+        if (data.googleTTS) {
+            ttsInstance.updateGoogleTTSSettings(data.googleTTS);
+            log.info(`🔊 Google TTS 설정 갱신: enabled=${data.googleTTS.enabled} | apiKey=${data.googleTTS.apiKey ? '있음' : '없음'}`);
+        }
         ttsInstance.speak(data.text, data.uniqueId);
     });
 
