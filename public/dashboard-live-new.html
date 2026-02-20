@@ -1356,6 +1356,10 @@
 
             currentPlayingSongId = null;
 
+            // 클라이언트 큐에서 현재 곡 제거
+            const playedIndex = currentSongQueue.findIndex(s => s.id === songId);
+            if (playedIndex !== -1) currentSongQueue.splice(playedIndex, 1);
+
             // 다음 곡 자동재생 (부재자 자동패스 포함)
             setTimeout(() => {
                 // 부재자 자동패스: 스트리머 직접 추가 곡 제외
