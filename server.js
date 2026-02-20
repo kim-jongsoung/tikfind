@@ -851,6 +851,15 @@ async function processChatMessage(chatData) {
     const currentUsage = await getUserDailyUsage(userId, user?.timezone || 'UTC');
     const planLimit = await PlanLimit.findOne({ planName: user?.plan || 'free' });
 
+    // 3-5. Desktop App TTS 실행 명령 (서버가 TikTok 직접 연결 시)
+    const desktopSocketId = desktopSocketMap.get(userId);
+    if (desktopSocketId) {
+        io.to(desktopSocketId).emit('tts-speak', {
+            text: message,
+            uniqueId: uniqueId || username
+        });
+    }
+
     // 4. 클라이언트 전송
     io.to(userId).emit('chat-message', {
         username,

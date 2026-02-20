@@ -194,6 +194,14 @@ function connectToServer() {
         stopLive();
     });
     
+    // 서버 → Desktop App: TTS 실행 명령 (서버가 TikTok 직접 연결 시)
+    socket.on('tts-speak', (data) => {
+        if (collector && data.text) {
+            collector.tts.speak(data.text, data.uniqueId);
+            log.info(`🔊 tts-speak 수신: "${data.text}" | @${data.uniqueId}`);
+        }
+    });
+
     // TTS 설정 업데이트 (방송 중 실시간 반영)
     socket.on('tts-settings', (settings) => {
         log.info('🔊 TTS 설정 업데이트');
