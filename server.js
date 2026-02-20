@@ -853,11 +853,15 @@ async function processChatMessage(chatData) {
 
     // 3-5. Desktop App TTS 실행 명령 (서버가 TikTok 직접 연결 시)
     const desktopSocketId = desktopSocketMap.get(userId);
+    console.log(`🔊 TTS-SPEAK 체크: desktopSocketId=${desktopSocketId || '없음'} | userId=${userId} | text="${message}"`);
     if (desktopSocketId) {
         io.to(desktopSocketId).emit('tts-speak', {
             text: message,
             uniqueId: uniqueId || username
         });
+        console.log(`✅ tts-speak 전송 완료 → ${desktopSocketId}`);
+    } else {
+        console.log(`⚠️ Desktop App 미연결 - tts-speak 전송 불가`);
     }
 
     // 4. 클라이언트 전송
