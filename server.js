@@ -1287,6 +1287,76 @@ app.post('/api/song-queue/settings', (req, res) => {
     }
 });
 
+// 나만의 플레이리스트 조회
+app.get('/api/my-playlist/:userId', async (req, res) => {
+    try {
+        const MyPlaylist = require('./models/MyPlaylist');
+        const { userId } = req.params;
+        const { search } = req.query;
+        const query = { userId };
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { artist: { $regex: search, $options: 'i' } }
+            ];
+        }
+        const playlist = await MyPlaylist.find(query).sort({ order: 1, addedAt: -1 });
+        res.json({ success: true, playlist });
+    } catch (error) {
+        console.error('❌ 플레이리스트 조회 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 나만의 플레이리스트 곡 추가
+app.post('/api/my-playlist/add', async (req, res) => {
+    try {
+        const MyPlaylist = require('./models/MyPlaylist');
+        const { userId, title, artist, videoId, thumbnail, youtubeUrl } = req.body;
+        if (!userId || !title) return res.json({ success: false, message: '필수 파라미터 누락' });
+        const count = await MyPlaylist.countDocuments({ userId });
+        const item = await MyPlaylist.create({ userId, title, artist: artist || '', videoId, thumbnail, youtubeUrl, order: count });
+        res.json({ success: true, item });
+    } catch (error) {
+        console.error('❌ 플레이리스트 추가 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 나만의 플레이리스트 곡 삭제
+app.delete('/api/my-playlist/:id', async (req, res) => {
+    try {
+        const MyPlaylist = require('./models/MyPlaylist');
+        await MyPlaylist.findByIdAndDelete(req.params.id);
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ 플레이리스트 삭제 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 플레이리스트에서 신청곡 큐로 추가
+app.post('/api/my-playlist/add-to-queue', async (req, res) => {
+    try {
+        const MyPlaylist = require('./models/MyPlaylist');
+        const User = require('./models/User');
+        const { userId, itemId } = req.body;
+        const item = await MyPlaylist.findById(itemId);
+        if (!item) return res.json({ success: false, message: '곡을 찾을 수 없습니다' });
+        const user = await User.findById(userId);
+        const streamerName = user?.tiktokId || 'Streamer';
+        const result = await songRequestService.addSongRequest(userId,
+            { title: item.title, artist: item.artist },
+            { username: streamerName, uniqueId: streamerName, nickname: streamerName, badges: [], isVIP: false, isStreamer: true, level: 1 }
+        );
+        if (result.success) emitQueueUpdate(userId);
+        res.json(result);
+    } catch (error) {
+        console.error('❌ 플레이리스트→큐 추가 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // 신청곡 히스토리 조회
 app.get('/api/song-history/:userId', async (req, res) => {
     try {
