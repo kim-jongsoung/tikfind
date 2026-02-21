@@ -1625,23 +1625,23 @@
     <script src="/js/timezone-detector.js"></script>
 
 <!-- ===== 마이히스토리 모달 ===== -->
-<div id="myHistoryModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);align-items:center;justify-content:center;">
- <div style="background:#141414;border-radius:14px;width:800px;max-width:96vw;height:82vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,0.9);border:1px solid #2a2a2a;">
+<div id="myHistoryModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.72);align-items:center;justify-content:center;">
+ <div style="background:#1f2128;border-radius:14px;width:920px;max-width:97vw;height:84vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,0.8);border:1px solid #383c47;">
   <!-- 헤더 -->
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #2a2a2a;flex-shrink:0;">
-   <span style="color:white;font-size:15px;font-weight:700;">🎵 마이히스토리</span>
-   <button onclick="closeMyHistoryModal()" style="background:none;border:none;color:#666;font-size:22px;cursor:pointer;">✕</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid #383c47;flex-shrink:0;background:#252830;border-radius:14px 14px 0 0;">
+   <span style="color:#f0f0f0;font-size:15px;font-weight:700;">🎵 마이히스토리</span>
+   <button onclick="closeMyHistoryModal()" style="background:none;border:none;color:#aaa;font-size:22px;cursor:pointer;line-height:1;">✕</button>
   </div>
   <!-- 탭 -->
-  <div style="display:flex;border-bottom:1px solid #2a2a2a;flex-shrink:0;">
+  <div style="display:flex;border-bottom:1px solid #383c47;flex-shrink:0;">
    <button id="mhTab_history" onclick="mhSwitchTab('history')" style="flex:1;padding:11px;font-size:12px;font-weight:600;background:#7c3aed;color:white;border:none;cursor:pointer;">📋 재생 히스토리</button>
-   <button id="mhTab_playlist" onclick="mhSwitchTab('playlist')" style="flex:1;padding:11px;font-size:12px;font-weight:600;background:#1e1e1e;color:#666;border:none;cursor:pointer;border-left:1px solid #2a2a2a;">⭐ 나만의 플레이리스트</button>
-   <button id="mhTab_ai" onclick="mhSwitchTab('ai')" style="flex:1;padding:11px;font-size:12px;font-weight:600;background:#1e1e1e;color:#666;border:none;cursor:pointer;border-left:1px solid #2a2a2a;">🤖 AI 노래 조언</button>
+   <button id="mhTab_playlist" onclick="mhSwitchTab('playlist')" style="flex:1;padding:11px;font-size:12px;font-weight:600;background:#2a2d36;color:#bbb;border:none;cursor:pointer;border-left:1px solid #383c47;">⭐ 나만의 플레이리스트</button>
+   <button id="mhTab_ai" onclick="mhSwitchTab('ai')" style="flex:1;padding:11px;font-size:12px;font-weight:600;background:#2a2d36;color:#bbb;border:none;cursor:pointer;border-left:1px solid #383c47;">🤖 AI 노래 조언</button>
   </div>
   <!-- 히스토리 패널 -->
   <div id="mhPane_history" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
-   <div style="padding:10px 16px;border-bottom:1px solid #1e1e1e;flex-shrink:0;">
-    <input id="mhHistorySearch" type="text" placeholder="곡명 · 가수 · @아이디 · 닉네임 검색..." oninput="mhHistoryDebounce()" style="width:100%;box-sizing:border-box;padding:7px 12px;font-size:11px;background:#0d0d0d;color:white;border:1px solid #333;border-radius:6px;">
+   <div style="padding:10px 16px;border-bottom:1px solid #383c47;flex-shrink:0;background:#252830;">
+    <input id="mhHistorySearch" type="text" placeholder="곡명 · 가수 · @아이디 · 닉네임 검색..." oninput="mhHistoryDebounce()" style="width:100%;box-sizing:border-box;padding:8px 13px;font-size:12px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:6px;">
    </div>
    <div id="mhHistoryList" style="flex:1;overflow-y:auto;"></div>
   </div>
@@ -1649,54 +1649,65 @@
   <div id="mhPane_playlist" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
    <div style="display:flex;flex:1;overflow:hidden;">
     <!-- 폴더 사이드바 -->
-    <div style="width:185px;border-right:1px solid #2a2a2a;display:flex;flex-direction:column;flex-shrink:0;">
-     <div style="padding:8px 10px;border-bottom:1px solid #1e1e1e;display:flex;gap:5px;">
-      <input id="mhNewFolder" type="text" placeholder="새 폴더명..." style="flex:1;padding:5px 7px;font-size:10px;background:#0d0d0d;color:white;border:1px solid #333;border-radius:4px;min-width:0;">
-      <button onclick="mhCreateFolder()" style="padding:5px 8px;font-size:10px;background:#7c3aed;color:white;border:none;border-radius:4px;cursor:pointer;">+</button>
+    <div style="width:190px;border-right:1px solid #383c47;display:flex;flex-direction:column;flex-shrink:0;background:#252830;">
+     <div style="padding:9px 10px;border-bottom:1px solid #383c47;display:flex;gap:5px;">
+      <input id="mhNewFolder" type="text" placeholder="새 폴더명..." style="flex:1;padding:6px 8px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:4px;min-width:0;">
+      <button onclick="mhCreateFolder()" style="padding:6px 10px;font-size:11px;background:#7c3aed;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:700;">+</button>
      </div>
      <div id="mhFolderList" style="flex:1;overflow-y:auto;padding:4px 0;"></div>
     </div>
-    <!-- 곡 목록 -->
+    <!-- 곡 목록 + AI 사이드패널 -->
     <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-     <div style="padding:8px 14px;border-bottom:1px solid #1e1e1e;display:flex;align-items:center;gap:8px;flex-shrink:0;">
-      <span id="mhFolderTitle" style="font-size:12px;font-weight:600;color:#888;flex:1;">← 폴더를 선택하세요</span>
-      <span id="mhFolderCount" style="font-size:10px;color:#555;"></span>
+     <div style="padding:9px 14px;border-bottom:1px solid #383c47;display:flex;align-items:center;gap:8px;flex-shrink:0;background:#252830;">
+      <span id="mhFolderTitle" style="font-size:12px;font-weight:600;color:#ccc;flex:1;">← 폴더를 선택하세요</span>
+      <span id="mhFolderCount" style="font-size:11px;color:#888;"></span>
      </div>
-     <div id="mhFolderAddRow" style="display:none;padding:8px 14px;border-bottom:1px solid #1e1e1e;flex-shrink:0;">
+     <div id="mhFolderAddRow" style="display:none;padding:9px 14px;border-bottom:1px solid #383c47;flex-shrink:0;background:#252830;">
       <div style="display:flex;gap:6px;">
-       <input id="mhPlTitle" type="text" placeholder="노래 제목" style="flex:2;padding:6px 8px;font-size:11px;background:#0d0d0d;color:white;border:1px solid #333;border-radius:4px;min-width:0;">
-       <input id="mhPlArtist" type="text" placeholder="가수명" style="flex:1;padding:6px 8px;font-size:11px;background:#0d0d0d;color:white;border:1px solid #333;border-radius:4px;min-width:0;">
-       <button id="mhPlAddBtn" onclick="mhAddSongToFolder()" style="padding:6px 10px;font-size:11px;background:#7c3aed;color:white;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">+ 저장</button>
+       <input id="mhPlTitle" type="text" placeholder="노래 제목" style="flex:2;padding:7px 9px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:4px;min-width:0;">
+       <input id="mhPlArtist" type="text" placeholder="가수명" style="flex:1;padding:7px 9px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:4px;min-width:0;">
+       <button id="mhPlAddBtn" onclick="mhAddSongToFolder()" style="padding:7px 11px;font-size:11px;background:#7c3aed;color:white;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">+ 저장</button>
+       <button onclick="mhTogglePlAi()" title="AI에게 물어보기" style="padding:7px 10px;font-size:13px;background:#2a2d36;color:#a78bfa;border:1px solid #4a4f5e;border-radius:4px;cursor:pointer;">🤖</button>
+      </div>
+     </div>
+     <!-- AI 인라인 패널 (플레이리스트 탭) -->
+     <div id="mhPlAiPanel" style="display:none;border-bottom:1px solid #383c47;flex-shrink:0;background:#1a1d24;">
+      <div id="mhPlAiChat" style="height:130px;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px;">
+       <div style="font-size:11px;color:#888;line-height:1.6;">🤖 폴더에 담을 노래 기억 안 날 때 물어보세요!<br><span style="color:#555;">예: "비 오는 날 감성 노래 추천해줘"</span></div>
+      </div>
+      <div style="padding:7px 12px;border-top:1px solid #383c47;display:flex;gap:6px;">
+       <input id="mhPlAiInput" type="text" placeholder="AI에게 노래 물어보기... (Enter)" onkeydown="if(event.key==='Enter')mhAskPlAI()" style="flex:1;padding:6px 10px;font-size:11px;background:#252830;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:6px;">
+       <button id="mhPlAiSendBtn" onclick="mhAskPlAI()" style="padding:6px 14px;font-size:11px;background:#7c3aed;color:white;border:none;border-radius:6px;cursor:pointer;">전송</button>
       </div>
      </div>
      <div id="mhPlaylistSongs" style="flex:1;overflow-y:auto;"></div>
     </div>
    </div>
   </div>
-  <!-- AI 조언 패널 -->
+  <!-- AI 조언 패널 (전용 탭) -->
   <div id="mhPane_ai" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
    <div id="mhAiChat" style="flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px;">
-    <div style="background:#1e1e1e;border-radius:10px;padding:12px 14px;font-size:12px;color:#aaa;line-height:1.7;">
+    <div style="background:#2a2d36;border-radius:10px;padding:12px 15px;font-size:12px;color:#ccc;line-height:1.7;">
      🤖 안녕하세요! 노래 추천 AI입니다.<br>
-     <span style="color:#555;font-size:11px;">예시: "오늘 비 오는 날 분위기 좋은 노래 추천해줘" · "신나는 K-POP 5곡 알려줘" · "BTS 노래 중 발라드 추천"</span>
+     <span style="color:#888;font-size:11px;">예시: "오늘 비 오는 날 분위기 좋은 노래 추천해줘" · "신나는 K-POP 5곡 알려줘" · "BTS 노래 중 발라드 추천"</span>
     </div>
    </div>
-   <div style="border-top:1px solid #2a2a2a;padding:10px 16px;flex-shrink:0;">
-    <div style="font-size:10px;color:#555;margin-bottom:6px;">💡 AI 답변 보고 아래에서 제목+가수 입력 → 큐 추가 또는 플레이리스트 저장</div>
+   <div style="border-top:1px solid #383c47;padding:10px 18px;flex-shrink:0;background:#252830;">
+    <div style="font-size:11px;color:#888;margin-bottom:7px;">💡 AI 답변 보고 아래에서 제목+가수 입력 → 큐 추가 또는 플레이리스트 저장</div>
     <div style="display:flex;gap:6px;">
-     <input id="mhAiQueueTitle" type="text" placeholder="노래 제목" style="flex:2;padding:6px 10px;font-size:11px;background:#0d0d0d;color:white;border:1px solid #333;border-radius:6px;min-width:0;">
-     <input id="mhAiQueueArtist" type="text" placeholder="가수명" style="flex:1;padding:6px 10px;font-size:11px;background:#0d0d0d;color:white;border:1px solid #333;border-radius:6px;min-width:0;">
-     <button onclick="mhAiAddToQueue()" style="padding:6px 12px;font-size:11px;background:#2563eb;color:white;border:none;border-radius:6px;cursor:pointer;white-space:nowrap;">+ 큐 추가</button>
-     <button onclick="mhAiSaveToPlaylist()" style="padding:6px 10px;font-size:11px;background:#1e1e1e;color:#f59e0b;border:1px solid #444;border-radius:6px;cursor:pointer;white-space:nowrap;">⭐ 저장</button>
+     <input id="mhAiQueueTitle" type="text" placeholder="노래 제목" style="flex:2;padding:7px 11px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:6px;min-width:0;">
+     <input id="mhAiQueueArtist" type="text" placeholder="가수명" style="flex:1;padding:7px 11px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:6px;min-width:0;">
+     <button onclick="mhAiAddToQueue()" style="padding:7px 13px;font-size:11px;background:#2563eb;color:white;border:none;border-radius:6px;cursor:pointer;white-space:nowrap;">+ 큐 추가</button>
+     <button onclick="mhAiSaveToPlaylist()" style="padding:7px 11px;font-size:11px;background:#2a2d36;color:#f59e0b;border:1px solid #4a4f5e;border-radius:6px;cursor:pointer;white-space:nowrap;">⭐ 저장</button>
     </div>
    </div>
-   <div style="border-top:1px solid #2a2a2a;padding:10px 16px;display:flex;gap:8px;flex-shrink:0;">
-    <input id="mhAiInput" type="text" placeholder="AI에게 노래 추천 물어보기... (Enter로 전송)" onkeydown="if(event.key==='Enter')mhAskAI()" style="flex:1;padding:8px 12px;font-size:12px;background:#0d0d0d;color:white;border:1px solid #333;border-radius:8px;">
-    <button id="mhAiSendBtn" onclick="mhAskAI()" style="padding:8px 18px;font-size:12px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;">전송</button>
+   <div style="border-top:1px solid #383c47;padding:10px 18px;display:flex;gap:8px;flex-shrink:0;background:#252830;">
+    <input id="mhAiInput" type="text" placeholder="AI에게 노래 추천 물어보기... (Enter로 전송)" onkeydown="if(event.key==='Enter')mhAskAI()" style="flex:1;padding:9px 13px;font-size:12px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:8px;">
+    <button id="mhAiSendBtn" onclick="mhAskAI()" style="padding:9px 20px;font-size:12px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;">전송</button>
    </div>
   </div>
   <!-- 하단 -->
-  <div style="padding:7px 18px;border-top:1px solid #1e1e1e;font-size:10px;color:#3a3a3a;text-align:center;flex-shrink:0;">
+  <div style="padding:7px 18px;border-top:1px solid #383c47;font-size:10px;color:#666;text-align:center;flex-shrink:0;background:#252830;border-radius:0 0 14px 14px;">
    큐 추가 버튼으로 신청곡 큐에 바로 추가 · 히스토리 ⭐ 버튼으로 플레이리스트 저장
   </div>
  </div>
@@ -1714,7 +1725,7 @@ function mhSwitchTab(tab){
     mhCurrentTab=tab;
     ['history','playlist','ai'].forEach(t=>{
         const btn=document.getElementById('mhTab_'+t),pane=document.getElementById('mhPane_'+t),active=t===tab;
-        btn.style.background=active?'#7c3aed':'#1e1e1e'; btn.style.color=active?'white':'#666';
+        btn.style.background=active?'#7c3aed':'#2a2d36'; btn.style.color=active?'white':'#bbb';
         pane.style.display=active?'flex':'none';
     });
     if(tab==='history')mhLoadHistory();
@@ -1734,19 +1745,19 @@ async function mhLoadHistory(){
         if(search)url+=`&search=${encodeURIComponent(search)}`;
         const res=await fetch(url); const data=await res.json();
         mhHistoryCache=data.history||[];
-        if(!mhHistoryCache.length){list.innerHTML='<div style="text-align:center;padding:40px;color:#444;font-size:12px;">재생 히스토리가 없습니다</div>';return;}
+        if(!mhHistoryCache.length){list.innerHTML='<div style="text-align:center;padding:40px;color:#888;font-size:13px;">재생 히스토리가 없습니다</div>';return;}
         list.innerHTML=mhHistoryCache.map(song=>{
             const date=song.playedAt?new Date(song.playedAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
-            const req=song.isStreamer?'<span style="color:#7c3aed;">직접선곡</span>':`<span style="color:#60a5fa;">@${escapeHtml(song.requester||'')}${song.requesterNickname?' ('+escapeHtml(song.requesterNickname)+')':''}</span>`;
-            return `<div style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #1e1e1e;">
-                <img src="${song.thumbnail||''}" style="width:44px;height:33px;object-fit:cover;border-radius:4px;flex-shrink:0;background:#222;" onerror="this.style.display='none'">
+            const req=song.isStreamer?'<span style="color:#a78bfa;font-weight:600;">직접선곡</span>':`<span style="color:#60a5fa;">@${escapeHtml(song.requester||'')}${song.requesterNickname?' ('+escapeHtml(song.requesterNickname)+')':''}</span>`;
+            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #2e3240;">
+                <img src="${song.thumbnail||''}" style="width:46px;height:34px;object-fit:cover;border-radius:5px;flex-shrink:0;background:#2a2d36;" onerror="this.style.display='none'">
                 <div style="flex:1;min-width:0;">
-                    <div style="font-size:12px;font-weight:600;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(song.title)}</div>
-                    <div style="font-size:10px;color:#666;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(song.artist)} · ${req} · <span style="color:#444;">${date}</span></div>
+                    <div style="font-size:12px;font-weight:600;color:#f0f0f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(song.title)}</div>
+                    <div style="font-size:11px;color:#9ca3af;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(song.artist)} · ${req} · <span style="color:#6b7280;">${date}</span></div>
                 </div>
-                <div style="display:flex;gap:4px;flex-shrink:0;">
-                    <button onclick="mhHistorySave('${song._id}')" style="padding:4px 8px;font-size:10px;background:#1e1e1e;color:#f59e0b;border:1px solid #333;border-radius:4px;cursor:pointer;">⭐</button>
-                    <button onclick="mhHistoryQueue('${song._id}')" style="padding:4px 8px;font-size:10px;background:#2563eb;color:white;border:none;border-radius:4px;cursor:pointer;">+ 큐</button>
+                <div style="display:flex;gap:5px;flex-shrink:0;">
+                    <button onclick="mhHistorySave('${song._id}')" style="padding:5px 9px;font-size:11px;background:#2a2d36;color:#f59e0b;border:1px solid #4a4f5e;border-radius:5px;cursor:pointer;">⭐</button>
+                    <button onclick="mhHistoryQueue('${song._id}')" style="padding:5px 9px;font-size:11px;background:#2563eb;color:white;border:none;border-radius:5px;cursor:pointer;">+ 큐</button>
                 </div></div>`;
         }).join('');
     }catch(e){list.innerHTML='<div style="text-align:center;padding:30px;color:#ef4444;font-size:12px;">불러오기 실패</div>';}
@@ -1770,15 +1781,15 @@ async function mhLoadFolders(){
     if(!currentUser)return;
     const userId=String(currentUser._id||currentUser.id);
     const list=document.getElementById('mhFolderList');
-    list.innerHTML='<div style="padding:10px;color:#444;font-size:11px;">불러오는 중...</div>';
+    list.innerHTML='<div style="padding:10px;color:#888;font-size:11px;">불러오는 중...</div>';
     try{
         const res=await fetch(`/api/my-playlist-folder/${userId}`); const data=await res.json();
-        if(!data.success||!data.folders.length){list.innerHTML='<div style="padding:12px 10px;color:#444;font-size:11px;text-align:center;">폴더가 없습니다<br>위에서 생성하세요</div>';return;}
+        if(!data.success||!data.folders.length){list.innerHTML='<div style="padding:14px 10px;color:#888;font-size:11px;text-align:center;">폴더가 없습니다<br><span style="color:#666;font-size:10px;">위에서 생성하세요</span></div>';return;}
         list.innerHTML=data.folders.map(f=>`
             <div onclick="mhSelectFolder('${f._id}','${escapeHtml(f.name).replace(/'/g,"\\'")}');" style="display:flex;align-items:center;padding:9px 10px;cursor:pointer;border-bottom:1px solid #1e1e1e;background:${mhSelectedFolderId===f._id?'#2a1a4a':'transparent'};">
                 <span style="font-size:13px;margin-right:6px;">📁</span>
-                <span style="flex:1;font-size:11px;color:${mhSelectedFolderId===f._id?'#c4b5fd':'#aaa'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(f.name)}</span>
-                <button onclick="event.stopPropagation();mhDeleteFolder('${f._id}')" style="background:none;border:none;color:#555;cursor:pointer;font-size:12px;padding:0 2px;">✕</button>
+                <span style="flex:1;font-size:11px;color:${mhSelectedFolderId===f._id?'#c4b5fd':'#d1d5db'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:${mhSelectedFolderId===f._id?'600':'400'}">${escapeHtml(f.name)}</span>
+                <button onclick="event.stopPropagation();mhDeleteFolder('${f._id}')" style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:12px;padding:0 2px;">✕</button>
             </div>`).join('');
     }catch(e){list.innerHTML='<div style="padding:10px;color:#ef4444;font-size:11px;">오류</div>';}
 }
@@ -1808,23 +1819,23 @@ async function mhLoadFolderSongs(){
     if(!currentUser||!mhSelectedFolderId)return;
     const userId=String(currentUser._id||currentUser.id);
     const songs=document.getElementById('mhPlaylistSongs');
-    songs.innerHTML='<div style="text-align:center;padding:20px;color:#444;font-size:12px;">불러오는 중...</div>';
+    songs.innerHTML='<div style="text-align:center;padding:20px;color:#888;font-size:12px;">불러오는 중...</div>';
     try{
         const res=await fetch(`/api/my-playlist/${userId}?folderId=${mhSelectedFolderId}`); const data=await res.json();
         const list=data.playlist||[];
         document.getElementById('mhFolderCount').textContent=`${list.length}/20곡`;
-        if(!list.length){songs.innerHTML='<div style="text-align:center;padding:30px;color:#444;font-size:12px;">곡이 없습니다<br>위에서 추가하세요</div>';return;}
+        if(!list.length){songs.innerHTML='<div style="text-align:center;padding:30px;color:#888;font-size:12px;">곡이 없습니다<br><span style="color:#666;font-size:11px;">위에서 추가하세요</span></div>';return;}
         songs.innerHTML=list.map((item,i)=>`
-            <div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid #1e1e1e;">
-                <span style="font-size:10px;color:#444;width:16px;text-align:right;flex-shrink:0;">${i+1}</span>
-                <img src="${item.thumbnail||''}" style="width:40px;height:30px;object-fit:cover;border-radius:3px;flex-shrink:0;background:#222;" onerror="this.style.display='none'">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid #2e3240;">
+                <span style="font-size:11px;color:#6b7280;width:18px;text-align:right;flex-shrink:0;">${i+1}</span>
+                <img src="${item.thumbnail||''}" style="width:42px;height:31px;object-fit:cover;border-radius:4px;flex-shrink:0;background:#2a2d36;" onerror="this.style.display='none'">
                 <div style="flex:1;min-width:0;">
-                    <div style="font-size:12px;font-weight:600;color:white;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.title)}</div>
-                    <div style="font-size:10px;color:#666;">${escapeHtml(item.artist)}</div>
+                    <div style="font-size:12px;font-weight:600;color:#f0f0f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.title)}</div>
+                    <div style="font-size:11px;color:#9ca3af;">${escapeHtml(item.artist)}</div>
                 </div>
-                <div style="display:flex;gap:4px;flex-shrink:0;">
-                    <button onclick="mhPlaylistQueue('${item._id}')" style="padding:4px 8px;font-size:10px;background:#2563eb;color:white;border:none;border-radius:4px;cursor:pointer;">+ 큐</button>
-                    <button onclick="mhDeleteSong('${item._id}')" style="padding:4px 8px;font-size:10px;background:#1e1e1e;color:#ef4444;border:1px solid #333;border-radius:4px;cursor:pointer;">🗑️</button>
+                <div style="display:flex;gap:5px;flex-shrink:0;">
+                    <button onclick="mhPlaylistQueue('${item._id}')" style="padding:5px 9px;font-size:11px;background:#2563eb;color:white;border:none;border-radius:5px;cursor:pointer;">+ 큐</button>
+                    <button onclick="mhDeleteSong('${item._id}')" style="padding:5px 9px;font-size:11px;background:#2a2d36;color:#ef4444;border:1px solid #4a4f5e;border-radius:5px;cursor:pointer;">🗑️</button>
                 </div></div>`).join('');
     }catch(e){songs.innerHTML='<div style="text-align:center;padding:20px;color:#ef4444;font-size:12px;">오류</div>';}
 }
@@ -1853,9 +1864,8 @@ async function mhPlaylistQueue(itemId){
 async function mhDeleteSong(itemId){
     if(!confirm('이 곡을 삭제할까요?'))return;
     const r=await fetch(`/api/my-playlist/${itemId}`,{method:'DELETE'}); const d=await r.json();
-    if(d.success){mhToast('삭제됐습니다');mhLoadFolderSongs();}else mhToast(d.message||'삭제 실패',true);
+    if(d.success){mhToast('삭제되었습니다');mhLoadFolderSongs();}else mhToast(d.message||'삭제 실패',true);
 }
-
 
 // ── AI 조언 탭 ──────────────────────────────────
 async function mhAskAI(){
@@ -1869,7 +1879,7 @@ async function mhAskAI(){
     input.value=''; chat.scrollTop=chat.scrollHeight;
     sendBtn.disabled=true; sendBtn.textContent='...';
     const loadId='mhLoad_'+Date.now();
-    chat.innerHTML+=`<div id="${loadId}" style="display:flex;align-items:center;gap:8px;padding:8px 0;"><div style="background:#1e1e1e;border-radius:10px;padding:10px 14px;font-size:12px;color:#666;">🤖 생각 중...</div></div>`;
+    chat.innerHTML+=`<div id="${loadId}" style="display:flex;align-items:center;gap:8px;padding:8px 0;"><div style="background:#2a2d36;border-radius:10px;padding:10px 14px;font-size:12px;color:#888;">🤖 생각 중...</div></div>`;
     chat.scrollTop=chat.scrollHeight;
     try{
         const res=await fetch('/api/ai-song-advice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,history:mhAiHistory.slice(-8)})});
@@ -1878,7 +1888,7 @@ async function mhAskAI(){
         if(el)el.remove();
         const answer=data.success?data.answer:(data.message||'오류가 발생했습니다.');
         mhAiHistory.push({role:'assistant',content:answer});
-        chat.innerHTML+=`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;"><div style="background:#1e1e1e;border-radius:2px 10px 10px 10px;padding:10px 14px;font-size:12px;color:#ddd;max-width:85%;line-height:1.7;white-space:pre-wrap;">${escapeHtml(answer)}</div></div>`;
+        chat.innerHTML+=`<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:4px;"><div style="background:#2a2d36;border-radius:2px 10px 10px 10px;padding:11px 14px;font-size:12px;color:#e5e7eb;max-width:85%;line-height:1.75;white-space:pre-wrap;border:1px solid #383c47;">${escapeHtml(answer)}</div></div>`;
         chat.scrollTop=chat.scrollHeight;
     }catch(e){
         const el=document.getElementById(loadId);
