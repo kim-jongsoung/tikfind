@@ -1892,6 +1892,41 @@ async function mhDeleteSong(itemId){
     if(d.success){mhToast('삭제되었습니다');mhLoadFolderSongs();}else mhToast(d.message||'삭제 실패',true);
 }
 
+// ── 플레이리스트 탭 AI 패널 ──────────────────────
+let mhPlAiHistory=[];
+function mhTogglePlAi(){
+    const panel=document.getElementById('mhPlAiPanel');
+    panel.style.display=panel.style.display==='none'?'block':'none';
+    if(panel.style.display==='block')document.getElementById('mhPlAiInput').focus();
+}
+async function mhAskPlAI(){
+    const input=document.getElementById('mhPlAiInput');
+    const question=input.value.trim(); if(!question)return;
+    const chat=document.getElementById('mhPlAiChat');
+    const sendBtn=document.getElementById('mhPlAiSendBtn');
+    chat.innerHTML+=`<div style="display:flex;justify-content:flex-end;margin-bottom:3px;"><div style="background:#7c3aed;color:white;border-radius:8px 8px 2px 8px;padding:6px 10px;font-size:11px;max-width:80%;">${escapeHtml(question)}</div></div>`;
+    mhPlAiHistory.push({role:'user',content:question});
+    input.value=''; chat.scrollTop=chat.scrollHeight;
+    sendBtn.disabled=true; sendBtn.textContent='...';
+    const lid='mhplai_'+Date.now();
+    chat.innerHTML+=`<div id="${lid}" style="font-size:11px;color:#666;padding:4px 0;">🤖 생각 중...</div>`;
+    chat.scrollTop=chat.scrollHeight;
+    try{
+        const res=await fetch('/api/ai-song-advice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question,history:mhPlAiHistory.slice(-6)})});
+        const data=await res.json();
+        const el=document.getElementById(lid); if(el)el.remove();
+        const answer=data.success?data.answer:(data.message||'오류가 발생했습니다.');
+        mhPlAiHistory.push({role:'assistant',content:answer});
+        chat.innerHTML+=`<div style="background:#252830;border-radius:2px 8px 8px 8px;padding:8px 11px;font-size:11px;color:#d1d5db;line-height:1.6;white-space:pre-wrap;margin-bottom:3px;border:1px solid #383c47;">${escapeHtml(answer)}</div>`;
+        chat.scrollTop=chat.scrollHeight;
+    }catch(e){
+        const el=document.getElementById(lid); if(el)el.remove();
+        chat.innerHTML+=`<div style="color:#ef4444;font-size:11px;">오류: 서버 연결 실패</div>`;
+    }finally{
+        sendBtn.disabled=false; sendBtn.textContent='전송';
+    }
+}
+
 // ── AI 조언 탭 ──────────────────────────────────
 async function mhAskAI(){
     const input=document.getElementById('mhAiInput');
