@@ -1431,7 +1431,7 @@ app.get('/api/song-history/:userId', async (req, res) => {
         const { userId } = req.params;
         const { search, date, limit = 100 } = req.query;
 
-        const query = { userId };
+        const query = { userId, isStreamer: { $ne: true } };
         if (date) {
             const start = new Date(date);
             const end = new Date(date);

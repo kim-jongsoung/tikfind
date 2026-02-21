@@ -1634,7 +1634,7 @@
   </div>
   <!-- 탭 -->
   <div style="display:flex;border-bottom:1px solid #383c47;flex-shrink:0;">
-   <button id="mhTab_history" onclick="mhSwitchTab('history')" style="flex:1;padding:11px;font-size:12px;font-weight:600;background:#7c3aed;color:white;border:none;cursor:pointer;">📋 재생 히스토리</button>
+   <button id="mhTab_history" onclick="mhSwitchTab('history')" style="flex:1;padding:11px;font-size:12px;font-weight:600;background:#7c3aed;color:white;border:none;cursor:pointer;">📋 시청자 신청곡 히스토리</button>
    <button id="mhTab_playlist" onclick="mhSwitchTab('playlist')" style="flex:1;padding:11px;font-size:12px;font-weight:600;background:#2a2d36;color:#bbb;border:none;cursor:pointer;border-left:1px solid #383c47;">⭐ 나만의 플레이리스트</button>
    <button id="mhTab_ai" onclick="mhSwitchTab('ai')" style="flex:1;padding:11px;font-size:12px;font-weight:600;background:#2a2d36;color:#bbb;border:none;cursor:pointer;border-left:1px solid #383c47;">🤖 AI 노래 조언</button>
   </div>
@@ -1770,10 +1770,10 @@ async function mhLoadHistory(){
         if(search)url+=`&search=${encodeURIComponent(search)}`;
         const res=await fetch(url); const data=await res.json();
         mhHistoryCache=data.history||[];
-        if(!mhHistoryCache.length){list.innerHTML='<div style="text-align:center;padding:40px;color:#888;font-size:13px;">재생 히스토리가 없습니다</div>';return;}
+        if(!mhHistoryCache.length){list.innerHTML='<div style="text-align:center;padding:40px;color:#888;font-size:13px;">시청자 신청곡 히스토리가 없습니다</div>';return;}
         list.innerHTML=mhHistoryCache.map(song=>{
             const date=song.playedAt?new Date(song.playedAt).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
-            const req=song.isStreamer?'<span style="color:#a78bfa;font-weight:600;">직접선곡</span>':`<span style="color:#60a5fa;">@${escapeHtml(song.requester||'')}${song.requesterNickname?' ('+escapeHtml(song.requesterNickname)+')':''}</span>`;
+            const req=`<span style="color:#60a5fa;">@${escapeHtml(song.requester||'')}${song.requesterNickname?' ('+escapeHtml(song.requesterNickname)+')':''}</span>`;
             return `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid #2e3240;">
                 <img src="${song.thumbnail||''}" style="width:46px;height:34px;object-fit:cover;border-radius:5px;flex-shrink:0;background:#2a2d36;" onerror="this.style.display='none'">
                 <div style="flex:1;min-width:0;">
