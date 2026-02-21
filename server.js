@@ -638,6 +638,34 @@ app.post('/api/ai-assistant', async (req, res) => {
     }
 });
 
+// 노래 추천 AI 조언 API (모달 전용)
+app.post('/api/ai-song-advice', async (req, res) => {
+    try {
+        const { question, history } = req.body;
+        if (!question || !question.trim()) return res.json({ success: false, message: '질문을 입력해주세요.' });
+        const axios = require('axios');
+        const messages = [
+            {
+                role: 'system',
+                content: '당신은 TikTok 라이브 스트리머를 위한 노래 추천 전문 AI입니다. 스트리머가 방송 중 틀 노래를 고를 때 도움을 줍니다. 노래 제목과 가수명을 명확하게 포함해서 추천해주세요. 답변은 간결하게 해주세요. 한국어로 답변해주세요.'
+            }
+        ];
+        if (history && Array.isArray(history)) {
+            history.slice(-8).forEach(msg => messages.push({ role: msg.role, content: msg.content }));
+        }
+        messages.push({ role: 'user', content: question });
+        const response = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            { model: 'gpt-4o-mini', messages, max_tokens: 500, temperature: 0.8 },
+            { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' } }
+        );
+        res.json({ success: true, answer: response.data.choices[0].message.content.trim() });
+    } catch (error) {
+        console.error('❌ AI 노래 추천 오류:', error);
+        res.json({ success: false, message: 'AI 응답 오류가 발생했습니다.' });
+    }
+});
+
 app.post('/api/setup-tiktok', async (req, res) => {
     if (!req.user) {
         return res.status(401).json({ success: false, message: '로그인이 필요합니다.' });
@@ -1287,20 +1315,55 @@ app.post('/api/song-queue/settings', (req, res) => {
     }
 });
 
-// 나만의 플레이리스트 조회
+// ── 플레이리스트 폴더 CRUD ──────────────────────────────────────
+// 폴더 목록 조회
+app.get('/api/my-playlist-folder/:userId', async (req, res) => {
+    try {
+        const MyPlaylistFolder = require('./models/MyPlaylistFolder');
+        const folders = await MyPlaylistFolder.find({ userId: req.params.userId }).sort({ order: 1, createdAt: 1 });
+        res.json({ success: true, folders });
+    } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 폴더 생성
+app.post('/api/my-playlist-folder/create', async (req, res) => {
+    try {
+        const MyPlaylistFolder = require('./models/MyPlaylistFolder');
+        const { userId, name } = req.body;
+        if (!userId || !name) return res.json({ success: false, message: '이름을 입력해주세요' });
+        const count = await MyPlaylistFolder.countDocuments({ userId });
+        const folder = await MyPlaylistFolder.create({ userId, name, order: count });
+        res.json({ success: true, folder });
+    } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// 폴더 삭제 (폴더 내 곡도 함께 삭제)
+app.delete('/api/my-playlist-folder/:id', async (req, res) => {
+    try {
+        const MyPlaylistFolder = require('./models/MyPlaylistFolder');
+        const MyPlaylist = require('./models/MyPlaylist');
+        const folder = await MyPlaylistFolder.findByIdAndDelete(req.params.id);
+        if (folder) await MyPlaylist.deleteMany({ folderId: String(folder._id) });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false, message: e.message }); }
+});
+
+// ── 나만의 플레이리스트 곡 CRUD ─────────────────────────────────
+// 폴더 내 곡 조회
 app.get('/api/my-playlist/:userId', async (req, res) => {
     try {
         const MyPlaylist = require('./models/MyPlaylist');
         const { userId } = req.params;
-        const { search } = req.query;
+        const { folderId, search } = req.query;
         const query = { userId };
+        if (folderId) query.folderId = folderId;
         if (search) {
             query.$or = [
                 { title: { $regex: search, $options: 'i' } },
                 { artist: { $regex: search, $options: 'i' } }
             ];
         }
-        const playlist = await MyPlaylist.find(query).sort({ order: 1, addedAt: -1 });
+        const playlist = await MyPlaylist.find(query).sort({ order: 1, addedAt: 1 });
         res.json({ success: true, playlist });
     } catch (error) {
         console.error('❌ 플레이리스트 조회 오류:', error);
@@ -1308,14 +1371,18 @@ app.get('/api/my-playlist/:userId', async (req, res) => {
     }
 });
 
-// 나만의 플레이리스트 곡 추가
+// 곡 추가 (폴더 지정)
 app.post('/api/my-playlist/add', async (req, res) => {
     try {
         const MyPlaylist = require('./models/MyPlaylist');
-        const { userId, title, artist, videoId, thumbnail, youtubeUrl } = req.body;
+        const { userId, title, artist, videoId, thumbnail, youtubeUrl, folderId, folderName } = req.body;
         if (!userId || !title) return res.json({ success: false, message: '필수 파라미터 누락' });
-        const count = await MyPlaylist.countDocuments({ userId });
-        const item = await MyPlaylist.create({ userId, title, artist: artist || '', videoId, thumbnail, youtubeUrl, order: count });
+        if (folderId) {
+            const count = await MyPlaylist.countDocuments({ userId, folderId });
+            if (count >= 20) return res.json({ success: false, message: '폴더당 최대 20곡까지 저장 가능합니다' });
+        }
+        const count = await MyPlaylist.countDocuments({ userId, folderId: folderId || null });
+        const item = await MyPlaylist.create({ userId, title, artist: artist || '', videoId, thumbnail, youtubeUrl, folderId: folderId || null, folderName: folderName || null, order: count });
         res.json({ success: true, item });
     } catch (error) {
         console.error('❌ 플레이리스트 추가 오류:', error);
@@ -1323,7 +1390,7 @@ app.post('/api/my-playlist/add', async (req, res) => {
     }
 });
 
-// 나만의 플레이리스트 곡 삭제
+// 곡 삭제
 app.delete('/api/my-playlist/:id', async (req, res) => {
     try {
         const MyPlaylist = require('./models/MyPlaylist');
@@ -1335,7 +1402,7 @@ app.delete('/api/my-playlist/:id', async (req, res) => {
     }
 });
 
-// 플레이리스트에서 신청곡 큐로 추가
+// 플레이리스트 → 신청곡 큐 추가
 app.post('/api/my-playlist/add-to-queue', async (req, res) => {
     try {
         const MyPlaylist = require('./models/MyPlaylist');

@@ -7,6 +7,8 @@ const myPlaylistSchema = new mongoose.Schema({
     videoId: { type: String },
     thumbnail: { type: String },
     youtubeUrl: { type: String },
+    folderId: { type: String, default: null, index: true },
+    folderName: { type: String, default: null },
     order: { type: Number, default: 0 },
     addedAt: { type: Date, default: Date.now }
 }, { timestamps: true });
