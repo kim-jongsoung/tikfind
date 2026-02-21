@@ -1236,9 +1236,9 @@ app.post('/api/song-queue/played', async (req, res) => {
         const queue = songRequestService.getQueue(userId);
         const song = queue.find(s => s.id === songId);
         
-        const success = songRequestService.markAsPlayed(userId, songId);
+        const playedSong = songRequestService.markAsPlayed(userId, songId);
         
-        if (success) {
+        if (playedSong) {
             emitQueueUpdate(userId);
             
             // SongHistory DB 저장
@@ -1264,7 +1264,7 @@ app.post('/api/song-queue/played', async (req, res) => {
             }
         }
         
-        res.json({ success });
+        res.json({ success: !!playedSong });
     } catch (error) {
         console.error('❌ 신청곡 재생 완료 처리 오류:', error);
         res.status(500).json({ success: false, message: error.message });

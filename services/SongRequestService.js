@@ -506,14 +506,14 @@ class SongRequestService {
      */
     markAsPlayed(userId, songId) {
         const queue = this.songQueue.get(userId);
-        if (!queue) return false;
+        if (!queue) return null;
 
-        const song = queue.find(s => s.id === songId);
-        if (!song) return false;
+        const index = queue.findIndex(s => s.id === songId);
+        if (index === -1) return null;
 
-        song.played = true;
-        console.log(`✅ 신청곡 재생 완료: ${song.title} - ${song.artist}`);
-        return true;
+        const [song] = queue.splice(index, 1);
+        console.log(`✅ 신청곡 재생 완료 및 큐 제거: ${song.title} - ${song.artist}`);
+        return song;
     }
 
     /**
