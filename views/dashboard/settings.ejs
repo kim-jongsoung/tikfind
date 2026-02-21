@@ -135,7 +135,7 @@
                     </div>
 
                     <!-- 기본 속도 -->
-                    <div class="mb-6">
+                    <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">기본 속도</label>
                         <div class="flex items-center gap-3">
                             <input type="range" id="ttsDefaultSpeed" min="0.5" max="2.0" step="0.1"
@@ -143,6 +143,18 @@
                                 class="flex-1" oninput="document.getElementById('ttsSpeedVal').textContent = parseFloat(this.value).toFixed(1) + 'x'">
                             <span id="ttsSpeedVal" class="text-sm font-medium w-10"><%= (user.ttsSettings && user.ttsSettings.defaultSpeed) ? user.ttsSettings.defaultSpeed.toFixed(1) : '1.0' %>x</span>
                         </div>
+                    </div>
+
+                    <!-- 전체 볼륨 -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">🔊 전체 목소리 크기</label>
+                        <div class="flex items-center gap-3">
+                            <input type="range" id="ttsDefaultVolume" min="0" max="100" step="5"
+                                value="<%= (user.ttsSettings && user.ttsSettings.defaultVolume != null) ? user.ttsSettings.defaultVolume : 80 %>"
+                                class="flex-1" oninput="document.getElementById('ttsVolumeVal').textContent = this.value + '%'">
+                            <span id="ttsVolumeVal" class="text-sm font-medium w-12"><%= (user.ttsSettings && user.ttsSettings.defaultVolume != null) ? user.ttsSettings.defaultVolume : 80 %>%</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">Desktop App TTS 전체 볼륨 (0% ~ 100%, 기본 80%)</p>
                     </div>
 
                     <button onclick="saveTTSSettings()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm mb-6">
@@ -285,10 +297,11 @@
         async function saveTTSSettings() {
             const useGoogleTTS = document.getElementById('useGoogleTTS').checked;
             const defaultSpeed = parseFloat(document.getElementById('ttsDefaultSpeed').value);
+            const defaultVolume = parseInt(document.getElementById('ttsDefaultVolume').value);
             const res = await fetch('/api/tts/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: USER_ID, useGoogleTTS, defaultSpeed })
+                body: JSON.stringify({ userId: USER_ID, useGoogleTTS, defaultSpeed, defaultVolume })
             });
             const data = await res.json();
             alert(data.success ? 'TTS 설정이 저장되었습니다!' : '저장 실패: ' + data.message);

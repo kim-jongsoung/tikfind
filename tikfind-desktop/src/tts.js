@@ -18,6 +18,7 @@ class TTSService {
         this.language = 'ko-KR';
         this.voice = 'female';
         this.speed = 1.0;
+        this.volume = 80;  // 볼륨 0~100, 기본 80
         this.queue = [];
         this.isPlaying = false;
         // Google TTS 설정
@@ -108,11 +109,13 @@ class TTSService {
         const tmpFile = path.join(os.tmpdir(), `tikfind_tts_${Date.now()}.mp3`).replace(/\\/g, '/');
         fs.writeFileSync(tmpFile, buffer);
 
+        const vol = Math.min(Math.max(this.volume / 100, 0), 1).toFixed(2);
         // MP3 실제 재생 완료까지 대기 (NaturalDuration 사용)
         const psCommand = [
             'Add-Type -AssemblyName presentationCore;',
             '$p = New-Object System.Windows.Media.MediaPlayer;',
             `$p.Open([uri]'${tmpFile}');`,
+            `$p.Volume = ${vol};`,
             '$p.Play();',
             'Start-Sleep -Milliseconds 500;',
             '$dur = $p.NaturalDuration.TimeSpan.TotalMilliseconds;',
@@ -142,11 +145,15 @@ class TTSService {
         if (settings.speed) {
             this.speed = settings.speed;
         }
+        if (settings.volume !== undefined) {
+            this.volume = Math.min(Math.max(parseInt(settings.volume) || 80, 0), 100);
+        }
         
         console.log('🔊 TTS 설정 업데이트:', {
             enabled: this.enabled,
             voice: this.voice,
-            speed: this.speed
+            speed: this.speed,
+            volume: this.volume
         });
     }
     
@@ -281,28 +288,27 @@ class TTSService {
             if (process.platform === 'win32') {
                 const { exec } = require('child_process');
                 const rate = Math.round((this.speed - 1) * 10); // -10 ~ 10 범위로 변환
+                const vol = Math.round(this.volume); // 0~100
                 
                 // 언어 자동 감지
                 const detectedLang = this.detectLanguage(text);
                 const voiceName = this.getVoiceForLanguage(detectedLang);
                 
-                console.log(`🌍 감지된 언어: ${detectedLang}, 음성: ${voiceName || '시스템 기본'}`);
+                console.log(`🌍 감지된 언어: ${detectedLang}, 음성: ${voiceName || '시스템 기본'}, 볼륨: ${vol}`);
                 
                 // PowerShell 명령어로 TTS 실행
                 let psCommand;
                 if (voiceName) {
-                    // 특정 음성 선택
-                    psCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.SelectVoice('${voiceName}'); $synth.Rate = ${rate}; $synth.Speak('${text.replace(/'/g, "''")}')`;
+                    psCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.SelectVoice('${voiceName}'); $synth.Rate = ${rate}; $synth.Volume = ${vol}; $synth.Speak('${text.replace(/'/g, "''")}')`;  
                 } else {
-                    // 시스템 기본 음성
-                    psCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Rate = ${rate}; $synth.Speak('${text.replace(/'/g, "''")}')`;
+                    psCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Rate = ${rate}; $synth.Volume = ${vol}; $synth.Speak('${text.replace(/'/g, "''")}')`;  
                 }
                 
                 exec(`powershell -Command "${psCommand}"`, (err) => {
                     if (err) {
                         console.error('TTS 오류:', err);
                         // 오류 발생 시 기본 음성으로 재시도
-                        const fallbackCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Rate = ${rate}; $synth.Speak('${text.replace(/'/g, "''")}')`;
+                        const fallbackCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Rate = ${rate}; $synth.Volume = ${vol}; $synth.Speak('${text.replace(/'/g, "''")}')`;
                         exec(`powershell -Command "${fallbackCommand}"`, (err2) => {
                             if (err2) {
                                 reject(err2);

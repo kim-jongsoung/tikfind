@@ -204,8 +204,12 @@ function connectToServer() {
     // 서버 → Desktop App: TTS 실행 명령
     socket.on('tts-speak', (data) => {
         if (!data.text) return;
-        log.info(`🔊 tts-speak 수신: "${data.text}" | @${data.uniqueId}`);
+        log.info(`🔊 tts-speak 수신: "${data.text}" | @${data.uniqueId} | volume=${data.volume}`);
         const ttsInstance = collector ? collector.tts : standaloneTTS;
+        // 볼륨 실시간 적용
+        if (data.volume !== undefined) {
+            ttsInstance.volume = Math.min(Math.max(parseInt(data.volume) || 80, 0), 100);
+        }
         // 매번 최신 Google TTS 설정 적용
         if (data.googleTTS) {
             ttsInstance.updateGoogleTTSSettings(data.googleTTS);

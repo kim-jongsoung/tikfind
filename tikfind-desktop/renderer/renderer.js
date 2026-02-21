@@ -20,8 +20,8 @@ const chatMessages = document.getElementById('chatMessages');
 
 // TTS 설정 요소
 const ttsEnabled = document.getElementById('ttsEnabled');
-const ttsSpeed = document.getElementById('ttsSpeed');
-const ttsSpeedValue = document.getElementById('ttsSpeedValue');
+const ttsVolume = document.getElementById('ttsVolume');
+const ttsVolumeValue = document.getElementById('ttsVolumeValue');
 
 let isConnected = false;
 
@@ -640,7 +640,7 @@ usernameInput.addEventListener('keypress', (e) => {
 function updateTTSSettings() {
     const settings = {
         enabled: ttsEnabled.checked,
-        speed: parseFloat(ttsSpeed.value)
+        volume: parseInt(ttsVolume.value)
     };
     
     window.tikfind.updateTTSSettings(settings);
@@ -650,12 +650,12 @@ function updateTTSSettings() {
 // TTS 활성화 체크박스
 ttsEnabled.addEventListener('change', updateTTSSettings);
 
-// TTS 속도 슬라이더
-ttsSpeed.addEventListener('input', (e) => {
-    ttsSpeedValue.textContent = parseFloat(e.target.value).toFixed(1);
+// TTS 볼륨 슬라이더
+ttsVolume.addEventListener('input', (e) => {
+    ttsVolumeValue.textContent = e.target.value + '%';
 });
 
-ttsSpeed.addEventListener('change', updateTTSSettings);
+ttsVolume.addEventListener('change', updateTTSSettings);
 
 // TTS 설정 (웹에서 전달받음)
 window.addEventListener('message', (event) => {

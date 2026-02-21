@@ -1652,11 +1652,12 @@ app.get('/debug/tts-settings/:userId', async (req, res) => {
 // Google TTS 활성화 설정 저장
 app.post('/api/tts/settings', async (req, res) => {
     try {
-        const { userId, useGoogleTTS, defaultSpeed } = req.body;
+        const { userId, useGoogleTTS, defaultSpeed, defaultVolume } = req.body;
         const User = require('./models/User');
         await User.findByIdAndUpdate(userId, {
             'ttsSettings.useGoogleTTS': useGoogleTTS,
-            'ttsSettings.defaultSpeed': defaultSpeed || 1.0
+            'ttsSettings.defaultSpeed': defaultSpeed || 1.0,
+            'ttsSettings.defaultVolume': defaultVolume != null ? defaultVolume : 80
         });
         res.json({ success: true });
     } catch (error) {
@@ -1973,6 +1974,7 @@ io.on('connection', (socket) => {
                     io.to(desktopSid).emit('tts-speak', {
                         text: tiktokData.message,
                         uniqueId: tiktokData.uniqueId || tiktokData.username,
+                        volume: user?.ttsSettings?.defaultVolume != null ? user.ttsSettings.defaultVolume : 80,
                         googleTTS: {
                             enabled: user?.ttsSettings?.useGoogleTTS || false,
                             apiKey: process.env.GOOGLE_TTS_API_KEY || '',
