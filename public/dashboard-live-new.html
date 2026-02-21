@@ -966,6 +966,17 @@
             updateSongQueue(data.queue);
         });
 
+        // 신청곡 추가 실패 수신
+        socket.on('song-request-error', (data) => {
+            console.error('❌ 신청곡 추가 실패:', data.message);
+            const button = document.getElementById('streamerAddBtn');
+            if (button) {
+                button.disabled = false;
+                button.textContent = '❌ ' + (data.message || '검색 실패');
+                setTimeout(() => { button.textContent = '🔍 검색 & 추가'; }, 3000);
+            }
+        });
+
         // 현재 신청곡 큐 저장 (재생 시 URL 참조용)
         let currentSongQueue = [];
         let isYoutubePremium = false;

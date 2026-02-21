@@ -825,7 +825,7 @@ async function processChatMessage(chatData) {
                 { upsert: true, new: true }
             );
             const planLimit = await PlanLimit.findOne({ planName: user?.plan || 'free' });
-            const limit = planLimit?.songRequestLimit || 5;
+            const limit = planLimit ? (planLimit.songRequestLimit ?? -1) : -1;
             const currentUsage = usageLog.songRequestCount || 0;
             console.log(`🎵 사용량 체크: ${currentUsage}/${limit}`);
 
@@ -1346,6 +1346,22 @@ app.post('/api/song-history/add-to-queue', async (req, res) => {
         res.json(result);
     } catch (error) {
         console.error('❌ 히스토리→큐 추가 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 호스트 직접 신청: 곡 검색 + 큐 추가
+app.post('/api/song-request/search', async (req, res) => {
+    try {
+        const { userId, title, artist } = req.body;
+        if (!userId || !title) return res.json({ success: false, message: '필수 파라미터 누락' });
+
+        const songData = await songRequestService.searchSong(title, artist || '');
+        if (!songData) return res.json({ success: false, message: '노래를 찾을 수 없습니다' });
+
+        res.json({ success: true, song: songData });
+    } catch (error) {
+        console.error('❌ 곡 검색 오류:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
@@ -2019,16 +2035,33 @@ io.on('connection', (socket) => {
         try {
             const { userId, songData } = data;
             console.log('🎵 스트리머 신청곡 추가 요청:', songData);
-            
+
+            const User = require('./models/User');
+            const user = await User.findById(userId);
+            const streamerName = user?.tiktokId || 'Streamer';
+
+            const requester = {
+                username: streamerName,
+                uniqueId: streamerName,
+                nickname: streamerName,
+                badges: [],
+                isVIP: false,
+                isStreamer: true,
+                level: 1
+            };
+
             const result = await songRequestService.addSongRequest(
-                userId, 
+                userId,
                 { title: songData.title, artist: songData.artist },
-                songData.requester
+                requester
             );
-            
+
             if (result.success) {
                 console.log('✅ 스트리머 신청곡 추가 성공:', result.song.title);
                 emitQueueUpdate(userId);
+            } else {
+                console.log('❌ 스트리머 신청곡 추가 실패:', result.message);
+                socket.emit('song-request-error', { message: result.message });
             }
         } catch (error) {
             console.error('❌ 스트리머 신청곡 추가 오류:', error);
