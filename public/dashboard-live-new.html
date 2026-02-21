@@ -1661,13 +1661,13 @@
      <div style="padding:9px 14px;border-bottom:1px solid #383c47;display:flex;align-items:center;gap:8px;flex-shrink:0;background:#252830;">
       <span id="mhFolderTitle" style="font-size:12px;font-weight:600;color:#ccc;flex:1;">← 폴더를 선택하세요</span>
       <span id="mhFolderCount" style="font-size:11px;color:#888;"></span>
+      <button onclick="mhTogglePlAi()" title="AI에게 노래 물어보기" style="padding:5px 9px;font-size:12px;background:#2a2d36;color:#a78bfa;border:1px solid #4a4f5e;border-radius:4px;cursor:pointer;">🤖 AI</button>
      </div>
      <div id="mhFolderAddRow" style="display:none;padding:9px 14px;border-bottom:1px solid #383c47;flex-shrink:0;background:#252830;">
       <div style="display:flex;gap:6px;">
        <input id="mhPlTitle" type="text" placeholder="노래 제목" style="flex:2;padding:7px 9px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:4px;min-width:0;">
        <input id="mhPlArtist" type="text" placeholder="가수명" style="flex:1;padding:7px 9px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:4px;min-width:0;">
        <button id="mhPlAddBtn" onclick="mhAddSongToFolder()" style="padding:7px 11px;font-size:11px;background:#7c3aed;color:white;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">+ 저장</button>
-       <button onclick="mhTogglePlAi()" title="AI에게 물어보기" style="padding:7px 10px;font-size:13px;background:#2a2d36;color:#a78bfa;border:1px solid #4a4f5e;border-radius:4px;cursor:pointer;">🤖</button>
       </div>
      </div>
      <!-- AI 인라인 패널 (플레이리스트 탭) -->
@@ -1694,11 +1694,14 @@
    </div>
    <div style="border-top:1px solid #383c47;padding:10px 18px;flex-shrink:0;background:#252830;">
     <div style="font-size:11px;color:#888;margin-bottom:7px;">💡 AI 답변 보고 아래에서 제목+가수 입력 → 큐 추가 또는 플레이리스트 저장</div>
-    <div style="display:flex;gap:6px;">
+    <div style="display:flex;gap:6px;margin-bottom:6px;">
      <input id="mhAiQueueTitle" type="text" placeholder="노래 제목" style="flex:2;padding:7px 11px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:6px;min-width:0;">
      <input id="mhAiQueueArtist" type="text" placeholder="가수명" style="flex:1;padding:7px 11px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:6px;min-width:0;">
      <button onclick="mhAiAddToQueue()" style="padding:7px 13px;font-size:11px;background:#2563eb;color:white;border:none;border-radius:6px;cursor:pointer;white-space:nowrap;">+ 큐 추가</button>
-     <button onclick="mhAiSaveToPlaylist()" style="padding:7px 11px;font-size:11px;background:#2a2d36;color:#f59e0b;border:1px solid #4a4f5e;border-radius:6px;cursor:pointer;white-space:nowrap;">⭐ 저장</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+     <select id="mhAiFolderSelect" style="flex:1;padding:7px 9px;font-size:11px;background:#1a1d24;color:#f0f0f0;border:1px solid #4a4f5e;border-radius:6px;min-width:0;"><option value="">📁 폴더 선택...</option></select>
+     <button onclick="mhAiSaveToPlaylist()" style="padding:7px 14px;font-size:11px;background:#f59e0b;color:#1a1a1a;border:none;border-radius:6px;cursor:pointer;white-space:nowrap;font-weight:700;">⭐ 플레이리스트 저장</button>
     </div>
    </div>
    <div style="border-top:1px solid #383c47;padding:10px 18px;display:flex;gap:8px;flex-shrink:0;background:#252830;">
@@ -1730,6 +1733,28 @@ function mhSwitchTab(tab){
     });
     if(tab==='history')mhLoadHistory();
     if(tab==='playlist')mhLoadFolders();
+    if(tab==='ai')mhLoadAiFolderSelect();
+}
+
+async function mhLoadAiFolderSelect(){
+    if(!currentUser)return;
+    const userId=String(currentUser._id||currentUser.id);
+    const sel=document.getElementById('mhAiFolderSelect');
+    if(!sel)return;
+    try{
+        const res=await fetch(`/api/my-playlist-folder/${userId}`);
+        const data=await res.json();
+        const prev=sel.value;
+        sel.innerHTML='<option value="">📁 폴더 선택...</option>';
+        if(data.success&&data.folders.length){
+            data.folders.forEach(f=>{
+                const opt=document.createElement('option');
+                opt.value=f._id; opt.textContent='📁 '+f.name;
+                sel.appendChild(opt);
+            });
+            if(prev)sel.value=prev;
+        }
+    }catch(e){}
 }
 
 function mhHistoryDebounce(){clearTimeout(mhHistoryTimer);mhHistoryTimer=setTimeout(mhLoadHistory,300);}
@@ -1922,10 +1947,13 @@ async function mhAiSaveToPlaylist(){
     const title=document.getElementById('mhAiQueueTitle').value.trim();
     const artist=document.getElementById('mhAiQueueArtist').value.trim();
     if(!title){mhToast('제목을 입력해주세요',true);return;}
+    const sel=document.getElementById('mhAiFolderSelect');
+    const folderId=sel.value; const folderName=sel.options[sel.selectedIndex]?.text.replace('📁 ','');
+    if(!folderId){mhToast('저장할 폴더를 선택해주세요',true);return;}
     const sr=await fetch('/api/song-request/search',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,title,artist})});
     const sd=await sr.json();
     const info=sd.success?sd.song:{};
-    const r=await fetch('/api/my-playlist/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,title:info.title||title,artist:info.artist||info.channelTitle||artist,videoId:info.videoId,thumbnail:info.thumbnail,youtubeUrl:info.url})});
+    const r=await fetch('/api/my-playlist/add',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId,title:info.title||title,artist:info.artist||info.channelTitle||artist,videoId:info.videoId,thumbnail:info.thumbnail,youtubeUrl:info.url,folderId,folderName})});
     const d=await r.json();
     mhToast(d.success?'플레이리스트에 저장됐습니다 ⭐':(d.message||'저장 실패'),!d.success);
     if(d.success){document.getElementById('mhAiQueueTitle').value='';document.getElementById('mhAiQueueArtist').value='';}
