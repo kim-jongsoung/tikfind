@@ -133,6 +133,61 @@ router.get('/stats', logAdminAction('stats_view'), async (req, res) => {
     }
 });
 
+// ==================== CHART DATA ====================
+
+// Get daily user growth & revenue for last 30 days
+router.get('/chart-data', async (req, res) => {
+    try {
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+        // Daily new users (last 30 days)
+        const userGrowthRaw = await User.aggregate([
+            { $match: { createdAt: { $gte: thirtyDaysAgo }, deletedAt: null } },
+            { $group: {
+                _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+                count: { $sum: 1 }
+            }},
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Daily revenue (last 30 days)
+        const revenueRaw = await Payment.aggregate([
+            { $match: { status: 'succeeded', paidAt: { $gte: thirtyDaysAgo } } },
+            { $group: {
+                _id: { $dateToString: { format: '%Y-%m-%d', date: '$paidAt' } },
+                total: { $sum: '$amount' }
+            }},
+            { $sort: { _id: 1 } }
+        ]);
+
+        // Build full 30-day date array
+        const labels = [];
+        const userMap = {};
+        const revenueMap = {};
+
+        for (let i = 29; i >= 0; i--) {
+            const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+            const key = d.toISOString().slice(0, 10);
+            labels.push(key.slice(5)); // MM-DD
+            userMap[key] = 0;
+            revenueMap[key] = 0;
+        }
+
+        userGrowthRaw.forEach(r => { if (userMap[r._id] !== undefined) userMap[r._id] = r.count; });
+        revenueRaw.forEach(r => { if (revenueMap[r._id] !== undefined) revenueMap[r._id] = r.total; });
+
+        const fullKeys = Object.keys(userMap);
+        const userCounts = fullKeys.map(k => userMap[k]);
+        const revenueTotals = fullKeys.map(k => parseFloat(revenueMap[k].toFixed(2)));
+
+        res.json({ success: true, labels, userCounts, revenueTotals });
+    } catch (error) {
+        console.error('Error fetching chart data:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch chart data' });
+    }
+});
+
 // ==================== USER MANAGEMENT ====================
 
 // Get users list with pagination, search, and filters
