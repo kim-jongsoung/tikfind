@@ -109,14 +109,15 @@
                             </div>
                             
                             <!-- 방송 중 VIP 목소리 변경 -->
-                            <div id="vipVoicePanel" style="margin-top: 6px; padding: 6px 8px; background: #0d1a0d; border: 1px solid #1a3a1a; border-radius: 4px; display: none;">
-                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                            <div id="vipVoicePanel" style="margin-top: 6px; padding: 6px 8px; background: #0d1a0d; border: 1px solid #1a3a1a; border-radius: 4px;">
+                                <div style="margin-bottom: 4px;">
                                     <span style="font-size: 10px; color: #4ade80; font-weight: bold;">🎙️ VIP 목소리 (방송 중 변경)</span>
-                                    <button onclick="toggleVipPanel()" style="font-size: 9px; color: #666; background: none; border: none; cursor: pointer;">닫기</button>
                                 </div>
                                 <div style="display: flex; gap: 4px; align-items: center;">
-                                    <input type="text" id="liveVipId" placeholder="TikTok 아이디" style="flex: 1; padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
-                                    <select id="liveVipVoice" style="padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                    <select id="liveVipNickname" onchange="onLiveVipNicknameChange()" style="flex: 1; padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
+                                        <option value="">닉네임 선택...</option>
+                                    </select>
+                                    <select id="liveVipVoice" style="flex: 1; padding: 3px 6px; font-size: 10px; background: #1a1a1a; color: white; border: 1px solid #333; border-radius: 4px;">
                                         <option value="">목소리</option>
                                     </select>
                                     <button onclick="previewLiveVoice()" style="padding: 3px 6px; font-size: 10px; background: #1a3a1a; color: #4ade80; border: 1px solid #1a3a1a; border-radius: 4px; cursor: pointer;">▶</button>
@@ -124,9 +125,6 @@
                                     <button onclick="applyLiveVipVoice()" style="padding: 3px 8px; font-size: 10px; background: #4ade80; color: #000; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">적용</button>
                                 </div>
                             </div>
-                            <button onclick="toggleVipPanel()" style="width: 100%; margin-top: 4px; padding: 4px; font-size: 9px; background: #0d1a0d; color: #4ade80; border: 1px solid #1a3a1a; border-radius: 4px; cursor: pointer;">
-                                🎙️ VIP 목소리 변경
-                            </button>
 
                             <!-- 시청자 신청곡 안내 -->
                             <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 4px; margin-top: 8px;">
@@ -348,6 +346,9 @@
                     
                     // 신청곡 큐 복원
                     loadSongQueue(userId);
+                    
+                    // VIP 닉네임 드롭다운 로드
+                    loadLiveVipNicknames();
                 } else {
                     window.location.href = '/';
                 }
@@ -892,24 +893,55 @@
             console.log('🔊 TTS 설정 전송:', settings);
         }
 
-        // VIP 목소리 패널 토글
-        function toggleVipPanel() {
-            const panel = document.getElementById('vipVoicePanel');
-            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-        }
-
-        // VIP 목소리 목록 로드 (방송 대시보드용)
+        // VIP 목소리 목록 로드 (방송 대시보드용) - (남)/(여) 표시
         async function loadLiveVoiceList() {
             const res = await fetch('/api/tts/voices');
             const data = await res.json();
             if (data.success) {
                 const sel = document.getElementById('liveVipVoice');
+                sel.innerHTML = '<option value="">목소리</option>';
                 data.voices.forEach(v => {
                     const opt = document.createElement('option');
-                    opt.value = v; opt.textContent = v;
+                    const genderLabel = v.gender === 'F' ? '(여)' : '(남)';
+                    opt.value = v.name;
+                    opt.textContent = `${v.name} ${genderLabel}`;
                     sel.appendChild(opt);
                 });
             }
+        }
+
+        // VIP 닉네임 드롭다운 로드
+        async function loadLiveVipNicknames() {
+            if (!currentUser) return;
+            const userId = String(currentUser._id || currentUser.id);
+            try {
+                const res = await fetch(`/api/tts/voice-settings/${userId}`);
+                const data = await res.json();
+                const sel = document.getElementById('liveVipNickname');
+                sel.innerHTML = '<option value="">닉네임 선택...</option>';
+                if (data.success && data.settings && data.settings.length) {
+                    data.settings.forEach(s => {
+                        const opt = document.createElement('option');
+                        opt.value = s.tiktokUniqueId;
+                        opt.dataset.voice = s.chirpVoice;
+                        opt.dataset.speed = s.speed;
+                        const label = s.nickname ? `${s.nickname} (@${s.tiktokUniqueId})` : `@${s.tiktokUniqueId}`;
+                        opt.textContent = label;
+                        sel.appendChild(opt);
+                    });
+                }
+            } catch(e) { console.error('VIP 닉네임 로드 오류:', e); }
+        }
+
+        // 닉네임 선택 시 기존 목소리/속도 자동 선택
+        function onLiveVipNicknameChange() {
+            const sel = document.getElementById('liveVipNickname');
+            const opt = sel.options[sel.selectedIndex];
+            if (!opt || !opt.value) return;
+            const voice = opt.dataset.voice;
+            const speed = opt.dataset.speed;
+            if (voice) document.getElementById('liveVipVoice').value = voice;
+            if (speed) document.getElementById('liveVipSpeed').value = speed;
         }
 
         // 방송 중 목소리 미리 듣기
@@ -927,10 +959,11 @@
         // 방송 중 VIP 목소리 적용 → DB 저장 + Desktop App 즉시 전달
         async function applyLiveVipVoice() {
             if (!currentUser) return;
-            const tiktokUniqueId = document.getElementById('liveVipId').value.trim().replace('@', '');
+            const nickSel = document.getElementById('liveVipNickname');
+            const tiktokUniqueId = nickSel.value;
             const chirpVoice = document.getElementById('liveVipVoice').value;
             const speed = parseFloat(document.getElementById('liveVipSpeed').value) || 1.0;
-            if (!tiktokUniqueId || !chirpVoice) { alert('아이디와 목소리를 입력하세요.'); return; }
+            if (!tiktokUniqueId || !chirpVoice) { alert('닉네임과 목소리를 선택하세요.'); return; }
 
             // DB 저장
             const res = await fetch('/api/tts/voice-settings', {
@@ -941,13 +974,18 @@
             const data = await res.json();
             if (!data.success) { alert('저장 실패: ' + data.message); return; }
 
+            // 드롭다운 dataset 업데이트 (다음 선택 시 반영)
+            const selOpt = nickSel.options[nickSel.selectedIndex];
+            if (selOpt) { selOpt.dataset.voice = chirpVoice; selOpt.dataset.speed = speed; }
+
             // Desktop App으로 즉시 전달 (tts-settings 소켓으로 최신 VIP 설정 전송)
             sendTTSSettings();
-            alert(`@${tiktokUniqueId} → ${chirpVoice} 적용 완료!`);
-            document.getElementById('liveVipId').value = '';
+            const nickLabel = selOpt ? selOpt.textContent : tiktokUniqueId;
+            alert(`${nickLabel} → ${chirpVoice} 적용 완료!`);
         }
 
         loadLiveVoiceList();
+        loadLiveVipNicknames();
 
         // 신청곡 큐 로드
         async function loadSongQueue(userId) {
