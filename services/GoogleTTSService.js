@@ -13,6 +13,29 @@ const CHIRP3_HD_VOICES = [
     'Sulafat', 'Umbriel', 'Vindemiatrix', 'Zephyr', 'Zubenelgenubi'
 ];
 
+const CHIRP3_HD_GENDER = {
+    'Achernar':      'F',
+    'Aoede':         'F',
+    'Autonoe':       'F',
+    'Callirrhoe':    'F',
+    'Despina':       'F',
+    'Enceladus':     'M',
+    'Erinome':       'F',
+    'Fenrir':        'M',
+    'Gacrux':        'M',
+    'Iocaste':       'F',
+    'Laomedeia':     'F',
+    'Leda':          'F',
+    'Orus':          'M',
+    'Pulcherrima':   'F',
+    'Schedar':       'M',
+    'Sulafat':       'M',
+    'Umbriel':       'M',
+    'Vindemiatrix':  'F',
+    'Zephyr':        'M',
+    'Zubenelgenubi': 'M'
+};
+
 const WAVENET_VOICES = [
     'ko-KR-Wavenet-A', // 여성
     'ko-KR-Wavenet-B', // 여성
@@ -96,7 +119,10 @@ class GoogleTTSService {
     }
 
     getChirp3Voices() {
-        return CHIRP3_HD_VOICES;
+        return CHIRP3_HD_VOICES.map(name => ({
+            name,
+            gender: CHIRP3_HD_GENDER[name] || 'M'
+        }));
     }
 }
 

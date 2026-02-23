@@ -1607,13 +1607,13 @@ app.get('/api/tts/voice-settings/:userId', async (req, res) => {
 // VIP 목소리 설정 저장/수정
 app.post('/api/tts/voice-settings', async (req, res) => {
     try {
-        const { userId, tiktokUniqueId, chirpVoice, speed, memo } = req.body;
+        const { userId, tiktokUniqueId, nickname, chirpVoice, speed, memo } = req.body;
         if (!userId || !tiktokUniqueId || !chirpVoice) {
             return res.status(400).json({ success: false, message: 'userId, tiktokUniqueId, chirpVoice 필수' });
         }
         const setting = await VoiceSettings.findOneAndUpdate(
             { userId, tiktokUniqueId },
-            { chirpVoice, speed: speed || 1.0, memo: memo || '' },
+            { nickname: nickname || '', chirpVoice, speed: speed || 1.0, memo: memo || '' },
             { upsert: true, new: true }
         );
         res.json({ success: true, setting });

@@ -16,6 +16,12 @@ const voiceSettingsSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
+    nickname: {
+        type: String,
+        default: '',
+        trim: true,
+        maxlength: 50
+    },
     chirpVoice: {
         type: String,
         required: true,

@@ -171,9 +171,12 @@
                     <p class="text-xs text-gray-500 mb-4">지정된 아이디는 고품질 Chirp 3 HD 목소리로 읽힙니다. 나머지는 WaveNet 자동 배정.</p>
 
                     <!-- 추가 폼 -->
-                    <div class="flex gap-2 mb-4">
+                    <div class="flex gap-2 mb-2">
                         <input type="text" id="vipUniqueId" placeholder="TikTok 아이디 (예: user123)" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500">
-                        <select id="vipChirpVoice" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500">
+                        <input type="text" id="vipNickname" placeholder="닉네임 (예: 단골손님)" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500">
+                    </div>
+                    <div class="flex gap-2 mb-4">
+                        <select id="vipChirpVoice" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500">
                             <option value="">목소리 선택</option>
                         </select>
                         <button onclick="previewVoice()" title="미리 듣기" class="px-3 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition text-sm">
@@ -254,7 +257,9 @@
                 const sel = document.getElementById('vipChirpVoice');
                 data.voices.forEach(v => {
                     const opt = document.createElement('option');
-                    opt.value = v; opt.textContent = v;
+                    const genderLabel = v.gender === 'F' ? '(여)' : '(남)';
+                    opt.value = v.name;
+                    opt.textContent = `${v.name} ${genderLabel}`;
                     sel.appendChild(opt);
                 });
             }
@@ -275,11 +280,11 @@
                         <div class="flex items-center gap-3">
                             <i class="fas fa-user-circle text-indigo-400"></i>
                             <div>
-                                <p class="font-medium text-sm text-gray-800">@${s.tiktokUniqueId}</p>
+                                <p class="font-medium text-sm text-gray-800">@${s.tiktokUniqueId}${s.nickname ? ` <span class="text-indigo-500 font-normal">(${s.nickname})</span>` : ''}</p>
                                 <p class="text-xs text-gray-500">${s.chirpVoice} · ${s.speed}x 속도</p>
                             </div>
-                        </div>
-                        <div class="flex gap-1">
+                        </div>`;
+                    item.innerHTML += `<div class="flex gap-1">
                             <button onclick="previewVoice('${s.chirpVoice}', ${s.speed})" class="text-green-500 hover:text-green-700 text-sm px-2 py-1" title="미리 듣기">
                                 <i class="fas fa-play"></i>
                             </button>
@@ -309,17 +314,19 @@
 
         async function addVoiceSetting() {
             const tiktokUniqueId = document.getElementById('vipUniqueId').value.trim().replace('@', '');
+            const nickname = document.getElementById('vipNickname').value.trim();
             const chirpVoice = document.getElementById('vipChirpVoice').value;
             const speed = parseFloat(document.getElementById('vipSpeed').value) || 1.0;
             if (!tiktokUniqueId || !chirpVoice) { alert('아이디와 목소리를 모두 입력하세요.'); return; }
             const res = await fetch('/api/tts/voice-settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userId: USER_ID, tiktokUniqueId, chirpVoice, speed })
+                body: JSON.stringify({ userId: USER_ID, tiktokUniqueId, nickname, chirpVoice, speed })
             });
             const data = await res.json();
             if (data.success) {
                 document.getElementById('vipUniqueId').value = '';
+                document.getElementById('vipNickname').value = '';
                 document.getElementById('vipChirpVoice').value = '';
                 document.getElementById('vipSpeed').value = '1.0';
                 await loadVoiceSettings();
