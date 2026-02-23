@@ -1,13 +1,84 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management - TikFind Admin</title>
+    <title>유저 관리 - TikFind Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .expiring-soon { background-color: #fef9c3 !important; }
+        .expired-row   { background-color: #fee2e2 !important; }
+        .active-row    { background-color: #f0fdf4 !important; }
+        .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:50;display:flex;align-items:center;justify-content:center; }
+    </style>
 </head>
 <body class="bg-gray-100">
+
+<!-- 구독 연장 모달 -->
+<div id="extendModal" class="modal-overlay hidden">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold">💳 구독 연장 / 결제 기록</h2>
+      <button onclick="closeExtendModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+    </div>
+    <div class="mb-3 p-3 bg-blue-50 rounded-lg">
+      <p class="text-sm font-semibold text-blue-800" id="extendUserName"></p>
+      <p class="text-xs text-blue-600 mt-1">현재 만료일: <span id="extendCurrentExpiry" class="font-bold"></span></p>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">연장 개월 수</label>
+        <select id="extendMonths" class="w-full px-3 py-2 border rounded-lg text-sm">
+          <option value="1">1개월</option><option value="2">2개월</option>
+          <option value="3">3개월</option><option value="6">6개월</option><option value="12">12개월</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">입금액 (원)</label>
+        <input type="number" id="extendAmount" placeholder="예: 9900" class="w-full px-3 py-2 border rounded-lg text-sm">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">메모 (입금자명 등)</label>
+        <input type="text" id="extendMemo" placeholder="예: 홍길동 입금 확인" class="w-full px-3 py-2 border rounded-lg text-sm">
+      </div>
+    </div>
+    <div class="flex gap-3 mt-5">
+      <button onclick="submitExtend()" class="flex-1 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 text-sm">✅ 연장 확정</button>
+      <button onclick="closeExtendModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- 결제 기록 모달 -->
+<div id="payHistModal" class="modal-overlay hidden">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold">📋 결제 기록</h2>
+      <button onclick="closePayHistModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+    </div>
+    <p class="text-sm text-gray-500 mb-3" id="payHistUserName"></p>
+    <div id="payHistList" class="space-y-2 max-h-80 overflow-y-auto"></div>
+    <button onclick="closePayHistModal()" class="mt-4 w-full py-2 bg-gray-200 text-gray-700 rounded-lg text-sm">닫기</button>
+  </div>
+</div>
+
+<!-- 메모 모달 -->
+<div id="memoModal" class="modal-overlay hidden">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold">📝 관리자 메모</h2>
+      <button onclick="closeMemoModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+    </div>
+    <p class="text-sm text-gray-500 mb-3" id="memoUserName"></p>
+    <textarea id="memoText" rows="5" class="w-full px-3 py-2 border rounded-lg text-sm resize-none" placeholder="관리자 메모..."></textarea>
+    <div class="flex gap-3 mt-4">
+      <button onclick="submitMemo()" class="flex-1 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm">저장</button>
+      <button onclick="closeMemoModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm">취소</button>
+    </div>
+  </div>
+</div>
+
     <header class="bg-slate-900 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -16,94 +87,94 @@
             </div>
             <div class="flex items-center space-x-4">
                 <span id="admin-email" class="text-sm"></span>
-                <a href="/dashboard" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
-                    <i class="fas fa-home mr-2"></i>User Dashboard
-                </a>
-                <a href="/auth/logout" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
-                </a>
+                <a href="/admin/dashboard" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm"><i class="fas fa-chart-line mr-1"></i>대시보드</a>
+                <a href="/auth/logout" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm"><i class="fas fa-sign-out-alt mr-1"></i>로그아웃</a>
             </div>
         </div>
     </header>
-
     <nav class="bg-white shadow-md">
         <div class="container mx-auto px-4">
-            <ul class="flex space-x-8 py-4">
-                <li><a href="/admin/dashboard" class="text-gray-600 hover:text-blue-600"><i class="fas fa-chart-line mr-2"></i>Dashboard</a></li>
-                <li><a href="/admin/users" class="text-blue-600 font-semibold border-b-2 border-blue-600 pb-2"><i class="fas fa-users mr-2"></i>Users</a></li>
-                <li><a href="/admin/subscriptions" class="text-gray-600 hover:text-blue-600"><i class="fas fa-credit-card mr-2"></i>Subscriptions</a></li>
-                <li><a href="/admin/payments" class="text-gray-600 hover:text-blue-600"><i class="fas fa-dollar-sign mr-2"></i>Payments</a></li>
-                <li><a href="/admin/logs" class="text-gray-600 hover:text-blue-600"><i class="fas fa-history mr-2"></i>Logs</a></li>
+            <ul class="flex space-x-8 py-4 text-sm">
+                <li><a href="/admin/dashboard" class="text-gray-600 hover:text-blue-600"><i class="fas fa-chart-line mr-1"></i>Dashboard</a></li>
+                <li><a href="/admin/users" class="text-blue-600 font-semibold border-b-2 border-blue-600 pb-2"><i class="fas fa-users mr-1"></i>Users</a></li>
+                <li><a href="/admin/subscriptions" class="text-gray-600 hover:text-blue-600"><i class="fas fa-credit-card mr-1"></i>Subscriptions</a></li>
+                <li><a href="/admin/payments" class="text-gray-600 hover:text-blue-600"><i class="fas fa-dollar-sign mr-1"></i>Payments</a></li>
+                <li><a href="/admin/logs" class="text-gray-600 hover:text-blue-600"><i class="fas fa-history mr-1"></i>Logs</a></li>
+                <li><a href="/admin/plan-limits" class="text-gray-600 hover:text-blue-600"><i class="fas fa-sliders-h mr-1"></i>Plan Limits</a></li>
             </ul>
         </div>
     </nav>
 
-    <main class="container mx-auto px-4 py-8">
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <main class="container mx-auto px-4 py-6">
+        <!-- 요약 카드 -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+            <div class="bg-white rounded-lg shadow p-4 text-center"><p class="text-xs text-gray-500">전체 유저</p><p class="text-2xl font-bold text-gray-800" id="stat-total">-</p></div>
+            <div class="bg-white rounded-lg shadow p-4 text-center"><p class="text-xs text-gray-500">활성 구독</p><p class="text-2xl font-bold text-green-600" id="stat-active">-</p></div>
+            <div class="bg-white rounded-lg shadow p-4 text-center"><p class="text-xs text-gray-500">만료 임박 (7일)</p><p class="text-2xl font-bold text-yellow-600" id="stat-expiring">-</p></div>
+            <div class="bg-white rounded-lg shadow p-4 text-center"><p class="text-xs text-gray-500">만료됨</p><p class="text-2xl font-bold text-red-600" id="stat-expired">-</p></div>
+        </div>
+
+        <!-- 필터 -->
+        <div class="bg-white rounded-lg shadow-md p-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-                    <input type="text" id="search-input" placeholder="Email, TikTok ID, or Nickname" 
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="search-input" placeholder="이메일 / TikTok ID / 닉네임"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                           onkeydown="if(event.key==='Enter') applyFilters()">
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Plan</label>
-                    <select id="plan-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                        <option value="">All Plans</option>
-                        <option value="free">Free</option>
-                        <option value="pro">Pro</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select id="status-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg">
-                        <option value="">All Status</option>
-                        <option value="trial">Trial</option>
-                        <option value="active">Active</option>
-                        <option value="cancelled">Cancelled</option>
-                        <option value="expired">Expired</option>
-                    </select>
+                <select id="plan-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <option value="">전체 플랜</option><option value="free">Free</option><option value="pro">Pro</option>
+                </select>
+                <select id="status-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <option value="">전체 상태</option><option value="trial">Trial</option><option value="active">Active</option>
+                    <option value="cancelled">Cancelled</option><option value="expired">Expired</option><option value="past_due">Past Due</option>
+                </select>
+                <div class="flex gap-2">
+                    <button onclick="applyFilters()" class="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"><i class="fas fa-search mr-1"></i>검색</button>
+                    <button onclick="resetFilters()" class="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300"><i class="fas fa-redo"></i></button>
                 </div>
             </div>
-            <div class="flex justify-between items-center mt-4">
-                <button onclick="applyFilters()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    <i class="fas fa-search mr-2"></i>Search
-                </button>
-                <button onclick="resetFilters()" class="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
-                    <i class="fas fa-redo mr-2"></i>Reset
-                </button>
-                <a href="/admin/api/export/users" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
-                    <i class="fas fa-download mr-2"></i>Export CSV
-                </a>
+            <div class="flex flex-wrap gap-2 mt-3 items-center">
+                <button onclick="filterExpiring()" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold hover:bg-yellow-200">⚠️ 만료 임박</button>
+                <button onclick="filterExpired()" class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold hover:bg-red-200">❌ 만료됨</button>
+                <button onclick="filterActive()" class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold hover:bg-green-200">✅ 활성</button>
+                <a href="/admin/api/export/users" class="ml-auto px-3 py-1 bg-gray-700 text-white rounded-full text-xs font-semibold hover:bg-gray-800"><i class="fas fa-download mr-1"></i>CSV</a>
             </div>
         </div>
 
+        <!-- 범례 -->
+        <div class="flex gap-4 mb-2 text-xs text-gray-400">
+            <span><span class="inline-block w-3 h-3 rounded bg-green-100 border border-green-300 mr-1"></span>활성</span>
+            <span><span class="inline-block w-3 h-3 rounded bg-yellow-100 border border-yellow-300 mr-1"></span>만료 7일 이내</span>
+            <span><span class="inline-block w-3 h-3 rounded bg-red-100 border border-red-300 mr-1"></span>만료됨</span>
+        </div>
+
+        <!-- 테이블 -->
         <div class="bg-white rounded-lg shadow-md overflow-hidden">
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full text-sm">
                     <thead class="bg-gray-50 border-b">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">TikTok ID</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Timezone</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">유저</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">TikTok ID</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">플랜 변경</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">상태</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">가입일</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">구독 만료일</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">마지막 로그인</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">관리</th>
                         </tr>
                     </thead>
-                    <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
-                        <tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">
-                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>Loading...</p>
+                    <tbody id="users-table-body" class="divide-y divide-gray-100">
+                        <tr><td colspan="8" class="px-6 py-10 text-center text-gray-400">
+                            <i class="fas fa-spinner fa-spin text-2xl block mb-2"></i>불러오는 중...
                         </td></tr>
                     </tbody>
                 </table>
             </div>
-            <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t">
-                <div class="text-sm text-gray-700">
-                    Showing <span id="showing-from">0</span> to <span id="showing-to">0</span> of <span id="total-users">0</span> users
-                </div>
-                <div class="flex space-x-2" id="pagination-buttons"></div>
+            <div class="bg-gray-50 px-5 py-3 flex items-center justify-between border-t text-sm text-gray-600">
+                <div>총 <span id="total-users" class="font-bold">0</span>명 중 <span id="showing-from">0</span>~<span id="showing-to">0</span>번째</div>
+                <div class="flex gap-1" id="pagination-buttons"></div>
             </div>
         </div>
     </main>
@@ -111,112 +182,284 @@
     <script>
         let currentPage = 1;
         let currentFilters = {};
+        let modalUserId = null;
+        let cachedUsers = [];
 
+        // ===== 초기화 =====
         async function loadAdminInfo() {
             try {
-                const response = await fetch('/admin/auth/check');
-                const data = await response.json();
+                const res = await fetch('/admin/auth/check');
+                const data = await res.json();
                 if (data.success && data.admin) {
                     document.getElementById('admin-email').textContent = data.admin.email;
-                } else {
-                    alert('Access denied. Admin privileges required.');
-                    window.location.href = '/admin/login';
-                }
-            } catch (error) {
-                console.error('Error loading admin info:', error);
-                window.location.href = '/admin/login';
-            }
+                } else { window.location.href = '/admin/login'; }
+            } catch { window.location.href = '/admin/login'; }
         }
 
+        // ===== 유저 목록 로드 =====
         async function loadUsers(page = 1) {
-            const params = new URLSearchParams({ page, limit: 50, ...currentFilters });
-            const response = await fetch(`/admin/api/users?${params}`);
-            const data = await response.json();
-            if (data.success) {
-                displayUsers(data.users);
-                displayPagination(data.pagination);
+            currentPage = page;
+            const params = new URLSearchParams({ page, limit: 30, ...currentFilters });
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-10 text-center text-gray-400"><i class="fas fa-spinner fa-spin text-xl block mb-2"></i>불러오는 중...</td></tr>';
+            try {
+                const res = await fetch(`/admin/api/users?${params}`);
+                const data = await res.json();
+                if (data.success) {
+                    cachedUsers = data.users;
+                    displayUsers(data.users);
+                    displayPagination(data.pagination);
+                    updateSummaryCards(data.users);
+                }
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-10 text-center text-red-400">데이터 로드 실패</td></tr>';
             }
         }
 
+        // ===== 요약 카드 업데이트 =====
+        function updateSummaryCards(users) {
+            const now = new Date();
+            const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            let active = 0, expiring = 0, expired = 0;
+            users.forEach(u => {
+                if (u.subscriptionStatus === 'active') active++;
+                if (u.subscriptionEndDate) {
+                    const exp = new Date(u.subscriptionEndDate);
+                    if (exp < now) expired++;
+                    else if (exp <= in7days) expiring++;
+                }
+            });
+            document.getElementById('stat-total').textContent = users.length;
+            document.getElementById('stat-active').textContent = active;
+            document.getElementById('stat-expiring').textContent = expiring;
+            document.getElementById('stat-expired').textContent = expired;
+        }
+
+        // ===== 행 색상 결정 =====
+        function getRowClass(user) {
+            const now = new Date();
+            const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            if (!user.subscriptionEndDate) return '';
+            const exp = new Date(user.subscriptionEndDate);
+            if (exp < now && user.subscriptionStatus === 'active') return 'expired-row';
+            if (exp <= in7days && user.subscriptionStatus === 'active') return 'expiring-soon';
+            if (user.subscriptionStatus === 'active') return 'active-row';
+            return '';
+        }
+
+        // ===== 만료일 표시 =====
+        function formatExpiry(user) {
+            if (!user.subscriptionEndDate) return '<span class="text-gray-400">-</span>';
+            const now = new Date();
+            const exp = new Date(user.subscriptionEndDate);
+            const diffDays = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+            const dateStr = exp.toLocaleDateString('ko-KR');
+            if (exp < now) return `<span class="text-red-600 font-semibold">${dateStr}<br><span class="text-xs">만료됨</span></span>`;
+            if (diffDays <= 7) return `<span class="text-yellow-600 font-semibold">${dateStr}<br><span class="text-xs">D-${diffDays}</span></span>`;
+            return `<span class="text-green-700">${dateStr}<br><span class="text-xs text-gray-400">D-${diffDays}</span></span>`;
+        }
+
+        // ===== 상태 배지 =====
+        function statusBadge(status) {
+            const map = {
+                'trial':     'bg-blue-100 text-blue-800',
+                'active':    'bg-green-100 text-green-800',
+                'cancelled': 'bg-yellow-100 text-yellow-800',
+                'expired':   'bg-red-100 text-red-800',
+                'past_due':  'bg-orange-100 text-orange-800'
+            };
+            return `<span class="px-2 py-0.5 text-xs rounded-full font-semibold ${map[status] || 'bg-gray-100 text-gray-700'}">${status}</span>`;
+        }
+
+        // ===== 유저 테이블 렌더링 =====
         function displayUsers(users) {
             const tbody = document.getElementById('users-table-body');
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-8 text-center text-gray-500">No users found</td></tr>';
+            if (!users.length) {
+                tbody.innerHTML = '<tr><td colspan="8" class="px-6 py-10 text-center text-gray-400">유저가 없습니다</td></tr>';
                 return;
             }
-            tbody.innerHTML = users.map(user => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4">
+            tbody.innerHTML = users.map(user => {
+                const rowClass = getRowClass(user);
+                const img = user.profileImage
+                    ? `<img src="${user.profileImage}" class="w-9 h-9 rounded-full mr-2 object-cover" onerror="this.src='https://placehold.co/36x36?text=U'">`
+                    : `<div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center mr-2 text-gray-500 text-xs font-bold">${(user.nickname||user.email||'?')[0].toUpperCase()}</div>`;
+                const memo = user.adminMemo ? `<span class="text-xs text-blue-600 cursor-pointer underline" onclick="openMemoModal('${user._id}','${escHtml(user.nickname||user.email)}','${escHtml(user.adminMemo)}')" title="${escHtml(user.adminMemo)}">📝 ${user.adminMemo.slice(0,12)}${user.adminMemo.length>12?'…':''}</span>` : `<span class="text-xs text-gray-400 cursor-pointer hover:text-blue-500" onclick="openMemoModal('${user._id}','${escHtml(user.nickname||user.email)}','')">+ 메모</span>`;
+                return `
+                <tr class="${rowClass} hover:opacity-90 transition-opacity">
+                    <td class="px-4 py-3">
                         <div class="flex items-center">
-                            <img src="${user.profileImage || 'https://placehold.co/40x40?text=U'}" class="w-10 h-10 rounded-full mr-3">
+                            ${img}
                             <div>
-                                <div class="text-sm font-medium">${user.nickname || 'No Name'}</div>
-                                <div class="text-sm text-gray-500">${user.email}</div>
+                                <div class="font-medium text-gray-800 text-xs">${escHtml(user.nickname || '이름없음')}</div>
+                                <div class="text-gray-400 text-xs">${escHtml(user.email)}</div>
                             </div>
                         </div>
                     </td>
-                    <td class="px-6 py-4 text-sm">${user.tiktokId || '-'}</td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 text-xs rounded-full ${user.plan === 'pro' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
-                            ${user.plan.toUpperCase()}
-                        </span>
+                    <td class="px-4 py-3 text-xs text-gray-600">${user.tiktokId ? `@${escHtml(user.tiktokId)}` : '<span class="text-gray-300">-</span>'}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex items-center gap-1">
+                            <select onchange="changePlan('${user._id}', this.value, '${user.subscriptionStatus}')"
+                                class="text-xs px-2 py-1 border rounded-lg ${user.plan==='pro'?'border-green-400 text-green-700 bg-green-50':'border-gray-300 text-gray-600'} cursor-pointer">
+                                <option value="free" ${user.plan==='free'?'selected':''}>Free</option>
+                                <option value="pro"  ${user.plan==='pro'?'selected':''}>Pro</option>
+                            </select>
+                        </div>
                     </td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 text-xs rounded-full ${getStatusColor(user.subscriptionStatus)}">
-                            ${user.subscriptionStatus}
-                        </span>
+                    <td class="px-4 py-3">
+                        <select onchange="changeStatus('${user._id}', this.value, '${user.plan}')"
+                            class="text-xs px-2 py-1 border rounded-lg cursor-pointer ${user.subscriptionStatus==='active'?'border-green-400 text-green-700 bg-green-50':user.subscriptionStatus==='expired'?'border-red-400 text-red-700 bg-red-50':'border-gray-300 text-gray-600'}">
+                            <option value="trial"     ${user.subscriptionStatus==='trial'?'selected':''}>trial</option>
+                            <option value="active"    ${user.subscriptionStatus==='active'?'selected':''}>active</option>
+                            <option value="cancelled" ${user.subscriptionStatus==='cancelled'?'selected':''}>cancelled</option>
+                            <option value="expired"   ${user.subscriptionStatus==='expired'?'selected':''}>expired</option>
+                            <option value="past_due"  ${user.subscriptionStatus==='past_due'?'selected':''}>past_due</option>
+                        </select>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-500">
-                        <span title="${user.timezone || 'UTC'}">${user.timezone || 'UTC'}</span>
+                    <td class="px-4 py-3 text-xs text-gray-500">${new Date(user.createdAt).toLocaleDateString('ko-KR')}</td>
+                    <td class="px-4 py-3 text-xs">${formatExpiry(user)}</td>
+                    <td class="px-4 py-3 text-xs text-gray-400">${user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ko-KR') : '-'}</td>
+                    <td class="px-4 py-3">
+                        <div class="flex flex-col gap-1">
+                            ${memo}
+                            <button onclick="openExtendModal('${user._id}','${escHtml(user.nickname||user.email)}','${user.subscriptionEndDate||''}')"
+                                class="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 whitespace-nowrap">
+                                💳 연장
+                            </button>
+                            <button onclick="openPayHistModal('${user._id}','${escHtml(user.nickname||user.email)}')"
+                                class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 whitespace-nowrap">
+                                📋 기록
+                            </button>
+                        </div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-500">${new Date(user.createdAt).toLocaleDateString()}</td>
-                    <td class="px-6 py-4 text-sm">
-                        <a href="/admin/users/${user._id}" class="text-blue-600 hover:text-blue-800">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                    </td>
-                </tr>
-            `).join('');
+                </tr>`;
+            }).join('');
         }
 
-        function getStatusColor(status) {
-            const colors = {
-                'trial': 'bg-blue-100 text-blue-800',
-                'active': 'bg-green-100 text-green-800',
-                'cancelled': 'bg-yellow-100 text-yellow-800',
-                'expired': 'bg-red-100 text-red-800'
-            };
-            return colors[status] || 'bg-gray-100 text-gray-800';
+        function escHtml(str) {
+            return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
         }
 
-        function displayPagination(pagination) {
-            document.getElementById('showing-from').textContent = pagination.totalUsers > 0 ? ((pagination.currentPage - 1) * pagination.limit + 1) : 0;
-            document.getElementById('showing-to').textContent = Math.min(pagination.currentPage * pagination.limit, pagination.totalUsers);
-            document.getElementById('total-users').textContent = pagination.totalUsers;
-
-            const container = document.getElementById('pagination-buttons');
-            let buttons = '';
-            if (pagination.hasPrevPage) {
-                buttons += `<button onclick="loadUsers(${pagination.currentPage - 1})" class="px-3 py-1 bg-white border rounded hover:bg-gray-50">Previous</button>`;
-            }
-            for (let i = Math.max(1, pagination.currentPage - 2); i <= Math.min(pagination.totalPages, pagination.currentPage + 2); i++) {
-                buttons += `<button onclick="loadUsers(${i})" class="px-3 py-1 ${i === pagination.currentPage ? 'bg-blue-600 text-white' : 'bg-white border'} rounded">${i}</button>`;
-            }
-            if (pagination.hasNextPage) {
-                buttons += `<button onclick="loadUsers(${pagination.currentPage + 1})" class="px-3 py-1 bg-white border rounded hover:bg-gray-50">Next</button>`;
-            }
-            container.innerHTML = buttons;
+        // ===== 플랜 인라인 변경 =====
+        async function changePlan(userId, plan, currentStatus) {
+            const status = plan === 'pro' ? 'active' : 'expired';
+            const res = await fetch(`/admin/api/users/${userId}/plan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan, subscriptionStatus: status })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`플랜 변경 완료: ${plan.toUpperCase()}`);
+                loadUsers(currentPage);
+            } else { alert('변경 실패: ' + data.message); }
         }
 
+        // ===== 상태 인라인 변경 =====
+        async function changeStatus(userId, subscriptionStatus, currentPlan) {
+            const res = await fetch(`/admin/api/users/${userId}/plan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscriptionStatus })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showToast(`상태 변경 완료: ${subscriptionStatus}`);
+                loadUsers(currentPage);
+            } else { alert('변경 실패: ' + data.message); }
+        }
+
+        // ===== 구독 연장 모달 =====
+        function openExtendModal(userId, name, currentExpiry) {
+            modalUserId = userId;
+            document.getElementById('extendUserName').textContent = name;
+            document.getElementById('extendCurrentExpiry').textContent = currentExpiry
+                ? new Date(currentExpiry).toLocaleDateString('ko-KR') : '없음 (오늘부터 시작)';
+            document.getElementById('extendMonths').value = '1';
+            document.getElementById('extendAmount').value = '';
+            document.getElementById('extendMemo').value = '';
+            document.getElementById('extendModal').classList.remove('hidden');
+        }
+        function closeExtendModal() { document.getElementById('extendModal').classList.add('hidden'); modalUserId = null; }
+
+        async function submitExtend() {
+            if (!modalUserId) return;
+            const months = document.getElementById('extendMonths').value;
+            const amount = document.getElementById('extendAmount').value;
+            const memo   = document.getElementById('extendMemo').value;
+            const res = await fetch(`/admin/api/users/${modalUserId}/extend`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ months, amount: amount ? parseInt(amount) : 0, memo })
+            });
+            const data = await res.json();
+            if (data.success) {
+                closeExtendModal();
+                showToast(data.message, 'green');
+                loadUsers(currentPage);
+            } else { alert('연장 실패: ' + data.message); }
+        }
+
+        // ===== 결제 기록 모달 =====
+        async function openPayHistModal(userId, name) {
+            document.getElementById('payHistUserName').textContent = name;
+            document.getElementById('payHistList').innerHTML = '<p class="text-gray-400 text-center py-6">불러오는 중...</p>';
+            document.getElementById('payHistModal').classList.remove('hidden');
+            const res = await fetch(`/admin/api/users/${userId}/payments`);
+            const data = await res.json();
+            const list = document.getElementById('payHistList');
+            if (data.success && data.paymentHistory.length) {
+                list.innerHTML = data.paymentHistory.map(p => `
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs font-semibold text-gray-700">${new Date(p.paidAt).toLocaleDateString('ko-KR')}</span>
+                                <span class="ml-2 text-xs text-green-700 font-bold">${p.amount ? p.amount.toLocaleString()+'원' : '-'}</span>
+                                <span class="ml-1 text-xs text-gray-400">(${p.extendedMonths}개월 연장)</span>
+                            </div>
+                            <span class="text-xs text-gray-400">${p.adminEmail||''}</span>
+                        </div>
+                        ${p.memo ? `<p class="text-xs text-gray-500 mt-1">📝 ${escHtml(p.memo)}</p>` : ''}
+                    </div>
+                `).join('');
+            } else {
+                list.innerHTML = '<p class="text-gray-400 text-center py-6">결제 기록이 없습니다</p>';
+            }
+        }
+        function closePayHistModal() { document.getElementById('payHistModal').classList.add('hidden'); }
+
+        // ===== 메모 모달 =====
+        function openMemoModal(userId, name, currentMemo) {
+            modalUserId = userId;
+            document.getElementById('memoUserName').textContent = name;
+            document.getElementById('memoText').value = currentMemo || '';
+            document.getElementById('memoModal').classList.remove('hidden');
+        }
+        function closeMemoModal() { document.getElementById('memoModal').classList.add('hidden'); modalUserId = null; }
+
+        async function submitMemo() {
+            if (!modalUserId) return;
+            const adminMemo = document.getElementById('memoText').value;
+            const res = await fetch(`/admin/api/users/${modalUserId}/memo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminMemo })
+            });
+            const data = await res.json();
+            if (data.success) { closeMemoModal(); showToast('메모 저장 완료'); loadUsers(currentPage); }
+            else { alert('저장 실패: ' + data.message); }
+        }
+
+        // ===== 필터 =====
         function applyFilters() {
-            currentFilters = {
-                search: document.getElementById('search-input').value,
-                plan: document.getElementById('plan-filter').value,
-                status: document.getElementById('status-filter').value
-            };
+            currentFilters = {};
+            const s = document.getElementById('search-input').value.trim();
+            const p = document.getElementById('plan-filter').value;
+            const st = document.getElementById('status-filter').value;
+            if (s) currentFilters.search = s;
+            if (p) currentFilters.plan = p;
+            if (st) currentFilters.status = st;
             loadUsers(1);
         }
-
         function resetFilters() {
             document.getElementById('search-input').value = '';
             document.getElementById('plan-filter').value = '';
@@ -224,6 +467,40 @@
             currentFilters = {};
             loadUsers(1);
         }
+        function filterExpiring() { currentFilters = { status: 'active' }; loadUsers(1); }
+        function filterExpired()  { currentFilters = { status: 'expired' }; loadUsers(1); }
+        function filterActive()   { currentFilters = { status: 'active', plan: 'pro' }; loadUsers(1); }
+
+        // ===== 페이지네이션 =====
+        function displayPagination(pagination) {
+            document.getElementById('showing-from').textContent = pagination.totalUsers > 0 ? ((pagination.currentPage-1)*pagination.limit+1) : 0;
+            document.getElementById('showing-to').textContent = Math.min(pagination.currentPage*pagination.limit, pagination.totalUsers);
+            document.getElementById('total-users').textContent = pagination.totalUsers;
+            const c = document.getElementById('pagination-buttons');
+            let html = '';
+            if (pagination.hasPrevPage) html += `<button onclick="loadUsers(${pagination.currentPage-1})" class="px-3 py-1 bg-white border rounded text-xs hover:bg-gray-50">◀</button>`;
+            for (let i = Math.max(1,pagination.currentPage-2); i <= Math.min(pagination.totalPages,pagination.currentPage+2); i++) {
+                html += `<button onclick="loadUsers(${i})" class="px-3 py-1 text-xs rounded ${i===pagination.currentPage?'bg-blue-600 text-white':'bg-white border hover:bg-gray-50'}">${i}</button>`;
+            }
+            if (pagination.hasNextPage) html += `<button onclick="loadUsers(${pagination.currentPage+1})" class="px-3 py-1 bg-white border rounded text-xs hover:bg-gray-50">▶</button>`;
+            c.innerHTML = html;
+        }
+
+        // ===== 토스트 알림 =====
+        function showToast(msg, color = 'blue') {
+            const t = document.createElement('div');
+            t.className = `fixed bottom-6 right-6 px-5 py-3 bg-${color}-600 text-white rounded-xl shadow-lg text-sm z-50 transition-opacity`;
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, 2500);
+        }
+
+        // ===== ESC 키로 모달 닫기 =====
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') {
+                closeExtendModal(); closePayHistModal(); closeMemoModal();
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             loadAdminInfo();

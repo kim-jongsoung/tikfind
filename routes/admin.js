@@ -188,6 +188,92 @@ router.get('/chart-data', async (req, res) => {
     }
 });
 
+// ==================== USER PLAN / SUBSCRIPTION MANAGEMENT ====================
+
+// 플랜 + 상태 수동 변경
+router.post('/users/:id/plan', async (req, res) => {
+    try {
+        const { plan, subscriptionStatus, adminMemo } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        if (plan !== undefined) user.plan = plan;
+        if (subscriptionStatus !== undefined) user.subscriptionStatus = subscriptionStatus;
+        if (adminMemo !== undefined) user.adminMemo = adminMemo;
+        await user.save();
+
+        res.json({ success: true, message: '플랜이 변경되었습니다.', user });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 구독 월 단위 연장 + 현금 결제 기록
+router.post('/users/:id/extend', async (req, res) => {
+    try {
+        const { months = 1, amount, memo } = req.body;
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        const now = new Date();
+        // 현재 만료일이 미래면 거기서부터, 아니면 오늘부터 연장
+        const base = (user.subscriptionEndDate && user.subscriptionEndDate > now)
+            ? new Date(user.subscriptionEndDate)
+            : now;
+
+        base.setMonth(base.getMonth() + parseInt(months));
+        user.subscriptionEndDate = base;
+        user.subscriptionStartDate = user.subscriptionStartDate || now;
+        user.plan = 'pro';
+        user.subscriptionStatus = 'active';
+
+        // 결제 기록 추가
+        user.paymentHistory.push({
+            paidAt: now,
+            amount: amount || 0,
+            currency: 'KRW',
+            method: 'cash',
+            memo: memo || '',
+            extendedMonths: parseInt(months),
+            adminEmail: req.session.adminEmail || 'admin'
+        });
+
+        await user.save();
+
+        res.json({
+            success: true,
+            message: `${months}개월 연장 완료 (만료일: ${base.toLocaleDateString('ko-KR')})`,
+            subscriptionEndDate: base,
+            user
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 메모 저장
+router.post('/users/:id/memo', async (req, res) => {
+    try {
+        const { adminMemo } = req.body;
+        const user = await User.findByIdAndUpdate(req.params.id, { adminMemo }, { new: true });
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        res.json({ success: true, message: '메모가 저장되었습니다.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 결제 기록 조회
+router.get('/users/:id/payments', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id).select('paymentHistory email nickname');
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        res.json({ success: true, paymentHistory: user.paymentHistory.reverse() });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // ==================== USER MANAGEMENT ====================
 
 // Get users list with pagination, search, and filters

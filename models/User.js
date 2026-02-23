@@ -209,7 +209,20 @@ const userSchema = new mongoose.Schema({
     },
     deletedAt: {
         type: Date
-    }
+    },
+    adminMemo: {
+        type: String,
+        default: ''
+    },
+    paymentHistory: [{
+        paidAt: { type: Date, default: Date.now },
+        amount: { type: Number },
+        currency: { type: String, default: 'KRW' },
+        method: { type: String, default: 'cash' },
+        memo: { type: String },
+        extendedMonths: { type: Number, default: 1 },
+        adminEmail: { type: String }
+    }]
 }, {
     timestamps: true
 });
