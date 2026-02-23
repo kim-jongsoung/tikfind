@@ -75,24 +75,53 @@
             <div class="modal-header" style="border-bottom: none; position: relative; z-index: 2;">
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body text-center py-5 px-4" style="position: relative; z-index: 2;">
-                <div style="display: inline-block; padding: 1rem; background: rgba(236, 72, 153, 0.1); border-radius: 50%; margin-bottom: 1.5rem; box-shadow: 0 0 30px rgba(236, 72, 153, 0.3);">
-                    <i class="fas fa-rocket" style="font-size: 3rem; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.5));"></i>
+            <div class="modal-body text-center py-4 px-4" style="position: relative; z-index: 2;">
+                <!-- 타이틀 -->
+                <div style="margin-bottom: 1.2rem;">
+                    <div style="display: inline-block; padding: 0.8rem; background: rgba(236, 72, 153, 0.12); border-radius: 50%; margin-bottom: 1rem; box-shadow: 0 0 30px rgba(236, 72, 153, 0.3);">
+                        <i class="fas fa-rocket" style="font-size: 2.4rem; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(236, 72, 153, 0.5));"></i>
+                    </div>
+                    <h2 class="text-white mb-1" style="font-weight: 800; font-size: 1.75rem; text-shadow: 0 0 20px rgba(236, 72, 153, 0.3);">무료로 시작하세요!</h2>
+                    <p style="color: #9ca3af; font-size: 0.88rem; margin: 0;">신용카드 불필요 &middot; 가입 즉시 사용 가능</p>
                 </div>
-                <h2 class="text-white mb-3" style="font-weight: bold; font-size: 2rem; text-shadow: 0 0 20px rgba(236, 72, 153, 0.3);">지금 바로 시작하세요!</h2>
-                <p class="text-white mb-4" style="font-size: 1.1rem; opacity: 0.9;">글로벌 틱톡 방송의 첫 걸음</p>
-                <p style="color: #9ca3af; font-size: 1rem; margin-bottom: 2rem;">AI가 실시간으로 번역하고 발음까지 알려드립니다</p>
-                
-                <a href="/auth/google" class="btn btn-lg w-100 mb-4" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; padding: 1rem; border-radius: 10px; font-weight: 700; font-size: 1.1rem; transition: all 0.3s; box-shadow: 0 10px 30px rgba(236, 72, 153, 0.4); border: 1px solid rgba(255, 255, 255, 0.1);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 40px rgba(236, 72, 153, 0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(236, 72, 153, 0.4)'">
-                    <i class="fab fa-google me-2"></i>
-                    Google로 무료 시작
+
+                <!-- 3가지 핵심 기능 -->
+                <div style="text-align: left; background: rgba(255,255,255,0.04); border-radius: 14px; padding: 1.1rem 1.3rem; margin-bottom: 1.4rem; border: 1px solid rgba(255,255,255,0.08);">
+                    <!-- 기능 1 -->
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.9rem;">
+                        <span style="font-size: 1.5rem; flex-shrink: 0; line-height: 1;">🔊</span>
+                        <div>
+                            <div style="color: #fb923c; font-weight: 700; font-size: 0.92rem; margin-bottom: 0.15rem;">VIP 목소리 TTS</div>
+                            <div style="color: #9ca3af; font-size: 0.8rem; line-height: 1.4;">20가지 목소리로 시청자 성별에 맞게 지정<br>한국어 원어민처럼 자연스러운 발음 구현</div>
+                        </div>
+                    </div>
+                    <!-- 기능 2 -->
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.9rem;">
+                        <span style="font-size: 1.5rem; flex-shrink: 0; line-height: 1;">🎤</span>
+                        <div>
+                            <div style="color: #a78bfa; font-weight: 700; font-size: 0.92rem; margin-bottom: 0.15rem;">AI 발음 코치</div>
+                            <div style="color: #9ca3af; font-size: 0.8rem; line-height: 1.4;">외국어 채팅 자동 감지 → 발음 안내<br>전 세계 어떤 언어도 자신있게 소통</div>
+                        </div>
+                    </div>
+                    <!-- 기능 3 -->
+                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                        <span style="font-size: 1.5rem; flex-shrink: 0; line-height: 1;">🎵</span>
+                        <div>
+                            <div style="color: #22d3ee; font-weight: 700; font-size: 0.92rem; margin-bottom: 0.15rem;">시청자 신청곡</div>
+                            <div style="color: #9ca3af; font-size: 0.8rem; line-height: 1.4;">시청자가 채팅으로 직접 신청 → 자동 수집<br>YouTube 연동으로 바로 재생</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Google 로그인 버튼 -->
+                <a href="/auth/google" class="btn btn-lg w-100 mb-3" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; padding: 0.9rem; border-radius: 10px; font-weight: 700; font-size: 1.05rem; transition: all 0.3s; box-shadow: 0 10px 30px rgba(236, 72, 153, 0.4); border: 1px solid rgba(255,255,255,0.1);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 15px 40px rgba(236, 72, 153, 0.6)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 10px 30px rgba(236, 72, 153, 0.4)'">
+                    <i class="fab fa-google me-2"></i>Google로 무료 시작
                 </a>
-                
-                <div class="text-white" style="font-size: 0.9rem;">
-                    <p class="mb-2" style="color: #9ca3af;"><i class="fas fa-check-circle me-2" style="color: #ec4899;"></i>평생 무료 TTS</p>
-                    <p class="mb-2" style="color: #9ca3af;"><i class="fas fa-check-circle me-2" style="color: #ec4899;"></i>신청곡 자동수집 (1일 5곡)</p>
-                    <p class="mb-0" style="color: #9ca3af;"><i class="fas fa-check-circle me-2" style="color: #ec4899;"></i>GPT AI 질문 (1일 20건)</p>
-                </div>
+
+                <!-- 무료 플랜 안내 -->
+                <p style="color: #4b5563; font-size: 0.78rem; margin: 0; line-height: 1.6;">
+                    무료 플랜 &middot; 신청곡 1일 10곡 &middot; AI 발음코치 10건 &middot; GPT AI 20건
+                </p>
             </div>
         </div>
     </div>
