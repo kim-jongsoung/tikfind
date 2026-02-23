@@ -148,21 +148,24 @@ async function getUserDailyUsage(userId, userTimezone = 'UTC') {
             return {
                 songRequestCount: 0,
                 gptAiCount: 0,
-                pronunciationCoachCount: 0
+                pronunciationCoachCount: 0,
+                ttsCharCount: 0
             };
         }
 
         return {
             songRequestCount: usageLog.songRequestCount || 0,
             gptAiCount: usageLog.gptAiCount || 0,
-            pronunciationCoachCount: usageLog.pronunciationCoachCount || 0
+            pronunciationCoachCount: usageLog.pronunciationCoachCount || 0,
+            ttsCharCount: usageLog.ttsCharCount || 0
         };
     } catch (error) {
         console.error('Get user daily usage error:', error);
         return {
             songRequestCount: 0,
             gptAiCount: 0,
-            pronunciationCoachCount: 0
+            pronunciationCoachCount: 0,
+            ttsCharCount: 0
         };
     }
 }

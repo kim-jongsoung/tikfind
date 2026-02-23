@@ -261,7 +261,7 @@ app.get('/api/current_user', async (req, res) => {
             usage: {
                 songRequest: {
                     used: usage.songRequestCount,
-                    limit: planLimit?.songRequestLimit || 5
+                    limit: planLimit?.songRequestLimit || 10
                 },
                 gptAi: {
                     used: usage.gptAiCount,
@@ -270,6 +270,10 @@ app.get('/api/current_user', async (req, res) => {
                 pronunciationCoach: {
                     used: usage.pronunciationCoachCount,
                     limit: planLimit?.pronunciationCoachLimit || 10
+                },
+                ttsChar: {
+                    used: usage.ttsCharCount,
+                    limit: planLimit?.ttsCharLimit || 500
                 }
             }
         });
@@ -910,9 +914,10 @@ async function processChatMessage(chatData) {
         teamMemberLevel: teamMemberLevel || null,
         timestamp: timestamp || Date.now(),
         usage: {
-            songRequest: { used: currentUsage.songRequestCount, limit: planLimit?.songRequestLimit || 5 },
+            songRequest: { used: currentUsage.songRequestCount, limit: planLimit?.songRequestLimit || 10 },
             gptAi: { used: currentUsage.gptAiCount, limit: planLimit?.gptAiLimit || 20 },
-            pronunciationCoach: { used: currentUsage.pronunciationCoachCount, limit: planLimit?.pronunciationCoachLimit || 10 }
+            pronunciationCoach: { used: currentUsage.pronunciationCoachCount, limit: planLimit?.pronunciationCoachLimit || 10 },
+            ttsChar: { used: currentUsage.ttsCharCount, limit: planLimit?.ttsCharLimit || 500 }
         }
     });
 

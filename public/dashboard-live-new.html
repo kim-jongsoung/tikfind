@@ -33,19 +33,23 @@
                     </div>
                 </div>
                 <div id="planUsageInfo" style="display: none; margin-top: 8px; padding: 8px 12px; background: rgba(102, 126, 234, 0.1); border-radius: 8px; font-size: 11px;">
-                    <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                        <span style="display: flex; align-items: center; gap: 4px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span id="coachUsageWrap" style="display: flex; align-items: center; gap: 4px;">
                             🎯 AI 발음 코치: <span id="aiCoachUsage">0/10</span>
+                            <a id="coachUpgradeBtn" href="/dashboard/billing" style="display:none; padding: 2px 8px; font-size: 10px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border-radius: 10px; text-decoration: none; font-weight: bold;">⚠️ 업그레이드</a>
                         </span>
-                        <span style="display: flex; align-items: center; gap: 4px;">
-                            🎵 신청곡: <span id="songRequestUsage">0/5</span>
+                        <span id="songUsageWrap" style="display: flex; align-items: center; gap: 4px;">
+                            🎵 신청곡: <span id="songRequestUsage">0/10</span>
+                            <a id="songUpgradeBtn" href="/dashboard/billing" style="display:none; padding: 2px 8px; font-size: 10px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border-radius: 10px; text-decoration: none; font-weight: bold;">⚠️ 업그레이드</a>
                         </span>
-                        <span style="display: flex; align-items: center; gap: 4px;">
-                            🤖 GPT AI: <span id="gptAiUsage">0/3</span>
+                        <span id="gptUsageWrap" style="display: flex; align-items: center; gap: 4px;">
+                            🤖 GPT AI: <span id="gptAiUsage">0/20</span>
+                            <a id="gptUpgradeBtn" href="/dashboard/billing" style="display:none; padding: 2px 8px; font-size: 10px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border-radius: 10px; text-decoration: none; font-weight: bold;">⚠️ 업그레이드</a>
                         </span>
-                        <button id="usageLimitUpgradeBtn" style="display: none; padding: 4px 12px; font-size: 11px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-left: auto;">
-                            ⚠️ 업그레이드
-                        </button>
+                        <span id="ttsUsageWrap" style="display: flex; align-items: center; gap: 4px;">
+                            🔊 TTS: <span id="ttsCharUsage">0/500</span>자
+                            <a id="ttsUpgradeBtn" href="/dashboard/billing" style="display:none; padding: 2px 8px; font-size: 10px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border-radius: 10px; text-decoration: none; font-weight: bold;">⚠️ 업그레이드</a>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -369,74 +373,38 @@
         
         // 사용량 표시 업데이트
         function updateUsageDisplay(usage) {
-            const aiCoachUsage = document.getElementById('aiCoachUsage');
-            const songRequestUsage = document.getElementById('songRequestUsage');
-            const gptAiUsage = document.getElementById('gptAiUsage');
-            
-            if (aiCoachUsage) {
-                const limit = usage.pronunciationCoach.limit === -1 ? '∞개' : `${usage.pronunciationCoach.limit}개중`;
-                const used = `/${usage.pronunciationCoach.used}사용`;
-                aiCoachUsage.textContent = `${limit} ${used}`;
-                
-                // 제한 초과 시 빨간색 표시
-                if (usage.pronunciationCoach.limit !== -1 && usage.pronunciationCoach.used >= usage.pronunciationCoach.limit) {
-                    aiCoachUsage.style.color = '#ef4444';
-                    aiCoachUsage.style.fontWeight = 'bold';
-                } else {
-                    aiCoachUsage.style.color = '';
-                    aiCoachUsage.style.fontWeight = '';
-                }
+            // 헬퍼: 각 항목 업데이트 + 개별 업그레이드 버튼 표시
+            function applyUsage(elId, upgradeBtnId, used, limit, unit) {
+                const el = document.getElementById(elId);
+                const btn = document.getElementById(upgradeBtnId);
+                if (!el) return;
+                const isUnlimited = limit === -1;
+                const exceeded = !isUnlimited && used >= limit;
+                el.textContent = isUnlimited ? `${used}/∞` : `${limit}${unit}중 /${used}사용`;
+                el.style.color = exceeded ? '#ef4444' : '';
+                el.style.fontWeight = exceeded ? 'bold' : '';
+                if (btn) btn.style.display = exceeded ? 'inline-block' : 'none';
             }
-            
-            if (songRequestUsage) {
-                const limit = usage.songRequest.limit === -1 ? '∞개' : `${usage.songRequest.limit}개중`;
-                const used = `/${usage.songRequest.used}사용`;
-                songRequestUsage.textContent = `${limit} ${used}`;
-                
-                if (usage.songRequest.limit !== -1 && usage.songRequest.used >= usage.songRequest.limit) {
-                    songRequestUsage.style.color = '#ef4444';
-                    songRequestUsage.style.fontWeight = 'bold';
-                } else {
-                    songRequestUsage.style.color = '';
-                    songRequestUsage.style.fontWeight = '';
-                }
-            }
-            
-            if (gptAiUsage) {
-                const limit = usage.gptAi.limit === -1 ? '∞개' : `${usage.gptAi.limit}개중`;
-                const used = `/${usage.gptAi.used}사용`;
-                gptAiUsage.textContent = `${limit} ${used}`;
-                
-                if (usage.gptAi.limit !== -1 && usage.gptAi.used >= usage.gptAi.limit) {
-                    gptAiUsage.style.color = '#ef4444';
-                    gptAiUsage.style.fontWeight = 'bold';
-                } else {
-                    gptAiUsage.style.color = '';
-                    gptAiUsage.style.fontWeight = '';
-                }
-            }
-            
-            // 플랜 사용량 정보 항상 표시
+
+            applyUsage('aiCoachUsage',    'coachUpgradeBtn',
+                usage.pronunciationCoach?.used ?? 0,
+                usage.pronunciationCoach?.limit ?? 10, '개');
+
+            applyUsage('songRequestUsage', 'songUpgradeBtn',
+                usage.songRequest?.used ?? 0,
+                usage.songRequest?.limit ?? 10, '개');
+
+            applyUsage('gptAiUsage',      'gptUpgradeBtn',
+                usage.gptAi?.used ?? 0,
+                usage.gptAi?.limit ?? 20, '개');
+
+            applyUsage('ttsCharUsage',    'ttsUpgradeBtn',
+                usage.ttsChar?.used ?? 0,
+                usage.ttsChar?.limit ?? 500, '');
+
+            // planUsageInfo 항상 표시
             const planUsageInfo = document.getElementById('planUsageInfo');
-            if (planUsageInfo) {
-                planUsageInfo.style.display = 'block';
-            }
-            
-            // 사용량 초과 시 업그레이드 버튼 표시
-            const usageLimitUpgradeBtn = document.getElementById('usageLimitUpgradeBtn');
-            const isAnyLimitReached = 
-                (usage.pronunciationCoach.limit !== -1 && usage.pronunciationCoach.used >= usage.pronunciationCoach.limit) ||
-                (usage.songRequest.limit !== -1 && usage.songRequest.used >= usage.songRequest.limit) ||
-                (usage.gptAi.limit !== -1 && usage.gptAi.used >= usage.gptAi.limit);
-            
-            if (usageLimitUpgradeBtn && isAnyLimitReached) {
-                usageLimitUpgradeBtn.style.display = 'block';
-                usageLimitUpgradeBtn.onclick = () => {
-                    window.location.href = '/pricing';
-                };
-            } else if (usageLimitUpgradeBtn) {
-                usageLimitUpgradeBtn.style.display = 'none';
-            }
+            if (planUsageInfo) planUsageInfo.style.display = 'block';
         }
 
         // 플랜 뱃지 업데이트

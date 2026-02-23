@@ -23,6 +23,10 @@ const usageLogSchema = new mongoose.Schema({
     pronunciationCoachCount: {
         type: Number,
         default: 0
+    },
+    ttsCharCount: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true
