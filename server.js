@@ -1937,6 +1937,61 @@ io.on('connection', (socket) => {
                     }
                 }
 
+                // 신청곡 파싱
+                const UsageLog = require('./models/UsageLog');
+                const PlanLimit = require('./models/PlanLimit');
+                const songData = songRequestService.parseSongRequest(tiktokData.message);
+                let songRequest = null;
+                const songSettings = songRequestService.getSettings(userId);
+                const requesterFollowRole = Number(tiktokData.followRole) || 0;
+                const minRole = songSettings.minFollowRole ?? 0;
+
+                if (songData) {
+                    console.log(`🎵 신청곡 감지: "${songData.title}" - "${songData.artist}" | followRole=${requesterFollowRole} | isAccepting=${songSettings.isAccepting}`);
+                }
+
+                if (songData && songSettings.isAccepting && (requesterFollowRole >= minRole || tiktokData.isModerator)) {
+                    const lastTime = songRequestService.getLastRequestTime(userId, tiktokData.uniqueId || tiktokData.username);
+                    const elapsed = lastTime ? (Date.now() - lastTime) / 1000 / 60 : Infinity;
+                    const cooldownOk = songSettings.cooldownMinutes === 0 || elapsed >= songSettings.cooldownMinutes;
+
+                    if (cooldownOk) {
+                        const today = new Date().toISOString().split('T')[0];
+                        let usageLog = await UsageLog.findOneAndUpdate(
+                            { userId, date: today },
+                            { $setOnInsert: { songRequestCount: 0, gptAiCount: 0, pronunciationCoachCount: 0 } },
+                            { upsert: true, new: true }
+                        );
+                        const planLimit = await PlanLimit.findOne({ planName: user?.plan || 'free' });
+                        const limit = planLimit ? (planLimit.songRequestLimit ?? -1) : -1;
+                        const currentUsage = usageLog.songRequestCount || 0;
+
+                        if (limit === -1 || currentUsage < limit) {
+                            const result = await songRequestService.addSongRequest(userId, songData, {
+                                username: tiktokData.username,
+                                uniqueId: tiktokData.uniqueId || tiktokData.username,
+                                nickname: tiktokData.nickname || tiktokData.username,
+                                badges: tiktokData.badges || [],
+                                isVIP: false,
+                                level: 1
+                            });
+                            console.log(`🎵 addSongRequest 결과:`, result.success, result.message || '');
+                            if (result.success) {
+                                songRequest = result.song;
+                                songRequestService.setLastRequestTime(userId, tiktokData.uniqueId || tiktokData.username, Date.now());
+                                await UsageLog.updateOne({ userId, date: today }, { $inc: { songRequestCount: 1 } });
+                                emitQueueUpdate(userId);
+                            }
+                        } else {
+                            console.log(`🎵 신청곡 사용량 초과: ${currentUsage}/${limit}`);
+                        }
+                    } else {
+                        console.log(`🎵 쿨다운 중: elapsed=${elapsed.toFixed(1)}분`);
+                    }
+                } else if (songData) {
+                    console.log(`🎵 신청곡 거부: isAccepting=${songSettings.isAccepting}, followRole=${requesterFollowRole}`);
+                }
+
                 // 사용량 정보 조회 후 emit에 포함
                 const UsageLogFinal = require('./models/UsageLog');
                 const PlanLimitFinal = require('./models/PlanLimit');
@@ -1963,6 +2018,7 @@ io.on('connection', (socket) => {
                     ...tiktokData,
                     messageLanguage,
                     pronunciationGuide,
+                    songRequest,
                     usage: usageInfo
                 });
 
