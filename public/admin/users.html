@@ -123,7 +123,10 @@
                            onkeydown="if(event.key==='Enter') applyFilters()">
                 </div>
                 <select id="plan-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                    <option value="">전체 플랜</option><option value="free">Free</option><option value="pro">Pro</option>
+                    <option value="">전체 플랜</option>
+                    <option value="free">Free</option>
+                    <option value="universe">Universe</option>
+                    <option value="unlimited">Unlimited</option>
                 </select>
                 <select id="status-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
                     <option value="">전체 상태</option><option value="trial">Trial</option><option value="active">Active</option>
@@ -299,9 +302,10 @@
                     <td class="px-4 py-3">
                         <div class="flex items-center gap-1">
                             <select onchange="changePlan('${user._id}', this.value, '${user.subscriptionStatus}')"
-                                class="text-xs px-2 py-1 border rounded-lg ${user.plan==='pro'?'border-green-400 text-green-700 bg-green-50':'border-gray-300 text-gray-600'} cursor-pointer">
-                                <option value="free" ${user.plan==='free'?'selected':''}>Free</option>
-                                <option value="pro"  ${user.plan==='pro'?'selected':''}>Pro</option>
+                                class="text-xs px-2 py-1 border rounded-lg ${user.plan==='unlimited'?'border-yellow-400 text-yellow-700 bg-yellow-50':user.plan==='universe'?'border-indigo-400 text-indigo-700 bg-indigo-50':'border-gray-300 text-gray-600'} cursor-pointer">
+                                <option value="free"      ${user.plan==='free'?'selected':''}>Free</option>
+                                <option value="universe"  ${user.plan==='universe'?'selected':''}>Universe</option>
+                                <option value="unlimited" ${user.plan==='unlimited'?'selected':''}>Unlimited</option>
                             </select>
                         </div>
                     </td>
@@ -341,7 +345,7 @@
 
         // ===== 플랜 인라인 변경 =====
         async function changePlan(userId, plan, currentStatus) {
-            const status = plan === 'pro' ? 'active' : 'expired';
+            const status = (plan === 'universe' || plan === 'unlimited') ? 'active' : 'expired';
             const res = await fetch(`/admin/api/users/${userId}/plan`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

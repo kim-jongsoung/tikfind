@@ -720,7 +720,8 @@ router.post('/plan-limits', logAdminAction('plan_limits_update'), async (req, re
                 {
                     songRequestLimit: limit.songRequestLimit,
                     gptAiLimit: limit.gptAiLimit,
-                    pronunciationCoachLimit: limit.pronunciationCoachLimit
+                    pronunciationCoachLimit: limit.pronunciationCoachLimit,
+                    ttsCharLimit: limit.ttsCharLimit !== undefined ? limit.ttsCharLimit : 500
                 },
                 { upsert: true, new: true }
             );

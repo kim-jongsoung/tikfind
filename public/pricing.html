@@ -29,139 +29,122 @@
 
     <main class="pt-24 pb-20 px-4">
         <div class="max-w-7xl mx-auto">
+
+            <!-- Hero -->
             <div class="text-center mb-16">
-                <h1 class="text-5xl font-bold text-gray-900 mb-4">
-                    <span data-i18n="pricingTitle">Simple, Transparent Pricing</span>
-                </h1>
-                <p class="text-xl text-gray-600 mb-6">
-                    <span data-i18n="pricingSubtitle">7일 무료체험 후 Pro 플랜으로 자동 전환</span>
-                </p>
-                <div class="inline-block bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 text-white px-8 py-3 rounded-full shadow-xl">
-                    <i class="fas fa-gift mr-2"></i>
-                    <span class="font-bold" data-i18n="trial7Days">7일 무료체험 제공</span>
+                <h1 class="text-5xl font-bold text-gray-900 mb-4">심플하고 투명한 요금제</h1>
+                <p class="text-xl text-gray-600 mb-8">TikTok 라이브 스트리머를 위한 AI 도구 — 전 세계 시청자와 소통하세요</p>
+                <!-- 3가지 핵심 기능 강조 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-10">
+                    <div class="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl p-6 border border-orange-200">
+                        <div class="text-4xl mb-3">🔊</div>
+                        <h3 class="font-bold text-gray-800 mb-2">TTS VIP 목소리</h3>
+                        <p class="text-sm text-gray-600">20가지 목소리로 전 세계 어떤 언어로도 시청자와 소통</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border border-purple-200">
+                        <div class="text-4xl mb-3">🎤</div>
+                        <h3 class="font-bold text-gray-800 mb-2">AI 발음 코치</h3>
+                        <p class="text-sm text-gray-600">외국어 채팅에 AI가 발음을 안내 — 어떤 언어도 자신있게</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-200">
+                        <div class="text-4xl mb-3">🎵</div>
+                        <h3 class="font-bold text-gray-800 mb-2">시청자 신청곡</h3>
+                        <p class="text-sm text-gray-600">시청자가 직접 채팅으로 신청곡 등록 — 자동 수집 & 관리</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="max-w-2xl mx-auto mb-16">
-                <!-- Pro Plan -->
-                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-2xl p-10 text-white relative">
-                    <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-full text-sm font-black shadow-xl">
-                        <i class="fas fa-crown mr-2"></i>
-                        <span data-i18n="onlyPlan">유일한 플랜</span>
-                    </div>
-                    
+            <!-- 3 Plans -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+
+                <!-- FREE -->
+                <div class="bg-white rounded-2xl shadow-xl p-8 border-2 border-gray-200 flex flex-col">
                     <div class="text-center mb-6">
-                        <div class="inline-block px-4 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-semibold mb-4">
-                            <span data-i18n="proPlan">Pro Plan</span>
-                        </div>
-                        <div class="text-5xl font-bold mb-2">
-                            $9.99
-                            <span class="text-xl font-normal opacity-90" data-i18n="perMonth">/month</span>
-                        </div>
-                        <p class="opacity-90" data-i18n="forProfessionals">For professional streamers</p>
+                        <span class="inline-block px-4 py-1 bg-gray-100 text-gray-600 rounded-full text-sm font-semibold mb-4">FREE</span>
+                        <div class="text-5xl font-bold text-gray-900 mb-1">$0<span class="text-lg font-normal text-gray-400">/월</span></div>
+                        <p class="text-gray-500 text-sm">시작하기에 완벽한 플랜</p>
                     </div>
-
-                    <ul class="space-y-4 mb-8">
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
-                            <span data-i18n="unlimitedSongs">Unlimited song requests</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
-                            <span data-i18n="aiTranslation">AI real-time translation</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
-                            <span data-i18n="premiumThemes">10+ premium themes</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
-                            <span data-i18n="removeWatermark">Remove watermark</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
-                            <span data-i18n="noAds">No ads</span>
-                        </li>
-                        <li class="flex items-start">
-                            <i class="fas fa-check-circle text-yellow-300 mr-3 mt-1"></i>
-                            <span data-i18n="prioritySupport">24/7 priority support</span>
-                        </li>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-green-500 mr-3 mt-0.5 flex-shrink-0"></i><span>신청곡 <strong>1일 10곡</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-green-500 mr-3 mt-0.5 flex-shrink-0"></i><span>GPT AI <strong>1일 20건</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-green-500 mr-3 mt-0.5 flex-shrink-0"></i><span>AI 발음 코치 <strong>1일 10건</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-green-500 mr-3 mt-0.5 flex-shrink-0"></i><span>TTS 20가지 목소리 <strong>1일 500자</strong></span></li>
+                        <li class="flex items-start text-sm text-gray-400"><i class="fas fa-times-circle mr-3 mt-0.5 flex-shrink-0"></i><span>프리미엄 테마</span></li>
+                        <li class="flex items-start text-sm text-gray-400"><i class="fas fa-times-circle mr-3 mt-0.5 flex-shrink-0"></i><span>우선 지원</span></li>
                     </ul>
+                    <button onclick="handleSubscribe('free')" class="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold hover:bg-gray-200 transition">무료로 시작</button>
+                </div>
 
-                    <button onclick="handleSubscribe('pro')" class="w-full py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition">
-                        <span data-i18n="subscribe">Subscribe Now</span>
-                    </button>
-                    
-                    
-                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-6 mt-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <i class="fas fa-gift text-yellow-300 text-2xl mr-3"></i>
-                                <div>
-                                    <p class="font-bold text-lg" data-i18n="trial7Days">7일 무료체험</p>
-                                    <p class="text-sm opacity-80" data-i18n="trialDesc">신용카드 등록 필요 없음</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-3xl font-black text-yellow-300">$0</p>
-                                <p class="text-xs opacity-80" data-i18n="for7Days">7일간</p>
-                            </div>
-                        </div>
-                        <div class="border-t border-white/20 pt-4">
-                            <p class="text-center text-sm opacity-90">
-                                <i class="fas fa-info-circle mr-2"></i>
-                                <span data-i18n="trialEndInfo">체험 종료 후 자동으로 Pro 플랜으로 전환됩니다</span>
-                            </p>
-                        </div>
+                <!-- UNIVERSE -->
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-2xl p-8 text-white relative flex flex-col">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-5 py-1.5 rounded-full text-xs font-black shadow-lg">⭐ 인기</div>
+                    <div class="text-center mb-6">
+                        <span class="inline-block px-4 py-1 bg-white/20 rounded-full text-sm font-semibold mb-4">UNIVERSE</span>
+                        <div class="text-5xl font-bold mb-1">$19<span class="text-lg font-normal opacity-80">/월</span></div>
+                        <p class="opacity-80 text-sm">글로벌 스트리머를 위한 플랜</p>
                     </div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-300 mr-3 mt-0.5 flex-shrink-0"></i><span>신청곡 <strong>1일 20곡</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-300 mr-3 mt-0.5 flex-shrink-0"></i><span>GPT AI <strong>1일 50건</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-300 mr-3 mt-0.5 flex-shrink-0"></i><span>AI 발음 코치 <strong>1일 50건</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-300 mr-3 mt-0.5 flex-shrink-0"></i><span>TTS 20가지 목소리 <strong>1일 500자</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-300 mr-3 mt-0.5 flex-shrink-0"></i><span>프리미엄 오버레이 테마</span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-300 mr-3 mt-0.5 flex-shrink-0"></i><span>24/7 우선 지원</span></li>
+                    </ul>
+                    <button onclick="handleSubscribe('universe')" class="w-full py-3 bg-white text-indigo-600 rounded-xl font-semibold hover:bg-gray-100 transition">UNIVERSE 시작하기</button>
                 </div>
-            </div>
 
-            <!-- Payment Methods -->
-            <div class="bg-white rounded-2xl shadow-lg p-8 mb-16">
-                <h3 class="text-2xl font-bold text-gray-800 text-center mb-6">
-                    <span data-i18n="acceptedPayments">Accepted Payment Methods</span>
-                </h3>
-                <div class="flex justify-center items-center space-x-8 flex-wrap">
-                    <img src="https://placehold.co/100x60?text=Visa" alt="Visa" class="h-12 grayscale hover:grayscale-0 transition">
-                    <img src="https://placehold.co/100x60?text=Mastercard" alt="Mastercard" class="h-12 grayscale hover:grayscale-0 transition">
-                    <img src="https://placehold.co/100x60?text=PayPal" alt="PayPal" class="h-12 grayscale hover:grayscale-0 transition">
-                    <img src="https://placehold.co/100x60?text=Stripe" alt="Stripe" class="h-12 grayscale hover:grayscale-0 transition">
+                <!-- UNLIMITED -->
+                <div class="bg-gradient-to-br from-yellow-500 via-orange-500 to-red-500 rounded-2xl shadow-2xl p-8 text-white relative flex flex-col">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-white text-orange-600 px-5 py-1.5 rounded-full text-xs font-black shadow-lg">🔥 최고급</div>
+                    <div class="text-center mb-6">
+                        <span class="inline-block px-4 py-1 bg-white/20 rounded-full text-sm font-semibold mb-4">UNLIMITED</span>
+                        <div class="text-5xl font-bold mb-1">$190<span class="text-lg font-normal opacity-80">/월</span></div>
+                        <p class="opacity-80 text-sm">프로 스트리머를 위한 무제한 플랜</p>
+                    </div>
+                    <ul class="space-y-3 mb-8 flex-1">
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-200 mr-3 mt-0.5 flex-shrink-0"></i><span>신청곡 <strong>무제한</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-200 mr-3 mt-0.5 flex-shrink-0"></i><span>GPT AI <strong>무제한</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-200 mr-3 mt-0.5 flex-shrink-0"></i><span>AI 발음 코치 <strong>무제한</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-200 mr-3 mt-0.5 flex-shrink-0"></i><span>TTS 20가지 목소리 <strong>무제한</strong></span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-200 mr-3 mt-0.5 flex-shrink-0"></i><span>프리미엄 오버레이 테마</span></li>
+                        <li class="flex items-start text-sm"><i class="fas fa-check-circle text-yellow-200 mr-3 mt-0.5 flex-shrink-0"></i><span>전용 계정 매니저 + 최우선 지원</span></li>
+                    </ul>
+                    <button onclick="handleSubscribe('unlimited')" class="w-full py-3 bg-white text-orange-600 rounded-xl font-semibold hover:bg-gray-100 transition">UNLIMITED 시작하기</button>
                 </div>
-                <p class="text-center text-gray-600 mt-6">
-                    <i class="fas fa-lock mr-2"></i>
-                    <span data-i18n="securePayment">Secure payment processing with 256-bit SSL encryption</span>
-                </p>
             </div>
 
             <!-- FAQ -->
             <div class="bg-white rounded-2xl shadow-lg p-8">
-                <h3 class="text-2xl font-bold text-gray-800 text-center mb-8">
-                    <span data-i18n="faq">Frequently Asked Questions</span>
-                </h3>
+                <h3 class="text-2xl font-bold text-gray-800 text-center mb-8">자주 묻는 질문</h3>
                 <div class="max-w-3xl mx-auto space-y-4">
                     <details class="group">
                         <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <span class="font-medium text-gray-800" data-i18n="faqQuestion1">Can I change my plan anytime?</span>
+                            <span class="font-medium text-gray-800">TTS 목소리는 어떤 언어를 지원하나요?</span>
                             <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
                         </summary>
-                        <p class="p-4 text-gray-600 text-sm" data-i18n="faqAnswer1">Yes, you can upgrade or downgrade your plan at any time. Changes will take effect in the next billing cycle.</p>
+                        <p class="p-4 text-gray-600 text-sm">20가지 VIP 목소리를 제공하며, 한국어·영어·일본어·중국어 등 전 세계 주요 언어를 지원합니다. 시청자 국적에 상관없이 자연스럽게 소통할 수 있습니다.</p>
                     </details>
-
                     <details class="group">
                         <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <span class="font-medium text-gray-800" data-i18n="faqQuestion2">What is your refund policy?</span>
+                            <span class="font-medium text-gray-800">AI 발음 코치는 어떻게 작동하나요?</span>
                             <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
                         </summary>
-                        <p class="p-4 text-gray-600 text-sm" data-i18n="faqAnswer2">We offer a full refund within 7 days of subscription. After that, pro-rated refunds are available.</p>
+                        <p class="p-4 text-gray-600 text-sm">외국어 채팅이 감지되면 AI가 자동으로 의미를 파악하고, 스트리머 언어로 발음을 안내합니다. 예) 영어 채팅 "HI" → "나이스 투 밋 유" 발음 안내.</p>
                     </details>
-
                     <details class="group">
                         <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
-                            <span class="font-medium text-gray-800" data-i18n="faqQuestion3">Do you offer discounts for annual plans?</span>
+                            <span class="font-medium text-gray-800">시청자 신청곡은 어떻게 등록하나요?</span>
                             <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
                         </summary>
-                        <p class="p-4 text-gray-600 text-sm" data-i18n="faqAnswer3">Yes! Annual subscriptions receive a 20% discount compared to monthly billing.</p>
+                        <p class="p-4 text-gray-600 text-sm">시청자가 채팅에 #노래제목#가수이름 형식으로 입력하면 자동으로 신청곡 큐에 추가됩니다. 스트리머는 별도 작업 없이 신청곡을 관리할 수 있습니다.</p>
+                    </details>
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                            <span class="font-medium text-gray-800">플랜을 언제든지 변경할 수 있나요?</span>
+                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
+                        </summary>
+                        <p class="p-4 text-gray-600 text-sm">네, 언제든지 플랜을 변경할 수 있습니다. 업그레이드는 즉시 적용되며, 다운그레이드는 다음 결제 주기부터 적용됩니다.</p>
                     </details>
                 </div>
             </div>
@@ -178,8 +161,11 @@
     <script src="/js/timezone-detector.js"></script>
     <script>
         function handleSubscribe(plan) {
-            // Redirect to Google login
-            window.location.href = '/';
+            if (plan === 'free') {
+                window.location.href = '/auth/google';
+            } else {
+                window.location.href = '/dashboard/billing';
+            }
         }
     </script>
 </body>

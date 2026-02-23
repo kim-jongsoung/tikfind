@@ -18,6 +18,10 @@ const planLimitSchema = new mongoose.Schema({
     pronunciationCoachLimit: {
         type: Number,
         default: -1
+    },
+    ttsCharLimit: {
+        type: Number,
+        default: 500
     }
 }, {
     timestamps: true

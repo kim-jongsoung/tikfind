@@ -17,8 +17,8 @@
             </div>
             <div class="flex items-center space-x-4">
                 <span id="admin-email" class="text-sm"></span>
-                <a href="/admin/dashboard" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
-                    <i class="fas fa-chart-line mr-2"></i>Dashboard
+                <a href="/dashboard" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
+                    <i class="fas fa-home mr-2"></i>User Dashboard
                 </a>
                 <a href="/auth/logout" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm">
                     <i class="fas fa-sign-out-alt mr-2"></i>Logout
@@ -26,6 +26,21 @@
             </div>
         </div>
     </header>
+
+    <!-- Admin Navigation -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4">
+            <ul class="flex space-x-8 py-4">
+                <li><a href="/admin/dashboard" class="text-gray-600 hover:text-blue-600 pb-2"><i class="fas fa-chart-line mr-2"></i>Dashboard</a></li>
+                <li><a href="/admin/users" class="text-gray-600 hover:text-blue-600 pb-2"><i class="fas fa-users mr-2"></i>Users</a></li>
+                <li><a href="/admin/subscriptions" class="text-gray-600 hover:text-blue-600 pb-2"><i class="fas fa-credit-card mr-2"></i>Subscriptions</a></li>
+                <li><a href="/admin/payments" class="text-gray-600 hover:text-blue-600 pb-2"><i class="fas fa-dollar-sign mr-2"></i>Payments</a></li>
+                <li><a href="/admin/logs" class="text-gray-600 hover:text-blue-600 pb-2"><i class="fas fa-history mr-2"></i>Activity Logs</a></li>
+                <li><a href="/admin/plan-limits" class="text-blue-600 font-semibold border-b-2 border-blue-600 pb-2"><i class="fas fa-sliders-h mr-2"></i>Plan Limits</a></li>
+                <li><a href="/admin/ai-curation" class="text-gray-600 hover:text-blue-600 pb-2"><i class="fas fa-magic mr-2"></i>AI 큐레이션</a></li>
+            </ul>
+        </div>
+    </nav>
 
     <!-- Main Content -->
     <main class="container mx-auto px-4 py-8">
@@ -35,106 +50,100 @@
         </div>
 
         <!-- Free Plan -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div class="flex items-center justify-between mb-4">
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-gray-400">
+            <div class="flex items-center justify-between mb-5">
                 <div>
                     <h3 class="text-2xl font-bold text-gray-800">FREE 플랜</h3>
-                    <p class="text-gray-600">무료 사용자 제한</p>
+                    <p class="text-gray-500 text-sm mt-1">무료 사용자 일일 제한</p>
                 </div>
-                <span class="px-4 py-2 bg-gray-200 text-gray-800 rounded-full font-semibold">$0/월</span>
+                <span class="px-4 py-2 bg-gray-200 text-gray-800 rounded-full font-semibold text-sm">$0 / 월</span>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-music mr-2 text-blue-600"></i>신청곡 (곡/일)
-                    </label>
-                    <input type="number" id="free-song" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="5">
-                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-music mr-2 text-blue-600"></i>신청곡 (곡/일)</label>
+                    <input type="number" id="free-song" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="10">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-brain mr-2 text-green-600"></i>GPT AI (건/일)
-                    </label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-brain mr-2 text-green-600"></i>GPT AI (건/일)</label>
                     <input type="number" id="free-gpt" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="20">
-                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-microphone mr-2 text-purple-600"></i>AI 발음 코치 (건/일)
-                    </label>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-microphone mr-2 text-purple-600"></i>AI 발음 코치 (건/일)</label>
                     <input type="number" id="free-coach" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="10">
-                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-volume-up mr-2 text-orange-500"></i>TTS (글자/일)</label>
+                    <input type="number" id="free-tts" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" value="500">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
                 </div>
             </div>
         </div>
 
         <!-- UNIVERSE Plan -->
-        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-md p-6 mb-6 border-2 border-indigo-200">
-            <div class="flex items-center justify-between mb-4">
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg shadow-md p-6 mb-6 border-l-4 border-indigo-500">
+            <div class="flex items-center justify-between mb-5">
                 <div>
                     <h3 class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">UNIVERSE 플랜</h3>
-                    <p class="text-gray-600">프리미엄 사용자 제한</p>
+                    <p class="text-gray-500 text-sm mt-1">프리미엄 사용자 일일 제한</p>
                 </div>
-                <span class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full font-semibold">$9/월</span>
+                <span class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full font-semibold text-sm">$19 / 월</span>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-music mr-2 text-blue-600"></i>신청곡 (곡/일)
-                    </label>
-                    <input type="number" id="universe-song" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="100">
-                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-music mr-2 text-blue-600"></i>신청곡 (곡/일)</label>
+                    <input type="number" id="universe-song" class="w-full px-4 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="20">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-brain mr-2 text-green-600"></i>GPT AI (건/일)
-                    </label>
-                    <input type="number" id="universe-gpt" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="100">
-                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-brain mr-2 text-green-600"></i>GPT AI (건/일)</label>
+                    <input type="number" id="universe-gpt" class="w-full px-4 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="50">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-microphone mr-2 text-purple-600"></i>AI 발음 코치 (건/일)
-                    </label>
-                    <input type="number" id="universe-coach" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="100">
-                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-microphone mr-2 text-purple-600"></i>AI 발음 코치 (건/일)</label>
+                    <input type="number" id="universe-coach" class="w-full px-4 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="50">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-volume-up mr-2 text-orange-500"></i>TTS (글자/일)</label>
+                    <input type="number" id="universe-tts" class="w-full px-4 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500" value="500">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
                 </div>
             </div>
         </div>
 
         <!-- UNLIMITED Plan -->
-        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg shadow-md p-6 mb-6 border-2 border-yellow-300">
-            <div class="flex items-center justify-between mb-4">
+        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg shadow-md p-6 mb-6 border-l-4 border-yellow-500">
+            <div class="flex items-center justify-between mb-5">
                 <div>
                     <h3 class="text-2xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">UNLIMITED 플랜</h3>
-                    <p class="text-gray-600">최고급 사용자 제한</p>
+                    <p class="text-gray-500 text-sm mt-1">최고급 사용자 일일 제한</p>
                 </div>
-                <span class="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full font-semibold">$39/월</span>
+                <span class="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full font-semibold text-sm">$190 / 월</span>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-music mr-2 text-blue-600"></i>신청곡 (곡/일)
-                    </label>
-                    <input type="number" id="unlimited-song" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
-                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-music mr-2 text-blue-600"></i>신청곡 (곡/일)</label>
+                    <input type="number" id="unlimited-song" class="w-full px-4 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-brain mr-2 text-green-600"></i>GPT AI (건/일)
-                    </label>
-                    <input type="number" id="unlimited-gpt" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
-                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-brain mr-2 text-green-600"></i>GPT AI (건/일)</label>
+                    <input type="number" id="unlimited-gpt" class="w-full px-4 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">
-                        <i class="fas fa-microphone mr-2 text-purple-600"></i>AI 발음 코치 (건/일)
-                    </label>
-                    <input type="number" id="unlimited-coach" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
-                    <p class="text-xs text-gray-500 mt-1">-1 = 무제한</p>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-microphone mr-2 text-purple-600"></i>AI 발음 코치 (건/일)</label>
+                    <input type="number" id="unlimited-coach" class="w-full px-4 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2"><i class="fas fa-volume-up mr-2 text-orange-500"></i>TTS (글자/일)</label>
+                    <input type="number" id="unlimited-tts" class="w-full px-4 py-2 border border-yellow-300 rounded-lg focus:ring-2 focus:ring-yellow-500" value="-1">
+                    <p class="text-xs text-gray-400 mt-1">-1 = 무제한</p>
                 </div>
             </div>
         </div>
@@ -173,13 +182,13 @@
             try {
                 const response = await fetch('/admin/api/plan-limits');
                 const data = await response.json();
-                
                 if (data.success && data.limits) {
                     data.limits.forEach(limit => {
-                        const planName = limit.planName;
-                        document.getElementById(`${planName}-song`).value = limit.songRequestLimit;
-                        document.getElementById(`${planName}-gpt`).value = limit.gptAiLimit;
-                        document.getElementById(`${planName}-coach`).value = limit.pronunciationCoachLimit;
+                        const p = limit.planName;
+                        if (document.getElementById(`${p}-song`))  document.getElementById(`${p}-song`).value  = limit.songRequestLimit;
+                        if (document.getElementById(`${p}-gpt`))   document.getElementById(`${p}-gpt`).value   = limit.gptAiLimit;
+                        if (document.getElementById(`${p}-coach`)) document.getElementById(`${p}-coach`).value = limit.pronunciationCoachLimit;
+                        if (document.getElementById(`${p}-tts`))   document.getElementById(`${p}-tts`).value   = limit.ttsCharLimit ?? 500;
                     });
                 }
             } catch (error) {
@@ -195,19 +204,22 @@
                     planName: 'free',
                     songRequestLimit: parseInt(document.getElementById('free-song').value),
                     gptAiLimit: parseInt(document.getElementById('free-gpt').value),
-                    pronunciationCoachLimit: parseInt(document.getElementById('free-coach').value)
+                    pronunciationCoachLimit: parseInt(document.getElementById('free-coach').value),
+                    ttsCharLimit: parseInt(document.getElementById('free-tts').value)
                 },
                 {
                     planName: 'universe',
                     songRequestLimit: parseInt(document.getElementById('universe-song').value),
                     gptAiLimit: parseInt(document.getElementById('universe-gpt').value),
-                    pronunciationCoachLimit: parseInt(document.getElementById('universe-coach').value)
+                    pronunciationCoachLimit: parseInt(document.getElementById('universe-coach').value),
+                    ttsCharLimit: parseInt(document.getElementById('universe-tts').value)
                 },
                 {
                     planName: 'unlimited',
                     songRequestLimit: parseInt(document.getElementById('unlimited-song').value),
                     gptAiLimit: parseInt(document.getElementById('unlimited-gpt').value),
-                    pronunciationCoachLimit: parseInt(document.getElementById('unlimited-coach').value)
+                    pronunciationCoachLimit: parseInt(document.getElementById('unlimited-coach').value),
+                    ttsCharLimit: parseInt(document.getElementById('unlimited-tts').value)
                 }
             ];
 
@@ -221,20 +233,28 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('플랜 제한 설정이 저장되었습니다!');
+                    showToast('플랜 제한 설정이 저장되었습니다!');
                     loadLimits();
                 } else {
-                    alert('저장 실패: ' + (data.message || '알 수 없는 오류'));
+                    showToast('저장 실패: ' + (data.message || '알 수 없는 오류'), false);
                 }
             } catch (error) {
                 console.error('Error saving limits:', error);
-                alert('저장 중 오류가 발생했습니다.');
+                showToast('저장 중 오류가 발생했습니다.', false);
             }
         }
 
         // Initialize
         loadAdminInfo();
         loadLimits();
+
+        function showToast(msg, ok = true) {
+            const t = document.createElement('div');
+            t.className = `fixed bottom-6 right-6 px-5 py-3 ${ok ? 'bg-blue-600' : 'bg-red-600'} text-white rounded-xl shadow-lg text-sm z-50`;
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 2500);
+        }
     </script>
 </body>
 </html>
