@@ -160,9 +160,10 @@
                                 <option value="20">20분에 1곡</option>
                                 <option value="30">30분에 1곡</option>
                             </select>
-                            <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: #999; margin-left: auto;">
+                            <label style="display: flex; align-items: center; gap: 4px; font-size: 10px; color: #999; margin-left: auto;" title="다음 곡 재생 시 신청자가 방에 없으면 자동으로 건너뜀">
                                 <input type="checkbox" id="autoSkipAbsent" checked style="width: 14px; height: 14px;">
                                 <span>부재자 자동패스</span>
+                                <span style="font-size: 9px; color: #555; margin-left: 2px;">(신청자 방 이탈 시 자동 건너뜀)</span>
                             </label>
                         </div>
                         
@@ -207,6 +208,14 @@
                                 <p style="font-size: 9px; color: #666; margin: 0 0 2px 0;">재생 중</p>
                                 <p id="currentSongTitle" style="font-size: 11px; font-weight: 600; color: white; margin: 0 0 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</p>
                                 <p style="font-size: 9px; color: #666; margin: 0;">신청: <span id="currentRequester">-</span></p>
+                            </div>
+                            <!-- YouTube Premium 안내 -->
+                            <div style="padding: 5px 8px; background: #0d0d0d; border-top: 1px solid #1a1a1a; display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 9px; color: #555;">&#9654; 유튜브 재생 중 광고가 보이나요?</span>
+                                <span style="font-size: 9px; color: #ef4444; font-weight: bold;">&#8594;</span>
+                                <span style="font-size: 9px; color: #ff0000; font-weight: bold;">YouTube</span>
+                                <span style="font-size: 9px; color: #aaa;">Premium 가입 구글 계정으로 로그인하면</span>
+                                <span style="font-size: 9px; color: #4ade80; font-weight: bold;">광고 없이 재생 ✔️</span>
                             </div>
                         </div>
                     </div>
