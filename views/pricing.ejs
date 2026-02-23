@@ -193,8 +193,37 @@
     <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <h1><i class="fas fa-tag"></i> 간단하고 투명한 가격</h1>
+            <h1><i class="fas fa-tag"></i> 심플하고 투명한 요금제</h1>
             <p style="font-size: 1.3rem; opacity: 0.9;">무료로 시작하고, 필요할 때 업그레이드하세요</p>
+        </div>
+    </section>
+
+    <!-- 3가지 핵심 기능 강조 -->
+    <section style="padding: 3rem 0; background: #0a0a0a;">
+        <div class="container">
+            <div class="row justify-content-center g-4">
+                <div class="col-md-4">
+                    <div style="background: rgba(251,146,60,0.08); border: 1px solid rgba(251,146,60,0.3); border-radius: 18px; padding: 2rem; text-align: center;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">🔊</div>
+                        <h4 style="color: #fb923c; font-weight: 700; margin-bottom: 0.5rem;">VIP 목소리 TTS</h4>
+                        <p style="color: #9ca3af; font-size: 0.9rem; line-height: 1.6; margin: 0;">20가지 목소리로 시청자 성별에 맞게 지정<br>한국어 원어민처럼 자연스러운 발음 구현</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="background: rgba(139,92,246,0.08); border: 1px solid rgba(139,92,246,0.3); border-radius: 18px; padding: 2rem; text-align: center;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">🎤</div>
+                        <h4 style="color: #a78bfa; font-weight: 700; margin-bottom: 0.5rem;">AI 발음 코치</h4>
+                        <p style="color: #9ca3af; font-size: 0.9rem; line-height: 1.6; margin: 0;">외국어 채팅 자동 감지 → 발음 즉시 안내<br>전 세계 어떤 언어도 자신있게 소통</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="background: rgba(34,211,238,0.08); border: 1px solid rgba(34,211,238,0.3); border-radius: 18px; padding: 2rem; text-align: center;">
+                        <div style="font-size: 2.5rem; margin-bottom: 0.8rem;">🎵</div>
+                        <h4 style="color: #22d3ee; font-weight: 700; margin-bottom: 0.5rem;">시청자 신청곡</h4>
+                        <p style="color: #9ca3af; font-size: 0.9rem; line-height: 1.6; margin: 0;">시청자가 채팅으로 직접 신청 → 자동 수집<br>YouTube 연동으로 바로 재생</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -202,153 +231,125 @@
     <section class="pricing-section">
         <div class="container">
             <div class="row justify-content-center">
-                <!-- 무료 플랜 -->
+
+                <!-- FREE 플랜 -->
                 <div class="col-md-4 mb-4">
-                    <div class="pricing-card">
+                    <div class="pricing-card" style="display: flex; flex-direction: column;">
                         <div class="text-center">
-                            <h2 style="color: #9ca3af; font-weight: bold; margin-top: 1rem;">FREE</h2>
-                            <div class="price">
-                                $0<span>/월</span>
-                            </div>
-                            <p class="text-muted">무료로 시작하기</p>
+                            <h2 style="color: #9ca3af; font-weight: 800; margin-top: 1rem; letter-spacing: 2px;">FREE</h2>
+                            <div class="price">$0<span style="font-size: 1.2rem; color: #6b7280;">/월</span></div>
+                            <p style="color: #6b7280; font-size: 0.9rem;">신용카드 없이 지금 바로 시작</p>
                         </div>
-
-                        <ul class="feature-list">
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>평생 무료 TTS</strong></span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>신청곡 자동수집</strong> - 1일 5곡</span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>GPT AI 질문</strong> - 1일 20건</span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>AI 발음 코치</strong> - 1일 10건</span>
-                            </li>
+                        <ul class="feature-list" style="flex: 1;">
+                            <li><i class="fas fa-check-circle"></i><span>🔊 VIP 목소리 TTS — <strong style="color:#fff;">1일 500자</strong></span></li>
+                            <li><i class="fas fa-check-circle"></i><span>🎵 시청자 신청곡 — <strong style="color:#fff;">1일 10곡</strong></span></li>
+                            <li><i class="fas fa-check-circle"></i><span>🎤 AI 발음 코치 — <strong style="color:#fff;">1일 10건</strong></span></li>
+                            <li><i class="fas fa-check-circle"></i><span>🤖 GPT AI — <strong style="color:#fff;">1일 20건</strong></span></li>
+                            <li style="opacity: 0.35;"><i class="fas fa-times-circle" style="color:#6b7280;"></i><span>우선 지원</span></li>
                         </ul>
-
-                        <div class="text-center mt-4">
-                            <a href="/auth/google" class="btn btn-lg" style="background: rgba(255, 255, 255, 0.1); color: white; padding: 1rem 2rem; border-radius: 10px; font-weight: bold; border: 1px solid rgba(255, 255, 255, 0.2); width: 100%;">
-                                무료 시작하기
+                        <div class="text-center mt-3">
+                            <a href="/auth/google" class="btn btn-lg" style="background: rgba(255,255,255,0.08); color: #d1d5db; border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; font-weight: 700; padding: 0.9rem; width: 100%;">
+                                무료로 시작하기
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- 유니버스 플랜 -->
+                <!-- UNIVERSE 플랜 (추천) -->
                 <div class="col-md-4 mb-4">
-                    <div class="pricing-card featured">
-                        <div class="pricing-badge">
-                            <i class="fas fa-crown"></i> 추천
-                        </div>
-                        
+                    <div class="pricing-card featured" style="display: flex; flex-direction: column;">
+                        <div class="pricing-badge"><i class="fas fa-crown me-1"></i> 추천</div>
                         <div class="text-center">
-                            <h2 style="color: #667eea; font-weight: bold; margin-top: 2rem;">UNIVERSE</h2>
-                            <div class="price">
-                                $9<span>/월</span>
-                            </div>
-                            <p class="text-muted">글로벌 스트리머를 위한 완벽한 솔루션</p>
+                            <h2 style="color: #818cf8; font-weight: 800; margin-top: 2rem; letter-spacing: 2px;">UNIVERSE</h2>
+                            <div class="price">$19<span style="font-size: 1.2rem; color: #9ca3af;">/월</span></div>
+                            <p style="color: #9ca3af; font-size: 0.9rem;">글로벌 스트리머를 위한 플랜</p>
                         </div>
-
-                        <ul class="feature-list">
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>평생 무료 TTS</strong></span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>신청곡 자동수집</strong> - 1일 100곡</span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>GPT AI 질문</strong> - 1일 100건</span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>AI 발음 코치</strong> - 1일 100건</span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>24/7 우선 지원</strong></span>
-                            </li>
+                        <ul class="feature-list" style="flex: 1;">
+                            <li><i class="fas fa-check-circle"></i><span>🔊 VIP 목소리 TTS — <strong style="color:#fff;">1일 500자</strong></span></li>
+                            <li><i class="fas fa-check-circle"></i><span>🎵 시청자 신청곡 — <strong style="color:#fff;">1일 20곡</strong></span></li>
+                            <li><i class="fas fa-check-circle"></i><span>🎤 AI 발음 코치 — <strong style="color:#fff;">1일 50건</strong></span></li>
+                            <li><i class="fas fa-check-circle"></i><span>🤖 GPT AI — <strong style="color:#fff;">1일 50건</strong></span></li>
+                            <li><i class="fas fa-check-circle"></i><span>⚡ 우선 지원</span></li>
                         </ul>
-
-                        <div class="text-center mt-4">
-                            <a href="/auth/google" class="btn btn-lg" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; padding: 1rem 3rem; border-radius: 50px; font-weight: bold; width: 100%;">
-                                <i class="fas fa-rocket"></i> 지금 시작하기
+                        <div class="text-center mt-3">
+                            <a href="/dashboard/billing" class="btn btn-lg" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; border-radius: 12px; font-weight: 700; padding: 0.9rem; width: 100%; border: none;">
+                                <i class="fas fa-rocket me-2"></i>UNIVERSE 시작하기
                             </a>
                         </div>
                     </div>
                 </div>
 
-                <!-- 무제한 플랜 -->
+                <!-- UNLIMITED 플랜 -->
                 <div class="col-md-4 mb-4">
-                    <div class="pricing-card" style="border-color: rgba(251, 191, 36, 0.5); box-shadow: 0 10px 40px rgba(251, 191, 36, 0.3);">
+                    <div class="pricing-card" style="border-color: rgba(251,191,36,0.5); box-shadow: 0 10px 40px rgba(251,191,36,0.15); display: flex; flex-direction: column;">
                         <div class="pricing-badge" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);">
-                            <i class="fas fa-star"></i> 최고급
+                            <i class="fas fa-fire me-1"></i> 최고급
                         </div>
-                        
                         <div class="text-center">
-                            <h2 style="color: #fbbf24; font-weight: bold; margin-top: 2rem;">UNLIMITED</h2>
-                            <div class="price">
-                                $39<span>/월</span>
-                            </div>
-                            <p class="text-muted">프로페셔널 스트리머를 위한 최고급 플랜</p>
+                            <h2 style="color: #fbbf24; font-weight: 800; margin-top: 2rem; letter-spacing: 2px;">UNLIMITED</h2>
+                            <div class="price">$190<span style="font-size: 1.2rem; color: #9ca3af;">/월</span></div>
+                            <p style="color: #9ca3af; font-size: 0.9rem;">프로 스트리머를 위한 무제한 플랜</p>
                         </div>
-
-                        <ul class="feature-list">
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>평생 무료 TTS</strong></span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>신청곡 자동수집</strong> - 무제한</span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>GPT AI 질문</strong> - 무제한</span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>AI 발음 코치</strong> - 무제한</span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>24/7 최우선 지원</strong></span>
-                            </li>
-                            <li>
-                                <i class="fas fa-check-circle"></i>
-                                <span><strong>전용 계정 매니저</strong></span>
-                            </li>
+                        <ul class="feature-list" style="flex: 1;">
+                            <li><i class="fas fa-check-circle" style="color:#fbbf24;"></i><span>🔊 VIP 목소리 TTS — <strong style="color:#fff;">무제한</strong></span></li>
+                            <li><i class="fas fa-check-circle" style="color:#fbbf24;"></i><span>🎵 시청자 신청곡 — <strong style="color:#fff;">무제한</strong></span></li>
+                            <li><i class="fas fa-check-circle" style="color:#fbbf24;"></i><span>🎤 AI 발음 코치 — <strong style="color:#fff;">무제한</strong></span></li>
+                            <li><i class="fas fa-check-circle" style="color:#fbbf24;"></i><span>🤖 GPT AI — <strong style="color:#fff;">무제한</strong></span></li>
+                            <li><i class="fas fa-check-circle" style="color:#fbbf24;"></i><span>👑 전용 계정 매니저 + 최우선 지원</span></li>
                         </ul>
-
-                        <div class="text-center mt-4">
-                            <a href="/auth/google" class="btn btn-lg" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; padding: 1rem 3rem; border-radius: 50px; font-weight: bold; width: 100%;">
-                                <i class="fas fa-crown"></i> 지금 시작하기
+                        <div class="text-center mt-3">
+                            <a href="/dashboard/billing" class="btn btn-lg" style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: white; border-radius: 12px; font-weight: 700; padding: 0.9rem; width: 100%; border: none;">
+                                <i class="fas fa-crown me-2"></i>UNLIMITED 시작하기
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Payment Methods -->
-            <div class="text-center mt-5">
-                <h3 class="mb-4" style="font-weight: bold;">지원하는 결제 수단</h3>
-                <div class="d-flex justify-content-center align-items-center flex-wrap gap-4">
-                    <i class="fab fa-cc-visa" style="font-size: 3rem; color: #1a1f71;"></i>
-                    <i class="fab fa-cc-mastercard" style="font-size: 3rem; color: #eb001b;"></i>
-                    <i class="fab fa-cc-paypal" style="font-size: 3rem; color: #003087;"></i>
-                    <i class="fab fa-cc-stripe" style="font-size: 3rem; color: #635bff;"></i>
-                </div>
-                <p class="text-muted mt-4">
-                    <i class="fas fa-lock"></i> 256-bit SSL 암호화로 안전한 결제 처리
-                </p>
+            <!-- 플랜 비교표 -->
+            <div style="margin-top: 3rem; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <th style="padding: 1rem; text-align: left; color: #9ca3af; font-weight: 600;">기능</th>
+                            <th style="padding: 1rem; text-align: center; color: #9ca3af; font-weight: 600;">FREE</th>
+                            <th style="padding: 1rem; text-align: center; color: #818cf8; font-weight: 700;">UNIVERSE</th>
+                            <th style="padding: 1rem; text-align: center; color: #fbbf24; font-weight: 700;">UNLIMITED</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 0.9rem 1rem; color: #d1d5db;">🔊 VIP 목소리 TTS (1일)</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #9ca3af;">500자</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #818cf8; font-weight: 600;">500자</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #fbbf24; font-weight: 600;">무제한</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 0.9rem 1rem; color: #d1d5db;">🎵 시청자 신청곡 (1일)</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #9ca3af;">10곡</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #818cf8; font-weight: 600;">20곡</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #fbbf24; font-weight: 600;">무제한</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 0.9rem 1rem; color: #d1d5db;">🎤 AI 발음 코치 (1일)</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #9ca3af;">10건</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #818cf8; font-weight: 600;">50건</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #fbbf24; font-weight: 600;">무제한</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <td style="padding: 0.9rem 1rem; color: #d1d5db;">🤖 GPT AI (1일)</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #9ca3af;">20건</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #818cf8; font-weight: 600;">50건</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #fbbf24; font-weight: 600;">무제한</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.9rem 1rem; color: #d1d5db;">💰 월 요금</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #9ca3af; font-weight: 700;">$0</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #818cf8; font-weight: 700;">$19</td>
+                            <td style="padding: 0.9rem; text-align: center; color: #fbbf24; font-weight: 700;">$190</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </section>
@@ -363,11 +364,41 @@
                 <div class="col-md-8">
                     <div class="faq-item">
                         <div class="faq-question" onclick="toggleFaq(this)">
-                            <span>언제든지 플랜을 변경할 수 있나요?</span>
+                            <span>TTS 목소리는 어떤 언어를 지원하나요?</span>
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="faq-answer">
-                            <p class="text-muted">네, 언제든지 플랜을 업그레이드하거나 다운그레이드할 수 있습니다. 변경 사항은 다음 결제 주기에 적용됩니다.</p>
+                            <p style="color: #9ca3af;">20가지 VIP 목소리를 제공하며, 한국어·영어·일본어·중국어 등 전 세계 주요 언어를 지원합니다. 시청자 성별에 맞게 목소리를 개별 지정할 수 있어 방송이 훨씬 자연스러워집니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFaq(this)">
+                            <span>AI 발음 코치는 어떻게 작동하나요?</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p style="color: #9ca3af;">외국어 채팅이 감지되면 AI가 자동으로 의미를 파악하고, 스트리머 언어로 발음을 안내합니다. 예) 영어 채팅 "HI" → "나이스 투 밋 유" 발음 안내. 46개 이상의 언어를 지원합니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFaq(this)">
+                            <span>시청자 신청곡은 어떻게 등록하나요?</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p style="color: #9ca3af;">시청자가 채팅에 <strong style="color:#fff;">#노래제목#가수이름</strong> 형식으로 입력하면 자동으로 신청곡 큐에 추가됩니다. YouTube 연동으로 바로 검색·재생되며, 스트리머는 별도 작업 없이 신청곡을 관리할 수 있습니다.</p>
+                        </div>
+                    </div>
+
+                    <div class="faq-item">
+                        <div class="faq-question" onclick="toggleFaq(this)">
+                            <span>플랜을 언제든지 변경할 수 있나요?</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p style="color: #9ca3af;">네, 언제든지 플랜을 변경할 수 있습니다. 업그레이드는 즉시 적용되며, 다운그레이드는 다음 결제 주기부터 적용됩니다.</p>
                         </div>
                     </div>
 
@@ -377,37 +408,7 @@
                             <i class="fas fa-chevron-down"></i>
                         </div>
                         <div class="faq-answer">
-                            <p class="text-muted">구독 후 7일 이내에 전액 환불이 가능합니다. 그 이후에는 비례 환불이 제공됩니다.</p>
-                        </div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <span>연간 플랜 할인이 있나요?</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p class="text-muted">네! 연간 구독 시 월간 결제 대비 20% 할인을 받으실 수 있습니다.</p>
-                        </div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <span>무료 체험 중 취소할 수 있나요?</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p class="text-muted">네, 7일 무료 체험 기간 중 언제든지 취소할 수 있으며, 요금이 청구되지 않습니다.</p>
-                        </div>
-                    </div>
-
-                    <div class="faq-item">
-                        <div class="faq-question" onclick="toggleFaq(this)">
-                            <span>어떤 언어를 지원하나요?</span>
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                        <div class="faq-answer">
-                            <p class="text-muted">AI 발음 코치는 46개 이상의 언어를 지원합니다. 영어, 일본어, 중국어, 스페인어, 프랑스어, 독일어, 러시아어, 포르투갈어, 태국어, 베트남어 등을 포함합니다.</p>
+                            <p style="color: #9ca3af;">구독 후 7일 이내에 전액 환불이 가능합니다. 그 이후에는 비례 환불이 제공됩니다.</p>
                         </div>
                     </div>
                 </div>
