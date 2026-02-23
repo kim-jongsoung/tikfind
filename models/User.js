@@ -192,6 +192,12 @@ const userSchema = new mongoose.Schema({
             default: 1.0,
             min: 0.25,
             max: 4.0
+        },
+        defaultVolume: {
+            type: Number,
+            default: 80,
+            min: 0,
+            max: 100
         }
     },
     isActive: {
