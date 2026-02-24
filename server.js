@@ -1978,7 +1978,13 @@ io.on('connection', (socket) => {
                         const currentUsage = usageLog.songRequestCount || 0;
 
                         if (limit === -1 || currentUsage < limit) {
-                            const result = await songRequestService.addSongRequest(userId, songData, {
+                            const hostYoutubeKey = user?.youtubeApiKey || process.env.YOUTUBE_API_KEY;
+                            const hostSongService = new SongRequestService(hostYoutubeKey);
+                            hostSongService.songQueue = songRequestService.songQueue;
+                            hostSongService.settings = songRequestService.settings;
+                            hostSongService.lastRequestTime = songRequestService.lastRequestTime;
+                            console.log(`🔑 TikTok 신청곡 API 키: ${user?.youtubeApiKey ? '호스트 키' : '서버 공용 키'}`);
+                            const result = await hostSongService.addSongRequest(userId, songData, {
                                 username: tiktokData.username,
                                 uniqueId: tiktokData.uniqueId || tiktokData.username,
                                 nickname: tiktokData.nickname || tiktokData.username,
