@@ -862,7 +862,13 @@ async function processChatMessage(chatData) {
             console.log(`🎵 사용량 체크: ${currentUsage}/${limit}`);
 
             if (limit === -1 || currentUsage < limit) {
-                const result = await songRequestService.addSongRequest(userId, songData, {
+                const hostYoutubeKey = user?.youtubeApiKey || process.env.YOUTUBE_API_KEY;
+                const hostSongService = new SongRequestService(hostYoutubeKey);
+                // 기존 큐/설정 상태 복사
+                hostSongService.songQueue = songRequestService.songQueue;
+                hostSongService.settings = songRequestService.settings;
+                hostSongService.lastRequestTime = songRequestService.lastRequestTime;
+                const result = await hostSongService.addSongRequest(userId, songData, {
                     username, uniqueId: uniqueId || username, nickname: nickname || username, badges: badges || [], isVIP: false, level: 1
                 });
                 console.log(`🎵 addSongRequest 결과:`, result.success, result.message || '');

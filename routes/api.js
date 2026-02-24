@@ -390,6 +390,22 @@ router.get('/overlay/settings', requireAuth, async (req, res) => {
     }
 });
 
+// YouTube API 키 저장
+router.post('/user/youtube-api-key', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+
+        user.youtubeApiKey = (req.body.youtubeApiKey || '').trim();
+        await user.save({ timestamps: false });
+        console.log('✅ YouTube API 키 저장:', req.user._id);
+        res.json({ success: true, message: 'YouTube API 키가 저장되었습니다.' });
+    } catch (error) {
+        console.error('❌ YouTube API 키 저장 오류:', error);
+        res.status(500).json({ success: false, message: '서버 오류: ' + error.message });
+    }
+});
+
 // 사용자 설정 저장
 router.post('/user/settings', requireAuth, async (req, res) => {
     try {
@@ -799,9 +815,13 @@ router.post('/song-request/search', async (req, res) => {
         }
         
         console.log('🎵 신청곡 검색 시작:', { title, artist: artist || '없음', userId });
-        console.log('🔑 YouTube API 키:', process.env.YOUTUBE_API_KEY ? '설정됨' : '❌ 없음');
-        
-        const songRequestService = new SongRequestService();
+
+        // 호스트 본인 YouTube API 키 우선 사용
+        const hostUser = await User.findById(userId).select('youtubeApiKey');
+        const youtubeApiKey = (hostUser && hostUser.youtubeApiKey) ? hostUser.youtubeApiKey : process.env.YOUTUBE_API_KEY;
+        console.log('🔑 YouTube API 키:', youtubeApiKey ? (hostUser?.youtubeApiKey ? '호스트 키 사용' : '서버 공용 키 사용') : '❌ 없음');
+
+        const songRequestService = new SongRequestService(youtubeApiKey);
         const song = await songRequestService.searchSong(title, artist || '');
         
         if (song) {

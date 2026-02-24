@@ -182,6 +182,10 @@ const userSchema = new mongoose.Schema({
             type: Date
         }
     },
+    youtubeApiKey: {
+        type: String,
+        default: ''
+    },
     ttsSettings: {
         useGoogleTTS: {
             type: Boolean,

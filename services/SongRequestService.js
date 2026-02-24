@@ -8,8 +8,8 @@ const axios = require('axios');
 const PopularSong = require('../models/PopularSong');
 
 class SongRequestService {
-    constructor() {
-        this.youtubeApiKey = process.env.YOUTUBE_API_KEY;
+    constructor(youtubeApiKey) {
+        this.youtubeApiKey = youtubeApiKey || process.env.YOUTUBE_API_KEY;
         this.songQueue = new Map(); // userId -> 신청곡 배열
         this.settings = new Map(); // userId -> { isAccepting, cooldownMinutes }
         this.lastRequestTime = new Map(); // `${userId}:${uniqueId}` -> timestamp
