@@ -1423,7 +1423,12 @@ app.post('/api/my-playlist/add-to-queue', async (req, res) => {
         if (!item) return res.json({ success: false, message: '곡을 찾을 수 없습니다' });
         const user = await User.findById(userId);
         const streamerName = user?.tiktokId || 'Streamer';
-        const result = await songRequestService.addSongRequest(userId,
+        const hostYoutubeKey1 = user?.youtubeApiKey || process.env.YOUTUBE_API_KEY;
+        const hostSongService1 = new SongRequestService(hostYoutubeKey1);
+        hostSongService1.songQueue = songRequestService.songQueue;
+        hostSongService1.settings = songRequestService.settings;
+        hostSongService1.lastRequestTime = songRequestService.lastRequestTime;
+        const result = await hostSongService1.addSongRequest(userId,
             { title: item.title, artist: item.artist },
             { username: streamerName, uniqueId: streamerName, nickname: streamerName, badges: [], isVIP: false, isStreamer: true, level: 1 }
         );
@@ -1480,7 +1485,12 @@ app.post('/api/song-history/add-to-queue', async (req, res) => {
         const User = require('./models/User');
         const user = await User.findById(userId);
 
-        const result = await songRequestService.addSongRequest(userId, { title: song.title, artist: song.artist }, {
+        const hostYoutubeKey2 = user?.youtubeApiKey || process.env.YOUTUBE_API_KEY;
+        const hostSongService2 = new SongRequestService(hostYoutubeKey2);
+        hostSongService2.songQueue = songRequestService.songQueue;
+        hostSongService2.settings = songRequestService.settings;
+        hostSongService2.lastRequestTime = songRequestService.lastRequestTime;
+        const result = await hostSongService2.addSongRequest(userId, { title: song.title, artist: song.artist }, {
             username: user?.tiktokId || 'Streamer',
             uniqueId: user?.tiktokId || 'Streamer',
             nickname: user?.tiktokId || 'Streamer',
@@ -2262,7 +2272,13 @@ io.on('connection', (socket) => {
                 level: 1
             };
 
-            const result = await songRequestService.addSongRequest(
+            const hostYoutubeKey = user?.youtubeApiKey || process.env.YOUTUBE_API_KEY;
+            const hostSongService = new SongRequestService(hostYoutubeKey);
+            hostSongService.songQueue = songRequestService.songQueue;
+            hostSongService.settings = songRequestService.settings;
+            hostSongService.lastRequestTime = songRequestService.lastRequestTime;
+            console.log(`🔑 스트리머 직접 신청 API 키: ${user?.youtubeApiKey ? '호스트 키' : '서버 공용 키'}`);
+            const result = await hostSongService.addSongRequest(
                 userId,
                 { title: songData.title, artist: songData.artist },
                 requester
