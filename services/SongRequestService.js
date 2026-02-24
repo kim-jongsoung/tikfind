@@ -175,6 +175,10 @@ class SongRequestService {
             // 5단계: DB에 없으면 YouTube API 검색 (비용 발생!)
             console.log('⚠️ DB 캐시 미스 - YouTube API 호출 (비용 발생)');
             const youtubeResult = await this.searchYouTube(title, artist);
+
+            if (youtubeResult && youtubeResult.quotaExceeded) {
+                return { quotaExceeded: true };
+            }
             
             if (youtubeResult) {
                 // YouTube 검색 결과를 DB에 저장 (다음번엔 비용 0원)
@@ -281,7 +285,7 @@ class SongRequestService {
             const reason = error.response?.data?.error?.errors?.[0]?.reason;
             console.error(`❌ YouTube 검색 오류 [${isHostKey ? '호스트 키' : '서버 키'}]:`, status, reason || error.message);
 
-            // 호스트 키 quota 초과(403 quotaExceeded/dailyLimitExceeded) → 공용 키로 fallback
+            // 호스트 키 quota 초과(403) → 공용 키로 fallback
             if (isHostKey && status === 403 && serverKey && serverKey !== this.youtubeApiKey) {
                 console.log('⚠️ 호스트 키 한도 초과 → 서버 공용 키로 재시도');
                 try {
@@ -289,8 +293,20 @@ class SongRequestService {
                     if (fallback) return fallback;
                     console.log('❌ 공용 키로도 검색 결과 없음');
                 } catch (fallbackError) {
-                    console.error('❌ 공용 키 fallback 오류:', fallbackError.response?.status, fallbackError.message);
+                    const fbStatus = fallbackError.response?.status;
+                    console.error('❌ 공용 키 fallback 오류:', fbStatus, fallbackError.message);
+                    if (fbStatus === 403) {
+                        console.log('❌ 공용 키도 한도 초과 - 오늘 이용량 소진');
+                        return { quotaExceeded: true };
+                    }
                 }
+                return null;
+            }
+
+            // 서버 키 단독 quota 초과
+            if (!isHostKey && status === 403) {
+                console.log('❌ 서버 공용 키 한도 초과 - 오늘 이용량 소진');
+                return { quotaExceeded: true };
             }
             return null;
         }
@@ -362,6 +378,13 @@ class SongRequestService {
             return {
                 success: false,
                 message: '노래를 찾을 수 없습니다'
+            };
+        }
+
+        if (youtubeData.quotaExceeded) {
+            return {
+                success: false,
+                message: '하루 이용량이 초과되었습니다.'
             };
         }
 
