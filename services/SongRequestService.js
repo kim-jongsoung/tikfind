@@ -233,50 +233,64 @@ class SongRequestService {
      * @param {string} artist - 가수 이름
      */
     async searchYouTube(title, artist) {
-        try {
-            if (!this.youtubeApiKey) {
-                console.error('❌ YouTube API 키가 설정되지 않았습니다. .env 파일을 확인해주세요.');
-                return null;
-            }
+        const url = 'https://www.googleapis.com/youtube/v3/search';
+        const query = artist ? `${title} ${artist}` : title;
 
-            const url = 'https://www.googleapis.com/youtube/v3/search';
-
-            // 쿼리 1번만 시도 (100 유닛 절약 - 하루 100곡 보장)
-            const query = artist ? `${title} ${artist}` : title;
-            console.log('🔍 YouTube 검색:', query);
-
+        const trySearch = async (apiKey, keyLabel) => {
+            if (!apiKey) return null;
+            console.log(`🔍 YouTube 검색 [${keyLabel}]:`, query);
             const response = await axios.get(url, {
                 params: {
-                    key: this.youtubeApiKey,
+                    key: apiKey,
                     q: query,
                     part: 'snippet',
                     type: 'video',
                     maxResults: 5,
-                    videoCategoryId: '10' // Music category
+                    videoCategoryId: '10'
                 }
             });
-
-            console.log('✅ YouTube API 응답:', response.data.items?.length || 0, '개 결과');
-
-            if (response.data.items && response.data.items.length > 0) {
-                const video = response.data.items[0];
-                const result = {
+            const items = response.data.items;
+            if (items && items.length > 0) {
+                const video = items[0];
+                console.log(`✅ YouTube 검색 성공 [${keyLabel}]:`, video.id.videoId, '-', video.snippet.title);
+                return {
                     videoId: video.id.videoId,
                     url: `https://www.youtube.com/watch?v=${video.id.videoId}`,
                     thumbnail: video.snippet.thumbnails.high.url,
                     channelTitle: video.snippet.channelTitle,
                     title: video.snippet.title
                 };
-                console.log('✅ YouTube 검색 성공:', result.videoId, '-', video.snippet.title);
-                return result;
             }
+            return null;
+        };
 
+        const serverKey = process.env.YOUTUBE_API_KEY;
+        const isHostKey = this.youtubeApiKey && this.youtubeApiKey !== serverKey;
+
+        try {
+            if (!this.youtubeApiKey) {
+                console.error('❌ YouTube API 키가 설정되지 않았습니다.');
+                return null;
+            }
+            const result = await trySearch(this.youtubeApiKey, isHostKey ? '호스트 키' : '서버 키');
+            if (result) return result;
             console.log('❌ YouTube 검색 결과 없음:', title, artist);
             return null;
         } catch (error) {
-            console.error('❌ YouTube 검색 오류:', error.message);
-            if (error.response) {
-                console.error('❌ YouTube API 응답 에러:', error.response.status, error.response.data);
+            const status = error.response?.status;
+            const reason = error.response?.data?.error?.errors?.[0]?.reason;
+            console.error(`❌ YouTube 검색 오류 [${isHostKey ? '호스트 키' : '서버 키'}]:`, status, reason || error.message);
+
+            // 호스트 키 quota 초과(403 quotaExceeded/dailyLimitExceeded) → 공용 키로 fallback
+            if (isHostKey && status === 403 && serverKey && serverKey !== this.youtubeApiKey) {
+                console.log('⚠️ 호스트 키 한도 초과 → 서버 공용 키로 재시도');
+                try {
+                    const fallback = await trySearch(serverKey, '서버 공용 키(fallback)');
+                    if (fallback) return fallback;
+                    console.log('❌ 공용 키로도 검색 결과 없음');
+                } catch (fallbackError) {
+                    console.error('❌ 공용 키 fallback 오류:', fallbackError.response?.status, fallbackError.message);
+                }
             }
             return null;
         }
