@@ -16,7 +16,7 @@
             padding: 0;
         }
 
-        /* 마퀴 바 - 레이어 가로 100% 꽉 채움 */
+        /* 마퀴 바 */
         .marquee-bar {
             width: 100%;
             overflow: hidden;
@@ -27,7 +27,7 @@
             gap: 0;
         }
 
-        /* 신청곡 뱃지 - 배경색 동일, 글자 크기 동일, 심플 */
+        /* 뱃지 공통 */
         .song-badge {
             flex-shrink: 0;
             color: #fff;
@@ -37,10 +37,16 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            border-right: 1px solid rgba(255,255,255,0.2);
+            border-right: 1px solid rgba(255,255,255,0.25);
         }
 
-        /* 마퀴 텍스트 영역 - 뱃지 오른쪽에서만 흐름 */
+        /* 뱃지 3가지 색상 */
+        .badge-now    { background: #16a34a; } /* 초록 - 현재곡 */
+        .badge-next   { background: #2563eb; } /* 파랑 - 다음곡 */
+        .badge-wait   { background: #7c3aed; } /* 보라 - 대기 */
+        .badge-info   { background: rgba(0,0,0,0); } /* 투명 - 안내 */
+
+        /* 마퀴 텍스트 영역 */
         .marquee-scroll-area {
             flex: 1;
             overflow: hidden;
@@ -66,19 +72,32 @@
             font-weight: 600;
             letter-spacing: 0.02em;
         }
+
+        /* 신청방법 안내 깜빡이는 텍스트 */
+        .blink-text {
+            display: inline;
+            font-weight: 700;
+            animation: blink-color 1.2s ease-in-out infinite;
+        }
+
+        @keyframes blink-color {
+            0%, 100% { color: #facc15; } /* 노랑 */
+            50%      { color: #f97316; } /* 주황 */
+        }
     </style>
 </head>
 <body>
     <div class="marquee-bar" id="marqueeBar">
-        <span class="song-badge" id="songBadge">
+        <!-- 뱃지는 JS로 동적 생성 -->
+        <span class="song-badge" id="songBadge" style="background:#16a34a;">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-            신청곡
+            <span id="badgeLabel">신청곡</span>
         </span>
         <div class="marquee-scroll-area">
             <div class="marquee-track" id="marqueeTrack">
-                <span class="marquee-text" id="marqueeText1">신청곡을 기다리고 있습니다...</span>
+                <span class="marquee-text" id="marqueeText1"></span>
                 <span style="display:inline;opacity:0.4;"> ✦ </span>
-                <span class="marquee-text" id="marqueeText2">신청곡을 기다리고 있습니다...</span>
+                <span class="marquee-text" id="marqueeText2"></span>
                 <span style="display:inline;opacity:0.4;"> ✦ </span>
             </div>
         </div>
@@ -89,7 +108,7 @@
         const userId = '<%= userId %>';
         const socket = io();
 
-        // URL 파라미터로 스타일 설정
+        // URL 파라미터
         const params   = new URLSearchParams(location.search);
         const bgColor  = decodeURIComponent(params.get('bg')    || 'rgba(0,0,0,0.55)');
         const txtColor = params.get('color') || '#ffffff';
@@ -98,67 +117,96 @@
 
         const bar   = document.getElementById('marqueeBar');
         const track = document.getElementById('marqueeTrack');
+        const badge = document.getElementById('songBadge');
 
         const fSize = parseInt(fontSize);
-        const barH  = Math.round(fSize * 1.8) + 'px';  // 글자 크기에 딱 맞는 높이
+        const barH  = Math.round(fSize * 1.8) + 'px';
 
         bar.style.background  = bgColor;
         bar.style.color       = txtColor;
         bar.style.fontSize    = fSize + 'px';
         bar.style.height      = barH;
         bar.style.lineHeight  = barH;
+        badge.style.fontSize  = fSize + 'px';
 
-        // 뱃지: 배경색 동일, 글자 크기 동일 (보라색 없음)
-        const badge = document.getElementById('songBadge');
-        badge.style.background = bgColor;
-        badge.style.fontSize   = fSize + 'px';
-
-        // 마퀴 속도: 글자 수 기반 + speed 배율
-        // translateX(-50%) 방식이므로 전체 길이 기준으로 계산
         function setSpeed(text) {
             const base = Math.max(12, text.length * 0.3);
-            const duration = base / speed;
-            track.style.animationDuration = duration + 's';
+            track.style.animationDuration = (base / speed) + 's';
         }
 
-        // 현재곡 / 다음곡 상태
         let currentSong = null;
         let nextQueue   = [];
+
+        // 뱃지 색상 + 라벨 업데이트
+        const BADGE_NOW  = '#16a34a'; // 초록
+        const BADGE_NEXT = '#2563eb'; // 파랑
+        const BADGE_WAIT = '#7c3aed'; // 보라
+
+        function updateBadge() {
+            const lbl = document.getElementById('badgeLabel');
+            if (currentSong) {
+                badge.style.background = BADGE_NOW;
+                lbl.textContent = '▶ 현재곡';
+            } else if (nextQueue.length > 0) {
+                badge.style.background = BADGE_NEXT;
+                lbl.textContent = '⏭ 다음곡';
+            } else {
+                badge.style.background = bgColor;
+                lbl.textContent = '🎵 신청곡';
+            }
+        }
 
         function songLabel(song) {
             if (!song) return '';
             let label = song.title;
             if (song.artist)    label += ' - ' + song.artist;
-            if (song.requester) label += ' (@' + song.requester + ')';
+            if (song.requester) label += '  @' + song.requester;
             return label;
         }
 
+        // HTML 포함 마퀴 텍스트 빌드
         function buildText() {
+            updateBadge();
+
             let parts = [];
+
             if (currentSong) {
-                parts.push('▶ 현재곡 ' + songLabel(currentSong));
+                parts.push(
+                    '<span style="display:inline;background:' + BADGE_NOW + ';color:#fff;padding:1px 6px;border-radius:3px;font-weight:700;font-size:0.85em;">▶ 현재곡</span> '
+                    + songLabel(currentSong)
+                );
             }
             if (nextQueue.length > 0) {
-                parts.push('⏭ 다음곡 ' + songLabel(nextQueue[0]));
+                parts.push(
+                    '<span style="display:inline;background:' + BADGE_NEXT + ';color:#fff;padding:1px 6px;border-radius:3px;font-weight:700;font-size:0.85em;">⏭ 다음곡</span> '
+                    + songLabel(nextQueue[0])
+                );
             }
-            if (nextQueue.length > 1) {
-                nextQueue.slice(1, 4).forEach((s, i) => {
-                    parts.push('🎶 대기' + (i + 1) + ' ' + songLabel(s));
-                });
-            }
+            nextQueue.slice(1, 3).forEach((s, i) => {
+                parts.push(
+                    '<span style="display:inline;background:' + BADGE_WAIT + ';color:#fff;padding:1px 6px;border-radius:3px;font-weight:700;font-size:0.85em;">🎶 대기' + (i + 1) + '</span> '
+                    + songLabel(s)
+                );
+            });
 
-            // 신청 안내 문구는 항상 포함
-            parts.push('💬 #노래제목 #가수명 으로 신청하세요');
+            // 신청방법 안내 - 깜빡이는 텍스트
+            const guideHtml =
+                '<span class="blink-text">팔로워·팁·가입 후</span>'
+                + ' <span style="color:#fff;font-weight:700;">#노래제목 #가수명</span>'
+                + ' <span class="blink-text">채팅창에 신청해주세요!</span>';
 
-            // 이모티콘으로 구분, 여백 없이
-            const text = parts.join(' ✦ ');
+            parts.push(guideHtml);
 
-            // 2벌 복사 → translateX(-50%) 무한 반복
-            const full = text + ' ✦ ';
-            document.getElementById('marqueeText1').textContent = full;
-            document.getElementById('marqueeText2').textContent = full;
-            setSpeed(full);
+            const sep = ' <span style="opacity:0.4"> ✦ </span> ';
+            const full = parts.join(sep) + sep;
+
+            document.getElementById('marqueeText1').innerHTML = full;
+            document.getElementById('marqueeText2').innerHTML = full;
+            setSpeed(full.replace(/<[^>]+>/g, ''));
         }
+
+        // 초기 안내 표시
+        buildText();
 
         socket.emit('join-overlay', userId);
 
@@ -169,10 +217,8 @@
 
         socket.on('song-queue', (queue) => {
             const all = queue || [];
-            // 현재 재생 중인 곡은 큐에서 제외 (currentSong과 id 또는 title로 매칭)
             if (currentSong) {
                 nextQueue = all.filter(s =>
-                    s.id !== currentSong.id &&
                     !(s.title === currentSong.title && s.requester === currentSong.requester)
                 );
             } else {
