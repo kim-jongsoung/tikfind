@@ -117,9 +117,11 @@ class GoogleTTSService {
                 if (/[하크]$/.test(t)) return t + '~';                 // 웃음으로 끝나면 ~ 추가
                 return t + '!';                                         // 그 외 모두 ! 추가
             })();
+            // WaveNet용 동일 전처리 (SSML 내부 텍스트에 적용)
+            const waveText = chirpText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const inputPayload = isChirp
                 ? { text: chirpText }
-                : { ssml: `<speak><prosody pitch="+15%" rate="${Math.min(Math.max(speed, 0.25), 4.0) * 100}%" volume="loud">${safeText}</prosody></speak>` };
+                : { ssml: `<speak><prosody pitch="+15%" rate="${Math.min(Math.max(speed, 0.25), 4.0) * 100}%" volume="loud">${waveText}</prosody></speak>` };
 
             const response = await axios.post(
                 `${this.baseUrl}?key=${this.apiKey}`,
