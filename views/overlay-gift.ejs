@@ -176,9 +176,22 @@
             font-weight: 900;
             letter-spacing: 0.04em;
             white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .mid-style  #card-label { color: #e9d5ff; }
         .mega-style #card-label { color: #fde68a; }
+        #card-score {
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            padding: 2px 9px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .mid-style  #card-score { background: rgba(168,85,247,0.25); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.4); }
+        .mega-style #card-score { background: rgba(249,212,35,0.2); color: #fde68a; border: 1px solid rgba(249,212,35,0.5); }
 
         /* 광택 */
         .card-shine {
@@ -203,7 +216,7 @@
         <div id="card-avatar"></div>
         <div id="card-text">
             <div id="card-nickname"></div>
-            <div id="card-label"></div>
+            <div id="card-label"><span id="card-label-text"></span><span id="card-score"></span></div>
         </div>
     </div>
 </div>
@@ -259,7 +272,11 @@
         inner.className  = 'card-inner ' + (isMega ? 'mega-style' : 'mid-style');
         nickEl.className = isMega ? 'mega-nick' : 'mid-nick';
         applyNameSize(nickEl, name);
-        lblEl.textContent  = randMsg(isMega ? megaMsgs : midMsgs);
+        document.getElementById('card-label-text').textContent = randMsg(isMega ? megaMsgs : midMsgs);
+        const scoreEl = document.getElementById('card-score');
+        const pts = d.totalDiamonds || d.diamondCount || 0;
+        scoreEl.textContent = pts > 0 ? '+' + Number(pts).toLocaleString() : '';
+        scoreEl.style.display = pts > 0 ? '' : 'none';
         nickEl.textContent = name;
 
         // 프로필 이미지
