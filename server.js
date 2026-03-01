@@ -2171,6 +2171,18 @@ io.on('connection', (socket) => {
             }
         } else if (type === 'gift') {
             io.to(userId).emit('gift-received', tiktokData);
+            // 스트릭 불가 선물(giftType !== 1)만 오버레이 위젯으로 전송
+            if (tiktokData.giftType !== 1 && tiktokData.isFinal !== false) {
+                const totalDiamonds = (tiktokData.diamondCount || 0) * (tiktokData.repeatCount || 1);
+                io.to(`overlay-${userId}`).emit('overlay-gift', {
+                    nickname: tiktokData.nickname || tiktokData.uniqueId || tiktokData.username || '익명',
+                    uniqueId: tiktokData.uniqueId || tiktokData.username || '',
+                    diamondCount: tiktokData.diamondCount || 0,
+                    repeatCount: tiktokData.repeatCount || 1,
+                    totalDiamonds,
+                    tier: totalDiamonds >= 1000 ? 'mega' : 'mid'
+                });
+            }
             const sessGift = liveSessionMap.get(String(userId));
             if (sessGift && tiktokData.isFinal !== false) {
                 sessGift.totalGifts += (tiktokData.repeatCount || 1);

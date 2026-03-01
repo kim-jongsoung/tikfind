@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind Gift Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            overflow: hidden;
+            font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+        }
+
+        /* ── 전체 무대 ── */
+        #stage {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        /* ── 테두리 흐름 닉네임 (MEGA 전용) ── */
+        #border-track {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.4s;
+        }
+        #border-track.active { opacity: 1; }
+
+        .border-marquee {
+            position: absolute;
+            white-space: nowrap;
+            font-size: 15px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            color: transparent;
+            background: linear-gradient(90deg, #f9d423, #ff4e50, #a855f7, #3b82f6, #10b981, #f9d423);
+            background-size: 300% 100%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            animation: gradient-flow 2s linear infinite;
+            text-shadow: none;
+            filter: drop-shadow(0 0 6px rgba(249,212,35,0.8));
+        }
+        /* 상단 */
+        #bm-top    { top: 6px;   left: 0; animation: slide-right 6s linear infinite, gradient-flow 2s linear infinite; }
+        /* 하단 */
+        #bm-bottom { bottom: 6px; right: 0; animation: slide-left  6s linear infinite, gradient-flow 2s linear infinite; }
+        /* 좌측 */
+        #bm-left   {
+            left: 6px; top: 0;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            animation: slide-down 6s linear infinite, gradient-flow 2s linear infinite;
+        }
+        /* 우측 */
+        #bm-right  {
+            right: 6px; top: 0;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            animation: slide-up 6s linear infinite, gradient-flow 2s linear infinite;
+        }
+
+        @keyframes slide-right  { from { transform: translateX(-50%); } to { transform: translateX(0%); } }
+        @keyframes slide-left   { from { transform: translateX(50%);  } to { transform: translateX(0%); } }
+        @keyframes slide-down   { from { transform: translateY(-50%); } to { transform: translateY(0%); } }
+        @keyframes slide-up     { from { transform: translateY(50%);  } to { transform: translateY(0%); } }
+        @keyframes gradient-flow { 0% { background-position: 0% 50%; } 100% { background-position: 300% 50%; } }
+
+        /* ── 테두리 글로우 라인 (MEGA) ── */
+        #border-glow {
+            position: fixed;
+            inset: 0;
+            border: 3px solid transparent;
+            border-radius: 4px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s;
+            background: linear-gradient(#0000, #0000) padding-box,
+                        linear-gradient(90deg, #f9d423, #ff4e50, #a855f7, #3b82f6, #f9d423) border-box;
+            background-size: 300% 100%;
+            animation: gradient-flow 2s linear infinite;
+        }
+        #border-glow.active { opacity: 1; }
+
+        /* ── 중앙 카드 ── */
+        #gift-card {
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%) scale(0.6);
+            opacity: 0;
+            pointer-events: none;
+            transition: none;
+            min-width: 280px;
+            max-width: 88%;
+            text-align: center;
+        }
+        #gift-card.show-mid {
+            animation: pop-mid 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+        }
+        #gift-card.show-mega {
+            animation: pop-mega 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards;
+        }
+        #gift-card.hide {
+            animation: fade-out 0.6s ease forwards;
+        }
+
+        @keyframes pop-mid {
+            0%   { transform: translate(-50%,-50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+        }
+        @keyframes pop-mega {
+            0%   { transform: translate(-50%,-50%) scale(0.3) rotate(-6deg); opacity: 0; }
+            60%  { transform: translate(-50%,-50%) scale(1.12) rotate(2deg);  opacity: 1; }
+            100% { transform: translate(-50%,-50%) scale(1)   rotate(0deg);  opacity: 1; }
+        }
+        @keyframes fade-out {
+            0%   { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%,-50%) scale(0.85); }
+        }
+
+        /* 카드 내부 */
+        .card-inner {
+            border-radius: 20px;
+            padding: 28px 36px 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .card-inner.mid-style {
+            background: linear-gradient(135deg, rgba(15,15,25,0.92) 0%, rgba(30,20,50,0.92) 100%);
+            border: 1.5px solid rgba(168,85,247,0.5);
+            box-shadow: 0 0 40px rgba(168,85,247,0.3), 0 8px 32px rgba(0,0,0,0.6);
+        }
+        .card-inner.mega-style {
+            background: linear-gradient(135deg, rgba(10,5,20,0.95) 0%, rgba(30,10,40,0.95) 100%);
+            border: 2px solid rgba(249,212,35,0.6);
+            box-shadow: 0 0 60px rgba(249,212,35,0.4), 0 0 120px rgba(255,78,80,0.2), 0 12px 48px rgba(0,0,0,0.8);
+        }
+
+        /* 상단 라벨 */
+        .card-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            opacity: 0.75;
+        }
+        .mid-style  .card-label { color: #c084fc; }
+        .mega-style .card-label { color: #fbbf24; }
+
+        /* 닉네임 */
+        .card-nickname {
+            font-size: 36px;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.01em;
+            word-break: break-all;
+        }
+        .mid-style .card-nickname {
+            color: #fff;
+            text-shadow: 0 0 20px rgba(168,85,247,0.6), 0 2px 8px rgba(0,0,0,0.8);
+        }
+        .mega-style .card-nickname {
+            background: linear-gradient(135deg, #fde68a 0%, #f9d423 30%, #ff4e50 60%, #a855f7 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            animation: nickname-shimmer 2s ease infinite;
+            text-shadow: none;
+            filter: drop-shadow(0 0 12px rgba(249,212,35,0.7));
+        }
+        @keyframes nickname-shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50%       { background-position: 100% 50%; }
+        }
+
+        /* 다이아몬드 표시 */
+        .card-diamonds {
+            margin-top: 12px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+        .mid-style  .card-diamonds { color: rgba(196,181,253,0.8); }
+        .mega-style .card-diamonds { color: rgba(253,230,138,0.9); }
+
+        /* 카드 배경 광택 */
+        .card-shine {
+            position: absolute;
+            top: -60%;
+            left: -60%;
+            width: 60%;
+            height: 200%;
+            background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.06) 50%, transparent 60%);
+            animation: shine-sweep 3s ease-in-out infinite;
+        }
+        @keyframes shine-sweep {
+            0%   { left: -60%; }
+            100% { left: 160%; }
+        }
+
+        /* ── 파티클 컨테이너 ── */
+        #particles { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle-fly var(--dur) ease-out forwards;
+        }
+        @keyframes particle-fly {
+            0%   { transform: translate(0,0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+
+        /* 별 파티클 */
+        .star-particle {
+            position: absolute;
+            pointer-events: none;
+            font-size: var(--fs);
+            animation: star-fly var(--dur) ease-out forwards;
+        }
+        @keyframes star-fly {
+            0%   { transform: translate(0,0) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 테두리 글로우 -->
+<div id="border-glow"></div>
+
+<!-- 테두리 닉네임 흐름 (MEGA) -->
+<div id="border-track">
+    <div class="border-marquee" id="bm-top"></div>
+    <div class="border-marquee" id="bm-bottom"></div>
+    <div class="border-marquee" id="bm-left"></div>
+    <div class="border-marquee" id="bm-right"></div>
+</div>
+
+<!-- 파티클 -->
+<div id="particles"></div>
+
+<!-- 중앙 카드 -->
+<div id="gift-card">
+    <div class="card-inner" id="card-inner">
+        <div class="card-shine"></div>
+        <div class="card-label" id="card-label">💎 선물</div>
+        <div class="card-nickname" id="card-nickname"></div>
+        <div class="card-diamonds" id="card-diamonds"></div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const userId = '<%= userId %>';
+    const socket = io();
+
+    // ── 큐 관리 ──
+    const eventQueue = [];
+    let isPlaying = false;
+
+    socket.emit('join-overlay', userId);
+
+    socket.on('overlay-gift', (data) => {
+        eventQueue.push(data);
+        if (!isPlaying) playNext();
+    });
+
+    function playNext() {
+        if (eventQueue.length === 0) { isPlaying = false; return; }
+        isPlaying = true;
+        const data = eventQueue.shift();
+        showGift(data);
+    }
+
+    // ── 닉네임 안전 처리 ──
+    function safeName(data) {
+        const name = (data.nickname || '').trim()
+                  || (data.uniqueId || '').trim()
+                  || '익명';
+        return name.length > 20 ? name.slice(0, 20) + '…' : name;
+    }
+
+    // ── 메인 표시 ──
+    function showGift(data) {
+        const nickname = safeName(data);
+        const tier = data.tier || (data.totalDiamonds >= 1000 ? 'mega' : 'mid');
+        const isMega = tier === 'mega';
+        const duration = isMega ? 5500 : 4000;
+
+        // 카드 세팅
+        const card     = document.getElementById('gift-card');
+        const inner    = document.getElementById('card-inner');
+        const labelEl  = document.getElementById('card-label');
+        const nickEl   = document.getElementById('card-nickname');
+        const diamEl   = document.getElementById('card-diamonds');
+
+        card.className   = '';
+        inner.className  = 'card-inner ' + (isMega ? 'mega-style' : 'mid-style');
+        labelEl.textContent = isMega ? '💎 선물';
+        nickEl.textContent  = nickname;
+        if (data.totalDiamonds > 0) {
+            diamEl.textContent = '💎 ' + data.totalDiamonds.toLocaleString();
+        } else {
+            diamEl.textContent = '';
+        }
+
+        // 파티클
+        spawnParticles(isMega);
+
+        // 테두리 (MEGA만)
+        if (isMega) {
+            const txt = ' ✦ ' + nickname + ' ';
+            const repeat = txt.repeat(12);
+            ['bm-top','bm-bottom','bm-left','bm-right'].forEach(id => {
+                document.getElementById(id).textContent = repeat;
+            });
+            document.getElementById('border-track').classList.add('active');
+            document.getElementById('border-glow').classList.add('active');
+        }
+
+        // 음향
+        playSound(isMega);
+
+        // 카드 등장
+        card.classList.add(isMega ? 'show-mega' : 'show-mid');
+
+        // 자동 퇴장
+        setTimeout(() => {
+            card.classList.remove('show-mega', 'show-mid');
+            card.classList.add('hide');
+            document.getElementById('border-track').classList.remove('active');
+            document.getElementById('border-glow').classList.remove('active');
+
+            setTimeout(() => {
+                card.className = '';
+                clearParticles();
+                playNext();
+            }, 700);
+        }, duration);
+    }
+
+    // ── 파티클 ──
+    function spawnParticles(isMega) {
+        const count = isMega ? 60 : 28;
+        const cx = window.innerWidth  / 2;
+        const cy = window.innerHeight / 2;
+        const container = document.getElementById('particles');
+
+        const colors = isMega
+            ? ['#f9d423','#ff4e50','#a855f7','#3b82f6','#10b981','#fbbf24','#ec4899']
+            : ['#a855f7','#c084fc','#e879f9','#7c3aed','#ddd6fe'];
+
+        const symbols = isMega ? ['✦','★','◆','✸','❋','✿','⬡'] : ['✦','★','◆'];
+
+        for (let i = 0; i < count; i++) {
+            const isStar = isMega && Math.random() > 0.4;
+            const el = document.createElement('div');
+            const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+            const dist  = 80 + Math.random() * (isMega ? 260 : 160);
+            const tx = Math.cos(angle) * dist;
+            const ty = Math.sin(angle) * dist;
+            const dur = (0.8 + Math.random() * 1.0).toFixed(2) + 's';
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            if (isStar) {
+                el.className = 'star-particle';
+                el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+                el.style.cssText = `
+                    left:${cx + (Math.random()-0.5)*40}px;
+                    top:${cy + (Math.random()-0.5)*40}px;
+                    color:${color};
+                    --fs:${14 + Math.random()*14}px;
+                    --tx:${tx}px; --ty:${ty}px;
+                    --dur:${dur};
+                    --rot:${Math.random()*360}deg;
+                `;
+            } else {
+                el.className = 'particle';
+                const size = isMega ? 5 + Math.random() * 8 : 4 + Math.random() * 6;
+                el.style.cssText = `
+                    width:${size}px; height:${size}px;
+                    left:${cx + (Math.random()-0.5)*40}px;
+                    top:${cy + (Math.random()-0.5)*40}px;
+                    background:${color};
+                    box-shadow: 0 0 ${size*2}px ${color};
+                    --tx:${tx}px; --ty:${ty}px;
+                    --dur:${dur};
+                `;
+            }
+            container.appendChild(el);
+        }
+    }
+
+    function clearParticles() {
+        document.getElementById('particles').innerHTML = '';
+    }
+
+    // ── Web Audio 음향 ──
+    let audioCtx = null;
+    function getAudioCtx() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return audioCtx;
+    }
+
+    function playSound(isMega) {
+        try {
+            const ctx = getAudioCtx();
+            if (isMega) playFanfare(ctx);
+            else        playChime(ctx);
+        } catch(e) {}
+    }
+
+    // 중간 선물: 맑은 차임
+    function playChime(ctx) {
+        const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+        notes.forEach((freq, i) => {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            const t = ctx.currentTime + i * 0.12;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.25, t + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+            osc.start(t);
+            osc.stop(t + 0.85);
+        });
+    }
+
+    // 대형 선물: 팡파레
+    function playFanfare(ctx) {
+        // 저음 붐
+        const boom = ctx.createOscillator();
+        const boomGain = ctx.createGain();
+        boom.connect(boomGain); boomGain.connect(ctx.destination);
+        boom.type = 'sine'; boom.frequency.value = 80;
+        boomGain.gain.setValueAtTime(0.5, ctx.currentTime);
+        boomGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+        boom.start(ctx.currentTime); boom.stop(ctx.currentTime + 0.5);
+
+        // 팡파레 멜로디: C5 E5 G5 C6 E6
+        const fanfare = [523.25, 659.25, 783.99, 1046.5, 1318.51];
+        fanfare.forEach((freq, i) => {
+            const osc  = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+            const t = ctx.currentTime + 0.1 + i * 0.1;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.3, t + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+            osc.start(t); osc.stop(t + 0.65);
+        });
+
+        // 반짝 하모닉
+        setTimeout(() => {
+            try {
+                const ctx2 = getAudioCtx();
+                [1046.5, 1318.51, 1567.98].forEach((freq, i) => {
+                    const osc  = ctx2.createOscillator();
+                    const gain = ctx2.createGain();
+                    osc.connect(gain); gain.connect(ctx2.destination);
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+                    const t = ctx2.currentTime + i * 0.07;
+                    gain.gain.setValueAtTime(0, t);
+                    gain.gain.linearRampToValueAtTime(0.2, t + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                    osc.start(t); osc.stop(t + 0.55);
+                });
+            } catch(e) {}
+        }, 700);
+    }
+
+    // ── AudioContext 활성화 (첫 인터랙션 또는 자동) ──
+    document.addEventListener('click', () => { try { getAudioCtx().resume(); } catch(e){} }, { once: true });
+    // 브라우저 소스 자동 재생 허용 시도
+    setTimeout(() => { try { getAudioCtx(); } catch(e){} }, 500);
+</script>
+</body>
+</html>

@@ -37,6 +37,11 @@ router.get('/overlay/:userId', (req, res) => {
     res.render('overlay-display', { title: 'TikFind Overlay', userId: req.params.userId });
 });
 
+// 선물 알림 위젯 (인증 불필요 - OBS 브라우저 소스)
+router.get('/overlay/:userId/gift', (req, res) => {
+    res.render('overlay-gift', { title: 'TikFind Gift Overlay', userId: req.params.userId });
+});
+
 router.get('/dashboard/billing', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/billing.html'));
 });

@@ -101,10 +101,32 @@
                 <p class="text-xs text-gray-400 mt-2">* 실제 방송에서는 현재 재생 중인 곡과 다음 곡이 자동으로 표시됩니다.</p>
             </div>
 
+            <!-- 선물 알림 위젯 카드 -->
+            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-purple-400">
+                <h3 class="font-semibold text-gray-700 mb-1 flex items-center gap-2">
+                    <i class="fas fa-gift text-purple-500"></i> 선물 알림 위젯 <span class="ml-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full font-bold">NEW</span>
+                </h3>
+                <p class="text-xs text-gray-500 mb-3">스트릭 불가 고가 선물 수신 시 닉네임이 화려하게 표시되는 오버레이입니다. OBS/TikTok Live Studio에 별도 소스로 추가하세요.</p>
+                <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 mb-3">
+                    <code class="text-xs text-gray-600 flex-1 break-all">https://tikfind.kr/overlay/<%= user._id %>/gift</code>
+                    <button onclick="navigator.clipboard.writeText('https://tikfind.kr/overlay/<%= user._id %>/gift').then(()=>{this.innerHTML='<i class=\'fas fa-check mr-1\'></i>복사됨!';setTimeout(()=>{this.innerHTML='<i class=\'fas fa-copy mr-1\'></i>복사'},2000)})"
+                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm whitespace-nowrap">
+                        <i class="fas fa-copy mr-1"></i>복사
+                    </button>
+                </div>
+                <div class="flex items-center gap-3">
+                    <a href="/overlay/<%= user._id %>/gift" target="_blank"
+                        class="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition text-sm">
+                        <i class="fas fa-external-link-alt"></i> 미리보기
+                    </a>
+                    <span class="text-xs text-gray-400">권장 해상도: 전체 화면 크기 (투명 배경)</span>
+                </div>
+            </div>
+
             <!-- 설정 적용된 URL + TikTok Live Studio 안내 카드 -->
             <div class="bg-white rounded-xl shadow p-6">
                 <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <i class="fas fa-code text-gray-500"></i> 설정 적용된 URL
+                    <i class="fas fa-code text-gray-500"></i> 신청곡 오버레이 URL
                 </h3>
                 <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 mb-4">
                     <code class="text-xs text-gray-600 flex-1 break-all" id="finalUrl">https://tikfind.kr/overlay/<%= user._id %></code>
