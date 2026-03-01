@@ -351,18 +351,21 @@
                     body: JSON.stringify({ uniqueId, gender })
                 });
                 const data = await res.json();
+                console.log('🔍 setUserGender 응답:', data, '| uniqueId:', uniqueId, '| gender:', gender);
                 if (data.success) {
                     if (gender === null) delete userGendersMap[uniqueId];
                     else userGendersMap[uniqueId] = gender;
                     // 채팅창 아이디 색상 즉시 갱신
                     const uidColor = gender === 'm' ? '#60a5fa' : gender === 'f' ? '#f472b6' : '#888';
                     const uidWeight = gender ? '600' : '400';
-                    document.querySelectorAll(`.uid-clickable[data-uid="${CSS.escape(uniqueId)}"]`).forEach(el => {
+                    const targets = document.querySelectorAll(`.uid-clickable[data-uid="${CSS.escape(uniqueId)}"]`);
+                    console.log('🔍 색상 변경 대상 개수:', targets.length);
+                    targets.forEach(el => {
                         el.style.color = uidColor;
                         el.style.fontWeight = uidWeight;
                     });
                 }
-            } catch (e) {}
+            } catch (e) { console.error('❌ setUserGender 오류:', e); }
         }
 
         // 성별 선택 팝업 표시
