@@ -495,7 +495,27 @@
     // ── 테스트 모드: ?test=mid 또는 ?test=mega ──
     const testParam = new URLSearchParams(location.search).get('test');
     if (testParam === 'mid' || testParam === 'mega') {
-        setTimeout(() => {
+        // 테스트 버튼 표시 (크롬 자동재생 정책 때문에 클릭 필요)
+        const btn = document.createElement('div');
+        btn.id = 'test-btn';
+        btn.innerHTML = testParam === 'mega' ? '💎 MEGA 효과 테스트 클릭' : '🎁 중간 선물 효과 테스트 클릭';
+        btn.style.cssText = `
+            position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
+            background:rgba(168,85,247,0.85); color:#fff;
+            font-family:'Noto Sans KR',sans-serif; font-size:15px; font-weight:700;
+            padding:14px 32px; border-radius:50px; cursor:pointer;
+            box-shadow:0 4px 20px rgba(168,85,247,0.5);
+            z-index:9999; border:none; pointer-events:auto;
+            animation: btn-pulse 1.5s ease-in-out infinite;
+        `;
+        const style = document.createElement('style');
+        style.textContent = `@keyframes btn-pulse { 0%,100%{box-shadow:0 4px 20px rgba(168,85,247,0.5)} 50%{box-shadow:0 4px 40px rgba(168,85,247,0.9)} }`;
+        document.head.appendChild(style);
+        document.body.appendChild(btn);
+
+        function runTest() {
+            btn.remove();
+            try { getAudioCtx().resume(); } catch(e) {}
             eventQueue.push({
                 nickname: '테스트닉네임',
                 uniqueId: 'test_user',
@@ -505,7 +525,11 @@
                 tier: testParam
             });
             playNext();
-        }, 1000);
+        }
+
+        btn.addEventListener('click', runTest);
+        // 3초 후 자동 실행 (TikTok Live Studio 브라우저 소스에서는 자동 시작)
+        setTimeout(() => { if (document.getElementById('test-btn')) runTest(); }, 3000);
     }
 </script>
 </body>
