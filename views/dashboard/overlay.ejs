@@ -13,6 +13,18 @@
         .mq-scroll { flex:1; overflow:hidden; display:flex; align-items:center; }
         .mq-track { display:inline-block; white-space:nowrap; animation:mq 14s linear infinite; padding:0 8px; }
         @keyframes mq { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+        /* 탭 */
+        .tab-btn { transition: all .2s; border-bottom: 3px solid transparent; }
+        .tab-btn.active { border-bottom-color: #6366f1; color: #6366f1; font-weight: 700; }
+        .tab-btn.active-purple { border-bottom-color: #a855f7; color: #a855f7; font-weight: 700; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* 사이즈 및지 카드 */
+        .size-badge { display:inline-flex; align-items:center; gap:6px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; padding:6px 12px; font-family:monospace; font-size:13px; font-weight:700; color:#374151; }
+        .size-badge .dim { color:#6366f1; }
+        .step-num { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -20,169 +32,270 @@
     <div id="header-container"></div>
     
     <main class="ml-64 p-8" style="margin-top: 88px;">
-        <div class="max-w-3xl mx-auto">
+        <div class="max-w-4xl mx-auto">
+
+            <!-- 페이지 헤더 -->
             <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">🎵 오버레이 설정</h2>
-                <p class="text-gray-500 mt-1 text-sm">TikTok Live Studio 브라우저 소스에 추가하세요</p>
+                <h2 class="text-2xl font-bold text-gray-800">📺 오버레이 설정</h2>
+                <p class="text-gray-500 mt-1 text-sm">TikTok Live Studio / OBS 브라우저 소스에 추가할 위젯을 설정하세요</p>
             </div>
 
-            <!-- 스타일 설정 카드 -->
-            <div class="bg-white rounded-xl shadow p-6 mb-5">
-                <h3 class="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                    <i class="fas fa-palette text-purple-500"></i> 스타일 설정
-                </h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-2">배경색 &amp; 투명도</label>
-                        <div class="flex items-center gap-3">
-                            <input type="color" id="bgColor" value="#000000"
-                                class="w-10 h-10 rounded cursor-pointer border border-gray-200" oninput="updateAll()">
-                            <div class="flex-1">
-                                <input type="range" id="bgOpacity" min="0" max="100" value="55"
-                                    class="w-full" oninput="updateAll()">
-                                <div class="flex justify-between text-xs text-gray-400 mt-0.5">
-                                    <span>투명</span><span id="opacityLabel">55%</span>
+            <!-- 탭 네비게이션 -->
+            <div class="bg-white rounded-xl shadow mb-6">
+                <div class="flex border-b border-gray-200 px-2">
+                    <button onclick="switchTab('gift')" id="tab-gift"
+                        class="tab-btn active-purple px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fas fa-gift text-purple-500"></i> 선물 알림
+                        <span class="px-1.5 py-0.5 bg-purple-100 text-purple-600 text-xs rounded-full font-bold">NEW</span>
+                    </button>
+                    <button onclick="switchTab('song')" id="tab-song"
+                        class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fas fa-music text-indigo-500"></i> 신청곡 자막
+                    </button>
+                    <button disabled
+                        class="px-5 py-4 text-sm text-gray-300 flex items-center gap-2 cursor-not-allowed">
+                        <i class="fas fa-plus"></i> 더 많은 위젯
+                        <span class="px-1.5 py-0.5 bg-gray-100 text-gray-400 text-xs rounded-full">준비중</span>
+                    </button>
+                </div>
+
+                <!-- ══════════════════════════════════
+                     탭 1: 선물 알림 위젯
+                ══════════════════════════════════ -->
+                <div id="panel-gift" class="tab-panel active p-6">
+
+                    <!-- 설명 -->
+                    <div class="flex items-start gap-4 mb-6 p-4 bg-purple-50 rounded-xl border border-purple-100">
+                        <div class="text-3xl">🎁</div>
+                        <div>
+                            <p class="font-semibold text-purple-800 text-sm">선물 알림 위젯이란?</p>
+                            <p class="text-xs text-purple-600 mt-1 leading-relaxed">
+                                100 다이아 이상의 고가 선물을 받았을 때 선물한 시청자의 프로필·닉네임·유도문구가 화면에 화려하게 표시됩니다.<br>
+                                <strong>MID (100~999💎)</strong> 보라색 효과 &nbsp;|&nbsp; <strong>MEGA (1,000💎+)</strong> 금색 팡파레 + 화면 번쩍임
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- URL 카드 -->
+                    <div class="mb-5">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-link text-purple-500 mr-1"></i> 위젯 URL
+                        </label>
+                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <code class="text-xs text-gray-600 flex-1 break-all select-all" id="giftUrl">https://tikfind.kr/overlay/<%= user._id %>/gift</code>
+                            <button onclick="copyGiftUrl()" id="copyGiftBtn"
+                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm whitespace-nowrap flex items-center gap-1">
+                                <i class="fas fa-copy"></i> 복사
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 사이즈 안내 -->
+                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
+                        <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-ruler-combined text-purple-500"></i> 권장 소스 크기 (휴대폰 세로 비율)
+                        </p>
+                        <div class="flex flex-wrap gap-3 mb-3">
+                            <div class="size-badge">
+                                <i class="fas fa-mobile-alt text-purple-400"></i>
+                                너비 <span class="dim">390</span> × 높이 <span class="dim">844</span> px
+                                <span class="text-gray-400 font-normal text-xs">(iPhone 14 기준)</span>
+                            </div>
+                            <div class="size-badge">
+                                <i class="fas fa-mobile-alt text-purple-400"></i>
+                                너비 <span class="dim">360</span> × 높이 <span class="dim">800</span> px
+                                <span class="text-gray-400 font-normal text-xs">(갤럭시 기준)</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-400 leading-relaxed">
+                            위젯은 <strong>투명 배경 전체화면</strong>으로 동작합니다. 호스트 얼굴 위에 겹쳐두면 선물이 올 때만 카드가 등장합니다.
+                        </p>
+                    </div>
+
+                    <!-- 버튼 -->
+                    <div class="flex flex-wrap gap-3 mb-6">
+                        <a href="/overlay/<%= user._id %>/gift?test=mega" target="_blank"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-300 text-yellow-700 rounded-lg hover:bg-yellow-100 transition text-sm font-semibold">
+                            <i class="fas fa-star"></i> MEGA 효과 미리보기
+                        </a>
+                        <a href="/overlay/<%= user._id %>/gift?test=mid" target="_blank"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-100 transition text-sm font-semibold">
+                            <i class="fas fa-gift"></i> MID 효과 미리보기
+                        </a>
+                    </div>
+
+                    <!-- TikTok Live Studio 추가 방법 -->
+                    <div class="border-t border-gray-100 pt-5">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-tv text-pink-500"></i> TikTok Live Studio 소스 추가 방법
+                        </h4>
+                        <ol class="space-y-3">
+                            <li class="flex gap-3 items-start">
+                                <span class="step-num bg-purple-500">1</span>
+                                <p class="text-sm text-gray-600 pt-0.5">TikTok Live Studio 실행 → <strong>소스 패널</strong> → <strong>+ 추가</strong> 클릭</p>
+                            </li>
+                            <li class="flex gap-3 items-start">
+                                <span class="step-num bg-purple-500">2</span>
+                                <p class="text-sm text-gray-600 pt-0.5"><strong>브라우저(URL)</strong> 소스 선택</p>
+                            </li>
+                            <li class="flex gap-3 items-start">
+                                <span class="step-num bg-purple-500">3</span>
+                                <p class="text-sm text-gray-600 pt-0.5">위 URL 붙여넣기</p>
+                            </li>
+                            <li class="flex gap-3 items-start">
+                                <span class="step-num bg-purple-500">4</span>
+                                <div class="text-sm text-gray-600 pt-0.5">
+                                    <strong>해상도</strong> 입력:
+                                    <span class="size-badge ml-2">너비 <span class="dim">390</span> × 높이 <span class="dim">844</span></span>
+                                </div>
+                            </li>
+                            <li class="flex gap-3 items-start">
+                                <span class="step-num bg-purple-500">5</span>
+                                <p class="text-sm text-gray-600 pt-0.5">소스를 <strong>화면 전체에 맞게</strong> 배치 (투명 배경이므로 호스트 얼굴 위에 올려도 됩니다)</p>
+                            </li>
+                        </ol>
+                        <div class="mt-4 p-3 bg-purple-50 border-l-4 border-purple-400 rounded text-xs text-purple-700">
+                            <i class="fas fa-lightbulb mr-1"></i>
+                            <strong>팁:</strong> 미리보기 링크를 클릭해 버튼을 누르면 실제 효과를 확인할 수 있습니다. Chrome 자동재생 정책으로 인해 첫 클릭이 필요합니다.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══════════════════════════════════
+                     탭 2: 신청곡 자막
+                ══════════════════════════════════ -->
+                <div id="panel-song" class="tab-panel p-6">
+
+                    <!-- 설명 -->
+                    <div class="flex items-start gap-4 mb-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                        <div class="text-3xl">🎵</div>
+                        <div>
+                            <p class="font-semibold text-indigo-800 text-sm">신청곡 자막 오버레이란?</p>
+                            <p class="text-xs text-indigo-600 mt-1 leading-relaxed">
+                                현재 재생 중인 곡과 다음 신청곡 정보가 화면 하단에 흐르는 자막으로 표시됩니다.<br>
+                                시청자는 채팅에 <strong>#노래제목#가수명</strong> 형식으로 신청할 수 있습니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 스타일 설정 -->
+                    <div class="mb-5">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-palette text-indigo-500"></i> 스타일 설정
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-2">배경색 &amp; 투명도</label>
+                                <div class="flex items-center gap-3">
+                                    <input type="color" id="bgColor" value="#000000"
+                                        class="w-10 h-10 rounded cursor-pointer border border-gray-200" oninput="updateAll()">
+                                    <div class="flex-1">
+                                        <input type="range" id="bgOpacity" min="0" max="100" value="55" class="w-full" oninput="updateAll()">
+                                        <div class="flex justify-between text-xs text-gray-400 mt-0.5">
+                                            <span>투명</span><span id="opacityLabel">55%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-2">글자색</label>
+                                <input type="color" id="txtColor" value="#ffffff"
+                                    class="w-10 h-10 rounded cursor-pointer border border-gray-200" oninput="updateAll()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-2">글자크기: <span id="sizeLabel">16</span>px</label>
+                                <input type="range" id="fontSize" min="12" max="36" value="16" class="w-full"
+                                    oninput="document.getElementById('sizeLabel').textContent=this.value; updateAll()">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-500 mb-2">흐르는 속도: <span id="speedLabel">1.0</span>x</label>
+                                <input type="range" id="mqSpeed" min="0.3" max="3.0" step="0.1" value="1.0" class="w-full"
+                                    oninput="document.getElementById('speedLabel').textContent=parseFloat(this.value).toFixed(1); updateAll()">
+                                <div class="flex justify-between text-xs text-gray-400 mt-0.5"><span>느림</span><span>빠름</span></div>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-end">
+                            <button onclick="saveSettings()"
+                                class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm flex items-center gap-2">
+                                <i class="fas fa-save"></i> 설정 저장
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 미리보기 -->
+                    <div class="mb-5">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-eye text-green-500"></i> 미리보기
+                        </h4>
+                        <div class="mq-outer">
+                            <div class="mq-bar" id="previewBar" style="background:rgba(0,0,0,0.55);color:#fff;font-size:16px;height:29px;line-height:29px;">
+                                <span class="mq-badge" id="previewBadge" style="background:rgba(0,0,0,0.55);font-size:16px;">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                                    신청곡
+                                </span>
+                                <div class="mq-scroll">
+                                    <div class="mq-track">
+                                        <span id="previewText" style="font-family:'Malgun Gothic',sans-serif;font-weight:600;">▶ 현재곡 비처럼 음악처럼 - 김현식 ✦ ⏭ 다음곡 비와 당신 - 안치환 ✦ 💬 #노래제목 #가수명 으로 신청하세요 ✦ </span>
+                                        <span style="font-family:'Malgun Gothic',sans-serif;font-weight:600;">▶ 현재곡 비처럼 음악처럼 - 김현식 ✦ ⏭ 다음곡 비와 당신 - 안치환 ✦ 💬 #노래제목 #가수명 으로 신청하세요 ✦ </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <p class="text-xs text-gray-400 mt-2">* 실제 방송에서는 현재 재생 중인 곡과 다음 곡이 자동으로 표시됩니다.</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-2">글자색</label>
-                        <input type="color" id="txtColor" value="#ffffff"
-                            class="w-10 h-10 rounded cursor-pointer border border-gray-200" oninput="updateAll()">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-2">
-                            글자크기: <span id="sizeLabel">16</span>px
-                        </label>
-                        <input type="range" id="fontSize" min="12" max="36" value="16"
-                            class="w-full"
-                            oninput="document.getElementById('sizeLabel').textContent=this.value; updateAll()">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-2">
-                            흐르는 속도: <span id="speedLabel">1.0</span>x
-                        </label>
-                        <input type="range" id="mqSpeed" min="0.3" max="3.0" step="0.1" value="1.0"
-                            class="w-full"
-                            oninput="document.getElementById('speedLabel').textContent=parseFloat(this.value).toFixed(1); updateAll()">
-                        <div class="flex justify-between text-xs text-gray-400 mt-0.5">
-                            <span>느림</span><span>빠름</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-5 flex justify-end">
-                    <button onclick="saveSettings()"
-                        class="px-5 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm flex items-center gap-2">
-                        <i class="fas fa-save"></i> 설정 저장
-                    </button>
-                </div>
-            </div>
 
-            <!-- 미리보기 카드 -->
-            <div class="bg-white rounded-xl shadow p-6 mb-5">
-                <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <i class="fas fa-eye text-green-500"></i> 미리보기
-                </h3>
-                <div class="mq-outer">
-                    <div class="mq-bar" id="previewBar" style="background:rgba(0,0,0,0.55);color:#fff;font-size:16px;height:29px;line-height:29px;">
-                        <span class="mq-badge" id="previewBadge" style="background:rgba(0,0,0,0.55);font-size:16px;">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-                            신청곡
-                        </span>
-                        <div class="mq-scroll">
-                            <div class="mq-track">
-                                <span id="previewText" style="font-family:'Malgun Gothic',sans-serif;font-weight:600;">▶ 현재곡 비처럼 음악처럼 - 김현식 ✦ ⏭ 다음곡 비와 당신 - 안치환 ✦ 💬 #노래제목 #가수명 으로 신청하세요 ✦ </span>
-                                <span style="font-family:'Malgun Gothic',sans-serif;font-weight:600;">▶ 현재곡 비처럼 음악처럼 - 김현식 ✦ ⏭ 다음곡 빈와 당신 - 안치환 ✦ 💬 #노래제목 #가수명 으로 신청하세요 ✦ </span>
+                    <!-- URL + 사이즈 안내 -->
+                    <div class="mb-5">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-link text-indigo-500 mr-1"></i> 위젯 URL (설정 자동 반영)
+                        </label>
+                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200 mb-3">
+                            <code class="text-xs text-gray-600 flex-1 break-all select-all" id="finalUrl">https://tikfind.kr/overlay/<%= user._id %></code>
+                            <button onclick="copyUrl('finalUrl','copyFinalBtn')" id="copyFinalBtn"
+                                class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm whitespace-nowrap flex items-center gap-1">
+                                <i class="fas fa-copy"></i> 복사
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-3 mb-3">
+                            <div class="size-badge">
+                                <i class="fas fa-expand-alt text-indigo-400"></i>
+                                너비 <span class="dim">400</span> × 높이 <span class="dim">60</span> px
+                                <span class="text-gray-400 font-normal text-xs">(가로 자막 기본)</span>
+                            </div>
+                            <div class="size-badge">
+                                <i class="fas fa-expand-alt text-indigo-400"></i>
+                                너비 <span class="dim">600</span> × 높이 <span class="dim">80</span> px
+                                <span class="text-gray-400 font-normal text-xs">(넓은 화면)</span>
                             </div>
                         </div>
                     </div>
-                </div>
-                <p class="text-xs text-gray-400 mt-2">* 실제 방송에서는 현재 재생 중인 곡과 다음 곡이 자동으로 표시됩니다.</p>
-            </div>
 
-            <!-- 선물 알림 위젯 카드 -->
-            <div class="bg-white rounded-xl shadow p-6 border-l-4 border-purple-400">
-                <h3 class="font-semibold text-gray-700 mb-1 flex items-center gap-2">
-                    <i class="fas fa-gift text-purple-500"></i> 선물 알림 위젯 <span class="ml-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full font-bold">NEW</span>
-                </h3>
-                <p class="text-xs text-gray-500 mb-3">스트릭 불가 고가 선물 수신 시 닉네임이 화려하게 표시되는 오버레이입니다. OBS/TikTok Live Studio에 별도 소스로 추가하세요.</p>
-                <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 mb-3">
-                    <code class="text-xs text-gray-600 flex-1 break-all">https://tikfind.kr/overlay/<%= user._id %>/gift</code>
-                    <button onclick="navigator.clipboard.writeText('https://tikfind.kr/overlay/<%= user._id %>/gift').then(()=>{this.innerHTML='<i class=\'fas fa-check mr-1\'></i>복사됨!';setTimeout(()=>{this.innerHTML='<i class=\'fas fa-copy mr-1\'></i>복사'},2000)})"
-                        class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm whitespace-nowrap">
-                        <i class="fas fa-copy mr-1"></i>복사
-                    </button>
-                </div>
-                <div class="flex items-center gap-3">
-                    <a href="/overlay/<%= user._id %>/gift" target="_blank"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition text-sm">
-                        <i class="fas fa-external-link-alt"></i> 미리보기
-                    </a>
-                    <span class="text-xs text-gray-400">권장 해상도: 전체 화면 크기 (투명 배경)</span>
-                </div>
-            </div>
+                    <div class="flex flex-wrap gap-3 mb-6">
+                        <a href="/overlay/<%= user._id %>" target="_blank" id="previewLink"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-100 transition text-sm font-semibold">
+                            <i class="fas fa-external-link-alt"></i> 새 창에서 미리보기
+                        </a>
+                    </div>
 
-            <!-- 설정 적용된 URL + TikTok Live Studio 안내 카드 -->
-            <div class="bg-white rounded-xl shadow p-6">
-                <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <i class="fas fa-code text-gray-500"></i> 신청곡 오버레이 URL
-                </h3>
-                <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 mb-4">
-                    <code class="text-xs text-gray-600 flex-1 break-all" id="finalUrl">https://tikfind.kr/overlay/<%= user._id %></code>
-                    <button onclick="copyUrl('finalUrl','copyFinalBtn')" id="copyFinalBtn"
-                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm whitespace-nowrap">
-                        <i class="fas fa-copy mr-1"></i>복사
-                    </button>
-                </div>
-                <div class="mb-4">
-                    <a href="/overlay/<%= user._id %>" target="_blank" id="previewLink"
-                        class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition text-sm">
-                        <i class="fas fa-external-link-alt"></i> 새 창에서 미리보기
-                    </a>
-                </div>
-
-                <!-- TikTok Live Studio 설정 안내 -->
-                <div class="border-t border-gray-100 pt-4">
-                    <h4 class="font-semibold text-gray-700 mb-3 flex items-center gap-2 text-sm">
-                        <i class="fas fa-tv text-pink-500"></i> TikTok Live Studio 소스 추가 방법
-                    </h4>
-                    <ol class="space-y-3">
-                        <li class="flex gap-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">1</span>
-                            <div class="text-sm text-gray-600">
-                                TikTok Live Studio 실행 후 <strong class="text-gray-800">소스 패널</strong>에서 <strong class="text-gray-800">+ 추가</strong> 클릭
-                            </div>
-                        </li>
-                        <li class="flex gap-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">2</span>
-                            <div class="text-sm text-gray-600">
-                                <strong class="text-gray-800">URL</strong> 소스 선택
-                            </div>
-                        </li>
-                        <li class="flex gap-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">3</span>
-                            <div class="text-sm text-gray-600">
-                                URL 입력란에 위 <strong class="text-gray-800">설정 적용된 URL</strong> 붙여넣기
-                            </div>
-                        </li>
-                        <li class="flex gap-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
-                            <div class="text-sm text-gray-600">
-                                <strong class="text-gray-800">사용자 지정 해상도</strong> 설정:
-                                <span class="inline-flex items-center gap-1 ml-1 px-2 py-0.5 bg-gray-100 rounded text-xs font-mono font-bold text-gray-700">너비 400 × 높이 100</span>
-                            </div>
-                        </li>
-                        <li class="flex gap-3">
-                            <span class="flex-shrink-0 w-6 h-6 bg-pink-500 text-white rounded-full flex items-center justify-center text-xs font-bold">5</span>
-                            <div class="text-sm text-gray-600">
-                                확인 후 화면에서 <strong class="text-gray-800">크기와 위치</strong>를 드래그로 자유롭게 조절하세요
-                            </div>
-                        </li>
-                    </ol>
-                    <div class="mt-4 p-3 bg-pink-50 border-l-4 border-pink-400 rounded text-xs text-pink-700">
-                        <i class="fas fa-lightbulb mr-1"></i>
-                        <strong>팁:</strong> 해상도를 400×100으로 설정한 뒤, 화면에서 소스를 선택하고 모서리를 드래그해 원하는 크기로 조절하세요. 배경 투명도는 위 스타일 설정에서 조절할 수 있습니다.
+                    <!-- 추가 방법 -->
+                    <div class="border-t border-gray-100 pt-5">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-tv text-pink-500"></i> TikTok Live Studio 소스 추가 방법
+                        </h4>
+                        <ol class="space-y-3">
+                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">1</span><p class="text-sm text-gray-600 pt-0.5">TikTok Live Studio 실행 → <strong>소스 패널</strong> → <strong>+ 추가</strong></p></li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">2</span><p class="text-sm text-gray-600 pt-0.5"><strong>브라우저(URL)</strong> 소스 선택</p></li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">3</span><p class="text-sm text-gray-600 pt-0.5">위 URL 붙여넣기</p></li>
+                            <li class="flex gap-3 items-start">
+                                <span class="step-num bg-indigo-500">4</span>
+                                <div class="text-sm text-gray-600 pt-0.5"><strong>해상도</strong> 입력: <span class="size-badge ml-2">너비 <span class="dim">400</span> × 높이 <span class="dim">60</span></span></div>
+                            </li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">5</span><p class="text-sm text-gray-600 pt-0.5">화면 하단에 배치 후 드래그로 크기 조절</p></li>
+                        </ol>
+                        <div class="mt-4 p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded text-xs text-indigo-700">
+                            <i class="fas fa-lightbulb mr-1"></i>
+                            <strong>팁:</strong> 배경 투명도를 0%로 설정하면 완전 투명 자막으로 사용할 수 있습니다.
+                        </div>
                     </div>
                 </div>
             </div>
@@ -194,6 +307,35 @@
     <script src="/js/layout.js"></script>
     <script>
         const BASE_URL = 'https://tikfind.kr/overlay/<%= user._id %>';
+
+        // ── 탭 전환 ──
+        function switchTab(name) {
+            ['gift','song'].forEach(t => {
+                document.getElementById('panel-' + t).classList.toggle('active', t === name);
+                const btn = document.getElementById('tab-' + t);
+                btn.classList.remove('active', 'active-purple');
+                if (t === name) {
+                    btn.classList.add(name === 'gift' ? 'active-purple' : 'active');
+                }
+            });
+        }
+
+        // ── 선물 URL 복사 ──
+        function copyGiftUrl() {
+            const text = document.getElementById('giftUrl').textContent.trim();
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copyGiftBtn');
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
+                btn.classList.replace('bg-purple-600','bg-green-600');
+                btn.classList.replace('hover:bg-purple-700','hover:bg-green-700');
+                setTimeout(() => {
+                    btn.innerHTML = orig;
+                    btn.classList.replace('bg-green-600','bg-purple-600');
+                    btn.classList.replace('hover:bg-green-700','hover:bg-purple-700');
+                }, 2000);
+            });
+        }
 
         function hexToRgba(hex, alpha) {
             const r = parseInt(hex.slice(1,3), 16);
