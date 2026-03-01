@@ -204,13 +204,17 @@ router.get('/chart-data', async (req, res) => {
 router.post('/users/:id/plan', async (req, res) => {
     try {
         const { plan, subscriptionStatus, adminMemo } = req.body;
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        const updateFields = {};
+        if (plan !== undefined) updateFields.plan = plan;
+        if (subscriptionStatus !== undefined) updateFields.subscriptionStatus = subscriptionStatus;
+        if (adminMemo !== undefined) updateFields.adminMemo = adminMemo;
 
-        if (plan !== undefined) user.plan = plan;
-        if (subscriptionStatus !== undefined) user.subscriptionStatus = subscriptionStatus;
-        if (adminMemo !== undefined) user.adminMemo = adminMemo;
-        await user.save();
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { $set: updateFields },
+            { new: true, runValidators: false }
+        );
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
         notifyPlanUpdate(user._id);
         res.json({ success: true, message: '플랜이 변경되었습니다.', user });
@@ -227,19 +231,13 @@ router.post('/users/:id/extend', async (req, res) => {
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
         const now = new Date();
-        // 현재 만료일이 미래면 거기서부터, 아니면 오늘부터 연장
         const base = (user.subscriptionEndDate && user.subscriptionEndDate > now)
             ? new Date(user.subscriptionEndDate)
-            : now;
+            : new Date(now);
 
         base.setMonth(base.getMonth() + parseInt(months));
-        user.subscriptionEndDate = base;
-        user.subscriptionStartDate = user.subscriptionStartDate || now;
-        user.plan = 'pro';
-        user.subscriptionStatus = 'active';
 
-        // 결제 기록 추가
-        user.paymentHistory.push({
+        const paymentEntry = {
             paidAt: now,
             amount: amount || 0,
             currency: 'KRW',
@@ -247,16 +245,28 @@ router.post('/users/:id/extend', async (req, res) => {
             memo: memo || '',
             extendedMonths: parseInt(months),
             adminEmail: req.session.adminEmail || 'admin'
-        });
+        };
 
-        await user.save();
+        const updated = await User.findByIdAndUpdate(
+            req.params.id,
+            {
+                $set: {
+                    plan: 'pro',
+                    subscriptionStatus: 'active',
+                    subscriptionEndDate: base,
+                    subscriptionStartDate: user.subscriptionStartDate || now
+                },
+                $push: { paymentHistory: paymentEntry }
+            },
+            { new: true, runValidators: false }
+        );
 
-        notifyPlanUpdate(user._id);
+        notifyPlanUpdate(updated._id);
         res.json({
             success: true,
             message: `${months}개월 연장 완료 (만료일: ${base.toLocaleDateString('ko-KR')})`,
             subscriptionEndDate: base,
-            user
+            user: updated
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -416,22 +426,24 @@ router.get('/users/:id', logAdminAction('user_view'), async (req, res) => {
 router.put('/users/:id', logAdminAction('user_update'), async (req, res) => {
     try {
         const { plan, subscriptionStatus, isActive, role, notes } = req.body;
-        
-        const user = await User.findById(req.params.id);
-        if (!user) {
+
+        const before = await User.findById(req.params.id).lean();
+        if (!before) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
-        
-        const before = user.toObject();
-        
-        // Update allowed fields
-        if (plan !== undefined) user.plan = plan;
-        if (subscriptionStatus !== undefined) user.subscriptionStatus = subscriptionStatus;
-        if (isActive !== undefined) user.isActive = isActive;
-        if (role !== undefined) user.role = role;
-        
-        await user.save();
-        
+
+        const updateFields = {};
+        if (plan !== undefined) updateFields.plan = plan;
+        if (subscriptionStatus !== undefined) updateFields.subscriptionStatus = subscriptionStatus;
+        if (isActive !== undefined) updateFields.isActive = isActive;
+        if (role !== undefined) updateFields.role = role;
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            { $set: updateFields },
+            { new: true, runValidators: false }
+        );
+
         // Log the change
         await AdminLog.create({
             adminId: req.user._id,
