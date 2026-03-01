@@ -43,6 +43,7 @@ class TTSService {
 
     getAutoWaveNetVoice(uniqueId, userGenders) {
         const gender = userGenders && userGenders[uniqueId];
+        console.log(`🔍 [WaveNet] uniqueId=${uniqueId} | gender=${gender} | userGenders keys=${Object.keys(userGenders || {}).join(',')}`);
         if (gender === 'f') {
             // 여성: A, B
             const femaleVoices = ['ko-KR-Wavenet-A', 'ko-KR-Wavenet-B'];
