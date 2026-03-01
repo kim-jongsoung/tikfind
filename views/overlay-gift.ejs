@@ -95,7 +95,10 @@
             word-break: keep-all;
             overflow-wrap: break-word;
             margin-bottom: 20px;
+            max-width: 90vw;
         }
+        #card-nickname.len-mid  { font-size: 48px; }
+        #card-nickname.len-long { font-size: 36px; letter-spacing: -0.03em; }
         .mid-nick {
             color: #ffffff;
             text-shadow:
@@ -193,7 +196,12 @@
     // ── 닉네임 안전 처리 ──
     function safeName(d) {
         const n = (d.nickname || '').trim() || (d.uniqueId || '').trim() || '익명';
-        return n.length > 14 ? n.slice(0, 14) + '…' : n;
+        return n.length > 20 ? n.slice(0, 20) + '…' : n;
+    }
+    function applyNameSize(el, name) {
+        el.classList.remove('len-mid', 'len-long');
+        if (name.length > 10) el.classList.add('len-long');
+        else if (name.length > 6) el.classList.add('len-mid');
     }
 
     // ── 랜덤 문구 ──
@@ -219,6 +227,7 @@
 
         inner.className  = 'card-inner ' + (isMega ? 'mega-style' : 'mid-style');
         nickEl.className   = isMega ? 'mega-nick' : 'mid-nick';
+        applyNameSize(nickEl, name);
         lblEl.textContent  = randMsg(isMega ? megaMsgs : midMsgs);
         nickEl.textContent = name;
         diaEl.textContent  = (d.totalDiamonds > 0) ? '💎 ' + Number(d.totalDiamonds).toLocaleString() : '';
