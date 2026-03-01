@@ -474,7 +474,7 @@
 
             applyUsage('ttsCharUsage',    'ttsUpgradeBtn',
                 usage.ttsChar?.used ?? 0,
-                usage.ttsChar?.limit ?? 500, '');
+                usage.ttsChar?.limit ?? -1, '');
 
             // planUsageInfo 항상 표시
             const planUsageInfo = document.getElementById('planUsageInfo');

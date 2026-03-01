@@ -273,7 +273,7 @@ app.get('/api/current_user', async (req, res) => {
                 },
                 ttsChar: {
                     used: usage.ttsCharCount,
-                    limit: planLimit?.ttsCharLimit || 500
+                    limit: planLimit?.ttsCharLimit ?? -1
                 }
             }
         });
@@ -928,7 +928,7 @@ async function processChatMessage(chatData) {
             songRequest: { used: currentUsage.songRequestCount, limit: planLimit?.songRequestLimit || 10 },
             gptAi: { used: currentUsage.gptAiCount, limit: planLimit?.gptAiLimit || 20 },
             pronunciationCoach: { used: currentUsage.pronunciationCoachCount, limit: planLimit?.pronunciationCoachLimit || 10 },
-            ttsChar: { used: currentUsage.ttsCharCount, limit: planLimit?.ttsCharLimit || 500 }
+            ttsChar: { used: currentUsage.ttsCharCount, limit: planLimit?.ttsCharLimit ?? -1 }
         }
     });
 
