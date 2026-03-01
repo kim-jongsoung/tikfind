@@ -891,9 +891,11 @@ async function processChatMessage(chatData) {
     const planLimit = await PlanLimit.findOne({ planName: user?.plan || 'free' });
 
     // 3-5. Desktop App TTS 실행 명령 (서버가 TikTok 직접 연결 시)
+    const liveStatus = liveStatusMap.get(String(userId));
+    const isCurrentlyLive = liveStatus?.isLive === true;
     const desktopSocketId = desktopSocketMap.get(userId);
-    console.log(`🔊 TTS-SPEAK 체크: desktopSocketId=${desktopSocketId || '없음'} | userId=${userId} | text="${message}"`);
-    if (desktopSocketId) {
+    console.log(`🔊 TTS-SPEAK 체크: desktopSocketId=${desktopSocketId || '없음'} | userId=${userId} | isLive=${isCurrentlyLive} | text="${message}"`);
+    if (desktopSocketId && isCurrentlyLive) {
         const userGenders = {};
         if (user?.tiktokUserGenders) {
             user.tiktokUserGenders.forEach((v, k) => { userGenders[k] = v; });
@@ -904,6 +906,8 @@ async function processChatMessage(chatData) {
             userGenders
         });
         console.log(`✅ tts-speak 전송 완료 → ${desktopSocketId}`);
+    } else if (!isCurrentlyLive) {
+        console.log(`⛔ 방송 중지 상태 - tts-speak 차단 (userId=${userId})`);
     } else {
         console.log(`⚠️ Desktop App 미연결 - tts-speak 전송 불가`);
     }
@@ -2059,7 +2063,8 @@ io.on('connection', (socket) => {
 
                 // Desktop App TTS 실행 명령
                 const desktopSid = desktopSocketMap.get(userId);
-                if (desktopSid && tiktokData.message) {
+                const liveStatusForTTS = liveStatusMap.get(String(userId));
+                if (desktopSid && tiktokData.message && liveStatusForTTS?.isLive === true) {
                     const VoiceSettingsModel = require('./models/VoiceSettings');
                     const voiceSettings = await VoiceSettingsModel.find({ userId });
                     const userGendersMap = {};
@@ -2215,6 +2220,7 @@ io.on('connection', (socket) => {
         const desktopSocketId = desktopSocketMap.get(userId);
         if (desktopSocketId) {
             io.to(desktopSocketId).emit('stop-live');
+            io.to(desktopSocketId).emit('tts-stop'); // TTS 즉시 중지
         } else {
             io.to(userId).emit('stop-live');
         }
@@ -2226,7 +2232,9 @@ io.on('connection', (socket) => {
             liveConnections.delete(userId);
         }
 
+        // 라이브 상태를 false로 먼저 설정 (이후 tiktok-data 이벤트에서 tts-speak 차단됨)
         liveStatusMap.set(userId, { isLive: false });
+        liveStatusMap.set(String(userId), { isLive: false });
         io.to(userId).emit('live-status', { isLive: false });
 
         // 알고리즘 리포트: 세션 종료 저장

@@ -200,6 +200,13 @@ function connectToServer() {
         log.info('⏹️ 라이브 종료 명령 수신');
         stopLive();
     });
+
+    // TTS 즉시 중지 명령 (방송 중지 시)
+    socket.on('tts-stop', () => {
+        log.info('⛔ tts-stop 수신 - TTS 강제 중지');
+        const ttsInstance = collector ? collector.tts : standaloneTTS;
+        ttsInstance.stop();
+    });
     
     // 서버 → Desktop App: TTS 실행 명령
     socket.on('tts-speak', (data) => {
@@ -215,7 +222,7 @@ function connectToServer() {
             ttsInstance.updateGoogleTTSSettings(data.googleTTS);
             log.info(`🔊 Google TTS 설정 갱신: enabled=${data.googleTTS.enabled} | apiKey=${data.googleTTS.apiKey ? '있음' : '없음'}`);
         }
-        ttsInstance.speak(data.text, data.uniqueId);
+        ttsInstance.speak(data.text, data.uniqueId, data.userGenders || {});
     });
 
     // TTS 설정 업데이트 (방송 중 실시간 반영)

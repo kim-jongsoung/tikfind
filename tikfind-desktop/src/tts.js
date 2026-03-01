@@ -21,6 +21,8 @@ class TTSService {
         this.volume = 80;  // 볼륨 0~100, 기본 80
         this.queue = [];
         this.isPlaying = false;
+        this._stopped = false; // 중지 플래그
+        this._currentProcess = null; // 현재 실행 중인 PowerShell 프로세스
         // Google TTS 설정
         this.googleTTS = {
             enabled: false,
@@ -39,17 +41,32 @@ class TTSService {
         console.log(`🔊 Google TTS ${this.googleTTS.enabled ? '활성화' : '비활성화'} | VIP ${this.googleTTS.voiceSettings.length}명`);
     }
 
-    getAutoWaveNetVoice(uniqueId) {
-        let hash = 0;
-        const str = uniqueId || 'default';
-        for (let i = 0; i < str.length; i++) {
-            hash = ((hash << 5) - hash) + str.charCodeAt(i);
-            hash |= 0;
+    getAutoWaveNetVoice(uniqueId, userGenders) {
+        const gender = userGenders && userGenders[uniqueId];
+        if (gender === 'f') {
+            // 여성: A, B
+            const femaleVoices = ['ko-KR-Wavenet-A', 'ko-KR-Wavenet-B'];
+            let hash = 0;
+            const str = uniqueId || 'default';
+            for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
+            return femaleVoices[Math.abs(hash) % femaleVoices.length];
+        } else if (gender === 'm') {
+            // 남성: C, D
+            const maleVoices = ['ko-KR-Wavenet-C', 'ko-KR-Wavenet-D'];
+            let hash = 0;
+            const str = uniqueId || 'default';
+            for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
+            return maleVoices[Math.abs(hash) % maleVoices.length];
+        } else {
+            // 미지정: 해시로 랜덤 배정
+            let hash = 0;
+            const str = uniqueId || 'default';
+            for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; }
+            return WAVENET_VOICES[Math.abs(hash) % WAVENET_VOICES.length];
         }
-        return WAVENET_VOICES[Math.abs(hash) % WAVENET_VOICES.length];
     }
 
-    async speakWithGoogleTTS(text, uniqueId) {
+    async speakWithGoogleTTS(text, uniqueId, userGenders) {
         return new Promise((resolve) => {
             try {
                 const vipSetting = this.googleTTS.voiceSettings.find(v => v.tiktokUniqueId === uniqueId);
@@ -60,9 +77,10 @@ class TTSService {
                     voiceConfig = { languageCode: 'ko-KR', name: `ko-KR-Chirp3-HD-${vipSetting.chirpVoice}` };
                     console.log(`🎙️ Chirp3 HD: ${vipSetting.chirpVoice} | @${uniqueId}`);
                 } else {
-                    const waveNetVoice = this.getAutoWaveNetVoice(uniqueId);
+                    const waveNetVoice = this.getAutoWaveNetVoice(uniqueId, userGenders);
                     voiceConfig = { languageCode: 'ko-KR', name: waveNetVoice };
-                    console.log(`🔊 WaveNet: ${waveNetVoice} | @${uniqueId}`);
+                    const genderLabel = userGenders?.[uniqueId] === 'm' ? '남' : userGenders?.[uniqueId] === 'f' ? '여' : '랜덤';
+                    console.log(`🔊 WaveNet: ${waveNetVoice} (${genderLabel}) | @${uniqueId}`);
                 }
 
                 const body = JSON.stringify({
@@ -195,8 +213,8 @@ class TTSService {
         return cleaned;
     }
     
-    speak(text, uniqueId) {
-        if (!this.enabled) return;
+    speak(text, uniqueId, userGenders) {
+        if (!this.enabled || this._stopped) return;
         
         // 텍스트 정제
         const cleanedText = this.cleanText(text);
@@ -207,8 +225,8 @@ class TTSService {
             return;
         }
         
-        // 큐에 추가 (uniqueId 포함)
-        this.queue.push({ text: cleanedText, uniqueId: uniqueId || 'unknown' });
+        // 큐에 추가 (uniqueId + userGenders 포함)
+        this.queue.push({ text: cleanedText, uniqueId: uniqueId || 'unknown', userGenders: userGenders || {} });
         
         // 재생 중이 아니면 시작
         if (!this.isPlaying) {
@@ -217,7 +235,7 @@ class TTSService {
     }
     
     async processQueue() {
-        if (this.queue.length === 0) {
+        if (this.queue.length === 0 || this._stopped) {
             this.isPlaying = false;
             return;
         }
@@ -226,10 +244,11 @@ class TTSService {
         const item = this.queue.shift();
         
         try {
+            if (this._stopped) { this.isPlaying = false; return; }
             console.log(`🔊 TTS 처리: "${item.text}" | googleTTS.enabled=${this.googleTTS.enabled} | apiKey=${this.googleTTS.apiKey ? '있음' : '없음(빈값)'}`);
             if (this.googleTTS.enabled && this.googleTTS.apiKey) {
                 console.log(`🎙️ Google TTS 사용 | @${item.uniqueId}`);
-                await this.speakWithGoogleTTS(item.text, item.uniqueId);
+                await this.speakWithGoogleTTS(item.text, item.uniqueId, item.userGenders);
             } else {
                 console.log(`🔈 기본 TTS 사용 (Google TTS 비활성 또는 API키 없음)`);
                 await this.speakText(item.text);
@@ -239,7 +258,8 @@ class TTSService {
         }
         
         // 다음 텍스트 재생
-        this.processQueue();
+        if (!this._stopped) this.processQueue();
+        else { this.isPlaying = false; }
     }
     
     detectLanguage(text) {
@@ -304,22 +324,21 @@ class TTSService {
                     psCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Rate = ${rate}; $synth.Volume = ${vol}; $synth.Speak('${text.replace(/'/g, "''")}')`;  
                 }
                 
-                exec(`powershell -Command "${psCommand}"`, (err) => {
+                const proc = exec(`powershell -Command "${psCommand}"`, (err) => {
+                    this._currentProcess = null;
                     if (err) {
                         console.error('TTS 오류:', err);
                         // 오류 발생 시 기본 음성으로 재시도
-                        const fallbackCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Rate = ${rate}; $synth.Volume = ${vol}; $synth.Speak('${text.replace(/'/g, "''")}')`;
+                        const fallbackCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Rate = ${rate}; $synth.Volume = ${vol}; $synth.Speak('${text.replace(/'/g, "''")}')`;  
                         exec(`powershell -Command "${fallbackCommand}"`, (err2) => {
-                            if (err2) {
-                                reject(err2);
-                            } else {
-                                resolve();
-                            }
+                            if (err2) reject(err2);
+                            else resolve();
                         });
                     } else {
                         resolve();
                     }
                 });
+                this._currentProcess = proc;
             }
             // Mac TTS
             else if (process.platform === 'darwin') {
@@ -394,9 +413,24 @@ class TTSService {
     }
     
     stop() {
+        this._stopped = true;
         this.queue = [];
         this.isPlaying = false;
-        say.stop();
+        // 실행 중인 PowerShell 프로세스 강제 종료
+        if (this._currentProcess) {
+            try { this._currentProcess.kill(); } catch(e) {}
+            this._currentProcess = null;
+        }
+        // Windows: powershell 프로세스 전체 종료 (say 모듈 포함)
+        if (process.platform === 'win32') {
+            const { exec } = require('child_process');
+            exec('taskkill /F /IM powershell.exe /T', () => {});
+        } else {
+            try { say.stop(); } catch(e) {}
+        }
+        console.log('⛔ TTS 강제 중지 완료 - 큐 비움');
+        // 잠시 후 _stopped 플래그 해제 (다음 방송 대비)
+        setTimeout(() => { this._stopped = false; }, 3000);
     }
 }
 
