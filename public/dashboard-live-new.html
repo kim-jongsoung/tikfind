@@ -2133,7 +2133,8 @@ async function sendCustomQuestion(inputEl, targetLanguage) {
     if (!text) return;
 
     const btn = inputEl.nextElementSibling;
-    const resultEl = inputEl.closest('div[style]').querySelector('.custom-q-result');
+    // input → flex div → wrapper div 순서로 올라가서 .custom-q-result 탐색
+    const resultEl = inputEl.parentElement.parentElement.querySelector('.custom-q-result');
     btn.disabled = true;
     btn.textContent = '...';
 
