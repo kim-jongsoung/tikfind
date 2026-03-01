@@ -98,8 +98,17 @@ class GoogleTTSService {
             const safeText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const isChirp = chirpVoice && CHIRP3_HD_VOICES.includes(chirpVoice);
             // WaveNet만 SSML 지원 - 음정 +15%, 밝고 씩씩한 느낌
+            // Chirp3 HD: 문장 끝에 ! 또는 ~ 임의 추가 → 밝고 생동감 있는 합성
+            const chirpText = (() => {
+                const t = text.trimEnd();
+                if (/[.。]$/.test(t)) return t.slice(0, -1) + '!';   // 마침표 → !
+                if (/[?？]$/.test(t)) return t;                        // 물음표 유지
+                if (/[!！]$/.test(t)) return t;                        // 이미 ! 있으면 유지
+                const pick = Math.random() < 0.6 ? '!' : '~';         // 60% !, 40% ~
+                return t + pick;
+            })();
             const inputPayload = isChirp
-                ? { text }
+                ? { text: chirpText }
                 : { ssml: `<speak><prosody pitch="+15%" rate="${Math.min(Math.max(speed, 0.25), 4.0) * 100}%" volume="loud">${safeText}</prosody></speak>` };
 
             const response = await axios.post(
