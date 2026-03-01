@@ -2177,6 +2177,7 @@ io.on('connection', (socket) => {
                 io.to(`overlay-${userId}`).emit('overlay-gift', {
                     nickname: tiktokData.nickname || tiktokData.uniqueId || tiktokData.username || '익명',
                     uniqueId: tiktokData.uniqueId || tiktokData.username || '',
+                    profilePictureUrl: tiktokData.profilePictureUrl || '',
                     diamondCount: tiktokData.diamondCount || 0,
                     repeatCount: tiktokData.repeatCount || 1,
                     totalDiamonds,
