@@ -604,6 +604,24 @@
         socket.on('gift-received', (data) => {
             giftCount += data.count || 1;
             document.getElementById('giftCount').textContent = giftCount;
+
+            // 채팅창에 선물 내역 표시
+            const nativeDiv = document.getElementById('nativeLanguageMessages');
+            const nativeEmpty = nativeDiv.querySelector('.empty-message');
+            if (nativeEmpty) nativeEmpty.remove();
+
+            const giftEl = document.createElement('div');
+            giftEl.className = 'chat-message';
+            giftEl.style.cssText = 'padding: 8px 10px; margin-bottom: 6px; background: linear-gradient(135deg, #2d1b4e 0%, #1e1e2e 100%); border-radius: 8px; border-left: 3px solid #f59e0b; border-bottom: 1px solid #2a2a3e;';
+            giftEl.innerHTML = `
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:18px;">🎁</span>
+                    <span style="color:#f59e0b;font-size:12px;font-weight:700;">@${escapeHtml(data.username || 'unknown')}</span>
+                    <span style="color:#fcd34d;font-size:13px;font-weight:500;">${escapeHtml(data.giftName || '선물')} × ${data.count || 1}</span>
+                </div>
+            `;
+            nativeDiv.appendChild(giftEl);
+            nativeDiv.scrollTop = nativeDiv.scrollHeight;
         });
 
         // 좋아요
