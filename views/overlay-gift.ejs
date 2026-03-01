@@ -67,8 +67,8 @@
             transform: translate(-50%,-50%);
             opacity: 0;
             pointer-events: none;
-            width: 440px;
-            max-width: 88vw;
+            width: 460px;
+            max-width: 90vw;
             text-align: center;
         }
         @keyframes pop-mid {
@@ -86,77 +86,79 @@
             100% { opacity:0; transform:translate(-50%,-50%) scale(0.88); }
         }
 
-        /* 카드 내부 */
+        /* 닉네임 - 박스 없이 화면에 크게 */
+        #card-nickname {
+            font-size: 62px;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            word-break: keep-all;
+            overflow-wrap: break-word;
+            margin-bottom: 20px;
+        }
+        .mid-nick {
+            color: #ffffff;
+            text-shadow:
+                0 0 30px rgba(168,85,247,1),
+                0 0 60px rgba(168,85,247,0.6),
+                0 4px 0 rgba(0,0,0,1);
+        }
+        .mega-nick {
+            background: linear-gradient(135deg, #fff9c4 0%, #fde68a 25%, #f9d423 50%, #ff6b35 75%, #ff4e50 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            filter: drop-shadow(0 0 18px rgba(249,212,35,0.95)) drop-shadow(0 4px 0 rgba(0,0,0,1));
+        }
+
+        /* 유도문구 박스 */
         .card-inner {
-            border-radius: 24px;
-            padding: 34px 44px 28px;
+            display: inline-block;
+            border-radius: 50px;
+            padding: 12px 28px;
             position: relative;
             overflow: hidden;
         }
         .mid-style {
-            background: rgba(14,8,30,0.90);
-            border: 1.5px solid rgba(168,85,247,0.6);
-            box-shadow: 0 0 50px rgba(168,85,247,0.4), 0 20px 50px rgba(0,0,0,0.7);
+            background: rgba(14,8,30,0.88);
+            border: 1.5px solid rgba(168,85,247,0.65);
+            box-shadow: 0 0 24px rgba(168,85,247,0.45), 0 8px 24px rgba(0,0,0,0.6);
         }
         .mega-style {
-            background: rgba(10,4,22,0.90);
-            border: 2px solid rgba(249,212,35,0.65);
-            box-shadow: 0 0 60px rgba(249,212,35,0.4), 0 20px 56px rgba(0,0,0,0.8);
+            background: rgba(10,4,22,0.88);
+            border: 2px solid rgba(249,212,35,0.7);
+            box-shadow: 0 0 28px rgba(249,212,35,0.45), 0 8px 24px rgba(0,0,0,0.7);
         }
 
         /* 광택 */
         .card-shine {
             position: absolute;
             inset: 0;
-            background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.055) 50%, transparent 70%);
+            background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
             animation: shine 2.8s ease-in-out infinite;
         }
         @keyframes shine { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
 
-        /* 문구 */
+        /* 유도 문구 */
         #card-label {
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.18em;
-            margin-bottom: 16px;
-            opacity: 0.85;
-        }
-        .mid-style  #card-label { color: #c084fc; }
-        .mega-style #card-label { color: #fde68a; }
-
-        /* 닉네임 */
-        #card-nickname {
-            font-size: 52px;
+            font-size: 17px;
             font-weight: 900;
-            line-height: 1.1;
-            letter-spacing: -0.02em;
-            word-break: keep-all;
-            overflow-wrap: break-word;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
         }
-        .mid-style #card-nickname {
-            color: #ffffff;
-            text-shadow:
-                0 0 24px rgba(168,85,247,0.9),
-                0 0 48px rgba(168,85,247,0.45),
-                0 3px 0 rgba(0,0,0,1);
-        }
-        .mega-style #card-nickname {
-            background: linear-gradient(135deg, #fff9c4 0%, #fde68a 25%, #f9d423 50%, #ff6b35 75%, #ff4e50 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            filter: drop-shadow(0 0 14px rgba(249,212,35,0.85)) drop-shadow(0 3px 0 rgba(0,0,0,1));
-        }
+        .mid-style  #card-label { color: #e9d5ff; }
+        .mega-style #card-label { color: #fde68a; }
 
         /* 다이아 */
         #card-diamonds {
-            margin-top: 14px;
-            font-size: 14px;
+            margin-top: 10px;
+            font-size: 13px;
             font-weight: 700;
             letter-spacing: 0.06em;
+            opacity: 0.75;
         }
-        .mid-style  #card-diamonds { color: rgba(196,181,253,0.8); }
-        .mega-style #card-diamonds { color: rgba(253,230,138,0.9); }
+        .mid-style  #card-diamonds { color: #c4b5fd; }
+        .mega-style #card-diamonds { color: #fde68a; }
     </style>
 </head>
 <body>
@@ -164,10 +166,10 @@
 <div id="flash"></div>
 <div id="particles"></div>
 <div id="gift-card">
+    <div id="card-nickname"></div>
     <div class="card-inner" id="card-inner">
         <div class="card-shine"></div>
         <div id="card-label"></div>
-        <div id="card-nickname"></div>
         <div id="card-diamonds"></div>
     </div>
 </div>
@@ -216,6 +218,7 @@
         void card.offsetWidth;
 
         inner.className  = 'card-inner ' + (isMega ? 'mega-style' : 'mid-style');
+        nickEl.className   = isMega ? 'mega-nick' : 'mid-nick';
         lblEl.textContent  = randMsg(isMega ? megaMsgs : midMsgs);
         nickEl.textContent = name;
         diaEl.textContent  = (d.totalDiamonds > 0) ? '💎 ' + Number(d.totalDiamonds).toLocaleString() : '';
