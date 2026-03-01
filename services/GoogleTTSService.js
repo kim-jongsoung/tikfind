@@ -102,7 +102,8 @@ class GoogleTTSService {
                     voice: voiceConfig,
                     audioConfig: {
                         audioEncoding: 'MP3',
-                        speakingRate: Math.min(Math.max(speed, 0.25), 4.0)
+                        speakingRate: Math.min(Math.max(speed, 0.25), 4.0),
+                        volumeGainDb: 6.0
                     }
                 },
                 { timeout: 10000 }
