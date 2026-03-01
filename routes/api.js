@@ -1175,20 +1175,18 @@ router.post('/pronunciation-coach/host', requireAuth, async (req, res) => {
 // ── 시청자 성별 저장 (POST /api/tts/user-gender) ──
 router.post('/tts/user-gender', requireAuth, async (req, res) => {
     try {
-        const { uniqueId, gender } = req.body; // gender: 'm' | 'f' | null(삭제)
+        const { uniqueId, gender } = req.body;
         if (!uniqueId) return res.status(400).json({ success: false, message: 'uniqueId 필요' });
-
-        const user = await User.findById(req.user._id);
-        if (!user.tiktokUserGenders) user.tiktokUserGenders = new Map();
-
-        if (gender === null || gender === undefined) {
-            user.tiktokUserGenders.delete(uniqueId);
-        } else {
-            if (!['m', 'f'].includes(gender)) return res.status(400).json({ success: false, message: '성별은 m 또는 f' });
-            user.tiktokUserGenders.set(uniqueId, gender);
+        if (gender !== null && gender !== undefined && !['m', 'f'].includes(gender)) {
+            return res.status(400).json({ success: false, message: '성별은 m 또는 f' });
         }
-        user.markModified('tiktokUserGenders');
-        await user.save();
+
+        const key = `tiktokUserGenders.${uniqueId}`;
+        if (gender === null || gender === undefined) {
+            await User.findByIdAndUpdate(req.user._id, { $unset: { [key]: '' } });
+        } else {
+            await User.findByIdAndUpdate(req.user._id, { $set: { [key]: gender } });
+        }
         res.json({ success: true, uniqueId, gender });
     } catch (e) {
         console.error('❌ 성별 저장 오류:', e);
