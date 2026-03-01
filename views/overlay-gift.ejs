@@ -490,8 +490,23 @@
 
     // ── AudioContext 활성화 (첫 인터랙션 또는 자동) ──
     document.addEventListener('click', () => { try { getAudioCtx().resume(); } catch(e){} }, { once: true });
-    // 브라우저 소스 자동 재생 허용 시도
     setTimeout(() => { try { getAudioCtx(); } catch(e){} }, 500);
+
+    // ── 테스트 모드: ?test=mid 또는 ?test=mega ──
+    const testParam = new URLSearchParams(location.search).get('test');
+    if (testParam === 'mid' || testParam === 'mega') {
+        setTimeout(() => {
+            eventQueue.push({
+                nickname: '테스트닉네임',
+                uniqueId: 'test_user',
+                diamondCount: testParam === 'mega' ? 1000 : 200,
+                repeatCount: 1,
+                totalDiamonds: testParam === 'mega' ? 1000 : 200,
+                tier: testParam
+            });
+            playNext();
+        }, 1000);
+    }
 </script>
 </body>
 </html>
