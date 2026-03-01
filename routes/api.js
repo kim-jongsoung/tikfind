@@ -1153,6 +1153,25 @@ router.delete('/admin/songs/:id', async (req, res) => {
     }
 });
 
+// ── 호스트 직접 질문 발음코치 (POST /api/pronunciation-coach/host) ──
+router.post('/pronunciation-coach/host', requireAuth, async (req, res) => {
+    try {
+        const { text, targetLanguage } = req.body;
+        if (!text || !text.trim()) return res.status(400).json({ success: false, message: '텍스트 필요' });
+        if (!targetLanguage) return res.status(400).json({ success: false, message: 'targetLanguage 필요' });
+
+        const PronunciationCoachService = require('../services/PronunciationCoachService');
+        const coachService = new PronunciationCoachService();
+        const result = await coachService.generateHostQuestionGuide(text.trim(), targetLanguage);
+
+        if (!result) return res.status(500).json({ success: false, message: '발음코치 생성 실패' });
+        res.json({ success: true, result });
+    } catch (e) {
+        console.error('❌ 호스트 발음코치 오류:', e);
+        res.status(500).json({ success: false, message: '서버 오류' });
+    }
+});
+
 // ── 시청자 성별 저장 (POST /api/tts/user-gender) ──
 router.post('/tts/user-gender', requireAuth, async (req, res) => {
     try {

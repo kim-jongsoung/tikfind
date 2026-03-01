@@ -302,6 +302,47 @@ Provide:
 
         return responseMeanings[responseLang]?.[response] || response;
     }
+
+    /**
+     * 호스트 직접 질문 발음 코치
+     * 호스트가 한글로 입력한 질문을 외국어로 번역 + 발음 안내
+     */
+    async generateHostQuestionGuide(koreanText, targetLanguage) {
+        try {
+            const languageNames = {
+                'ko': '한국어', 'en': '영어', 'ja': '일본어',
+                'zh': '중국어', 'es': '스페인어', 'vi': '베트남어', 'th': '태국어'
+            };
+            const targetLangName = languageNames[targetLanguage] || targetLanguage;
+
+            const prompt = `한국어 스트리머가 ${targetLangName} 시청자에게 다음 말을 하고 싶습니다:\n"${koreanText}"\n\n다음 형식으로 답변해주세요:\n번역: (${targetLangName}로 번역)\n발음: (번역된 내용을 한글로 발음 표기)`;
+
+            const response = await this.openai.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [
+                    { role: 'system', content: '당신은 스트리머의 발음 코치입니다. 한국어를 외국어로 번역하고 한글 발음 표기를 제공합니다.' },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.5,
+                max_tokens: 150
+            });
+
+            const result = response.choices[0].message.content.trim();
+            const lines = result.split('\n').filter(l => l.trim());
+            let translation = '';
+            let pronunciation = '';
+
+            for (const line of lines) {
+                if (line.includes('번역:')) translation = line.split(':').slice(1).join(':').trim();
+                else if (line.includes('발음:')) pronunciation = line.split(':').slice(1).join(':').trim();
+            }
+
+            return { original: koreanText, translation, pronunciation, targetLanguage };
+        } catch (error) {
+            console.error('❌ 호스트 질문 발음코치 오류:', error);
+            return null;
+        }
+    }
 }
 
 module.exports = PronunciationCoachService;
