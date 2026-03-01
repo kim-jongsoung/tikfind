@@ -842,6 +842,17 @@
                             </div>
                             <div style="color: #a16207; font-size: 10px; margin-top: 2px;">${escapeHtml(guide.followUpQuestion)}</div>
                         </div>` : ''}
+                        <div style="margin-top: 6px; padding: 5px 7px; background: rgba(139,92,246,0.1); border-left: 3px solid #7c3aed; border-radius: 4px;" id="custom-q-wrap-${escapeHtml(data.uniqueId||data.username)}-${guide.timestamp||Date.now()}">
+                            <span style="color: #a78bfa; font-size: 10px; font-weight: bold;">✏️ 내가 직접 할 말 입력</span>
+                            <div style="display:flex;gap:4px;margin-top:4px;">
+                                <input type="text" placeholder="한글로 입력..." maxlength="100"
+                                    style="flex:1;background:#1a1a2e;border:1px solid #4c1d95;border-radius:4px;padding:4px 8px;color:#fff;font-size:12px;outline:none;"
+                                    onkeydown="if(event.key==='Enter') sendCustomQuestion(this, '${escapeHtml(guide.originalLanguage||'en')}')">
+                                <button onclick="sendCustomQuestion(this.previousElementSibling, '${escapeHtml(guide.originalLanguage||'en')}')"
+                                    style="padding:4px 10px;background:#7c3aed;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:11px;white-space:nowrap;">발음 안내</button>
+                            </div>
+                            <div class="custom-q-result" style="margin-top:4px;display:none;"></div>
+                        </div>
                     `;
                 }
                 
@@ -2114,6 +2125,50 @@ async function mhAiSaveToPlaylist(){
     const d=await r.json();
     mhToast(d.success?'플레이리스트에 저장됐습니다 ⭐':(d.message||'저장 실패'),!d.success);
     if(d.success){document.getElementById('mhAiQueueTitle').value='';document.getElementById('mhAiQueueArtist').value='';}
+}
+
+// ── 카드 내 직접 입력 발음코치 (해당 아이디 언어로 자동 변환) ──────────────────────────────────
+async function sendCustomQuestion(inputEl, targetLanguage) {
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    const btn = inputEl.nextElementSibling;
+    const resultEl = inputEl.closest('div[style]').querySelector('.custom-q-result');
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    try {
+        const res = await fetch('/api/pronunciation-coach/host', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text, targetLanguage })
+        });
+        const data = await res.json();
+
+        if (data.success && data.result) {
+            const r = data.result;
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = `
+                <div style="margin-bottom:2px;">
+                    <span style="color:#3b82f6;font-size:11px;">번역: </span>
+                    <span style="color:#93c5fd;font-size:13px;font-weight:bold;">${escapeHtml(r.translation)}</span>
+                </div>
+                <div>
+                    <span style="color:#ef4444;font-size:15px;font-weight:bold;">발음: ${escapeHtml(r.pronunciation)}</span>
+                </div>
+            `;
+            inputEl.value = '';
+        } else {
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = `<span style="color:#ef4444;font-size:11px;">${data.message || '실패'}</span>`;
+        }
+    } catch (e) {
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = `<span style="color:#ef4444;font-size:11px;">서버 오류</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '발음 안내';
+    }
 }
 
 // ── 호스트 직접 질문 발음코치 ──────────────────────────────────
