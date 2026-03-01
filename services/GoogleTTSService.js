@@ -95,14 +95,21 @@ class GoogleTTSService {
                 console.log(`🔊 WaveNet: ${waveNetVoice} | @${uniqueId}`);
             }
 
+            const safeText = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            const isChirp = chirpVoice && CHIRP3_HD_VOICES.includes(chirpVoice);
+            // WaveNet만 SSML 지원 - 음정 +15%, 밝고 씩씩한 느낌
+            const inputPayload = isChirp
+                ? { text }
+                : { ssml: `<speak><prosody pitch="+15%" rate="${Math.min(Math.max(speed, 0.25), 4.0) * 100}%" volume="loud">${safeText}</prosody></speak>` };
+
             const response = await axios.post(
                 `${this.baseUrl}?key=${this.apiKey}`,
                 {
-                    input: { text },
+                    input: inputPayload,
                     voice: voiceConfig,
                     audioConfig: {
                         audioEncoding: 'MP3',
-                        speakingRate: Math.min(Math.max(speed, 0.25), 4.0),
+                        speakingRate: isChirp ? Math.min(Math.max(speed, 0.25), 4.0) : 1.0,
                         volumeGainDb: 6.0
                     }
                 },
