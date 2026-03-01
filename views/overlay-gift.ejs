@@ -209,7 +209,6 @@
         const inner  = document.getElementById('card-inner');
         const lblEl  = document.getElementById('card-label');
         const nickEl = document.getElementById('card-nickname');
-        const diaEl  = document.getElementById('card-diamonds');
 
         card.style.animation = 'none';
         card.style.opacity   = '0';
@@ -220,7 +219,6 @@
         applyNameSize(nickEl, name);
         lblEl.textContent  = randMsg(isMega ? megaMsgs : midMsgs);
         nickEl.textContent = name;
-        diaEl.textContent  = (d.totalDiamonds > 0) ? '💎 ' + Number(d.totalDiamonds).toLocaleString() : '';
 
         // 화면 번쩍임
         flash(isMega);
