@@ -1153,4 +1153,42 @@ router.delete('/admin/songs/:id', async (req, res) => {
     }
 });
 
+// ── 시청자 성별 저장 (POST /api/tts/user-gender) ──
+router.post('/tts/user-gender', requireAuth, async (req, res) => {
+    try {
+        const { uniqueId, gender } = req.body; // gender: 'm' | 'f' | null(삭제)
+        if (!uniqueId) return res.status(400).json({ success: false, message: 'uniqueId 필요' });
+
+        const user = await User.findById(req.user._id);
+        if (!user.tiktokUserGenders) user.tiktokUserGenders = new Map();
+
+        if (gender === null || gender === undefined) {
+            user.tiktokUserGenders.delete(uniqueId);
+        } else {
+            if (!['m', 'f'].includes(gender)) return res.status(400).json({ success: false, message: '성별은 m 또는 f' });
+            user.tiktokUserGenders.set(uniqueId, gender);
+        }
+        user.markModified('tiktokUserGenders');
+        await user.save();
+        res.json({ success: true, uniqueId, gender });
+    } catch (e) {
+        console.error('❌ 성별 저장 오류:', e);
+        res.status(500).json({ success: false, message: '저장 실패' });
+    }
+});
+
+// ── 시청자 성별 전체 조회 (GET /api/tts/user-genders) ──
+router.get('/tts/user-genders', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('tiktokUserGenders');
+        const genders = {};
+        if (user.tiktokUserGenders) {
+            user.tiktokUserGenders.forEach((v, k) => { genders[k] = v; });
+        }
+        res.json({ success: true, genders });
+    } catch (e) {
+        res.status(500).json({ success: false, message: '조회 실패' });
+    }
+});
+
 module.exports = router;

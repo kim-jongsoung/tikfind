@@ -186,6 +186,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    tiktokUserGenders: {
+        type: Map,
+        of: { type: String, enum: ['m', 'f'] },
+        default: {}
+    },
     ttsSettings: {
         useGoogleTTS: {
             type: Boolean,

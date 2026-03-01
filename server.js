@@ -894,9 +894,14 @@ async function processChatMessage(chatData) {
     const desktopSocketId = desktopSocketMap.get(userId);
     console.log(`🔊 TTS-SPEAK 체크: desktopSocketId=${desktopSocketId || '없음'} | userId=${userId} | text="${message}"`);
     if (desktopSocketId) {
+        const userGenders = {};
+        if (user?.tiktokUserGenders) {
+            user.tiktokUserGenders.forEach((v, k) => { userGenders[k] = v; });
+        }
         io.to(desktopSocketId).emit('tts-speak', {
             text: message,
-            uniqueId: uniqueId || username
+            uniqueId: uniqueId || username,
+            userGenders
         });
         console.log(`✅ tts-speak 전송 완료 → ${desktopSocketId}`);
     } else {
@@ -2054,10 +2059,15 @@ io.on('connection', (socket) => {
                 if (desktopSid && tiktokData.message) {
                     const VoiceSettingsModel = require('./models/VoiceSettings');
                     const voiceSettings = await VoiceSettingsModel.find({ userId });
+                    const userGendersMap = {};
+                    if (user?.tiktokUserGenders) {
+                        user.tiktokUserGenders.forEach((v, k) => { userGendersMap[k] = v; });
+                    }
                     io.to(desktopSid).emit('tts-speak', {
                         text: tiktokData.message,
                         uniqueId: tiktokData.uniqueId || tiktokData.username,
                         volume: user?.ttsSettings?.defaultVolume != null ? user.ttsSettings.defaultVolume : 80,
+                        userGenders: userGendersMap,
                         googleTTS: {
                             enabled: user?.ttsSettings?.useGoogleTTS || false,
                             apiKey: process.env.GOOGLE_TTS_API_KEY || '',
