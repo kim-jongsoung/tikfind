@@ -255,14 +255,29 @@ class SongRequestService {
             });
             const items = response.data.items;
             if (items && items.length > 0) {
-                const video = items[0];
-                console.log(`✅ YouTube 검색 성공 [${keyLabel}]:`, video.id.videoId, '-', video.snippet.title);
+                // 스코어링: MV/공식채널 우선, 커버/노래방 감점
+                const scored = items.map(item => {
+                    const t = item.snippet.title.toLowerCase();
+                    const ch = item.snippet.channelTitle.toLowerCase();
+                    let score = 0;
+                    if (/mv|m\/v|official music video|뮤직비디오/.test(t)) score += 4;
+                    if (/official|오피셜/.test(t)) score += 2;
+                    if (/hybe|smtown|jyp|ygentertainment|big hit|starship|kakao|stone|vevo/.test(ch)) score += 3;
+                    if (/official|레이블|records|entertainment|music/.test(ch)) score += 1;
+                    if (artist && t.includes(artist.toLowerCase())) score += 2;
+                    if (/커버|cover|노래방|karaoke|mr|inst|reaction|반응|review|리뷰|piano|guitar|violin|drum/.test(t)) score -= 3;
+                    if (/live|라이브|concert|콘서트|stage/.test(t)) score -= 1;
+                    return { item, score };
+                });
+                scored.sort((a, b) => b.score - a.score);
+                const best = scored[0].item;
+                console.log(`✅ YouTube 검색 성공 [${keyLabel}] score=${scored[0].score}:`, best.id.videoId, '-', best.snippet.title);
                 return {
-                    videoId: video.id.videoId,
-                    url: `https://www.youtube.com/watch?v=${video.id.videoId}`,
-                    thumbnail: video.snippet.thumbnails.high.url,
-                    channelTitle: video.snippet.channelTitle,
-                    title: video.snippet.title
+                    videoId: best.id.videoId,
+                    url: `https://www.youtube.com/watch?v=${best.id.videoId}`,
+                    thumbnail: best.snippet.thumbnails.high?.url || best.snippet.thumbnails.default?.url,
+                    channelTitle: best.snippet.channelTitle,
+                    title: best.snippet.title
                 };
             }
             return null;

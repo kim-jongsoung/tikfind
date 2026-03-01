@@ -787,6 +787,9 @@ const aiService = new AIService();
 const pronunciationCoach = new PronunciationCoachService();
 const songRequestService = new SongRequestService();
 
+// 닉네임 발음 캐시: "userId:nickname" → "발음"
+const nicknamePronunciationCache = new Map();
+
 // ===== 채팅 메시지 공통 처리 함수 (TikTokLiveService + /api/live/chat 공유) =====
 async function processChatMessage(chatData) {
     const { userId, username, message, uniqueId, nickname, badges, userBadges,
@@ -912,11 +915,37 @@ async function processChatMessage(chatData) {
         console.log(`⚠️ Desktop App 미연결 - tts-speak 전송 불가`);
     }
 
-    // 4. 클라이언트 전송
+    // 4. 닉네임 발음 처리 (외국어 닉네임 → 한국어 발음, 캐시 기반)
+    let nicknamePronunciation = null;
+    const displayNickname = nickname || username || '';
+    const isKorean = /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(displayNickname);
+    const isAsciiOnly = /^[a-zA-Z0-9._\-\s]+$/.test(displayNickname);
+    // 한글 아니고, 순수 영문/숫자/기호도 아닌 경우 (일본어, 중국어, 아랍어 등) 발음 변환
+    if (!isKorean && !isAsciiOnly && displayNickname.length > 0) {
+        const cacheKey = `${userId}:${displayNickname}`;
+        if (nicknamePronunciationCache.has(cacheKey)) {
+            nicknamePronunciation = nicknamePronunciationCache.get(cacheKey);
+        } else {
+            try {
+                const guide = await pronunciationCoach.generatePronunciationGuide(displayNickname, await pronunciationCoach.detectLanguage(displayNickname), 'ko');
+                if (guide?.pronunciation) {
+                    nicknamePronunciation = guide.pronunciation;
+                    nicknamePronunciationCache.set(cacheKey, nicknamePronunciation);
+                    if (nicknamePronunciationCache.size > 2000) {
+                        const firstKey = nicknamePronunciationCache.keys().next().value;
+                        nicknamePronunciationCache.delete(firstKey);
+                    }
+                }
+            } catch (e) { /* 발음 변환 실패 시 무시 */ }
+        }
+    }
+
+    // 5. 클라이언트 전송
     io.to(userId).emit('chat-message', {
         username,
         uniqueId: uniqueId || username,
         nickname: nickname || username,
+        nicknamePronunciation,
         message,
         messageLanguage,
         pronunciationGuide,
@@ -2053,8 +2082,29 @@ io.on('connection', (socket) => {
                     }
                 };
 
+                // 닉네임 발음 처리 (외국어 닉네임 → 한국어 발음, 캐시 기반)
+                let nicknamePronunciation2 = null;
+                const dn2 = tiktokData.nickname || tiktokData.username || '';
+                const isKorean2 = /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(dn2);
+                const isAscii2 = /^[a-zA-Z0-9._\-\s]+$/.test(dn2);
+                if (!isKorean2 && !isAscii2 && dn2.length > 0) {
+                    const ck2 = `${userId}:${dn2}`;
+                    if (nicknamePronunciationCache.has(ck2)) {
+                        nicknamePronunciation2 = nicknamePronunciationCache.get(ck2);
+                    } else {
+                        try {
+                            const g2 = await pronunciationCoach.generatePronunciationGuide(dn2, await pronunciationCoach.detectLanguage(dn2), 'ko');
+                            if (g2?.pronunciation) {
+                                nicknamePronunciation2 = g2.pronunciation;
+                                nicknamePronunciationCache.set(ck2, nicknamePronunciation2);
+                            }
+                        } catch (e) {}
+                    }
+                }
+
                 io.to(userId).emit('chat-message', {
                     ...tiktokData,
+                    nicknamePronunciation: nicknamePronunciation2,
                     messageLanguage,
                     pronunciationGuide,
                     songRequest,
