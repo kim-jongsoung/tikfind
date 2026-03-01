@@ -26,67 +26,25 @@
             z-index: 10;
         }
         @keyframes flash-mid {
-            0%   { opacity: 0.55; }
-            40%  { opacity: 0.1; }
-            55%  { opacity: 0.4; }
-            75%  { opacity: 0.05; }
+            0%   { opacity: 0.5; }
+            25%  { opacity: 0; }
+            40%  { opacity: 0.35; }
+            70%  { opacity: 0; }
             100% { opacity: 0; }
         }
         @keyframes flash-mega {
-            0%   { opacity: 0.7; }
-            12%  { opacity: 0.05; }
-            22%  { opacity: 0.6; }
-            35%  { opacity: 0; }
-            45%  { opacity: 0.45; }
-            58%  { opacity: 0; }
-            68%  { opacity: 0.25; }
-            85%  { opacity: 0; }
+            0%   { opacity: 0.65; }
+            10%  { opacity: 0; }
+            20%  { opacity: 0.55; }
+            32%  { opacity: 0; }
+            42%  { opacity: 0.45; }
+            54%  { opacity: 0; }
+            63%  { opacity: 0.3; }
+            78%  { opacity: 0; }
+            88%  { opacity: 0.15; }
             100% { opacity: 0; }
         }
 
-        /* ── 테두리 글로우 ── */
-        #border-glow {
-            position: fixed;
-            inset: 0;
-            border: 3px solid transparent;
-            border-radius: 4px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.35s;
-            background: linear-gradient(#0000,#0000) padding-box,
-                        linear-gradient(90deg,#f9d423,#ff4e50,#a855f7,#3b82f6,#f9d423) border-box;
-            background-size: 300% 100%;
-            animation: gflow 2s linear infinite;
-        }
-        #border-glow.on { opacity: 1; }
-        @keyframes gflow { 0%{background-position:0% 50%} 100%{background-position:300% 50%} }
-
-        /* ── 테두리 닉네임 (MEGA) ── */
-        #border-wrap {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.35s;
-        }
-        #border-wrap.on { opacity: 1; }
-        .bm {
-            position: absolute;
-            white-space: nowrap;
-            font-size: 14px;
-            font-weight: 900;
-            letter-spacing: 0.1em;
-            color: #fff;
-            text-shadow: 0 0 8px rgba(249,212,35,0.9), 0 0 18px rgba(255,78,80,0.6);
-        }
-        #bm-t { top:8px;    left:0;  animation: bm-r 7s linear infinite; }
-        #bm-b { bottom:8px; right:0; animation: bm-l 7s linear infinite; }
-        #bm-l { left:8px;   top:0;   writing-mode:vertical-rl; animation: bm-d 7s linear infinite; }
-        #bm-r { right:8px;  top:0;   writing-mode:vertical-rl; animation: bm-u 7s linear infinite; }
-        @keyframes bm-r { from{transform:translateX(-50%)} to{transform:translateX(0)} }
-        @keyframes bm-l { from{transform:translateX(50%)}  to{transform:translateX(0)} }
-        @keyframes bm-d { from{transform:translateY(-50%)} to{transform:translateY(0)} }
-        @keyframes bm-u { from{transform:translateY(50%)}  to{transform:translateY(0)} }
 
         /* ── 파티클 ── */
         #particles { position:fixed; inset:0; pointer-events:none; overflow:hidden; }
@@ -142,8 +100,8 @@
         }
         .mega-style {
             background: rgba(10,4,22,0.90);
-            border: 2px solid rgba(249,212,35,0.7);
-            box-shadow: 0 0 60px rgba(249,212,35,0.45), 0 0 100px rgba(255,78,80,0.15), 0 20px 56px rgba(0,0,0,0.8);
+            border: 2px solid rgba(249,212,35,0.65);
+            box-shadow: 0 0 60px rgba(249,212,35,0.4), 0 20px 56px rgba(0,0,0,0.8);
         }
 
         /* 광택 */
@@ -183,17 +141,11 @@
                 0 3px 0 rgba(0,0,0,1);
         }
         .mega-style #card-nickname {
-            background: linear-gradient(135deg, #fff9c4 0%, #fde68a 18%, #f9d423 38%, #ff6b35 62%, #ff4e50 82%, #c084fc 100%);
-            background-size: 250% 250%;
+            background: linear-gradient(135deg, #fff9c4 0%, #fde68a 25%, #f9d423 50%, #ff6b35 75%, #ff4e50 100%);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            animation: ng 1.6s ease infinite;
             filter: drop-shadow(0 0 14px rgba(249,212,35,0.85)) drop-shadow(0 3px 0 rgba(0,0,0,1));
-        }
-        @keyframes ng {
-            0%,100% { background-position:0% 50%; }
-            50%      { background-position:100% 50%; }
         }
 
         /* 다이아 */
@@ -210,13 +162,6 @@
 <body>
 
 <div id="flash"></div>
-<div id="border-glow"></div>
-<div id="border-wrap">
-    <div class="bm" id="bm-t"></div>
-    <div class="bm" id="bm-b"></div>
-    <div class="bm" id="bm-l"></div>
-    <div class="bm" id="bm-r"></div>
-</div>
 <div id="particles"></div>
 <div id="gift-card">
     <div class="card-inner" id="card-inner">
@@ -281,13 +226,6 @@
         // 파티클
         spawnParticles(isMega);
 
-        // MEGA 테두리
-        if (isMega) {
-            const rep = (' ✦ ' + name + ' ').repeat(14);
-            ['bm-t','bm-b','bm-l','bm-r'].forEach(id => document.getElementById(id).textContent = rep);
-            document.getElementById('border-wrap').classList.add('on');
-            document.getElementById('border-glow').classList.add('on');
-        }
 
         // 음향
         playSound(isMega);
@@ -298,8 +236,6 @@
         // 퇴장
         setTimeout(() => {
             card.style.animation = 'card-out 0.5s ease forwards';
-            document.getElementById('border-wrap').classList.remove('on');
-            document.getElementById('border-glow').classList.remove('on');
             setTimeout(() => {
                 card.style.animation = 'none';
                 card.style.opacity   = '0';
@@ -312,12 +248,10 @@
     // ── 화면 번쩍임 ──
     function flash(isMega) {
         const el = document.getElementById('flash');
-        el.style.background = isMega
-            ? 'radial-gradient(ellipse at center, rgba(249,212,35,0.6) 0%, rgba(255,78,80,0.3) 60%, transparent 100%)'
-            : 'radial-gradient(ellipse at center, rgba(168,85,247,0.55) 0%, rgba(124,58,237,0.2) 60%, transparent 100%)';
+        el.style.background = isMega ? '#f9d423' : '#a855f7';
         el.style.animation = 'none';
         void el.offsetWidth;
-        el.style.animation = (isMega ? 'flash-mega' : 'flash-mid') + ' ' + (isMega ? '1.2s' : '0.8s') + ' ease forwards';
+        el.style.animation = (isMega ? 'flash-mega' : 'flash-mid') + ' ' + (isMega ? '1.4s' : '0.9s') + ' ease forwards';
     }
 
     // ── 파티클 ──
