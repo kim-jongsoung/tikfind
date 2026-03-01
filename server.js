@@ -1765,6 +1765,9 @@ function emitQueueUpdate(userId) {
 // userId별 Desktop App 소켓 ID 추적 (첫 번째 연결된 앱만 명령 수신)
 const desktopSocketMap = new Map();
 
+// 알고리즘 리포트 - 방송 세션 추적 (userId → { sessionId, startedAt, tiktokId, countryMap, hourlyMap, peakViewers, totalChats, totalGifts, totalLikes, foreignChatCount, languages })
+const liveSessionMap = new Map();
+
 // 디버그: Desktop App 등록 상태 확인
 app.get('/debug/desktop-status', (req, res) => {
     const status = {};
@@ -2081,16 +2084,44 @@ io.on('connection', (socket) => {
                     });
                     console.log(`🔊 tts-speak 전송 → ${desktopSid} | "${tiktokData.message}" | googleTTS=${user?.ttsSettings?.useGoogleTTS}`);
                 }
+
+                // 알고리즘 리포트: 채팅/국가/시간대 기록
+                const sessChat = liveSessionMap.get(String(userId));
+                if (sessChat) {
+                    sessChat.totalChats++;
+                    const hr = new Date().getHours();
+                    if (!sessChat.hourlyMap[hr]) sessChat.hourlyMap[hr] = { viewerCount: 0, chatCount: 0 };
+                    sessChat.hourlyMap[hr].chatCount++;
+                    const cc = tiktokData.userCountry || tiktokData.countryCode || '';
+                    if (cc) sessChat.countryMap[cc] = (sessChat.countryMap[cc] || 0) + 1;
+                    if (messageLanguage && messageLanguage !== 'unknown' && messageLanguage !== streamerLanguage) {
+                        sessChat.foreignChatCount++;
+                        sessChat.languages.add(messageLanguage);
+                    }
+                }
             } catch (err) {
                 console.error('❌ tiktok-data chat 처리 오류:', err);
                 io.to(userId).emit('chat-message', tiktokData);
             }
         } else if (type === 'stats') {
             io.to(userId).emit('viewer-update', tiktokData);
+            // 알고리즘 리포트: 시청자 수 기록
+            const sessSt = liveSessionMap.get(String(userId));
+            if (sessSt) {
+                const viewers = tiktokData.viewerCount || 0;
+                if (viewers > sessSt.peakViewers) sessSt.peakViewers = viewers;
+                const hr = new Date().getHours();
+                if (!sessSt.hourlyMap[hr]) sessSt.hourlyMap[hr] = { viewerCount: 0, chatCount: 0 };
+                sessSt.hourlyMap[hr].viewerCount = Math.max(sessSt.hourlyMap[hr].viewerCount, viewers);
+            }
         } else if (type === 'gift') {
             io.to(userId).emit('gift-received', tiktokData);
+            const sessGift = liveSessionMap.get(String(userId));
+            if (sessGift) sessGift.totalGifts++;
         } else if (type === 'like') {
             io.to(userId).emit('like-received', tiktokData);
+            const sessLike = liveSessionMap.get(String(userId));
+            if (sessLike) sessLike.totalLikes += (tiktokData.likeCount || 1);
         }
     });
     
@@ -2115,6 +2146,26 @@ io.on('connection', (socket) => {
     socket.on('start-live', async (data) => {
         const { userId, tiktokId } = data;
         console.log(`🎥 라이브 시작 명령: ${userId}, TikTok: ${tiktokId}`);
+
+        // 알고리즘 리포트: 세션 시작
+        try {
+            const LiveSession = require('./models/LiveSession');
+            const session = await LiveSession.create({ userId, tiktokId, startedAt: new Date() });
+            liveSessionMap.set(String(userId), {
+                sessionId: session._id,
+                startedAt: session.startedAt,
+                tiktokId,
+                countryMap: {},
+                hourlyMap: {},
+                peakViewers: 0,
+                totalChats: 0,
+                totalGifts: 0,
+                totalLikes: 0,
+                foreignChatCount: 0,
+                languages: new Set()
+            });
+            console.log(`📊 LiveSession 시작: ${session._id}`);
+        } catch(e) { console.error('LiveSession 시작 오류:', e); }
 
         // Desktop App이 연결되어 있는지 확인
         const room = io.sockets.adapter.rooms.get(userId);
@@ -2156,7 +2207,7 @@ io.on('connection', (socket) => {
     });
 
     // 웹 → Desktop App: 라이브 종료 명령
-    socket.on('stop-live', (data) => {
+    socket.on('stop-live', async (data) => {
         const { userId } = data;
         console.log(`⏹️ 라이브 종료 명령: ${userId}`);
 
@@ -2177,6 +2228,31 @@ io.on('connection', (socket) => {
 
         liveStatusMap.set(userId, { isLive: false });
         io.to(userId).emit('live-status', { isLive: false });
+
+        // 알고리즘 리포트: 세션 종료 저장
+        const sess = liveSessionMap.get(String(userId));
+        if (sess) {
+            try {
+                const LiveSession = require('./models/LiveSession');
+                const endedAt = new Date();
+                const durationMinutes = Math.round((endedAt - sess.startedAt) / 60000);
+                const countryStats = Object.entries(sess.countryMap).map(([cc, cnt]) => ({ countryCode: cc, countryName: cc, count: cnt }));
+                const hourlyStats = Object.entries(sess.hourlyMap).map(([h, v]) => ({ hour: parseInt(h), viewerCount: v.viewerCount || 0, chatCount: v.chatCount || 0 }));
+                await LiveSession.findByIdAndUpdate(sess.sessionId, {
+                    endedAt, durationMinutes,
+                    peakViewers: sess.peakViewers,
+                    totalChats: sess.totalChats,
+                    totalGifts: sess.totalGifts,
+                    totalLikes: sess.totalLikes,
+                    foreignChatCount: sess.foreignChatCount,
+                    countryStats,
+                    hourlyStats,
+                    detectedLanguages: [...sess.languages]
+                });
+                console.log(`📊 LiveSession 종료 저장: ${sess.sessionId} (${durationMinutes}분)`);
+            } catch(e) { console.error('LiveSession 종료 저장 오류:', e); }
+            liveSessionMap.delete(String(userId));
+        }
     });
     
     // TTS 설정 (웹 → Desktop App)

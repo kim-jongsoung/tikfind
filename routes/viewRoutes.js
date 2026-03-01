@@ -49,6 +49,10 @@ router.get('/dashboard/settings', requireAuth, (req, res) => {
     res.render('dashboard/settings', { title: '설정 - TikFind', user: req.user });
 });
 
+router.get('/dashboard/report', requireAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/report.html'));
+});
+
 // 마이페이지 라우트 (인증 필요)
 router.get('/mypage', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/mypage.html'));

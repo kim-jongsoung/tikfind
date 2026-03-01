@@ -1210,4 +1210,151 @@ router.get('/tts/user-genders', requireAuth, async (req, res) => {
     }
 });
 
+// ── 알고리즘 리포트 API ────────────────────────────────────────
+
+// 방송 이력 목록
+router.get('/report/sessions', requireAuth, async (req, res) => {
+    try {
+        const LiveSession = require('../models/LiveSession');
+        const sessions = await LiveSession.find({ userId: req.user._id, endedAt: { $exists: true } })
+            .sort({ startedAt: -1 }).limit(30).lean();
+        res.json({ success: true, sessions });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 집계 통계 (국가별, 시간대별, 전체 요약)
+router.get('/report/stats', requireAuth, async (req, res) => {
+    try {
+        const LiveSession = require('../models/LiveSession');
+        const sessions = await LiveSession.find({ userId: req.user._id, endedAt: { $exists: true } })
+            .sort({ startedAt: -1 }).limit(20).lean();
+
+        // 국가별 집계
+        const countryTotals = {};
+        // 시간대별 집계
+        const hourlyTotals = {};
+        let totalDuration = 0, totalChats = 0, totalForeign = 0, sessionCount = sessions.length;
+
+        for (const s of sessions) {
+            totalDuration += s.durationMinutes || 0;
+            totalChats += s.totalChats || 0;
+            totalForeign += s.foreignChatCount || 0;
+            for (const c of (s.countryStats || [])) {
+                if (!c.countryCode) continue;
+                countryTotals[c.countryCode] = (countryTotals[c.countryCode] || 0) + c.count;
+            }
+            for (const h of (s.hourlyStats || [])) {
+                if (!hourlyTotals[h.hour]) hourlyTotals[h.hour] = { viewerTotal: 0, chatTotal: 0, count: 0 };
+                hourlyTotals[h.hour].viewerTotal += h.viewerCount || 0;
+                hourlyTotals[h.hour].chatTotal += h.chatCount || 0;
+                hourlyTotals[h.hour].count++;
+            }
+        }
+
+        const countryRanking = Object.entries(countryTotals)
+            .map(([code, count]) => ({ code, count }))
+            .sort((a, b) => b.count - a.count);
+
+        const hourlyAvg = Object.entries(hourlyTotals).map(([h, v]) => ({
+            hour: parseInt(h),
+            avgViewers: v.count ? Math.round(v.viewerTotal / v.count) : 0,
+            avgChats: v.count ? Math.round(v.chatTotal / v.count) : 0
+        })).sort((a, b) => a.hour - b.hour);
+
+        res.json({
+            success: true,
+            summary: { sessionCount, totalDuration, totalChats, totalForeign, avgDuration: sessionCount ? Math.round(totalDuration / sessionCount) : 0 },
+            countryRanking,
+            hourlyAvg,
+            recentSessions: sessions.slice(0, 10)
+        });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// AI 분석 + 다음 방송 전략 추천
+router.post('/report/ai-analysis', requireAuth, async (req, res) => {
+    try {
+        const LiveSession = require('../models/LiveSession');
+        const OpenAI = require('openai');
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        const sessions = await LiveSession.find({ userId: req.user._id, endedAt: { $exists: true } })
+            .sort({ startedAt: -1 }).limit(10).lean();
+
+        if (sessions.length === 0) {
+            return res.json({ success: false, message: '분석할 방송 데이터가 없습니다. 방송을 진행한 후 이용해주세요.' });
+        }
+
+        // 통계 집계
+        const countryTotals = {};
+        const hourlyTotals = {};
+        let totalChats = 0, totalForeign = 0;
+
+        for (const s of sessions) {
+            totalChats += s.totalChats || 0;
+            totalForeign += s.foreignChatCount || 0;
+            for (const c of (s.countryStats || [])) {
+                if (c.countryCode) countryTotals[c.countryCode] = (countryTotals[c.countryCode] || 0) + c.count;
+            }
+            for (const h of (s.hourlyStats || [])) {
+                if (!hourlyTotals[h.hour]) hourlyTotals[h.hour] = { viewerTotal: 0, chatTotal: 0, count: 0 };
+                hourlyTotals[h.hour].viewerTotal += h.viewerCount || 0;
+                hourlyTotals[h.hour].chatTotal += h.chatCount || 0;
+                hourlyTotals[h.hour].count++;
+            }
+        }
+
+        const topCountries = Object.entries(countryTotals).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([c,n])=>`${c}(${n}명)`).join(', ');
+        const bestHours = Object.entries(hourlyTotals)
+            .map(([h, v]) => ({ hour: parseInt(h), avg: v.count ? v.viewerTotal / v.count : 0 }))
+            .sort((a,b) => b.avg - a.avg).slice(0, 3).map(h => `${h.hour}시`).join(', ');
+        const avgDuration = sessions.length ? Math.round(sessions.reduce((a,s) => a + (s.durationMinutes||0), 0) / sessions.length) : 0;
+        const foreignRate = totalChats ? Math.round(totalForeign / totalChats * 100) : 0;
+
+        const prompt = `당신은 틱톡 라이브 알고리즘 전문가입니다. 아래 데이터를 분석하여 한국어로 답변해주세요.
+
+[방송 데이터 (최근 ${sessions.length}회)]
+- 평균 방송 시간: ${avgDuration}분
+- 상위 해외 시청자 국가: ${topCountries || '데이터 없음'}
+- 시청자 최다 시간대: ${bestHours || '데이터 없음'}
+- 해외 채팅 비율: ${foreignRate}%
+
+다음 형식으로 정확히 답변해주세요:
+
+[알고리즘 분석]
+(2-3줄로 현재 방송 패턴 분석)
+
+[집중 추천 시간대]
+(다음 방송에서 집중할 최적 시간대 1-2개와 이유)
+
+[집중 추천 국가]
+(가장 공략할 국가 1-2개와 해당 국가 시청자를 위한 전략)
+
+[방송 전 공지 문구]
+(아래 상위 2개 국가 언어로 각각 방송 시작 알림 문구 작성, 예: 일본어라면 일본어로)
+국가1: (해당 언어 문구)
+국가2: (해당 언어 문구)
+
+[다음 방송 실행 팁]
+(구체적인 실행 가능한 팁 3가지)`;
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            max_tokens: 800
+        });
+
+        const analysis = response.choices[0].message.content.trim();
+        res.json({ success: true, analysis, dataUsed: { sessions: sessions.length, topCountries, bestHours, avgDuration, foreignRate } });
+    } catch (e) {
+        console.error('AI 분석 오류:', e);
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 module.exports = router;

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>알고리즘 리포트 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/layout.js" defer></script>
+</head>
+<body class="bg-slate-900">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+
+    <main class="ml-64 mt-16 p-6" style="margin-top:88px;">
+        <div class="max-w-5xl mx-auto">
+
+            <!-- 헤더 -->
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+                        <i class="fas fa-chart-line text-purple-400"></i> 알고리즘 리포트
+                    </h2>
+                    <p class="text-slate-400 text-sm mt-1">방송 데이터를 분석해 틱톡 알고리즘 최적화 전략을 제안합니다</p>
+                </div>
+                <button onclick="loadStats()" class="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition">
+                    <i class="fas fa-sync-alt"></i> 새로고침
+                </button>
+            </div>
+
+            <!-- 요약 카드 -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="summaryCards">
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                    <div class="text-slate-400 text-xs mb-1">총 방송 횟수</div>
+                    <div class="text-2xl font-bold text-white" id="statSessionCount">-</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                    <div class="text-slate-400 text-xs mb-1">평균 방송 시간</div>
+                    <div class="text-2xl font-bold text-purple-400" id="statAvgDuration">-</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                    <div class="text-slate-400 text-xs mb-1">총 채팅 수</div>
+                    <div class="text-2xl font-bold text-blue-400" id="statTotalChats">-</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700">
+                    <div class="text-slate-400 text-xs mb-1">해외 채팅 비율</div>
+                    <div class="text-2xl font-bold text-green-400" id="statForeignRate">-</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- 국가별 시청자 -->
+                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+                    <h3 class="text-white font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-globe text-blue-400"></i> 해외 시청자 국가 TOP
+                    </h3>
+                    <div id="countryList" class="space-y-2">
+                        <div class="text-slate-500 text-sm text-center py-4">데이터 로딩 중...</div>
+                    </div>
+                </div>
+
+                <!-- 시간대별 시청자 -->
+                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700">
+                    <h3 class="text-white font-semibold mb-4 flex items-center gap-2">
+                        <i class="fas fa-clock text-yellow-400"></i> 시간대별 평균 시청자
+                    </h3>
+                    <canvas id="hourlyChart" height="180"></canvas>
+                    <div id="hourlyEmpty" class="text-slate-500 text-sm text-center py-8 hidden">방송 데이터가 없습니다</div>
+                </div>
+            </div>
+
+            <!-- 방송 이력 -->
+            <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 mb-6">
+                <h3 class="text-white font-semibold mb-4 flex items-center gap-2">
+                    <i class="fas fa-history text-slate-400"></i> 최근 방송 이력
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-slate-300">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-slate-700">
+                                <th class="text-left py-2 pr-4">날짜</th>
+                                <th class="text-right py-2 pr-4">방송 시간</th>
+                                <th class="text-right py-2 pr-4">최고 시청자</th>
+                                <th class="text-right py-2 pr-4">채팅 수</th>
+                                <th class="text-right py-2 pr-4">해외 채팅</th>
+                                <th class="text-right py-2">선물</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessionTable">
+                            <tr><td colspan="6" class="text-center py-4 text-slate-500">로딩 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- AI 분석 -->
+            <div class="bg-slate-800 rounded-xl p-5 border border-purple-800">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-white font-semibold flex items-center gap-2">
+                        <i class="fas fa-robot text-purple-400"></i> AI 알고리즘 분석 & 전략 추천
+                    </h3>
+                    <button onclick="runAiAnalysis()" id="aiAnalysisBtn"
+                        class="flex items-center gap-2 px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-semibold transition">
+                        <i class="fas fa-magic"></i> AI 분석 실행
+                    </button>
+                </div>
+                <div id="aiResult" class="text-slate-400 text-sm">
+                    <div class="flex items-center gap-2 text-slate-500">
+                        <i class="fas fa-info-circle"></i>
+                        <span>AI 분석 실행 버튼을 클릭하면 방송 데이터를 분석해 틱톡 알고리즘 전략을 제안합니다.</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const FLAG_MAP = {
+            'JP': '🇯🇵', 'US': '🇺🇸', 'KR': '🇰🇷', 'CN': '🇨🇳', 'TH': '🇹🇭',
+            'VN': '🇻🇳', 'PH': '🇵🇭', 'ID': '🇮🇩', 'MY': '🇲🇾', 'SG': '🇸🇬',
+            'TW': '🇹🇼', 'HK': '🇭🇰', 'GB': '🇬🇧', 'DE': '🇩🇪', 'FR': '🇫🇷',
+            'BR': '🇧🇷', 'MX': '🇲🇽', 'ES': '🇪🇸', 'CA': '🇨🇦', 'AU': '🇦🇺',
+            'RU': '🇷🇺', 'SA': '🇸🇦', 'IN': '🇮🇳', 'AR': '🇦🇷', 'TR': '🇹🇷'
+        };
+        const COUNTRY_NAME = {
+            'JP': '일본', 'US': '미국', 'KR': '한국', 'CN': '중국', 'TH': '태국',
+            'VN': '베트남', 'PH': '필리핀', 'ID': '인도네시아', 'MY': '말레이시아', 'SG': '싱가포르',
+            'TW': '대만', 'HK': '홍콩', 'GB': '영국', 'DE': '독일', 'FR': '프랑스',
+            'BR': '브라질', 'MX': '멕시코', 'ES': '스페인', 'CA': '캐나다', 'AU': '호주',
+            'RU': '러시아', 'SA': '사우디', 'IN': '인도', 'AR': '아르헨티나', 'TR': '튀르키예'
+        };
+
+        let hourlyChartInstance = null;
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/report/stats');
+                const data = await res.json();
+                if (!data.success) return;
+
+                const { summary, countryRanking, hourlyAvg, recentSessions } = data;
+
+                // 요약 카드
+                document.getElementById('statSessionCount').textContent = summary.sessionCount + '회';
+                document.getElementById('statAvgDuration').textContent = summary.avgDuration + '분';
+                document.getElementById('statTotalChats').textContent = summary.totalChats.toLocaleString();
+                const rate = summary.totalChats ? Math.round(summary.totalForeign / summary.totalChats * 100) : 0;
+                document.getElementById('statForeignRate').textContent = rate + '%';
+
+                // 국가 랭킹
+                const countryEl = document.getElementById('countryList');
+                if (countryRanking.length === 0) {
+                    countryEl.innerHTML = '<div class="text-slate-500 text-sm text-center py-4">아직 국가 데이터가 없습니다<br><span class="text-xs">방송 중 해외 시청자의 국가 코드가 감지되면 표시됩니다</span></div>';
+                } else {
+                    const max = countryRanking[0].count;
+                    countryEl.innerHTML = countryRanking.slice(0, 8).map(c => {
+                        const pct = Math.round(c.count / max * 100);
+                        const flag = FLAG_MAP[c.code] || '🌍';
+                        const name = COUNTRY_NAME[c.code] || c.code;
+                        return `
+                        <div class="flex items-center gap-3">
+                            <span class="text-lg w-8">${flag}</span>
+                            <span class="text-slate-300 text-sm w-16">${name}</span>
+                            <div class="flex-1 bg-slate-700 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width:${pct}%"></div>
+                            </div>
+                            <span class="text-slate-400 text-xs w-12 text-right">${c.count}명</span>
+                        </div>`;
+                    }).join('');
+                }
+
+                // 시간대 차트
+                if (hourlyAvg.length > 0) {
+                    document.getElementById('hourlyEmpty').classList.add('hidden');
+                    const labels = hourlyAvg.map(h => `${h.hour}시`);
+                    const viewers = hourlyAvg.map(h => h.avgViewers);
+                    const chats = hourlyAvg.map(h => h.avgChats);
+
+                    if (hourlyChartInstance) hourlyChartInstance.destroy();
+                    const ctx = document.getElementById('hourlyChart').getContext('2d');
+                    hourlyChartInstance = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels,
+                            datasets: [
+                                { label: '평균 시청자', data: viewers, backgroundColor: 'rgba(139,92,246,0.7)', borderRadius: 4 },
+                                { label: '평균 채팅', data: chats, backgroundColor: 'rgba(59,130,246,0.5)', borderRadius: 4 }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
+                            scales: {
+                                x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } },
+                                y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: '#1e293b' } }
+                            }
+                        }
+                    });
+                } else {
+                    document.getElementById('hourlyEmpty').classList.remove('hidden');
+                }
+
+                // 방송 이력 테이블
+                const tbody = document.getElementById('sessionTable');
+                if (recentSessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-500">방송 이력이 없습니다<br><span class="text-xs">방송을 시작하면 자동으로 기록됩니다</span></td></tr>';
+                } else {
+                    tbody.innerHTML = recentSessions.map(s => {
+                        const date = new Date(s.startedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        return `<tr class="border-b border-slate-700 hover:bg-slate-750">
+                            <td class="py-2 pr-4">${date}</td>
+                            <td class="py-2 pr-4 text-right text-purple-300">${s.durationMinutes || 0}분</td>
+                            <td class="py-2 pr-4 text-right text-yellow-300">${(s.peakViewers || 0).toLocaleString()}</td>
+                            <td class="py-2 pr-4 text-right text-blue-300">${(s.totalChats || 0).toLocaleString()}</td>
+                            <td class="py-2 pr-4 text-right text-green-300">${(s.foreignChatCount || 0).toLocaleString()}</td>
+                            <td class="py-2 text-right text-pink-300">${(s.totalGifts || 0).toLocaleString()}</td>
+                        </tr>`;
+                    }).join('');
+                }
+            } catch (e) {
+                console.error('통계 로드 실패:', e);
+            }
+        }
+
+        async function runAiAnalysis() {
+            const btn = document.getElementById('aiAnalysisBtn');
+            const result = document.getElementById('aiResult');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 분석 중...';
+            result.innerHTML = '<div class="flex items-center gap-2 text-purple-400"><i class="fas fa-spinner fa-spin"></i><span>AI가 방송 데이터를 분석하고 있습니다...</span></div>';
+
+            try {
+                const res = await fetch('/api/report/ai-analysis', { method: 'POST' });
+                const data = await res.json();
+
+                if (data.success) {
+                    // 분석 결과를 섹션별로 파싱해서 예쁘게 표시
+                    const text = data.analysis;
+                    const sections = text.split(/\[([^\]]+)\]/g).filter(s => s.trim());
+                    let html = '';
+                    for (let i = 0; i < sections.length; i += 2) {
+                        const title = sections[i]?.trim();
+                        const content = sections[i+1]?.trim() || '';
+                        if (!title || !content) continue;
+                        const iconMap = {
+                            '알고리즘 분석': { icon: 'fas fa-chart-bar', color: 'text-blue-400', bg: 'bg-blue-900/20 border-blue-800' },
+                            '집중 추천 시간대': { icon: 'fas fa-clock', color: 'text-yellow-400', bg: 'bg-yellow-900/20 border-yellow-800' },
+                            '집중 추천 국가': { icon: 'fas fa-globe', color: 'text-green-400', bg: 'bg-green-900/20 border-green-800' },
+                            '방송 전 공지 문구': { icon: 'fas fa-bullhorn', color: 'text-pink-400', bg: 'bg-pink-900/20 border-pink-800' },
+                            '다음 방송 실행 팁': { icon: 'fas fa-lightbulb', color: 'text-purple-400', bg: 'bg-purple-900/20 border-purple-800' }
+                        };
+                        const style = iconMap[title] || { icon: 'fas fa-info-circle', color: 'text-slate-400', bg: 'bg-slate-700 border-slate-600' };
+                        html += `
+                        <div class="rounded-lg border p-4 mb-3 ${style.bg}">
+                            <div class="font-semibold ${style.color} mb-2 flex items-center gap-2">
+                                <i class="${style.icon}"></i> ${title}
+                            </div>
+                            <div class="text-slate-300 text-sm whitespace-pre-line">${content}</div>
+                        </div>`;
+                    }
+                    result.innerHTML = html || `<pre class="text-slate-300 text-sm whitespace-pre-wrap">${text}</pre>`;
+
+                    // 데이터 기반 정보도 표시
+                    if (data.dataUsed) {
+                        const d = data.dataUsed;
+                        result.innerHTML += `<div class="mt-3 text-xs text-slate-500 border-t border-slate-700 pt-3">
+                            📊 분석 기반: 최근 ${d.sessions}회 방송 | 주요 국가: ${d.topCountries||'없음'} | 피크 시간대: ${d.bestHours||'없음'} | 평균 방송 ${d.avgDuration}분 | 해외채팅 ${d.foreignRate}%
+                        </div>`;
+                    }
+                } else {
+                    result.innerHTML = `<div class="text-yellow-400 flex items-center gap-2"><i class="fas fa-exclamation-triangle"></i>${data.message}</div>`;
+                }
+            } catch (e) {
+                result.innerHTML = '<div class="text-red-400">분석 중 오류가 발생했습니다.</div>';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> AI 분석 실행';
+            }
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>
