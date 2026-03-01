@@ -66,6 +66,26 @@ class TikTokCollector extends EventEmitter {
         }
     }
     
+    // 공통 유저 정보 추출 헬퍼
+    extractUser(data) {
+        return {
+            uniqueId: data.uniqueId || '',
+            nickname: data.nickname || data.uniqueId || '',
+            profilePictureUrl: data.profilePictureUrl || '',
+            followRole: data.followRole || 0,
+            followInfo: data.followInfo || null,
+            userBadges: data.userBadges || [],
+            userDetails: data.userDetails || null,
+            isModerator: data.isModerator || false,
+            isNewGifter: data.isNewGifter || false,
+            isSubscriber: data.isSubscriber || false,
+            topGifterRank: data.topGifterRank || null,
+            teamMemberLevel: data.teamMemberLevel || null,
+            msgId: data.msgId || null,
+            createTime: data.createTime || null
+        };
+    }
+
     setupListeners() {
         // 연결 성공
         this.client.on('connected', () => {
@@ -82,10 +102,23 @@ class TikTokCollector extends EventEmitter {
             this.emit('disconnected');
             this.broadcastStatus(false);
         });
+
+        // 방송 종료 (호스트 종료 or 플랫폼 강제종료)
+        this.client.on('streamEnd', (actionId) => {
+            console.log(`🔴 방송 종료 (actionId: ${actionId})`);
+            this.isRunning = false;
+            this.emit('streamEnd', { actionId });
+            this.broadcastStatus(false);
+            // 서버에도 알림
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'streamEnd',
+                data: { actionId, timestamp: Date.now() }
+            });
+        });
         
         // 채팅 메시지
         this.client.on('chat', (data) => {
-            // 첫 채팅 수신 시 연결된 것으로 간주
             if (!this.isRunning) {
                 console.log('✅ TikTok Live 연결 성공 (첫 채팅 수신)');
                 this.isRunning = true;
@@ -93,97 +126,258 @@ class TikTokCollector extends EventEmitter {
                 this.broadcastStatus(true);
             }
             
-            // 원본 데이터 필드 확인 (개발용)
-            console.log('📦 TikTok 채팅 원본 데이터 키:', Object.keys(data));
-            console.log('📦 badges:', JSON.stringify(data.badges));
-            console.log('📦 userBadges:', JSON.stringify(data.userBadges));
-            console.log('📦 teamMemberLevel:', data.teamMemberLevel);
-            console.log('📦 userDetails:', JSON.stringify(data.userDetails));
-            console.log('📦 followRole:', data.followRole);
-            console.log('📦 isModerator:', data.isModerator);
-            console.log('📦 isSubscriber:', data.isSubscriber);
-            console.log('📦 topGifterRank:', data.topGifterRank);
-            
             const chatData = {
-                userId: this.userId,
+                ...this.extractUser(data),
                 username: data.uniqueId || data.nickname,
-                nickname: data.nickname || data.uniqueId,
-                uniqueId: data.uniqueId,
                 message: data.comment,
                 badges: data.badges || [],
-                userBadges: data.userBadges || [],
-                followRole: data.followRole || 0,
-                isModerator: data.isModerator || false,
-                isSubscriber: data.isSubscriber || false,
-                topGifterRank: data.topGifterRank || null,
-                teamMemberLevel: data.teamMemberLevel || null,
-                userDetails: data.userDetails || null,
+                displayType: data.displayType || null,
+                label: data.label || null,
                 timestamp: Date.now()
             };
             
             this.stats.messages++;
+            console.log(`💬 [${chatData.uniqueId}]: ${chatData.message}`);
             
-            console.log(`💬 [${chatData.username}]: ${chatData.message}`);
-            console.log(`📤 채팅 데이터 전송 준비:`, chatData.username);
-            
-            // 즉시 UI 업데이트 (최우선)
             this.emit('chat', chatData);
             this.emit('stats', this.stats);
-            
-            // TTS는 서버에서 tts-speak 이벤트로 처리 (중복 방지)
         });
         
-        // 시청자 수
+        // 시청자 수 + 상위 선물 랭킹
         this.client.on('roomUser', (data) => {
             this.stats.viewers = data.viewerCount || 0;
-            
             console.log(`👥 시청자: ${this.stats.viewers}`);
-            
-            // 즉시 UI 업데이트
             this.emit('stats', this.stats);
-            
-            // 서버 전송 (비동기, 백그라운드)
-            this.sendToServer('/api/live/viewers', {
+
+            // 서버: 시청자 수 + topGifterList 포함
+            this.sendToServer('/api/live/tiktok-data', {
                 userId: this.userId,
-                viewerCount: this.stats.viewers
+                type: 'stats',
+                data: {
+                    viewerCount: this.stats.viewers,
+                    topGifterList: data.topGifterList || [],
+                    timestamp: Date.now()
+                }
             });
         });
         
-        // 선물
+        // 선물 (전체 필드)
         this.client.on('gift', (data) => {
+            // 스트릭 중인 선물은 repeatEnd=true 일 때만 최종 처리
+            const isFinal = data.giftType !== 1 || data.repeatEnd === true;
+
             const giftData = {
-                userId: this.userId,
+                ...this.extractUser(data),
                 username: data.uniqueId || data.nickname,
+                giftId: data.giftId || null,
                 giftName: data.giftName || 'Unknown',
-                count: data.repeatCount || 1,
+                giftPictureUrl: data.giftPictureUrl || '',
+                giftType: data.giftType || 0,
+                diamondCount: data.diamondCount || 0,
+                repeatCount: data.repeatCount || 1,
+                repeatEnd: data.repeatEnd || false,
+                groupId: data.groupId || null,
+                receiverUserId: data.receiverUserId || null,
+                displayType: data.displayType || null,
+                describe: data.describe || null,
+                isFinal,
                 timestamp: Date.now()
             };
             
-            this.stats.gifts += giftData.count;
+            if (isFinal) this.stats.gifts += giftData.repeatCount;
+            console.log(`🎁 선물: ${giftData.giftName} x${giftData.repeatCount} 💎${giftData.diamondCount} (from ${giftData.username}) final=${isFinal}`);
             
-            console.log(`🎁 선물: ${giftData.giftName} x${giftData.count} (from ${giftData.username})`);
-            
-            // 즉시 UI 업데이트
             this.emit('gift', giftData);
             this.emit('stats', this.stats);
-            
-            // 서버 전송 (비동기, 백그라운드)
-            this.sendToServer('/api/live/gift', giftData);
+
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'gift',
+                data: giftData
+            });
         });
         
-        // 좋아요
+        // 좋아요 (전체 필드)
         this.client.on('like', (data) => {
             const likeData = {
-                count: data.likeCount || 1,
+                ...this.extractUser(data),
+                username: data.uniqueId || data.nickname,
+                likeCount: data.likeCount || 1,
+                totalLikeCount: data.totalLikeCount || 0,
+                displayType: data.displayType || null,
+                label: data.label || null,
                 timestamp: Date.now()
             };
             
-            this.stats.likes += likeData.count;
-            
-            console.log(`❤️ 좋아요 +${likeData.count}`);
+            this.stats.likes += likeData.likeCount;
+            console.log(`❤️ 좋아요 +${likeData.likeCount} (총 ${likeData.totalLikeCount}) by ${likeData.uniqueId}`);
             
             this.emit('like', likeData);
             this.emit('stats', this.stats);
+
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'like',
+                data: likeData
+            });
+        });
+
+        // 입장 (시청자가 방에 들어올 때) - 국가 데이터 핵심
+        this.client.on('member', (data) => {
+            const memberData = {
+                ...this.extractUser(data),
+                username: data.uniqueId || data.nickname,
+                actionId: data.actionId || null,
+                displayType: data.displayType || null,
+                label: data.label || null,
+                timestamp: Date.now()
+            };
+
+            this.stats.viewers = Math.max(this.stats.viewers, 1);
+            console.log(`👋 입장: ${memberData.uniqueId} (팔로워: ${memberData.followInfo?.followerCount || 0})`);
+
+            this.emit('member', memberData);
+
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'member',
+                data: memberData
+            });
+        });
+
+        // 팔로우 / 공유 (social 이벤트)
+        this.client.on('social', (data) => {
+            const isFollow = (data.displayType || '').includes('follow');
+            const isShare = (data.displayType || '').includes('share');
+
+            const socialData = {
+                ...this.extractUser(data),
+                username: data.uniqueId || data.nickname,
+                displayType: data.displayType || null,
+                label: data.label || null,
+                isFollow,
+                isShare,
+                timestamp: Date.now()
+            };
+
+            if (isFollow) {
+                this.stats.follows = (this.stats.follows || 0) + 1;
+                console.log(`➕ 팔로우: ${socialData.uniqueId}`);
+            } else if (isShare) {
+                this.stats.shares = (this.stats.shares || 0) + 1;
+                console.log(`🔗 공유: ${socialData.uniqueId}`);
+            }
+
+            this.emit('social', socialData);
+
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'social',
+                data: socialData
+            });
+        });
+
+        // 구독 (멤버십)
+        this.client.on('subscribe', (data) => {
+            const subscribeData = {
+                ...this.extractUser(data),
+                username: data.uniqueId || data.nickname,
+                subMonth: data.subMonth || 1,
+                oldSubscribeStatus: data.oldSubscribeStatus || null,
+                subscribingStatus: data.subscribingStatus || null,
+                displayType: data.displayType || null,
+                label: data.label || null,
+                timestamp: Date.now()
+            };
+
+            this.stats.subscribes = (this.stats.subscribes || 0) + 1;
+            console.log(`⭐ 구독: ${subscribeData.uniqueId} (${subscribeData.subMonth}개월)`);
+
+            this.emit('subscribe', subscribeData);
+
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'subscribe',
+                data: subscribeData
+            });
+        });
+
+        // 질문 기능
+        this.client.on('questionNew', (data) => {
+            const questionData = {
+                ...this.extractUser(data),
+                username: data.uniqueId || data.nickname,
+                questionText: data.questionText || '',
+                timestamp: Date.now()
+            };
+
+            console.log(`❓ 질문: [${questionData.uniqueId}] ${questionData.questionText}`);
+            this.emit('questionNew', questionData);
+
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'questionNew',
+                data: questionData
+            });
+        });
+
+        // 이모티콘 (구독자 전용 스티커)
+        this.client.on('emote', (data) => {
+            const emoteData = {
+                ...this.extractUser(data),
+                username: data.uniqueId || data.nickname,
+                emoteId: data.emoteId || null,
+                emoteImageUrl: data.emoteImageUrl || null,
+                timestamp: Date.now()
+            };
+
+            console.log(`😀 이모티콘: ${emoteData.uniqueId} → ${emoteData.emoteId}`);
+            this.emit('emote', emoteData);
+
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'emote',
+                data: emoteData
+            });
+        });
+
+        // 보물상자 (envelope)
+        this.client.on('envelope', (data) => {
+            const envelopeData = {
+                ...this.extractUser(data),
+                username: data.uniqueId || data.nickname,
+                coins: data.coins || 0,
+                canOpen: data.canOpen || 0,
+                timestamp: data.timestamp || Date.now()
+            };
+
+            console.log(`🎀 보물상자: ${envelopeData.uniqueId} (코인: ${envelopeData.coins})`);
+            this.emit('envelope', envelopeData);
+
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'envelope',
+                data: envelopeData
+            });
+        });
+
+        // 라이브 인트로
+        this.client.on('liveIntro', (data) => {
+            const introData = {
+                ...this.extractUser(data),
+                id: data.id || null,
+                description: data.description || '',
+                timestamp: Date.now()
+            };
+
+            console.log(`📢 라이브 인트로: ${introData.description}`);
+            this.emit('liveIntro', introData);
+
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'liveIntro',
+                data: introData
+            });
         });
         
         // 에러

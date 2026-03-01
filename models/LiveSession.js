@@ -21,9 +21,14 @@ const liveSessionSchema = new mongoose.Schema({
     peakViewers: { type: Number, default: 0 },
     totalChats: { type: Number, default: 0 },
     totalGifts: { type: Number, default: 0 },
+    totalDiamonds: { type: Number, default: 0 },  // 선물 다이아 총합
     totalLikes: { type: Number, default: 0 },
+    totalFollows: { type: Number, default: 0 },   // 방송 중 팔로우 수
+    totalShares: { type: Number, default: 0 },    // 방송 중 공유 수
+    totalSubscribes: { type: Number, default: 0 }, // 방송 중 구독(멤버십) 수
+    totalJoins: { type: Number, default: 0 },     // 총 입장 수
     foreignChatCount: { type: Number, default: 0 },
-    countryStats: [countryStatSchema],   // 국가별 채팅 수
+    countryStats: [countryStatSchema],   // 국가별 입장/채팅 수
     hourlyStats: [hourlyStatSchema],     // 시간대별 데이터
     detectedLanguages: [String]          // 감지된 언어 목록
 }, { timestamps: true });

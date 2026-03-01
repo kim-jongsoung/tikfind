@@ -2122,11 +2122,71 @@ io.on('connection', (socket) => {
         } else if (type === 'gift') {
             io.to(userId).emit('gift-received', tiktokData);
             const sessGift = liveSessionMap.get(String(userId));
-            if (sessGift) sessGift.totalGifts++;
+            if (sessGift && tiktokData.isFinal !== false) {
+                sessGift.totalGifts += (tiktokData.repeatCount || 1);
+                sessGift.totalDiamonds = (sessGift.totalDiamonds || 0) + ((tiktokData.diamondCount || 0) * (tiktokData.repeatCount || 1));
+            }
         } else if (type === 'like') {
             io.to(userId).emit('like-received', tiktokData);
             const sessLike = liveSessionMap.get(String(userId));
             if (sessLike) sessLike.totalLikes += (tiktokData.likeCount || 1);
+        } else if (type === 'member') {
+            // 입장 이벤트 - 국가 데이터 수집 (followInfo.region 또는 userDetails 기반)
+            io.to(userId).emit('member-join', tiktokData);
+            const sessMember = liveSessionMap.get(String(userId));
+            if (sessMember) {
+                sessMember.totalJoins = (sessMember.totalJoins || 0) + 1;
+                // 팔로워 수 기반 국가 추정은 어렵지만 데이터 저장은 해둠
+                const cc = tiktokData.userCountry || tiktokData.countryCode || '';
+                if (cc) sessMember.countryMap[cc] = (sessMember.countryMap[cc] || 0) + 1;
+            }
+        } else if (type === 'social') {
+            io.to(userId).emit('social-event', tiktokData);
+            const sessSocial = liveSessionMap.get(String(userId));
+            if (sessSocial) {
+                if (tiktokData.isFollow) sessSocial.totalFollows = (sessSocial.totalFollows || 0) + 1;
+                if (tiktokData.isShare) sessSocial.totalShares = (sessSocial.totalShares || 0) + 1;
+            }
+        } else if (type === 'subscribe') {
+            io.to(userId).emit('subscribe-event', tiktokData);
+            const sessSub = liveSessionMap.get(String(userId));
+            if (sessSub) sessSub.totalSubscribes = (sessSub.totalSubscribes || 0) + 1;
+        } else if (type === 'streamEnd') {
+            // TikTok이 자체 종료 → 서버도 라이브 상태 false 처리
+            console.log(`🔴 streamEnd 수신 (userId: ${userId}, actionId: ${tiktokData.actionId})`);
+            liveStatusMap.set(String(userId), { isLive: false });
+            liveStatusMap.set(userId, { isLive: false });
+            io.to(userId).emit('live-status', { isLive: false, reason: 'streamEnd', actionId: tiktokData.actionId });
+            // 세션 종료 저장
+            const sessEnd = liveSessionMap.get(String(userId));
+            if (sessEnd) {
+                try {
+                    const LiveSession = require('./models/LiveSession');
+                    const endedAt = new Date();
+                    const durationMinutes = Math.round((endedAt - sessEnd.startedAt) / 60000);
+                    const countryStats = Object.entries(sessEnd.countryMap).map(([cc, cnt]) => ({ countryCode: cc, countryName: cc, count: cnt }));
+                    const hourlyStats = Object.entries(sessEnd.hourlyMap).map(([h, v]) => ({ hour: parseInt(h), viewerCount: v.viewerCount || 0, chatCount: v.chatCount || 0 }));
+                    await LiveSession.findByIdAndUpdate(sessEnd.sessionId, {
+                        endedAt, durationMinutes,
+                        peakViewers: sessEnd.peakViewers,
+                        totalChats: sessEnd.totalChats,
+                        totalGifts: sessEnd.totalGifts,
+                        totalLikes: sessEnd.totalLikes,
+                        foreignChatCount: sessEnd.foreignChatCount,
+                        countryStats, hourlyStats,
+                        detectedLanguages: [...sessEnd.languages]
+                    });
+                } catch(e) { console.error('streamEnd 세션 저장 오류:', e); }
+                liveSessionMap.delete(String(userId));
+            }
+        } else if (type === 'questionNew') {
+            io.to(userId).emit('question-new', tiktokData);
+        } else if (type === 'emote') {
+            io.to(userId).emit('emote-received', tiktokData);
+        } else if (type === 'envelope') {
+            io.to(userId).emit('envelope-received', tiktokData);
+        } else if (type === 'liveIntro') {
+            io.to(userId).emit('live-intro', tiktokData);
         }
     });
     
@@ -2251,7 +2311,12 @@ io.on('connection', (socket) => {
                     peakViewers: sess.peakViewers,
                     totalChats: sess.totalChats,
                     totalGifts: sess.totalGifts,
+                    totalDiamonds: sess.totalDiamonds || 0,
                     totalLikes: sess.totalLikes,
+                    totalFollows: sess.totalFollows || 0,
+                    totalShares: sess.totalShares || 0,
+                    totalSubscribes: sess.totalSubscribes || 0,
+                    totalJoins: sess.totalJoins || 0,
                     foreignChatCount: sess.foreignChatCount,
                     countryStats,
                     hourlyStats,
