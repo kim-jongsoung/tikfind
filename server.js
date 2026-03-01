@@ -188,7 +188,7 @@ const adminAuthRoutes = require('./routes/adminAuth');
 const adminRoutes = require('./routes/admin');
 const adminViewRoutes = require('./routes/adminViews');
 app.use('/admin/auth', adminAuthRoutes);
-app.use('/admin/api', adminRoutes);
+app.use('/admin/api', adminRoutes(io));
 app.use('/admin', adminViewRoutes);
 console.log('✅ Admin Routes 연결됨: /admin/login, /admin/dashboard, /admin/api/users, /admin/api/stats 등');
 

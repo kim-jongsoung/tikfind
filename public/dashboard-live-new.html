@@ -417,6 +417,7 @@
                     
                     // 사용량 정보 표시
                     if (data.usage) {
+                        currentUser.usage = data.usage;
                         updateUsageDisplay(data.usage);
                         
                         // 한도 초과 상태 확인 및 메시지 표시
@@ -547,6 +548,13 @@
         socket.on('disconnect', () => {
             console.log('❌ Socket.io 연결 끊김');
             updateStatus('연결 끊김', false);
+        });
+
+        // 어드민 플랜 변경 시 실시간 갱신
+        socket.on('plan-updated', async () => {
+            console.log('🔄 플랜 변경 감지 - 사용자 정보 갱신 중...');
+            await loadUserInfo();
+            console.log('✅ 플랜 갱신 완료:', currentUser?.subscription?.plan || currentUser?.plan);
         });
 
         // 라이브 연결 오류

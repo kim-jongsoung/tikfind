@@ -1,14 +1,24 @@
 const express = require('express');
-const router = express.Router();
 const User = require('../models/User');
 const Subscription = require('../models/Subscription');
 const Payment = require('../models/Payment');
 const AdminLog = require('../models/AdminLog');
 const { isAuthenticated, isAdmin, logAdminAction } = require('../middleware/adminAuth');
 
+module.exports = function(io) {
+const router = express.Router();
+
 // Apply authentication middleware to all admin routes
 router.use(isAuthenticated);
 router.use(isAdmin);
+
+// 플랜 변경 시 해당 유저 소켓에 갱신 이벤트 전송
+function notifyPlanUpdate(userId) {
+    if (io && userId) {
+        io.to(String(userId)).emit('plan-updated');
+        console.log(`📢 plan-updated 전송 → userId: ${userId}`);
+    }
+}
 
 // ==================== DASHBOARD STATS ====================
 
@@ -202,6 +212,7 @@ router.post('/users/:id/plan', async (req, res) => {
         if (adminMemo !== undefined) user.adminMemo = adminMemo;
         await user.save();
 
+        notifyPlanUpdate(user._id);
         res.json({ success: true, message: '플랜이 변경되었습니다.', user });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -240,6 +251,7 @@ router.post('/users/:id/extend', async (req, res) => {
 
         await user.save();
 
+        notifyPlanUpdate(user._id);
         res.json({
             success: true,
             message: `${months}개월 연장 완료 (만료일: ${base.toLocaleDateString('ko-KR')})`,
@@ -433,7 +445,8 @@ router.put('/users/:id', logAdminAction('user_update'), async (req, res) => {
             notes,
             ipAddress: req.ip
         });
-        
+
+        notifyPlanUpdate(user._id);
         res.json({ success: true, message: 'User updated successfully', user });
     } catch (error) {
         console.error('Error updating user:', error);
@@ -734,4 +747,5 @@ router.post('/plan-limits', logAdminAction('plan_limits_update'), async (req, re
     }
 });
 
-module.exports = router;
+return router;
+}; // module.exports = function(io)
