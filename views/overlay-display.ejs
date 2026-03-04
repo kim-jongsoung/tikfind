@@ -23,7 +23,7 @@
             white-space: nowrap;
             display: flex;
             align-items: stretch;
-            border-radius: 0;
+            border-radius: 9999px;
             gap: 0;
         }
 
@@ -88,12 +88,7 @@
 </head>
 <body>
     <div class="marquee-bar" id="marqueeBar">
-        <!-- 뱃지는 JS로 동적 생성 -->
-        <span class="song-badge" id="songBadge" style="background:#16a34a;">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-            <span id="badgeLabel">신청곡</span>
-        </span>
-        <div class="marquee-scroll-area">
+        <div class="marquee-scroll-area" style="padding-left:14px;">
             <div class="marquee-track" id="marqueeTrack">
                 <span class="marquee-text" id="marqueeText1"></span>
                 <span style="display:inline;opacity:0.4;"> ✦ </span>
@@ -143,24 +138,15 @@
         const BADGE_WAIT = '#7c3aed'; // 보라
 
         function updateBadge() {
-            const lbl = document.getElementById('badgeLabel');
-            if (currentSong) {
-                badge.style.background = BADGE_NOW;
-                lbl.textContent = '▶ 현재곡';
-            } else if (nextQueue.length > 0) {
-                badge.style.background = BADGE_NEXT;
-                lbl.textContent = '⏭ 다음곡';
-            } else {
-                badge.style.background = bgColor;
-                lbl.textContent = '🎵 신청곡';
-            }
+            // 좌측 뱃지 제거됨 - 아무것도 하지 않음
         }
 
         function songLabel(song) {
             if (!song) return '';
             let label = song.title;
             if (song.artist)    label += ' - ' + song.artist;
-            if (song.requester) label += '  @' + song.requester;
+            const who = song.requesterNickname || song.requester;
+            if (who) label += '  @' + who;
             return label;
         }
 

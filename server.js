@@ -1791,7 +1791,8 @@ function emitQueueUpdate(userId) {
     io.to(`overlay-${userId}`).emit('song-queue', queue.map(s => ({
         title: s.title,
         artist: s.artist,
-        requester: s.requester
+        requester: s.requester,
+        requesterNickname: s.requesterNickname || s.requester
     })));
 }
 
@@ -1832,7 +1833,8 @@ io.on('connection', (socket) => {
         socket.emit('song-queue', currentQueue.map(s => ({
             title: s.title,
             artist: s.artist,
-            requester: s.requester
+            requester: s.requester,
+            requesterNickname: s.requesterNickname || s.requester
         })));
     });
 
@@ -1848,7 +1850,8 @@ io.on('connection', (socket) => {
         io.to(overlayRoom).emit('song-queue', currentQueue.map(s => ({
             title: s.title,
             artist: s.artist,
-            requester: s.requester
+            requester: s.requester,
+            requesterNickname: s.requesterNickname || s.requester
         })));
     });
 
