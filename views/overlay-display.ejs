@@ -53,6 +53,9 @@
             overflow: hidden;
             display: flex;
             align-items: center;
+            position: relative;
+            /* 좌우 40px 안쪽에서 클리핑 */
+            clip-path: inset(0 40px 0 40px);
         }
 
         .marquee-track {
@@ -63,8 +66,8 @@
         }
 
         @keyframes marquee-scroll {
-            0%   { transform: translateX(100vw); }
-            100% { transform: translateX(-50%); }
+            0%   { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
         }
 
         .marquee-text {
@@ -108,7 +111,7 @@
         const params   = new URLSearchParams(location.search);
         const bgColor  = decodeURIComponent(params.get('bg')    || 'rgba(0,0,0,0.55)');
         const txtColor = params.get('color') || '#ffffff';
-        const fontSize = params.get('size')  || '16';
+        const fontSize = params.get('size')  || '10';
         const speed    = parseFloat(params.get('speed') || '1.0');
 
         const bar   = document.getElementById('marqueeBar');
