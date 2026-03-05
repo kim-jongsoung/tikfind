@@ -76,7 +76,8 @@
         /* 신청방법 안내 깜빡이는 텍스트 */
         .blink-text {
             display: inline;
-            font-weight: 700;
+            font-weight: 400;
+            text-shadow: 0 0 8px currentColor, 0 1px 2px rgba(0,0,0,0.9);
             animation: blink-color 1.2s ease-in-out infinite;
         }
 
@@ -175,9 +176,9 @@
 
             // 신청방법 안내 - 깜빡이는 텍스트
             const guideHtml =
-                '<span class="blink-text">팔로워·팁·가입 후</span>'
-                + ' <span style="color:#fff;font-weight:700;">#노래제목 #가수명</span>'
-                + ' <span class="blink-text">채팅창에 신청해주세요!</span>';
+                '<span class="blink-text">팔로우·팀가입 후</span>'
+                + ' <span style="color:#fff;font-weight:400;text-shadow:0 0 8px rgba(255,255,255,0.8),0 1px 2px rgba(0,0,0,0.9);">#노래제목 #가수명</span>'
+                + ' <span class="blink-text">음악신청 가능!</span>';
 
             parts.push(guideHtml);
 
