@@ -1359,12 +1359,38 @@ router.post('/report/ai-analysis', requireAuth, async (req, res) => {
 
 // ===== 알고리즘 확장 API =====
 
-// 비팔로워 시청자 목록 조회
+// 비팔로워 시청자 목록 조회 (확장 검색)
 router.get('/growth/viewers', requireAuth, async (req, res) => {
     try {
-        const { page = 1, limit = 50, status, dateFrom, dateTo } = req.query;
+        const {
+            page = 1, limit = 50,
+            status,           // pending|followed|dm_sent|ignored
+            keyword,          // 닉네임/아이디 키워드
+            minVisit,         // 최소 방문횟수
+            dateFrom, dateTo, // 날짜 범위 (lastSeenAt 기준)
+            sort = 'lastSeenAt_desc'  // lastSeenAt_desc|lastSeenAt_asc|visitCount_desc|firstSeenAt_asc
+        } = req.query;
+
         const query = { userId: req.user._id };
+
+        // 상태 필터
         if (status) query.status = status;
+
+        // 키워드 (닉네임 or uniqueId)
+        if (keyword && keyword.trim()) {
+            const kw = keyword.trim();
+            query.$or = [
+                { uniqueId: { $regex: kw, $options: 'i' } },
+                { nickname: { $regex: kw, $options: 'i' } }
+            ];
+        }
+
+        // 최소 방문횟수
+        if (minVisit && parseInt(minVisit) > 1) {
+            query.visitCount = { $gte: parseInt(minVisit) };
+        }
+
+        // 날짜 범위
         if (dateFrom || dateTo) {
             query.lastSeenAt = {};
             if (dateFrom) query.lastSeenAt.$gte = new Date(dateFrom);
@@ -1374,12 +1400,46 @@ router.get('/growth/viewers', requireAuth, async (req, res) => {
                 query.lastSeenAt.$lte = to;
             }
         }
+
+        // 정렬
+        const sortMap = {
+            'lastSeenAt_desc':  { lastSeenAt: -1 },
+            'lastSeenAt_asc':   { lastSeenAt:  1 },
+            'visitCount_desc':  { visitCount: -1, lastSeenAt: -1 },
+            'firstSeenAt_asc':  { firstSeenAt: 1 }
+        };
+        const sortOption = sortMap[sort] || { lastSeenAt: -1 };
+
         const total = await AlgorithmViewer.countDocuments(query);
         const viewers = await AlgorithmViewer.find(query)
-            .sort({ lastSeenAt: -1 })
-            .skip((page - 1) * limit)
+            .sort(sortOption)
+            .skip((page - 1) * parseInt(limit))
             .limit(parseInt(limit));
-        res.json({ success: true, viewers, total, page: parseInt(page) });
+
+        // 상태별 통계
+        const stats = await AlgorithmViewer.aggregate([
+            { $match: { userId: req.user._id } },
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+        ]);
+        const statusStats = { pending: 0, followed: 0, dm_sent: 0, ignored: 0 };
+        stats.forEach(s => { if (s._id) statusStats[s._id] = s.count; });
+
+        res.json({ success: true, viewers, total, page: parseInt(page), statusStats });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 일괄 상태 변경
+router.patch('/growth/viewers/bulk-status', requireAuth, async (req, res) => {
+    try {
+        const { ids, status } = req.body;
+        if (!ids || !ids.length || !status) return res.status(400).json({ success: false, message: '필수 파라미터 누락' });
+        await AlgorithmViewer.updateMany(
+            { _id: { $in: ids }, userId: req.user._id },
+            { $set: { status } }
+        );
+        res.json({ success: true });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
     }

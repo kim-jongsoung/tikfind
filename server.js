@@ -2206,23 +2206,39 @@ io.on('connection', (socket) => {
                 const cc = tiktokData.userCountry || tiktokData.countryCode || '';
                 if (cc) sessMember.countryMap[cc] = (sessMember.countryMap[cc] || 0) + 1;
             }
-            // 비팔로워 시청자 DB 저장 (알고리즘 확장)
+            // 비팔로워 시청자 DB 저장 / 팔로워 전환 자동 감지 (알고리즘 확장)
             try {
                 const followRole = tiktokData.followRole || 0;
-                if (followRole === 0 && tiktokData.uniqueId) {
-                    await AlgorithmViewer.findOneAndUpdate(
-                        { userId, uniqueId: tiktokData.uniqueId },
-                        {
-                            $set: {
-                                nickname: tiktokData.nickname || tiktokData.uniqueId,
-                                profilePictureUrl: tiktokData.profilePictureUrl || '',
-                                lastSeenAt: new Date()
+                if (tiktokData.uniqueId) {
+                    if (followRole === 0) {
+                        // 비팔로워 입장 → upsert
+                        await AlgorithmViewer.findOneAndUpdate(
+                            { userId, uniqueId: tiktokData.uniqueId },
+                            {
+                                $set: {
+                                    nickname: tiktokData.nickname || tiktokData.uniqueId,
+                                    profilePictureUrl: tiktokData.profilePictureUrl || '',
+                                    lastSeenAt: new Date()
+                                },
+                                $inc: { visitCount: 1 },
+                                $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
                             },
-                            $inc: { visitCount: 1 },
-                            $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
-                        },
-                        { upsert: true, new: true }
-                    );
+                            { upsert: true, new: true }
+                        );
+                    } else if (followRole >= 1) {
+                        // 팔로워로 입장 → 기존 레코드가 pending/dm_sent 상태면 followed 로 자동 업데이트
+                        await AlgorithmViewer.findOneAndUpdate(
+                            { userId, uniqueId: tiktokData.uniqueId, status: { $in: ['pending', 'dm_sent'] } },
+                            {
+                                $set: {
+                                    status: 'followed',
+                                    nickname: tiktokData.nickname || tiktokData.uniqueId,
+                                    profilePictureUrl: tiktokData.profilePictureUrl || '',
+                                    lastSeenAt: new Date()
+                                }
+                            }
+                        );
+                    }
                 }
             } catch (e) {
                 console.error('알고리즘 시청자 저장 오류:', e.message);
