@@ -58,6 +58,10 @@ router.get('/dashboard/report', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/report.html'));
 });
 
+router.get('/dashboard/growth', requireAuth, (req, res) => {
+    res.render('dashboard/growth', { title: '알고리즘 확장 - TikFind', user: req.user });
+});
+
 // 마이페이지 라우트 (인증 필요)
 router.get('/mypage', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/mypage.html'));

@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
 const User = require('../models/User');
+const AlgorithmViewer = require('../models/AlgorithmViewer');
+const MessageTemplate = require('../models/MessageTemplate');
 const ytdl = require('@distube/ytdl-core');
 const SongRequestService = require('../services/SongRequestService');
 
@@ -1351,6 +1353,142 @@ router.post('/report/ai-analysis', requireAuth, async (req, res) => {
         res.json({ success: true, analysis, dataUsed: { sessions: sessions.length, topCountries, bestHours, avgDuration, foreignRate } });
     } catch (e) {
         console.error('AI 분석 오류:', e);
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// ===== 알고리즘 확장 API =====
+
+// 비팔로워 시청자 목록 조회
+router.get('/growth/viewers', requireAuth, async (req, res) => {
+    try {
+        const { page = 1, limit = 50, status, dateFrom, dateTo } = req.query;
+        const query = { userId: req.user._id };
+        if (status) query.status = status;
+        if (dateFrom || dateTo) {
+            query.lastSeenAt = {};
+            if (dateFrom) query.lastSeenAt.$gte = new Date(dateFrom);
+            if (dateTo) {
+                const to = new Date(dateTo);
+                to.setHours(23, 59, 59, 999);
+                query.lastSeenAt.$lte = to;
+            }
+        }
+        const total = await AlgorithmViewer.countDocuments(query);
+        const viewers = await AlgorithmViewer.find(query)
+            .sort({ lastSeenAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+        res.json({ success: true, viewers, total, page: parseInt(page) });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 시청자 상태 변경
+router.patch('/growth/viewers/:id', requireAuth, async (req, res) => {
+    try {
+        const { status, memo } = req.body;
+        const update = {};
+        if (status) update.status = status;
+        if (memo !== undefined) update.memo = memo;
+        const viewer = await AlgorithmViewer.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user._id },
+            { $set: update },
+            { new: true }
+        );
+        if (!viewer) return res.status(404).json({ success: false, message: '없는 시청자입니다.' });
+        res.json({ success: true, viewer });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 시청자 삭제
+router.delete('/growth/viewers/:id', requireAuth, async (req, res) => {
+    try {
+        await AlgorithmViewer.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 메시지 템플릿 목록
+router.get('/growth/templates', requireAuth, async (req, res) => {
+    try {
+        const templates = await MessageTemplate.find({ userId: req.user._id }).sort({ order: 1, createdAt: 1 });
+        res.json({ success: true, templates });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 메시지 템플릿 저장
+router.post('/growth/templates', requireAuth, async (req, res) => {
+    try {
+        const count = await MessageTemplate.countDocuments({ userId: req.user._id });
+        if (count >= 10) return res.status(400).json({ success: false, message: '템플릿은 최대 10개까지 저장 가능합니다.' });
+        const { title, content } = req.body;
+        if (!title || !content) return res.status(400).json({ success: false, message: '제목과 내용을 입력해주세요.' });
+        const tmpl = await MessageTemplate.create({ userId: req.user._id, title, content, order: count });
+        res.json({ success: true, template: tmpl });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 메시지 템플릿 수정
+router.patch('/growth/templates/:id', requireAuth, async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        const tmpl = await MessageTemplate.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user._id },
+            { $set: { title, content } },
+            { new: true }
+        );
+        if (!tmpl) return res.status(404).json({ success: false, message: '없는 템플릿입니다.' });
+        res.json({ success: true, template: tmpl });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 메시지 템플릿 삭제
+router.delete('/growth/templates/:id', requireAuth, async (req, res) => {
+    try {
+        await MessageTemplate.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// AI 메시지 생성
+router.post('/growth/ai-message', requireAuth, async (req, res) => {
+    try {
+        const { tiktokId, nickname } = req.body;
+        const hostTiktokId = req.user.tiktokId || tiktokId || '';
+        const OpenAI = require('openai');
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        const prompt = `TikTok 라이브 스트리머 @${hostTiktokId}가 방송에 방문했던 비팔로워 시청자${nickname ? ` @${nickname}` : ''}에게 보낼 짧고 친근한 DM 메시지를 한국어로 3가지 만들어주세요.
+조건:
+- 각 메시지는 2~3문장 이내
+- 방송에 와줘서 고맙다는 내용 포함
+- 다음에 또 놀러오라는 재방문 유도
+- 호스트 TikTok 링크(https://www.tiktok.com/@${hostTiktokId}) 자연스럽게 포함
+- 과하지 않고 자연스럽게
+- 각 메시지를 ---로 구분해서 출력`;
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 500
+        });
+        const text = response.choices[0].message.content.trim();
+        const messages = text.split('---').map(m => m.trim()).filter(Boolean);
+        res.json({ success: true, messages });
+    } catch (e) {
+        console.error('AI 메시지 생성 오류:', e);
         res.status(500).json({ success: false, message: e.message });
     }
 });

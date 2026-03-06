@@ -10,6 +10,7 @@ const http = require('http');
 const socketIO = require('socket.io');
 const cors = require('cors');
 const TikTokLiveService = require('./services/TikTokLiveService');
+const AlgorithmViewer = require('./models/AlgorithmViewer');
 const authRoutes = require('./routes/auth');
 const viewRoutes = require('./routes/viewRoutes');
 const apiRoutes = require('./routes/api');
@@ -2202,9 +2203,29 @@ io.on('connection', (socket) => {
             const sessMember = liveSessionMap.get(String(userId));
             if (sessMember) {
                 sessMember.totalJoins = (sessMember.totalJoins || 0) + 1;
-                // 팔로워 수 기반 국가 추정은 어렵지만 데이터 저장은 해둠
                 const cc = tiktokData.userCountry || tiktokData.countryCode || '';
                 if (cc) sessMember.countryMap[cc] = (sessMember.countryMap[cc] || 0) + 1;
+            }
+            // 비팔로워 시청자 DB 저장 (알고리즘 확장)
+            try {
+                const followRole = tiktokData.followRole || 0;
+                if (followRole === 0 && tiktokData.uniqueId) {
+                    await AlgorithmViewer.findOneAndUpdate(
+                        { userId, uniqueId: tiktokData.uniqueId },
+                        {
+                            $set: {
+                                nickname: tiktokData.nickname || tiktokData.uniqueId,
+                                profilePictureUrl: tiktokData.profilePictureUrl || '',
+                                lastSeenAt: new Date()
+                            },
+                            $inc: { visitCount: 1 },
+                            $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
+                        },
+                        { upsert: true, new: true }
+                    );
+                }
+            } catch (e) {
+                console.error('알고리즘 시청자 저장 오류:', e.message);
             }
         } else if (type === 'social') {
             io.to(userId).emit('social-event', tiktokData);

@@ -63,6 +63,12 @@ function loadSidebar() {
                         </a>
                     </li>
                     <li>
+                        <a href="/dashboard/growth" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="growth">
+                            <i class="fas fa-rocket mr-3 text-green-400"></i>
+                            <span>알고리즘 확장</span>
+                        </a>
+                    </li>
+                    <li>
                         <a href="/dashboard/settings" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="settings">
                             <i class="fas fa-cog mr-3"></i>
                             <span data-i18n="settings">설정</span>
