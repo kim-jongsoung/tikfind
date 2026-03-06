@@ -231,28 +231,6 @@
                         </div>
                     </div>
 
-                    <!-- 미리보기 -->
-                    <div class="mb-5">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <i class="fas fa-eye text-green-500"></i> 미리보기
-                        </h4>
-                        <div class="mq-outer">
-                            <div class="mq-bar" id="previewBar" style="background:rgba(0,0,0,0.55);color:#fff;font-size:16px;height:29px;line-height:29px;">
-                                <span class="mq-badge" id="previewBadge" style="background:rgba(0,0,0,0.55);font-size:16px;">
-                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-                                    신청곡
-                                </span>
-                                <div class="mq-scroll">
-                                    <div class="mq-track">
-                                        <span id="previewText" style="font-family:'Malgun Gothic',sans-serif;font-weight:600;">▶ 현재곡 비처럼 음악처럼 - 김현식 ✦ ⏭ 다음곡 비와 당신 - 안치환 ✦ 💬 #노래제목 #가수명 으로 신청하세요 ✦ </span>
-                                        <span style="font-family:'Malgun Gothic',sans-serif;font-weight:600;">▶ 현재곡 비처럼 음악처럼 - 김현식 ✦ ⏭ 다음곡 비와 당신 - 안치환 ✦ 💬 #노래제목 #가수명 으로 신청하세요 ✦ </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <p class="text-xs text-gray-400 mt-2">* 실제 방송에서는 현재 재생 중인 곡과 다음 곡이 자동으로 표시됩니다.</p>
-                    </div>
-
                     <!-- URL + 사이즈 안내 -->
                     <div class="mb-5">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
@@ -420,15 +398,6 @@
             } catch(e) {}
         }
 
-        // 미리보기 마퀴 속도 반영
-        function applyPreviewSpeed() {
-            const speed = parseFloat(document.getElementById('mqSpeed').value);
-            const text  = document.getElementById('previewText').textContent;
-            const base  = Math.max(10, text.length * 0.35);
-            const dur   = base / speed;
-            document.querySelector('.mq-track').style.animationDuration = dur + 's';
-        }
-
         function updateAll() {
             const hex     = document.getElementById('bgColor').value;
             const opacity = parseInt(document.getElementById('bgOpacity').value);
@@ -440,20 +409,6 @@
 
             const alpha = (opacity / 100).toFixed(2);
             const bg    = hexToRgba(hex, alpha);
-
-            const bar = document.getElementById('previewBar');
-            const barH = Math.round(size * 1.8) + 'px';
-            bar.style.background = bg;
-            bar.style.color      = color;
-            bar.style.fontSize   = size + 'px';
-            bar.style.height     = barH;
-            bar.style.lineHeight = barH;
-            // 뱃지 배경색 동일, 글자 크기 동일
-            const badge = document.getElementById('previewBadge');
-            badge.style.background = bg;
-            badge.style.fontSize   = size + 'px';
-
-            applyPreviewSpeed();
 
             const p = new URLSearchParams();
             p.set('bg',    encodeURIComponent(bg));
