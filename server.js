@@ -497,33 +497,26 @@ app.post('/api/ai/pronunciation', async (req, res) => {
         
         if (result) {
             // 캐시에 저장 (최대 10,000개)
+            const cacheData = {
+                originalMeaning: result.originalMeaning,
+                nicknamePronunciation: result.nicknamePronunciation || '',
+                response: result.response,
+                responseMeaning: result.responseMeaning,
+                pronunciation: result.pronunciation
+            };
             if (pronunciationCache.size < MAX_CACHE_SIZE) {
-                pronunciationCache.set(cacheKey, {
-                    originalMeaning: result.originalMeaning,
-                    response: result.response,
-                    responseMeaning: result.responseMeaning,
-                    pronunciation: result.pronunciation
-                });
-                console.log(`💾 캐시 저장: "${message}" (총 ${pronunciationCache.size}개)`);
+                pronunciationCache.set(cacheKey, cacheData);
+                console.log(`💾 캐시 저장: "${message}" (웑 ${pronunciationCache.size}개)`);
             } else {
-                // 캐시가 가득 찬 경우 가장 오래된 항목 삭제 (LRU)
                 const firstKey = pronunciationCache.keys().next().value;
                 pronunciationCache.delete(firstKey);
-                pronunciationCache.set(cacheKey, {
-                    originalMeaning: result.originalMeaning,
-                    response: result.response,
-                    responseMeaning: result.responseMeaning,
-                    pronunciation: result.pronunciation
-                });
+                pronunciationCache.set(cacheKey, cacheData);
                 console.log(`💾 캐시 저장 (LRU): "${message}"`);
             }
             
             res.json({
                 success: true,
-                originalMeaning: result.originalMeaning,
-                response: result.response,
-                responseMeaning: result.responseMeaning,
-                pronunciation: result.pronunciation,
+                ...cacheData,
                 cached: false
             });
         } else {

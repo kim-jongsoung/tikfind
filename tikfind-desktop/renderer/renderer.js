@@ -569,8 +569,12 @@ async function requestAiCoach(username, message, messageEl, streamerLanguage = '
             
             const aiCoachDiv = document.createElement('div');
             aiCoachDiv.className = 'ai-coach-inline';
+            const nicknameLine = data.nicknamePronunciation
+                ? `<div class="ai-nickname-pronunciation">👤 닉네임 발음: <strong>${escapeHtml(data.nicknamePronunciation)}</strong></div>`
+                : '';
             aiCoachDiv.innerHTML = `
                 <div class="ai-coach-header">🤖 AI 발음 코치</div>
+                ${nicknameLine}
                 <div class="ai-original">원본: ${escapeHtml(message)} <span class="ai-meaning">(${escapeHtml(data.originalMeaning || '의미')})</span></div>
                 <div class="ai-response">답변: ${escapeHtml(data.response)} <span class="ai-meaning">(${escapeHtml(data.responseMeaning || '답변 의미')})</span></div>
                 <div class="ai-pronunciation">발음: ${escapeHtml(data.pronunciation)}</div>

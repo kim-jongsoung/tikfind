@@ -47,24 +47,27 @@ class AiPronunciationService {
 출력 형식 (JSON):
 {
   "originalMeaning": "원본 메시지의 ${targetLangName} 의미",
+  "nicknamePronunciation": "시청자 닉네임을 ${targetLangName} 화자가 읽을 수 있는 발음 표기 (닉네임이 외국어/특수문자면 발음 표기, 한국어면 그대로)",
   "response": "시청자와 같은 언어로 작성된 답변 (스트리머 페르소나 반영)",
   "responseMeaning": "답변의 ${targetLangName} 의미",
   "pronunciation": "답변을 ${targetLangName} 화자가 읽을 수 있는 발음 표기"
 }
 
-예시 1 (영어 시청자):
+예시 1 (영어 시청자 @john_doe):
 시청자: "Hello"
 {
   "originalMeaning": "안녕하세요",
+  "nicknamePronunciation": "존 도우",
   "response": "Hello! Nice to meet you~ Where are you from?",
   "responseMeaning": "친근한 인사와 출신 국가 질문",
   "pronunciation": "헬로우! 나이스 투 밋 유~ 웨어 아 유 프롬?"
 }
 
-예시 2 (일본어 시청자):
+예시 2 (일본어 시청자 @sakura_chan):
 시청자: "こんにちは"
 {
   "originalMeaning": "안녕하세요",
+  "nicknamePronunciation": "사쿠라 찬",
   "response": "こんにちは！はじめまして～どこから来ましたか？",
   "responseMeaning": "친근한 인사와 출신 국가 질문",
   "pronunciation": "곤니치와! 하지메마시테~ 도코카라 키마시타카?"
@@ -105,6 +108,7 @@ class AiPronunciationService {
                 const result = JSON.parse(aiResponse);
                 return {
                     originalMeaning: result.originalMeaning,
+                    nicknamePronunciation: result.nicknamePronunciation || '',
                     response: result.response,
                     responseMeaning: result.responseMeaning,
                     pronunciation: result.pronunciation

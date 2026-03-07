@@ -837,3 +837,18 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+/* AI 발음 코치 닉네임 발음 */
+.ai-nickname-pronunciation {
+    font-size: 11px;
+    color: #a78bfa;
+    background: rgba(167, 139, 250, 0.1);
+    border-left: 2px solid #a78bfa;
+    padding: 3px 8px;
+    margin-bottom: 4px;
+    border-radius: 0 4px 4px 0;
+}
+.ai-nickname-pronunciation strong {
+    color: #c4b5fd;
+    font-weight: 700;
+}
