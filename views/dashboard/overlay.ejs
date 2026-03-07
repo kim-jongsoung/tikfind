@@ -528,32 +528,34 @@
         }
 
         function renderModerators(mods) {
-            const el = document.getElementById('modList');
+            var el = document.getElementById('modList');
             document.getElementById('modCount').textContent = mods.length + '명 등록됨';
             if (!mods.length) {
                 el.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">등록된 모더가 없습니다.</div>';
                 return;
             }
-            el.innerHTML = mods.map(m => {
-                const isUrl = (m.profileImg || '').startsWith('http');
-                const avatarHtml = isUrl
-                    ? `<img src="${escHtmlMod(m.profileImg)}" class="w-full h-full object-cover" onerror="this.parentNode.textContent='${escHtmlMod(m.displayName.charAt(0))}'">` 
-                    : (m.profileImg ? `<span style="font-size:18px">${escHtmlMod(m.profileImg)}</span>` : escHtmlMod(m.displayName.charAt(0).toUpperCase()));
-                return `
-                <div class="flex items-center gap-2 p-2.5 bg-white border border-gray-200 rounded-lg">
-                    <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center font-bold text-blue-600 flex-shrink-0 overflow-hidden border border-blue-100">
-                        ${avatarHtml}
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-sm font-semibold text-gray-700 truncate">${escHtmlMod(m.displayName)}</div>
-                        <div class="text-xs text-gray-400 truncate">@${escHtmlMod(m.tiktokUniqueId)}</div>
-                    </div>
-                    <button onclick="deleteModerator('${m._id}')"
-                        class="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-red-50 transition text-red-400 flex-shrink-0">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `).join('');
+            var html = '';
+            for (var i = 0; i < mods.length; i++) {
+                var m = mods[i];
+                var isUrl = (m.profileImg || '').startsWith('http');
+                var avatarHtml;
+                if (isUrl) {
+                    avatarHtml = '<img src="' + escHtmlMod(m.profileImg) + '" class="w-full h-full object-cover">';
+                } else if (m.profileImg) {
+                    avatarHtml = '<span style="font-size:18px">' + escHtmlMod(m.profileImg) + '</span>';
+                } else {
+                    avatarHtml = escHtmlMod(m.displayName.charAt(0).toUpperCase());
+                }
+                html += '<div class="flex items-center gap-2 p-2.5 bg-white border border-gray-200 rounded-lg">';
+                html += '<div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center font-bold text-blue-600 flex-shrink-0 overflow-hidden border border-blue-100">' + avatarHtml + '</div>';
+                html += '<div class="flex-1 min-w-0">';
+                html += '<div class="text-sm font-semibold text-gray-700 truncate">' + escHtmlMod(m.displayName) + '</div>';
+                html += '<div class="text-xs text-gray-400 truncate">@' + escHtmlMod(m.tiktokUniqueId) + '</div>';
+                html += '</div>';
+                html += '<button onclick="deleteModerator(\'' + m._id + '\')" class="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-red-50 transition text-red-400 flex-shrink-0"><i class="fas fa-trash"></i></button>';
+                html += '</div>';
+            }
+            el.innerHTML = html;
         }
 
         function escHtmlMod(s) {
