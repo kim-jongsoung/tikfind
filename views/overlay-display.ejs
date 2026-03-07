@@ -3,103 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikFind Overlay</title>
+    <title>TikFind Overlay - Song</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
+        html, body {
             background: transparent;
             overflow: hidden;
-            width: 100%;
-            height: 100%;
+            width: 700px;
+            height: 80px;
             margin: 0;
             padding: 0;
         }
 
-        /* 마퀴 바 */
-        .marquee-bar {
-            width: 100%;
+        .overlay-bar {
+            width: 700px;
+            height: 80px;
             overflow: hidden;
-            white-space: nowrap;
             display: flex;
-            align-items: stretch;
-            border-radius: 9999px;
-            gap: 0;
+            align-items: center;
             position: relative;
         }
 
-        /* 뱃지 공통 */
-        .song-badge {
+        /* 슬라이드 아이템 - 기본은 화면 오른쪽 바깥 대기 */
+        .slide-item {
+            position: absolute;
+            width: 700px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            transform: translateX(700px);
+            opacity: 0;
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+        }
+
+        /* 슬라이드 인 */
+        .slide-item.slide-in {
+            animation: slideIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        /* 슬라이드 아웃 */
+        .slide-item.slide-out {
+            animation: slideOut 0.35s cubic-bezier(0.55, 0, 0.1, 1) forwards;
+        }
+
+        /* 항목 1개일 때 - 고정 표시 */
+        .slide-item.static-show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(700px); opacity: 0; }
+            to   { transform: translateX(0);     opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateX(0);      opacity: 1; }
+            to   { transform: translateX(-700px); opacity: 0; }
+        }
+
+        .item-badge {
             flex-shrink: 0;
             color: #fff;
             font-weight: 700;
-            padding: 0 10px;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            border-right: 1px solid rgba(255,255,255,0.25);
-        }
-
-        /* 뱃지 3가지 색상 */
-        .badge-now    { background: #16a34a; } /* 초록 - 현재곡 */
-        .badge-next   { background: #2563eb; } /* 파랑 - 다음곡 */
-        .badge-wait   { background: #7c3aed; } /* 보라 - 대기 */
-        .badge-info   { background: rgba(0,0,0,0); } /* 투명 - 안내 */
-
-        /* 마퀴 텍스트 영역 */
-        .marquee-scroll-area {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            position: relative;
-            /* 좌우 40px 안쪽에서 클리핑 */
-            clip-path: inset(0 40px 0 40px);
-        }
-
-        .marquee-track {
-            display: inline-block;
-            white-space: nowrap;
-            animation: marquee-scroll 20s linear infinite;
-            padding: 0;
-        }
-
-        @keyframes marquee-scroll {
-            0%   { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
-
-        .marquee-text {
-            display: inline;
-            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-            font-weight: 400;
+            font-size: 0.78em;
+            padding: 3px 10px;
+            border-radius: 5px;
+            margin-right: 10px;
             letter-spacing: 0.02em;
         }
 
-        /* 신청방법 안내 깜빡이는 텍스트 */
-        .blink-text {
-            display: inline;
-            font-weight: 400;
-            animation: blink-color 1.2s ease-in-out infinite;
+        .item-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 500;
+            letter-spacing: 0.01em;
         }
 
-        @keyframes blink-color {
-            0%, 100% { color: #facc15; } /* 노랑 */
-            50%      { color: #f97316; } /* 주황 */
+        .notice-icon {
+            flex-shrink: 0;
+            margin-right: 10px;
+            font-size: 1.1em;
         }
     </style>
 </head>
 <body>
-    <div class="marquee-bar" id="marqueeBar">
-        <div class="marquee-scroll-area">
-            <div class="marquee-track" id="marqueeTrack">
-                <span class="marquee-text" id="marqueeText1"></span>
-                <span style="display:inline;opacity:0.4;"> ✦ </span>
-                <span class="marquee-text" id="marqueeText2"></span>
-                <span style="display:inline;opacity:0.4;"> ✦ </span>
-            </div>
-        </div>
+    <div class="overlay-bar" id="overlayBar">
+        <div class="slide-item" id="slideItem"></div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -107,106 +102,140 @@
         const userId = '<%= userId %>';
         const socket = io();
 
-        // URL 파라미터
         const params   = new URLSearchParams(location.search);
-        const bgColor  = decodeURIComponent(params.get('bg')    || 'rgba(0,0,0,0.55)');
+        const bgColor  = decodeURIComponent(params.get('bg')    || 'rgba(0,0,0,0.65)');
         const txtColor = params.get('color') || '#ffffff';
-        const fontSize = params.get('size')  || '10';
-        const speed    = parseFloat(params.get('speed') || '1.0');
+        const fontSize = parseInt(params.get('size') || '16');
 
-        const bar   = document.getElementById('marqueeBar');
-        const track = document.getElementById('marqueeTrack');
-
-        const fSize = parseInt(fontSize);
-        const barH  = Math.round(fSize * 1.8) + 'px';
+        const bar  = document.getElementById('overlayBar');
+        const item = document.getElementById('slideItem');
 
         bar.style.background  = bgColor;
-        bar.style.height      = barH;
-        bar.style.lineHeight  = barH;
+        item.style.fontSize   = fontSize + 'px';
+        item.style.color      = txtColor;
 
-        // 글자 크기/색깔을 track에 직접 적용해야 상속됨
-        track.style.fontSize  = fSize + 'px';
-        track.style.color     = txtColor;
-
-        function setSpeed(text) {
-            const base = Math.max(12, text.length * 0.3);
-            track.style.animationDuration = (base / speed) + 's';
-        }
+        const BADGE = {
+            now:    { bg: '#16a34a', text: '▶ 현재곡' },
+            next:   { bg: '#2563eb', text: '⏭ 다음곡' },
+            wait1:  { bg: '#7c3aed', text: '🎶 대기1' },
+            wait2:  { bg: '#7c3aed', text: '🎶 대기2' },
+            notice: { bg: '#dc2626', text: '📢 공지' }
+        };
 
         let currentSong = null;
         let nextQueue   = [];
+        let notices     = [];
+        let queue       = [];  // 표시할 전체 큐
+        let queueIdx    = 0;
+        let timer       = null;
+        let isAnimating = false;
 
-        // 뱃지 색상 + 라벨 업데이트
-        const BADGE_NOW  = '#16a34a'; // 초록
-        const BADGE_NEXT = '#2563eb'; // 파랑
-        const BADGE_WAIT = '#7c3aed'; // 보라
-
-        function updateBadge() {
-            // 좌측 뱃지 제거됨 - 아무것도 하지 않음
+        // 공지 로드
+        async function loadNotices() {
+            try {
+                const res = await fetch('/api/overlay-notice/' + userId);
+                const data = await res.json();
+                if (data.success) notices = data.notices.map(n => ({ type: 'notice', text: n.content }));
+            } catch(e) {}
         }
 
-        function songLabel(song) {
-            if (!song) return '';
-            let label = song.title;
-            if (song.artist)    label += ' - ' + song.artist;
-            const who = song.requesterNickname || song.requester;
-            if (who) label += '  @' + who;
-            return label;
-        }
-
-        // HTML 포함 마퀴 텍스트 빌드
-        function buildText() {
-            updateBadge();
-
-            let parts = [];
-
+        function buildQueue() {
+            const q = [];
             if (currentSong) {
-                parts.push(
-                    '<span style="display:inline;background:' + BADGE_NOW + ';color:#fff;padding:1px 6px;border-radius:3px;font-weight:700;font-size:0.85em;">▶ 현재곡</span> '
-                    + songLabel(currentSong)
-                );
+                let t = currentSong.title;
+                if (currentSong.artist) t += ' / ' + currentSong.artist;
+                const who = currentSong.requesterNickname || currentSong.requester;
+                if (who) t += ' / ' + who;
+                q.push({ type: 'now', text: t });
             }
-            if (nextQueue.length > 0) {
-                parts.push(
-                    '<span style="display:inline;background:' + BADGE_NEXT + ';color:#fff;padding:1px 6px;border-radius:3px;font-weight:700;font-size:0.85em;">⏭ 다음곡</span> '
-                    + songLabel(nextQueue[0])
-                );
+            if (nextQueue[0]) {
+                let t = nextQueue[0].title;
+                if (nextQueue[0].artist) t += ' / ' + nextQueue[0].artist;
+                const who = nextQueue[0].requesterNickname || nextQueue[0].requester;
+                if (who) t += ' / ' + who;
+                q.push({ type: 'next', text: t });
             }
             nextQueue.slice(1, 3).forEach((s, i) => {
-                parts.push(
-                    '<span style="display:inline;background:' + BADGE_WAIT + ';color:#fff;padding:1px 6px;border-radius:3px;font-weight:700;font-size:0.85em;">🎶 대기' + (i + 1) + '</span> '
-                    + songLabel(s)
-                );
+                let t = s.title;
+                if (s.artist) t += ' / ' + s.artist;
+                const who = s.requesterNickname || s.requester;
+                if (who) t += ' / ' + who;
+                q.push({ type: i === 0 ? 'wait1' : 'wait2', text: t });
             });
-
-            // 신청방법 안내 - 깜빡이는 텍스트
-            const guideHtml =
-                '<span class="blink-text">팔로우·팀가입 후</span>'
-                + ' <span style="font-weight:400;">#노래제목 #가수명</span>'
-                + ' <span class="blink-text">음악신청 가능!</span>';
-
-            parts.push(guideHtml);
-
-            const sep = ' <span style="opacity:0.4"> ✦ </span> ';
-            const full = parts.join(sep) + sep;
-
-            document.getElementById('marqueeText1').innerHTML = full;
-            document.getElementById('marqueeText2').innerHTML = full;
-            setSpeed(full.replace(/<[^>]+>/g, ''));
+            notices.forEach(n => q.push(n));
+            queue = q;
         }
 
-        // 초기 안내 표시
-        buildText();
+        function renderItem(entry) {
+            if (!entry) return;
+            if (entry.type === 'notice') {
+                item.innerHTML =
+                    '<span class="notice-icon">📢</span>'
+                    + '<span class="item-text">' + escHtml(entry.text) + '</span>';
+            } else {
+                const b = BADGE[entry.type] || BADGE.now;
+                item.innerHTML =
+                    '<span class="item-badge" style="background:' + b.bg + '">' + b.text + '</span>'
+                    + '<span class="item-text">' + escHtml(entry.text) + '</span>';
+            }
+        }
 
+        function escHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function showStatic(entry) {
+            renderItem(entry);
+            item.className = 'slide-item static-show';
+        }
+
+        function startCycle() {
+            if (timer) clearTimeout(timer);
+            buildQueue();
+            if (queue.length === 0) {
+                item.className = 'slide-item';
+                return;
+            }
+            if (queue.length === 1) {
+                showStatic(queue[0]);
+                return;
+            }
+            queueIdx = queueIdx % queue.length;
+            showNext();
+        }
+
+        function showNext() {
+            if (queue.length === 0) return;
+            if (queue.length === 1) { showStatic(queue[0]); return; }
+
+            const entry = queue[queueIdx];
+            renderItem(entry);
+
+            // 슬라이드 인
+            item.className = 'slide-item';
+            void item.offsetWidth; // reflow
+            item.className = 'slide-item slide-in';
+
+            // 3초 표시 후 슬라이드 아웃
+            timer = setTimeout(() => {
+                item.className = 'slide-item slide-out';
+                timer = setTimeout(() => {
+                    queueIdx = (queueIdx + 1) % queue.length;
+                    showNext();
+                }, 360);
+            }, 3000);
+        }
+
+        // 소켓 이벤트
         socket.emit('join-overlay', userId);
 
         socket.on('current-song', (data) => {
             currentSong = (data && data.title) ? data : null;
-            buildText();
+            startCycle();
         });
 
-        socket.on('song-queue', (queue) => {
-            const all = queue || [];
+        socket.on('song-queue', (q) => {
+            const all = q || [];
             if (currentSong) {
                 nextQueue = all.filter(s =>
                     !(s.title === currentSong.title && s.requester === currentSong.requester)
@@ -214,8 +243,15 @@
             } else {
                 nextQueue = all;
             }
-            buildText();
+            startCycle();
         });
+
+        socket.on('overlay-notice-update', () => {
+            loadNotices().then(() => startCycle());
+        });
+
+        // 초기 로드
+        loadNotices().then(() => startCycle());
     </script>
 </body>
 </html>

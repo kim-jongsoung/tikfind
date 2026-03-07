@@ -50,7 +50,7 @@
                     </button>
                     <button onclick="switchTab('song')" id="tab-song"
                         class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
-                        <i class="fas fa-music text-indigo-500"></i> 신청곡 자막
+                        <i class="fas fa-music text-indigo-500"></i> 신청곡 + 공지
                     </button>
                     <button disabled
                         class="px-5 py-4 text-sm text-gray-300 flex items-center gap-2 cursor-not-allowed">
@@ -182,8 +182,8 @@
                     <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
                         <i class="fas fa-ruler-combined text-blue-500 mt-0.5"></i>
                         <div>
-                            <p class="text-sm font-semibold text-blue-800 mb-1">고정 소스 크기 — <span class="font-mono">800 × 65 px</span></p>
-                            <p class="text-xs text-blue-600 leading-relaxed">신청곡 자막은 <strong>너비 800px × 높이 65px</strong> 크기로 고정되어 있습니다. TikTok Live Studio 소스 크기를 이 값으로 설정해 주세요.</p>
+                            <p class="text-sm font-semibold text-blue-800 mb-1">고정 소스 크기 — <span class="font-mono">700 × 80 px</span></p>
+                            <p class="text-xs text-blue-600 leading-relaxed">신청곡+공지 자막은 <strong>너비 700px × 높이 80px</strong> 고정 크기입니다. TikTok Live Studio에서 소스를 추가한 뒤 원하는 위치에 자유롭게 드래그해 배치하세요.</p>
                         </div>
                     </div>
 
@@ -253,8 +253,8 @@
                         <div class="flex flex-wrap gap-3">
                             <div class="size-badge">
                                 <i class="fas fa-expand-alt text-indigo-400"></i>
-                                너비 <span class="dim">800</span> × 높이 <span class="dim">65</span> px
-                                <span class="text-gray-400 font-normal text-xs">(고정 권장 크기)</span>
+                                너비 <span class="dim">700</span> × 높이 <span class="dim">80</span> px
+                                <span class="text-gray-400 font-normal text-xs">(고정 크기)</span>
                             </div>
                         </div>
                     </div>
@@ -264,6 +264,37 @@
                             class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-100 transition text-sm font-semibold">
                             <i class="fas fa-external-link-alt"></i> 새 창에서 미리보기
                         </a>
+                    </div>
+
+                    <!-- 공지사항 관리 -->
+                    <div class="mb-6 border border-indigo-100 rounded-xl overflow-hidden">
+                        <div class="bg-indigo-50 px-5 py-3 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-bullhorn text-indigo-500"></i>
+                                <span class="text-sm font-semibold text-indigo-800">공지사항 관리</span>
+                                <span class="text-xs text-indigo-500">(최대 10개 · 50자 이내)</span>
+                            </div>
+                            <span class="text-xs text-indigo-400" id="noticeSavedCount">0개 저장됨</span>
+                        </div>
+                        <div class="p-4">
+                            <!-- 공지 추가 입력 -->
+                            <div class="flex gap-2 mb-4">
+                                <div class="flex-1 relative">
+                                    <input type="text" id="noticeInput" maxlength="50"
+                                        placeholder="공지 내용 입력 (최대 50자)"
+                                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 pr-12"
+                                        onkeydown="if(event.key==='Enter') addNotice()">
+                                    <span class="absolute right-3 top-2.5 text-xs text-gray-400" id="noticeCharCount">0/50</span>
+                                </div>
+                                <button onclick="addNotice()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition flex items-center gap-1">
+                                    <i class="fas fa-plus"></i> 추가
+                                </button>
+                            </div>
+                            <!-- 공지 목록 -->
+                            <div id="noticeList" class="space-y-2">
+                                <div class="text-center py-4 text-gray-400 text-sm"><i class="fas fa-spinner fa-spin mr-1"></i>불러오는 중...</div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 추가 방법 -->
@@ -279,10 +310,10 @@
                                 <span class="step-num bg-indigo-500">4</span>
                                 <div class="text-sm text-gray-600 pt-0.5">
                                     <strong>해상도(너비 × 높이)</strong> 입력:
-                                    <span class="size-badge ml-2"><span class="dim">800</span> × <span class="dim">65</span></span>
+                                    <span class="size-badge ml-2"><span class="dim">700</span> × <span class="dim">80</span></span>
                                 </div>
                             </li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">5</span><p class="text-sm text-gray-600 pt-0.5">화면 하단에 배치 후 소스 크기를 <strong>800 × 65</strong>에 맞게 조절</p></li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">5</span><p class="text-sm text-gray-600 pt-0.5">원하는 위치에 <strong>드래그해서 배치</strong> — 소스 크기가 700×80으로 딱 맞게 고정됩니다</p></li>
                             <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">6</span>
                                 <div class="text-sm text-gray-600 pt-0.5">
                                     <strong>⚠️ 스타일 수정 시</strong>: 설정 저장 후 새 URL을 복사하여 Studio 소스의 URL을 교체해 주세요.
@@ -424,6 +455,111 @@
         // 초기 실행
         loadSettings();
         updateAll();
+
+        // ── 공지사항 관리 ──
+        document.getElementById('noticeInput').addEventListener('input', function() {
+            document.getElementById('noticeCharCount').textContent = this.value.length + '/50';
+        });
+
+        async function loadNotices() {
+            const res = await fetch('/api/overlay-notice');
+            const data = await res.json();
+            if (!data.success) return;
+            renderNotices(data.notices);
+        }
+
+        function renderNotices(notices) {
+            const el = document.getElementById('noticeList');
+            document.getElementById('noticeSavedCount').textContent = notices.length + '개 저장됨';
+            if (!notices.length) {
+                el.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">저장된 공지가 없습니다.<br><span class="text-xs">공지를 추가하면 오버레이에 신청곡 사이에 표시됩니다.</span></div>';
+                return;
+            }
+            el.innerHTML = notices.map(n => `
+                <div class="flex items-center gap-2 p-2.5 bg-white border border-gray-200 rounded-lg" id="notice-${n._id}">
+                    <span class="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0 ${n.isActive ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-400'}">
+                        ${n.isActive ? '📢 ON' : 'OFF'}
+                    </span>
+                    <span class="flex-1 text-sm text-gray-700 truncate" id="notice-text-${n._id}">${escHtml(n.content)}</span>
+                    <div class="flex gap-1 flex-shrink-0">
+                        <button onclick="toggleNotice('${n._id}', ${!n.isActive})"
+                            class="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 transition ${n.isActive ? 'text-gray-500' : 'text-indigo-600'}">
+                            ${n.isActive ? '끄기' : '켜기'}
+                        </button>
+                        <button onclick="editNotice('${n._id}', ${JSON.stringify(n.content)})"
+                            class="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-gray-50 transition text-gray-500">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                        <button onclick="deleteNotice('${n._id}')"
+                            class="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-red-50 transition text-red-400">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function escHtml(s) {
+            return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        async function addNotice() {
+            const input = document.getElementById('noticeInput');
+            const content = input.value.trim();
+            if (!content) return;
+            const res = await fetch('/api/overlay-notice', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content })
+            });
+            const data = await res.json();
+            if (data.success) {
+                input.value = '';
+                document.getElementById('noticeCharCount').textContent = '0/50';
+                loadNotices();
+            } else {
+                alert(data.message);
+            }
+        }
+
+        async function toggleNotice(id, isActive) {
+            await fetch(`/api/overlay-notice/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isActive })
+            });
+            loadNotices();
+        }
+
+        async function editNotice(id, currentContent) {
+            const newContent = prompt('공지 내용 수정 (최대 50자):', currentContent);
+            if (newContent === null) return;
+            if (newContent.length > 50) { alert('50자 이내로 입력해주세요.'); return; }
+            const res = await fetch(`/api/overlay-notice/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: newContent.trim() })
+            });
+            const data = await res.json();
+            if (data.success) loadNotices();
+            else alert(data.message);
+        }
+
+        async function deleteNotice(id) {
+            if (!confirm('이 공지를 삭제하시겠습니까?')) return;
+            await fetch(`/api/overlay-notice/${id}`, { method: 'DELETE' });
+            loadNotices();
+        }
+
+        // song 탭 활성화 시 공지 로드
+        const origSwitchTab = switchTab;
+        switchTab = function(name) {
+            origSwitchTab(name);
+            if (name === 'song') loadNotices();
+        };
+
+        // 초기 탭이 song이면 로드
+        if (document.getElementById('panel-song').classList.contains('active')) loadNotices();
     </script>
 </body>
 </html>

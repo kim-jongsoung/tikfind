@@ -6,6 +6,7 @@ const archiver = require('archiver');
 const User = require('../models/User');
 const AlgorithmViewer = require('../models/AlgorithmViewer');
 const MessageTemplate = require('../models/MessageTemplate');
+const OverlayNotice = require('../models/OverlayNotice');
 const ytdl = require('@distube/ytdl-core');
 const SongRequestService = require('../services/SongRequestService');
 
@@ -1549,6 +1550,77 @@ router.post('/growth/ai-message', requireAuth, async (req, res) => {
         res.json({ success: true, messages });
     } catch (e) {
         console.error('AI 메시지 생성 오류:', e);
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// ===== 오버레이 공지사항 API =====
+
+// 공지 목록 조회 (오버레이에서도 인증 없이 userId로 조회)
+router.get('/overlay-notice/:userId', async (req, res) => {
+    try {
+        const notices = await OverlayNotice.find({ userId: req.params.userId, isActive: true })
+            .sort({ order: 1, createdAt: 1 });
+        res.json({ success: true, notices });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 공지 목록 조회 (대시보드 - 인증 필요)
+router.get('/overlay-notice', requireAuth, async (req, res) => {
+    try {
+        const notices = await OverlayNotice.find({ userId: req.user._id })
+            .sort({ order: 1, createdAt: 1 });
+        res.json({ success: true, notices });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 공지 추가
+router.post('/overlay-notice', requireAuth, async (req, res) => {
+    try {
+        const { content } = req.body;
+        if (!content || !content.trim()) return res.status(400).json({ success: false, message: '내용을 입력해주세요.' });
+        if (content.length > 50) return res.status(400).json({ success: false, message: '50자 이내로 입력해주세요.' });
+        const count = await OverlayNotice.countDocuments({ userId: req.user._id });
+        if (count >= 10) return res.status(400).json({ success: false, message: '공지는 최대 10개까지 저장할 수 있습니다.' });
+        const notice = await OverlayNotice.create({ userId: req.user._id, content: content.trim(), order: count });
+        res.json({ success: true, notice });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 공지 수정
+router.patch('/overlay-notice/:id', requireAuth, async (req, res) => {
+    try {
+        const { content, isActive } = req.body;
+        const update = {};
+        if (content !== undefined) {
+            if (content.length > 50) return res.status(400).json({ success: false, message: '50자 이내로 입력해주세요.' });
+            update.content = content.trim();
+        }
+        if (isActive !== undefined) update.isActive = isActive;
+        const notice = await OverlayNotice.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user._id },
+            { $set: update },
+            { new: true }
+        );
+        if (!notice) return res.status(404).json({ success: false, message: '공지를 찾을 수 없습니다.' });
+        res.json({ success: true, notice });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 공지 삭제
+router.delete('/overlay-notice/:id', requireAuth, async (req, res) => {
+    try {
+        await OverlayNotice.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        res.json({ success: true });
+    } catch (e) {
         res.status(500).json({ success: false, message: e.message });
     }
 });
