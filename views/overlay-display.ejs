@@ -297,11 +297,33 @@
         });
 
         socket.on('overlay-notice-update', () => {
-            loadNotices().then(() => startCycle());
+            loadNotices().then(() => {
+                // 타이머/애니메이션 완전 리셋 후 재시작
+                if (timer) { clearTimeout(timer); timer = null; }
+                isAnimating = false;
+                queueIdx = 0;
+                item.className = 'slide-item';
+                const track = item.querySelector('.notice-marquee-track');
+                if (track) { track.style.transition = ''; track.style.transform = ''; }
+                startCycle();
+            });
         });
 
         // 초기 로드
         loadNotices().then(() => startCycle());
+
+        // 30초 주기 폴링 (소켓 미수신 대비)
+        setInterval(() => {
+            loadNotices().then(() => {
+                if (timer) { clearTimeout(timer); timer = null; }
+                isAnimating = false;
+                queueIdx = 0;
+                item.className = 'slide-item';
+                const track = item.querySelector('.notice-marquee-track');
+                if (track) { track.style.transition = ''; track.style.transform = ''; }
+                startCycle();
+            });
+        }, 30000);
     </script>
 </body>
 </html>
