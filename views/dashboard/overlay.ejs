@@ -233,9 +233,17 @@
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label class="block text-xs font-medium text-gray-500 mb-1">프로필 이미지 URL <span class="text-gray-300">(선택)</span></label>
-                            <input type="text" id="modProfileImg" placeholder="https://... (비워두면 이니셜 표시)"
-                                class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300">
+                            <label class="block text-xs font-medium text-gray-500 mb-2">프로필 이모지 선택</label>
+                            <div class="flex gap-2 flex-wrap">
+                                <input type="hidden" id="modEmoji" value="👑">
+                                <% ['👑','🏆','💎','⭐','🌟'].forEach(function(em) { %>
+                                <button type="button" onclick="selectModEmoji(this, '<%= em %>')" data-emoji="<%= em %>"
+                                    class="mod-emoji-btn w-12 h-12 text-2xl rounded-xl border-2 border-gray-200 hover:border-blue-400 transition flex items-center justify-center bg-gray-50 hover:bg-blue-50"
+                                    style="<%= em === '👑' ? 'border-color:#3b82f6;background:#eff6ff;' : '' %>">
+                                    <%= em %>
+                                </button>
+                                <% }); %>
+                            </div>
                         </div>
                         <div class="flex justify-end">
                             <button onclick="addModerator()"
@@ -513,12 +521,15 @@
                 el.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">등록된 모더가 없습니다.</div>';
                 return;
             }
-            el.innerHTML = mods.map(m => `
+            el.innerHTML = mods.map(m => {
+                const isUrl = (m.profileImg || '').startsWith('http');
+                const avatarHtml = isUrl
+                    ? `<img src="${escHtmlMod(m.profileImg)}" class="w-full h-full object-cover" onerror="this.parentNode.textContent='${escHtmlMod(m.displayName.charAt(0))}'">` 
+                    : (m.profileImg ? `<span style="font-size:18px">${escHtmlMod(m.profileImg)}</span>` : escHtmlMod(m.displayName.charAt(0).toUpperCase()));
+                return `
                 <div class="flex items-center gap-2 p-2.5 bg-white border border-gray-200 rounded-lg">
-                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-sm font-bold text-blue-600 flex-shrink-0 overflow-hidden">
-                        ${m.profileImg
-                            ? `<img src="${escHtmlMod(m.profileImg)}" class="w-full h-full object-cover" onerror="this.parentNode.textContent='${escHtmlMod(m.displayName.charAt(0))}'">`
-                            : escHtmlMod(m.displayName.charAt(0).toUpperCase())}
+                    <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center font-bold text-blue-600 flex-shrink-0 overflow-hidden border border-blue-100">
+                        ${avatarHtml}
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="text-sm font-semibold text-gray-700 truncate">${escHtmlMod(m.displayName)}</div>
@@ -536,10 +547,20 @@
             return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
+        function selectModEmoji(btn, emoji) {
+            document.querySelectorAll('.mod-emoji-btn').forEach(b => {
+                b.style.borderColor = '';
+                b.style.background  = '';
+            });
+            btn.style.borderColor = '#3b82f6';
+            btn.style.background  = '#eff6ff';
+            document.getElementById('modEmoji').value = emoji;
+        }
+
         async function addModerator() {
             const tiktokUniqueId = document.getElementById('modTiktokId').value.trim().replace(/^@/, '');
             const displayName    = document.getElementById('modDisplayName').value.trim();
-            const profileImg     = document.getElementById('modProfileImg').value.trim();
+            const profileImg     = document.getElementById('modEmoji').value || '👑';
             if (!tiktokUniqueId || !displayName) { alert('TikTok ID와 닉네임을 입력해주세요.'); return; }
             const res = await fetch('/api/moderator', {
                 method: 'POST',
@@ -550,7 +571,12 @@
             if (data.success) {
                 document.getElementById('modTiktokId').value    = '';
                 document.getElementById('modDisplayName').value = '';
-                document.getElementById('modProfileImg').value  = '';
+                // 이모지 선택 초기화
+                document.querySelectorAll('.mod-emoji-btn').forEach((b,i) => {
+                    b.style.borderColor = i === 0 ? '#3b82f6' : '';
+                    b.style.background  = i === 0 ? '#eff6ff' : '';
+                });
+                document.getElementById('modEmoji').value = '👑';
                 loadModerators();
             } else {
                 alert(data.message);

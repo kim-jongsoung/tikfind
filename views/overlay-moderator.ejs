@@ -77,7 +77,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
+            font-size: 28px;
             font-weight: 900;
             color: #fff;
             overflow: hidden;
@@ -171,18 +171,19 @@
         card.className = 'mod-card';
         card.id = 'mod-' + uid;
 
-        const name   = mod.displayName || uid;
-        const imgUrl = mod.profileImg || '';
+        const name    = mod.displayName || uid;
+        const rawImg  = mod.profileImg || '';
+        // URL이면 img 태그, 아니면(이모지 등) 텍스트로 표시
+        const isUrl   = rawImg.startsWith('http');
         const initial = name.charAt(0).toUpperCase();
+        const avatarContent = isUrl
+            ? `<img src="${escHtml(rawImg)}" onerror="this.parentNode.textContent='${escHtml(initial)}'">`
+            : (rawImg ? escHtml(rawImg) : escHtml(initial));
 
         card.innerHTML = `
             <div class="mod-badge">with 모더</div>
             <div class="mod-body">
-                <div class="mod-avatar" id="av-${uid}">
-                    ${imgUrl
-                        ? `<img src="${escHtml(imgUrl)}" onerror="this.parentNode.textContent='${escHtml(initial)}'">`
-                        : escHtml(initial)}
-                </div>
+                <div class="mod-avatar" id="av-${uid}">${avatarContent}</div>
                 <div class="mod-name">${escHtml(name)}</div>
                 <div class="mod-status"><span class="mod-dot"></span>입장</div>
             </div>
