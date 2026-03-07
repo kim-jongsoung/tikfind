@@ -454,6 +454,9 @@
                     else btn.classList.add('active');
                 }
             });
+            if (name === 'song') loadNotices();
+            if (name === 'gift') loadGiftSettings();
+            if (name === 'mod')  loadModerators();
         }
 
         // ── 선물 다이아 기준 저장 ──
@@ -795,15 +798,6 @@
             await fetch(`/api/overlay-notice/${id}`, { method: 'DELETE' });
             loadNotices();
         }
-
-        // 탭 전환 시 각 탭 데이터 로드
-        const origSwitchTab = switchTab;
-        switchTab = function(name) {
-            origSwitchTab(name);
-            if (name === 'song') loadNotices();
-            if (name === 'gift') loadGiftSettings();
-            if (name === 'mod')  loadModerators();
-        };
 
         // 초기 탭 로드
         if (document.getElementById('panel-song').classList.contains('active')) loadNotices();
