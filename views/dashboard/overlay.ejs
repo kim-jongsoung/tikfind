@@ -199,9 +199,9 @@
                                     <input type="color" id="bgColor" value="#000000"
                                         class="w-10 h-10 rounded cursor-pointer border border-gray-200" oninput="updateAll()">
                                     <div class="flex-1">
-                                        <input type="range" id="bgOpacity" min="0" max="100" value="55" class="w-full" oninput="updateAll()">
+                                        <input type="range" id="bgOpacity" min="0" max="100" value="30" class="w-full" oninput="updateAll()">
                                         <div class="flex justify-between text-xs text-gray-400 mt-0.5">
-                                            <span>투명</span><span id="opacityLabel">55%</span>
+                                            <span>투명</span><span id="opacityLabel">30%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -211,16 +211,11 @@
                                 <input type="color" id="txtColor" value="#ffffff"
                                     class="w-10 h-10 rounded cursor-pointer border border-gray-200" oninput="updateAll()">
                             </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 mb-2">글자크기: <span id="sizeLabel">16</span>px</label>
-                                <input type="range" id="fontSize" min="12" max="36" value="16" class="w-full"
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-gray-500 mb-2">글자크기: <span id="sizeLabel">25</span>px</label>
+                                <input type="range" id="fontSize" min="12" max="40" value="25" class="w-full"
                                     oninput="document.getElementById('sizeLabel').textContent=this.value; updateAll()">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-gray-500 mb-2">흐르는 속도: <span id="speedLabel">1.0</span>x</label>
-                                <input type="range" id="mqSpeed" min="0.3" max="3.0" step="0.1" value="1.0" class="w-full"
-                                    oninput="document.getElementById('speedLabel').textContent=parseFloat(this.value).toFixed(1); updateAll()">
-                                <div class="flex justify-between text-xs text-gray-400 mt-0.5"><span>느림</span><span>빠름</span></div>
+                                <div class="flex justify-between text-xs text-gray-400 mt-0.5"><span>작게</span><span>크게</span></div>
                             </div>
                         </div>
                         <div class="mt-4 flex justify-end">
@@ -395,8 +390,7 @@
                 bgColor:   document.getElementById('bgColor').value,
                 bgOpacity: document.getElementById('bgOpacity').value,
                 txtColor:  document.getElementById('txtColor').value,
-                fontSize:  document.getElementById('fontSize').value,
-                mqSpeed:   document.getElementById('mqSpeed').value
+                fontSize:  document.getElementById('fontSize').value
             };
             localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
             const btn = event.currentTarget;
@@ -416,15 +410,14 @@
                 const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
                 if (!s) return;
                 if (s.bgColor)   document.getElementById('bgColor').value   = s.bgColor;
-                if (s.bgOpacity) document.getElementById('bgOpacity').value = s.bgOpacity;
+                if (s.bgOpacity) {
+                    document.getElementById('bgOpacity').value = s.bgOpacity;
+                    document.getElementById('opacityLabel').textContent = s.bgOpacity + '%';
+                }
                 if (s.txtColor)  document.getElementById('txtColor').value  = s.txtColor;
                 if (s.fontSize) {
                     document.getElementById('fontSize').value = s.fontSize;
                     document.getElementById('sizeLabel').textContent = s.fontSize;
-                }
-                if (s.mqSpeed) {
-                    document.getElementById('mqSpeed').value = s.mqSpeed;
-                    document.getElementById('speedLabel').textContent = parseFloat(s.mqSpeed).toFixed(1);
                 }
             } catch(e) {}
         }
@@ -434,7 +427,6 @@
             const opacity = parseInt(document.getElementById('bgOpacity').value);
             const color   = document.getElementById('txtColor').value;
             const size    = parseInt(document.getElementById('fontSize').value);
-            const speed   = parseFloat(document.getElementById('mqSpeed').value);
 
             document.getElementById('opacityLabel').textContent = opacity + '%';
 
@@ -445,7 +437,6 @@
             p.set('bg',    encodeURIComponent(bg));
             p.set('color', color);
             p.set('size',  size);
-            p.set('speed', speed.toFixed(1));
             const finalUrl = BASE_URL + '?' + p.toString();
 
             document.getElementById('finalUrl').textContent = finalUrl;

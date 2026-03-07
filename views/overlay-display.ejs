@@ -103,9 +103,9 @@
         const socket = io();
 
         const params   = new URLSearchParams(location.search);
-        const bgColor  = decodeURIComponent(params.get('bg')    || 'rgba(0,0,0,0.65)');
+        const bgColor  = decodeURIComponent(params.get('bg')    || 'rgba(0,0,0,0.30)');
         const txtColor = params.get('color') || '#ffffff';
-        const fontSize = parseInt(params.get('size') || '16');
+        const fontSize = parseInt(params.get('size') || '25');
 
         const bar  = document.getElementById('overlayBar');
         const item = document.getElementById('slideItem');
