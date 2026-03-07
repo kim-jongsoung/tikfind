@@ -1588,6 +1588,8 @@ router.post('/overlay-notice', requireAuth, async (req, res) => {
         const count = await OverlayNotice.countDocuments({ userId: req.user._id });
         if (count >= 10) return res.status(400).json({ success: false, message: '공지는 최대 10개까지 저장할 수 있습니다.' });
         const notice = await OverlayNotice.create({ userId: req.user._id, content: content.trim(), order: count });
+        const io = req.app.get('io');
+        if (io) io.to('overlay-' + String(req.user._id)).emit('overlay-notice-update');
         res.json({ success: true, notice });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
@@ -1610,6 +1612,8 @@ router.patch('/overlay-notice/:id', requireAuth, async (req, res) => {
             { new: true }
         );
         if (!notice) return res.status(404).json({ success: false, message: '공지를 찾을 수 없습니다.' });
+        const io = req.app.get('io');
+        if (io) io.to('overlay-' + String(req.user._id)).emit('overlay-notice-update');
         res.json({ success: true, notice });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
@@ -1620,6 +1624,8 @@ router.patch('/overlay-notice/:id', requireAuth, async (req, res) => {
 router.delete('/overlay-notice/:id', requireAuth, async (req, res) => {
     try {
         await OverlayNotice.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        const io = req.app.get('io');
+        if (io) io.to('overlay-' + String(req.user._id)).emit('overlay-notice-update');
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });

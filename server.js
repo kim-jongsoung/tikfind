@@ -20,6 +20,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 const PORT = process.env.PORT || 3001;
+app.set('io', io);
 
 // TikTok Live 연결 관리
 const liveConnections = new Map();
