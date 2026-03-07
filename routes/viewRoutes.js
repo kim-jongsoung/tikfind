@@ -42,6 +42,11 @@ router.get('/overlay/:userId/gift', (req, res) => {
     res.render('overlay-gift', { title: 'TikFind Gift Overlay', userId: req.params.userId });
 });
 
+// 모더 위젯 (인증 불필요 - OBS 브라우저 소스)
+router.get('/overlay/:userId/moderator', (req, res) => {
+    res.render('overlay-moderator', { title: 'TikFind Moderator Overlay', userId: req.params.userId });
+});
+
 router.get('/dashboard/billing', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/billing.html'));
 });

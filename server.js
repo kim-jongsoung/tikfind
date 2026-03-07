@@ -2200,6 +2200,27 @@ io.on('connection', (socket) => {
         } else if (type === 'member') {
             // 입장 이벤트 - 국가 데이터 수집 (followInfo.region 또는 userDetails 기반)
             io.to(userId).emit('member-join', tiktokData);
+
+            // 모더 감지: 등록된 모더가 입장하면 오버레이에 emit
+            try {
+                const Moderator = require('./models/Moderator');
+                const incomingUid = (tiktokData.uniqueId || '').trim().toLowerCase();
+                if (incomingUid) {
+                    const mod = await Moderator.findOne({
+                        userId,
+                        tiktokUniqueId: { $regex: new RegExp(`^${incomingUid}$`, 'i') }
+                    });
+                    if (mod) {
+                        io.to(userId).emit('overlay-moderator-join', {
+                            uniqueId:    tiktokData.uniqueId,
+                            displayName: mod.displayName,
+                            profileImg:  mod.profileImg
+                        });
+                    }
+                }
+            } catch (modErr) {
+                // 모더 감지 오류는 무시
+            }
             const sessMember = liveSessionMap.get(String(userId));
             if (sessMember) {
                 sessMember.totalJoins = (sessMember.totalJoins || 0) + 1;

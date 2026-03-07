@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind Moderator Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@600;700;900&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 150px;
+            min-height: 100px;
+            background: transparent;
+            overflow: visible;
+            font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+        }
+
+        #mod-list {
+            width: 150px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 4px 0;
+        }
+
+        /* 각 모더 카드 */
+        .mod-card {
+            width: 144px;
+            margin: 0 auto;
+            border-radius: 14px;
+            border: 1.5px solid rgba(255,255,255,0.30);
+            background: rgba(0, 0, 0, 0.20);
+            overflow: hidden;
+            animation: card-in 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards;
+        }
+        .mod-card.leaving {
+            animation: card-out 0.35s ease forwards;
+        }
+        @keyframes card-in {
+            from { opacity:0; transform: scale(0.82) translateY(-8px); }
+            to   { opacity:1; transform: scale(1)    translateY(0); }
+        }
+        @keyframes card-out {
+            from { opacity:1; transform: scale(1); }
+            to   { opacity:0; transform: scale(0.82) translateY(-6px); }
+        }
+
+        /* 상단 뱃지 */
+        .mod-badge {
+            width: 100%;
+            background: rgba(99,102,241,0.75);
+            text-align: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.08em;
+            padding: 3px 0;
+            border-radius: 0;
+        }
+
+        /* 프로필 영역 */
+        .mod-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 6px 9px;
+            gap: 5px;
+        }
+
+        .mod-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: rgba(99,102,241,0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 900;
+            color: #fff;
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 10px rgba(99,102,241,0.4);
+        }
+        .mod-avatar img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+
+        .mod-name {
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            text-align: center;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            word-break: break-all;
+            line-height: 1.3;
+            max-width: 130px;
+        }
+
+        /* 온라인 dot */
+        .mod-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.7);
+        }
+        .mod-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 5px #4ade80;
+            animation: pulse 1.8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%,100% { opacity:1; }
+            50%      { opacity:0.4; }
+        }
+    </style>
+</head>
+<body>
+<div id="mod-list"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const userId = '<%= userId %>';
+    const socket = io();
+
+    // 현재 입장한 모더 목록 { uniqueId: { displayName, profileImg, cardEl } }
+    const activeMods = new Map();
+
+    // 서버에서 모더 목록 로드
+    let modConfig = []; // [{ tiktokUniqueId, displayName, profileImg }]
+
+    async function loadMods() {
+        try {
+            const res  = await fetch('/api/moderator?userId=' + userId);
+            const data = await res.json();
+            if (data.success) modConfig = data.moderators;
+        } catch(e) {}
+    }
+
+    loadMods();
+    socket.emit('join-overlay', userId);
+
+    // 소켓: 모더 설정 변경 실시간 반영
+    socket.on('moderator-update', () => loadMods());
+
+    // 소켓: 모더 입장 이벤트 (서버에서 등록 모더 확인 후 emit)
+    socket.on('overlay-moderator-join', (data) => {
+        const uid = (data.uniqueId || '').trim().toLowerCase();
+        if (!uid) return;
+        if (activeMods.has(uid)) return; // 이미 표시 중
+        addModCard(uid, {
+            displayName: data.displayName,
+            profileImg:  data.profileImg || ''
+        });
+    });
+
+    // 소켓: 라이브 종료 시 전체 클리어
+    socket.on('live-ended', () => {
+        activeMods.forEach((v, k) => removeModCard(k));
+    });
+
+    function addModCard(uid, mod) {
+        const list = document.getElementById('mod-list');
+
+        const card = document.createElement('div');
+        card.className = 'mod-card';
+        card.id = 'mod-' + uid;
+
+        const name   = mod.displayName || uid;
+        const imgUrl = mod.profileImg || '';
+        const initial = name.charAt(0).toUpperCase();
+
+        card.innerHTML = `
+            <div class="mod-badge">with 모더</div>
+            <div class="mod-body">
+                <div class="mod-avatar" id="av-${uid}">
+                    ${imgUrl
+                        ? `<img src="${escHtml(imgUrl)}" onerror="this.parentNode.textContent='${escHtml(initial)}'">`
+                        : escHtml(initial)}
+                </div>
+                <div class="mod-name">${escHtml(name)}</div>
+                <div class="mod-status"><span class="mod-dot"></span>입장</div>
+            </div>
+        `;
+
+        list.appendChild(card);
+        activeMods.set(uid, { mod, cardEl: card });
+    }
+
+    function removeModCard(uid) {
+        const entry = activeMods.get(uid);
+        if (!entry) return;
+        const card = entry.cardEl;
+        card.classList.add('leaving');
+        card.addEventListener('animationend', () => {
+            card.remove();
+            activeMods.delete(uid);
+        }, { once: true });
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+</script>
+</body>
+</html>

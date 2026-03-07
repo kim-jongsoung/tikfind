@@ -7,6 +7,7 @@ const User = require('../models/User');
 const AlgorithmViewer = require('../models/AlgorithmViewer');
 const MessageTemplate = require('../models/MessageTemplate');
 const OverlayNotice = require('../models/OverlayNotice');
+const Moderator = require('../models/Moderator');
 const ytdl = require('@distube/ytdl-core');
 const SongRequestService = require('../services/SongRequestService');
 
@@ -1656,6 +1657,81 @@ router.post('/gift-settings', requireAuth, async (req, res) => {
                 megaMin: update['giftSettings.megaMin'] ?? undefined
             });
         }
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// ── 모더 위젯 ─────────────────────────────────────────────────
+// GET /api/moderator?userId=xxx  (오버레이 공개 조회)
+router.get('/moderator', async (req, res) => {
+    try {
+        const uid = req.query.userId || (req.user && req.user._id);
+        if (!uid) return res.json({ success: true, moderators: [] });
+        const mods = await Moderator.find({ userId: uid }).sort({ order: 1, createdAt: 1 });
+        res.json({ success: true, moderators: mods });
+    } catch (e) {
+        res.json({ success: true, moderators: [] });
+    }
+});
+
+// GET /api/moderator/list  (인증 - 대시보드)
+router.get('/moderator/list', requireAuth, async (req, res) => {
+    try {
+        const mods = await Moderator.find({ userId: req.user._id }).sort({ order: 1, createdAt: 1 });
+        res.json({ success: true, moderators: mods });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/moderator  (추가)
+router.post('/moderator', requireAuth, async (req, res) => {
+    try {
+        const { tiktokUniqueId, displayName, profileImg } = req.body;
+        if (!tiktokUniqueId || !displayName)
+            return res.status(400).json({ success: false, message: 'ID와 닉네임을 입력해주세요.' });
+        const count = await Moderator.countDocuments({ userId: req.user._id });
+        if (count >= 20)
+            return res.status(400).json({ success: false, message: '최대 20명까지 등록 가능합니다.' });
+        const mod = await Moderator.create({
+            userId: req.user._id,
+            tiktokUniqueId: tiktokUniqueId.trim(),
+            displayName: displayName.trim().slice(0, 20),
+            profileImg: profileImg || ''
+        });
+        // 실시간 반영
+        const io = req.app.get('io');
+        if (io) io.to(req.user._id.toString()).emit('moderator-update');
+        res.json({ success: true, moderator: mod });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// PATCH /api/moderator/:id  (수정)
+router.patch('/moderator/:id', requireAuth, async (req, res) => {
+    try {
+        const { displayName, profileImg } = req.body;
+        const update = {};
+        if (displayName) update.displayName = displayName.trim().slice(0, 20);
+        if (profileImg !== undefined) update.profileImg = profileImg;
+        await Moderator.findOneAndUpdate({ _id: req.params.id, userId: req.user._id }, { $set: update });
+        const io = req.app.get('io');
+        if (io) io.to(req.user._id.toString()).emit('moderator-update');
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// DELETE /api/moderator/:id
+router.delete('/moderator/:id', requireAuth, async (req, res) => {
+    try {
+        await Moderator.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        const io = req.app.get('io');
+        if (io) io.to(req.user._id.toString()).emit('moderator-update');
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
