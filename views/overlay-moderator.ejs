@@ -10,7 +10,7 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            width: 150px;
+            width: 110px;
             min-height: 100px;
             background: transparent;
             overflow: visible;
@@ -26,11 +26,11 @@
             padding-top: 40px;
         }
         body.preview-mode #mod-list {
-            width: 150px;
+            width: 110px;
         }
 
         #mod-list {
-            width: 150px;
+            width: 110px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -39,7 +39,7 @@
 
         /* 각 모더 카드 */
         .mod-card {
-            width: 144px;
+            width: 106px;
             margin: 0 auto;
             border-radius: 14px;
             border: 1.5px solid rgba(255,255,255,0.30);
@@ -82,54 +82,35 @@
         }
 
         .mod-avatar {
-            width: 52px;
-            height: 52px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             background: rgba(99,102,241,0.35);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 18px;
             font-weight: 900;
             color: #fff;
             overflow: hidden;
             flex-shrink: 0;
-            box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 10px rgba(99,102,241,0.4);
+            box-shadow: 0 0 0 2px rgba(99,102,241,0.6), 0 0 8px rgba(99,102,241,0.4);
         }
         .mod-avatar img {
             width: 100%; height: 100%; object-fit: cover; display: block;
         }
 
         .mod-name {
-            font-size: 12px;
-            font-weight: 700;
+            font-size: 14px;
+            font-weight: 800;
             color: #fff;
             text-align: center;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            text-shadow: 0 1px 6px rgba(0,0,0,0.9);
             word-break: break-all;
             line-height: 1.3;
-            max-width: 130px;
+            max-width: 100px;
         }
 
-        /* 온라인 dot */
-        .mod-status {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 10px;
-            color: rgba(255,255,255,0.7);
-        }
-        .mod-dot {
-            width: 6px; height: 6px;
-            border-radius: 50%;
-            background: #4ade80;
-            box-shadow: 0 0 5px #4ade80;
-            animation: pulse 1.8s ease-in-out infinite;
-        }
-        @keyframes pulse {
-            0%,100% { opacity:1; }
-            50%      { opacity:0.4; }
-        }
     </style>
 </head>
 <body>
@@ -197,7 +178,6 @@
             <div class="mod-body">
                 <div class="mod-avatar" id="av-${uid}">${avatarContent}</div>
                 <div class="mod-name">${escHtml(name)}</div>
-                <div class="mod-status"><span class="mod-dot"></span>입장</div>
             </div>
         `;
 
