@@ -26,6 +26,8 @@
         .size-badge { display:inline-flex; align-items:center; gap:6px; background:#f3f4f6; border:1px solid #e5e7eb; border-radius:8px; padding:6px 12px; font-family:monospace; font-size:13px; font-weight:700; color:#374151; }
         .size-badge .dim { color:#6366f1; }
         .step-num { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+        /* 모바일 오버레이가 클릭을 차단하지 않도록 */
+        #mobile-overlay.hidden { pointer-events: none !important; display: none !important; }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -803,6 +805,21 @@
         if (document.getElementById('panel-song').classList.contains('active')) loadNotices();
         if (document.getElementById('panel-gift').classList.contains('active')) loadGiftSettings();
         if (document.getElementById('panel-mod').classList.contains('active'))  loadModerators();
+
+        // mobile-overlay가 클릭을 차단하지 않도록 강제 숨김
+        function fixMobileOverlay() {
+            const mo = document.getElementById('mobile-overlay');
+            if (mo) {
+                mo.classList.add('hidden');
+                mo.style.pointerEvents = 'none';
+                mo.style.display = 'none';
+            }
+        }
+        fixMobileOverlay();
+        // header-container에 동적 삽입 후에도 처리
+        const headerObs = new MutationObserver(() => fixMobileOverlay());
+        const hc = document.getElementById('header-container');
+        if (hc) headerObs.observe(hc, { childList: true, subtree: true });
     </script>
 </body>
 </html>
