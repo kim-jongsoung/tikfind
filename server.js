@@ -2204,10 +2204,13 @@ io.on('connection', (socket) => {
             // 모더 감지: 등록된 모더가 입장하면 오버레이에 emit
             try {
                 const Moderator = require('./models/Moderator');
+                const mongoose  = require('mongoose');
                 const incomingUid = (tiktokData.uniqueId || '').trim().toLowerCase();
                 if (incomingUid) {
+                    const modUserId = mongoose.Types.ObjectId.isValid(userId)
+                        ? new mongoose.Types.ObjectId(userId) : userId;
                     const mod = await Moderator.findOne({
-                        userId,
+                        userId: modUserId,
                         tiktokUniqueId: { $regex: new RegExp(`^${incomingUid}$`, 'i') }
                     });
                     if (mod) {
