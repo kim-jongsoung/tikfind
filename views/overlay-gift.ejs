@@ -16,6 +16,12 @@
             overflow: hidden;
             font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
         }
+        body.preview-mode {
+            width: 100vw !important;
+            height: 100vh !important;
+            background: #1a0a2e !important;
+            overflow: hidden;
+        }
 
         /* ── 파티클 (소스 내 범위만) ── */
         #particles { position:fixed; inset:0; pointer-events:none; overflow:hidden; }
@@ -394,19 +400,28 @@
     // ── 테스트 모드 ──
     const testParam = new URLSearchParams(location.search).get('test');
     if (testParam === 'mid' || testParam === 'mega') {
+        document.body.classList.add('preview-mode');
+
+        // 미리보기 레이블
+        const label = document.createElement('div');
+        label.textContent = testParam === 'mega' ? '💛 MEGA 미리보기 모드' : '💜 MID 미리보기 모드';
+        label.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-family:"Noto Sans KR",sans-serif;font-size:12px;font-weight:700;padding:5px 16px;border-radius:50px;z-index:9999;pointer-events:none;white-space:nowrap;';
+        document.body.appendChild(label);
+
         const btn = document.createElement('div');
-        btn.innerHTML = testParam === 'mega' ? '💎 MEGA 테스트 (클릭)' : '🎁 MID 테스트 (클릭)';
-        btn.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(124,58,237,0.9);color:#fff;font-family:"Noto Sans KR",sans-serif;font-size:13px;font-weight:700;padding:10px 24px;border-radius:50px;cursor:pointer;z-index:9999;box-shadow:0 4px 20px rgba(124,58,237,0.6);pointer-events:auto;white-space:nowrap;';
+        btn.innerHTML = testParam === 'mega' ? '� MEGA 효과 재생' : '🎁 MID 효과 재생';
+        btn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:' + (testParam==='mega'?'rgba(202,138,4,0.95)':'rgba(124,58,237,0.95)') + ';color:#fff;font-family:"Noto Sans KR",sans-serif;font-size:14px;font-weight:700;padding:12px 32px;border-radius:50px;cursor:pointer;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.4);pointer-events:auto;white-space:nowrap;user-select:none;';
         document.body.appendChild(btn);
+
         function runTest() {
-            btn.remove();
             try { getCtx().resume(); } catch(e) {}
-            const pts = testParam === 'mega' ? 1500 : 200;
-            queue.push({ nickname: testParam === 'mega' ? '박서준' : '김지유', uniqueId:'test', profilePictureUrl:'', totalDiamonds: pts, tier: testParam });
+            const pts = testParam === 'mega' ? (MEGA_MIN || 1000) + 500 : (MID_MIN || 100) + 100;
+            queue.push({ nickname: testParam === 'mega' ? '박서준' : '김지유', uniqueId:'test', profilePictureUrl:'', totalDiamonds: pts });
             if (!busy) next();
         }
         btn.addEventListener('click', runTest);
-        setTimeout(() => { if (btn.parentNode) runTest(); }, 2500);
+        // 1.5초 후 자동 재생
+        setTimeout(runTest, 1500);
     }
 </script>
 </body>

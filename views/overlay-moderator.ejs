@@ -16,6 +16,18 @@
             overflow: visible;
             font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
         }
+        body.preview-mode {
+            width: 100vw !important;
+            min-height: 100vh !important;
+            background: #0f172a !important;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 40px;
+        }
+        body.preview-mode #mod-list {
+            width: 150px;
+        }
 
         #mod-list {
             width: 150px;
@@ -206,6 +218,43 @@
 
     function escHtml(s) {
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── 테스트 모드 ──
+    const testParam = new URLSearchParams(location.search).get('test');
+    if (testParam === '1' || testParam === 'true') {
+        document.body.classList.add('preview-mode');
+
+        // 상단 레이블
+        const label = document.createElement('div');
+        label.textContent = '🛡️ 모더 위젯 미리보기 모드';
+        label.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:#fff;font-family:"Noto Sans KR",sans-serif;font-size:12px;font-weight:700;padding:5px 16px;border-radius:50px;z-index:9999;pointer-events:none;white-space:nowrap;';
+        document.body.appendChild(label);
+
+        // 더미 모더 3명 표시
+        const dummies = [
+            { uniqueId:'mod_test1', displayName:'김민지', profileImg:'👑' },
+            { uniqueId:'mod_test2', displayName:'이서연', profileImg:'💎' },
+            { uniqueId:'mod_test3', displayName:'박하은',  profileImg:'🏆' },
+        ];
+        dummies.forEach((d, i) => {
+            setTimeout(() => addModCard(d.uniqueId, d), i * 400);
+        });
+
+        // 재생 버튼
+        const btn = document.createElement('div');
+        btn.innerHTML = '🔄 다시 보기';
+        btn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(59,130,246,0.95);color:#fff;font-family:"Noto Sans KR",sans-serif;font-size:14px;font-weight:700;padding:12px 32px;border-radius:50px;cursor:pointer;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.4);white-space:nowrap;user-select:none;';
+        document.body.appendChild(btn);
+        btn.addEventListener('click', () => {
+            // 기존 카드 제거 후 재표시
+            activeMods.forEach((v, k) => removeModCard(k));
+            setTimeout(() => {
+                dummies.forEach((d, i) => {
+                    setTimeout(() => addModCard(d.uniqueId, d), i * 400);
+                });
+            }, 400);
+        });
     }
 </script>
 </body>
