@@ -184,7 +184,6 @@
         function renderItem(entry) {
             if (!entry) return;
             if (entry.type === 'notice') {
-                // 마퀴 래퍼 구조 - startNoticeMarquee에서 너비 측정 후 마퀴 적용
                 item.innerHTML =
                     '<span class="notice-icon">📢</span>'
                     + '<div class="notice-marquee-wrap">'
@@ -192,9 +191,12 @@
                     + '</div>';
             } else {
                 const b = BADGE[entry.type] || BADGE.now;
+                // 신청곡도 마퀴 래퍼 구조로 통일
                 item.innerHTML =
                     '<span class="item-badge" style="background:' + b.bg + '">' + b.text + '</span>'
-                    + '<span class="item-text">' + escHtml(entry.text) + '</span>';
+                    + '<div class="notice-marquee-wrap">'
+                    + '<span class="notice-marquee-track">' + escHtml(entry.text) + '</span>'
+                    + '</div>';
             }
         }
 
@@ -234,13 +236,8 @@
             void item.offsetWidth;
             item.className = 'slide-item slide-in';
 
-            if (entry.type === 'notice') {
-                // 공지: 슬라이드인 후 2초 대기 → 마퀴 → 슬라이드아웃
-                timer = setTimeout(() => startNoticeMarquee(entry), 350 + 2000);
-            } else {
-                // 신청곡: 5초 표시 후 슬라이드아웃
-                timer = setTimeout(doSlideOut, 350 + 5000);
-            }
+            // 모든 항목: 슬라이드인(0.35s) 후 2초 대기 → 길면 마퀴, 짧으면 5초 고정
+            timer = setTimeout(() => startNoticeMarquee(entry), 350 + 2000);
         }
 
         function startNoticeMarquee(entry) {
