@@ -447,6 +447,39 @@ app.get('/api/user/:userId', async (req, res) => {
     }
 });
 
+// AI 어시스턴트 (방송 기획/궁금사항 GPT 채팅)
+app.post('/api/ai-song-advice', async (req, res) => {
+    try {
+        const { question, history } = req.body;
+        if (!question) return res.json({ success: false, message: '질문을 입력해주세요.' });
+
+        const OpenAI = require('openai');
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        const messages = [
+            {
+                role: 'system',
+                content: '당신은 TikTok 라이브 스트리머를 도와주는 AI 어시스턴트입니다. 방송 기획, 시청자 관리, 콘텐츠 아이디어, 노래 추천, 방송 운영 팁 등 방송에 관련된 모든 질문에 친절하고 실용적으로 답변해주세요. 답변은 한국어로 해주세요.'
+            },
+            ...(Array.isArray(history) ? history.slice(-8) : []),
+            { role: 'user', content: question }
+        ];
+
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages,
+            temperature: 0.7,
+            max_tokens: 600
+        });
+
+        const answer = response.choices[0].message.content.trim();
+        res.json({ success: true, answer });
+    } catch (e) {
+        console.error('❌ ai-song-advice 오류:', e.message);
+        res.json({ success: false, message: 'AI 응답 중 오류가 발생했습니다.' });
+    }
+});
+
 // AI 발음 코치 API (캐싱 적용)
 app.post('/api/ai/pronunciation', async (req, res) => {
     try {

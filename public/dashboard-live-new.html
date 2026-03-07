@@ -1751,6 +1751,46 @@
             });
         }
 
+        // AI 어시스턴트 (하단 섹션)
+        const aiHistory = [];
+        async function sendAiMessage() {
+            const input = document.getElementById('aiQuestion');
+            const sendBtn = document.getElementById('aiSendBtn');
+            const history = document.getElementById('aiChatHistory');
+            const question = input.value.trim();
+            if (!question) return;
+            history.innerHTML += `<div style="display:flex;justify-content:flex-end;margin-bottom:6px;"><div style="background:#7c3aed;color:white;border-radius:10px 10px 2px 10px;padding:8px 12px;font-size:12px;max-width:80%;line-height:1.5;">${escapeHtml(question)}</div></div>`;
+            aiHistory.push({ role: 'user', content: question });
+            input.value = '';
+            history.scrollTop = history.scrollHeight;
+            sendBtn.disabled = true; sendBtn.textContent = '...';
+            const loadId = 'aiLoad_' + Date.now();
+            history.innerHTML += `<div id="${loadId}" style="font-size:12px;color:#666;padding:6px 0;">🤖 생각 중...</div>`;
+            history.scrollTop = history.scrollHeight;
+            try {
+                const res = await fetch('/api/ai-song-advice', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question, history: aiHistory.slice(-8) })
+                });
+                const data = await res.json();
+                const el = document.getElementById(loadId); if (el) el.remove();
+                const answer = data.success ? data.answer : (data.message || '오류가 발생했습니다.');
+                aiHistory.push({ role: 'assistant', content: answer });
+                history.innerHTML += `<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;"><div style="background:#2a2d36;border-radius:2px 10px 10px 10px;padding:10px 13px;font-size:12px;color:#e5e7eb;max-width:90%;line-height:1.75;white-space:pre-wrap;border:1px solid #383c47;">${escapeHtml(answer)}</div></div>`;
+                history.scrollTop = history.scrollHeight;
+            } catch(e) {
+                const el = document.getElementById(loadId); if (el) el.remove();
+                history.innerHTML += `<div style="color:#ef4444;font-size:11px;padding:4px 0;">오류: 서버 연결 실패</div>`;
+            } finally {
+                sendBtn.disabled = false; sendBtn.textContent = '전송';
+            }
+        }
+        document.getElementById('aiSendBtn').addEventListener('click', sendAiMessage);
+        document.getElementById('aiQuestion').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') sendAiMessage();
+        });
+
         // 페이지 언로드 시 (새로고침/닫기)
         window.addEventListener('beforeunload', () => {
             // 라이브 상태 유지 (localStorage에 저장됨)
