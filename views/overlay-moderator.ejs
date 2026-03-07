@@ -70,6 +70,23 @@
             letter-spacing: 0.08em;
             padding: 3px 0;
             border-radius: 0;
+            transition: background 0.6s ease;
+        }
+        .mod-badge.inactive {
+            background: rgba(220,38,38,0.85);
+        }
+        /* 재입장/활동 시 배지 반짝임 */
+        .mod-badge.flash {
+            animation: badge-flash 5s ease forwards;
+        }
+        @keyframes badge-flash {
+            0%   { background: rgba(250,204,21,0.95); transform: scaleY(1.0); }
+            10%  { background: rgba(250,204,21,0.95); transform: scaleY(1.25); }
+            20%  { background: rgba(99,102,241,0.95); transform: scaleY(1.0); }
+            40%  { background: rgba(250,204,21,0.95); transform: scaleY(1.15); }
+            60%  { background: rgba(99,102,241,0.95); }
+            80%  { background: rgba(250,204,21,0.85); }
+            100% { background: rgba(99,102,241,0.75); transform: scaleY(1.0); }
         }
 
         /* 프로필 영역 */
@@ -141,15 +158,62 @@
     // 소켓: 모더 설정 변경 실시간 반영
     socket.on('moderator-update', () => loadMods());
 
-    // 소켓: 모더 입장 이벤트 (서버에서 등록 모더 확인 후 emit)
+    // 비활성 타임아웃 (3분 = 180000ms)
+    const INACTIVE_MS = 3 * 60 * 1000;
+
+    // 활동 타이머 맵 { uid: timeoutId }
+    const activityTimers = new Map();
+
+    function resetActivityTimer(uid) {
+        // 기존 타이머 클리어
+        if (activityTimers.has(uid)) clearTimeout(activityTimers.get(uid));
+        // 배지 활성(파란색)
+        const entry = activeMods.get(uid);
+        if (entry) {
+            const badge = entry.cardEl.querySelector('.mod-badge');
+            if (badge) badge.classList.remove('inactive');
+        }
+        // 3분 후 비활성(빨간색)
+        const t = setTimeout(() => {
+            const e = activeMods.get(uid);
+            if (e) {
+                const b = e.cardEl.querySelector('.mod-badge');
+                if (b) b.classList.add('inactive');
+            }
+        }, INACTIVE_MS);
+        activityTimers.set(uid, t);
+    }
+
+    // 소켓: 모더 입장 이벤트
     socket.on('overlay-moderator-join', (data) => {
         const uid = (data.uniqueId || '').trim().toLowerCase();
         if (!uid) return;
-        if (activeMods.has(uid)) return; // 이미 표시 중
+        if (activeMods.has(uid)) {
+            // 재입장: 카드를 맨 위로 이동 + 배지 flash
+            const entry = activeMods.get(uid);
+            const list  = document.getElementById('mod-list');
+            list.prepend(entry.cardEl);
+            const badge = entry.cardEl.querySelector('.mod-badge');
+            if (badge) {
+                badge.classList.remove('flash', 'inactive');
+                void badge.offsetWidth; // reflow
+                badge.classList.add('flash');
+            }
+            resetActivityTimer(uid);
+            return;
+        }
         addModCard(uid, {
             displayName: data.displayName,
             profileImg:  data.profileImg || ''
         });
+        resetActivityTimer(uid);
+    });
+
+    // 소켓: 모더 활동 이벤트 (채팅/선물/좋아요)
+    socket.on('overlay-moderator-activity', (data) => {
+        const uid = (data.uniqueId || '').trim().toLowerCase();
+        if (!uid || !activeMods.has(uid)) return;
+        resetActivityTimer(uid);
     });
 
     // 소켓: 라이브 종료 시 전체 클리어

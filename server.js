@@ -1941,6 +1941,29 @@ io.on('connection', (socket) => {
     });
     
     // Desktop App → 웹: TikTok 데이터 전송
+    // 모더 활동 감지 헬퍼 (chat/gift/like/social 공통 사용)
+    async function emitModeratorActivity(userId, uniqueId) {
+        if (!uniqueId) return;
+        try {
+            const Moderator = require('./models/Moderator');
+            const mongoose  = require('mongoose');
+            const uid = uniqueId.trim().toLowerCase();
+            const modUserId = mongoose.Types.ObjectId.isValid(userId)
+                ? new mongoose.Types.ObjectId(userId) : userId;
+            const mod = await Moderator.findOne({
+                userId: modUserId,
+                tiktokUniqueId: { $regex: new RegExp(`^${uid}$`, 'i') }
+            });
+            if (mod) {
+                io.to(userId).emit('overlay-moderator-activity', {
+                    uniqueId,
+                    displayName: mod.displayName,
+                    profileImg:  mod.profileImg
+                });
+            }
+        } catch(e) {}
+    }
+
     socket.on('tiktok-data', async (data) => {
         const { userId, type, data: tiktokData } = data;
         console.log(`📡 TikTok 데이터 수신 (${type}):`, userId);
@@ -2162,6 +2185,7 @@ io.on('connection', (socket) => {
                 console.error('❌ tiktok-data chat 처리 오류:', err);
                 io.to(userId).emit('chat-message', tiktokData);
             }
+            emitModeratorActivity(userId, tiktokData.uniqueId);
         } else if (type === 'stats') {
             io.to(userId).emit('viewer-update', tiktokData);
             // 알고리즘 리포트: 시청자 수 기록
@@ -2175,6 +2199,7 @@ io.on('connection', (socket) => {
             }
         } else if (type === 'gift') {
             io.to(userId).emit('gift-received', tiktokData);
+            emitModeratorActivity(userId, tiktokData.uniqueId);
             // 스트릭 불가 선물(giftType !== 1)만 오버레이 위젯으로 전송
             if (tiktokData.giftType !== 1 && tiktokData.isFinal !== false) {
                 const totalDiamonds = (tiktokData.diamondCount || 0) * (tiktokData.repeatCount || 1);
@@ -2195,6 +2220,7 @@ io.on('connection', (socket) => {
             }
         } else if (type === 'like') {
             io.to(userId).emit('like-received', tiktokData);
+            emitModeratorActivity(userId, tiktokData.uniqueId);
             const sessLike = liveSessionMap.get(String(userId));
             if (sessLike) sessLike.totalLikes += (tiktokData.likeCount || 1);
         } else if (type === 'member') {
