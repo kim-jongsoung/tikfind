@@ -10,43 +10,14 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            width: 100%;
-            height: 100%;
+            width: 800px;
+            height: 200px;
             background: transparent;
             overflow: hidden;
             font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
         }
 
-        /* ── 화면 번쩍임 플래시 ── */
-        #flash {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            opacity: 0;
-            z-index: 10;
-        }
-        @keyframes flash-mid {
-            0%   { opacity: 0.5; }
-            25%  { opacity: 0; }
-            40%  { opacity: 0.35; }
-            70%  { opacity: 0; }
-            100% { opacity: 0; }
-        }
-        @keyframes flash-mega {
-            0%   { opacity: 0.65; }
-            10%  { opacity: 0; }
-            20%  { opacity: 0.55; }
-            32%  { opacity: 0; }
-            42%  { opacity: 0.45; }
-            54%  { opacity: 0; }
-            63%  { opacity: 0.3; }
-            78%  { opacity: 0; }
-            88%  { opacity: 0.15; }
-            100% { opacity: 0; }
-        }
-
-
-        /* ── 파티클 ── */
+        /* ── 파티클 (소스 내 범위만) ── */
         #particles { position:fixed; inset:0; pointer-events:none; overflow:hidden; }
         .pt { position:absolute; border-radius:50%; animation:pt-fly var(--d) ease-out forwards; }
         .st { position:absolute; animation:st-fly var(--d) ease-out forwards; }
@@ -59,122 +30,117 @@
             100% { transform:translate(var(--tx),var(--ty)) rotate(var(--r)) scale(0); opacity:0; }
         }
 
-        /* ── 중앙 카드 ── */
+        /* ── 카드 래퍼: 소스 중앙 정렬 ── */
         #gift-card {
-            position: fixed;
+            position: absolute;
             left: 50%;
             top: 50%;
-            transform: translate(-50%,-50%);
+            transform: translate(-50%, -50%);
             opacity: 0;
             pointer-events: none;
-            width: 460px;
-            max-width: 90vw;
-            text-align: center;
+            max-width: 600px;
+            min-width: 280px;
+            width: max-content;
         }
+
+        /* 등장 / 퇴장 애니메이션 */
         @keyframes pop-mid {
-            0%   { transform:translate(-50%,-50%) scale(0.45); opacity:0; }
-            65%  { transform:translate(-50%,-50%) scale(1.05); opacity:1; }
+            0%   { transform:translate(-50%,-50%) scale(0.5);  opacity:0; }
+            65%  { transform:translate(-50%,-50%) scale(1.06); opacity:1; }
             100% { transform:translate(-50%,-50%) scale(1);    opacity:1; }
         }
         @keyframes pop-mega {
-            0%   { transform:translate(-50%,-50%) scale(0.3) rotate(-5deg); opacity:0; }
-            55%  { transform:translate(-50%,-50%) scale(1.1)  rotate(2deg);  opacity:1; }
-            100% { transform:translate(-50%,-50%) scale(1)    rotate(0deg);  opacity:1; }
+            0%   { transform:translate(-50%,-50%) scale(0.35) rotate(-4deg); opacity:0; }
+            55%  { transform:translate(-50%,-50%) scale(1.08) rotate(1.5deg); opacity:1; }
+            100% { transform:translate(-50%,-50%) scale(1)    rotate(0deg);   opacity:1; }
         }
         @keyframes card-out {
-            0%   { opacity:1; transform:translate(-50%,-50%) scale(1); }
-            100% { opacity:0; transform:translate(-50%,-50%) scale(0.88); }
+            0%   { opacity:1; transform:translate(-50%,-50%) scale(1) translateY(0); }
+            100% { opacity:0; transform:translate(-50%,-50%) scale(0.9) translateY(-12px); }
         }
 
-        /* ── 가로 레이아웃 ── */
+        /* ── 카드 내부 가로 레이아웃 ── */
         .card-inner {
-            display: flex;
+            display: inline-flex;
             flex-direction: row;
             align-items: center;
             gap: 0;
-            border-radius: 120px;
+            border-radius: 9999px;
             padding: 0;
             position: relative;
             overflow: hidden;
+            white-space: nowrap;
         }
         .mid-style {
-            background: rgba(14,8,30,0.88);
-            border: 1.5px solid rgba(168,85,247,0.65);
-            box-shadow: 0 0 28px rgba(168,85,247,0.45), 0 8px 24px rgba(0,0,0,0.6);
+            background: rgba(14,8,30,0.90);
+            border: 1.5px solid rgba(168,85,247,0.7);
+            box-shadow: 0 0 32px rgba(168,85,247,0.5), 0 8px 28px rgba(0,0,0,0.65);
         }
         .mega-style {
-            background: rgba(10,4,22,0.88);
-            border: 2px solid rgba(249,212,35,0.7);
-            box-shadow: 0 0 32px rgba(249,212,35,0.45), 0 8px 24px rgba(0,0,0,0.7);
+            background: rgba(10,4,22,0.92);
+            border: 2px solid rgba(249,212,35,0.8);
+            box-shadow: 0 0 40px rgba(249,212,35,0.55), 0 8px 28px rgba(0,0,0,0.75);
         }
 
-        /* 프로필 이미지 */
+        /* 아바타 */
         #card-avatar {
-            width: 88px;
-            height: 88px;
+            width: 84px;
+            height: 84px;
             border-radius: 50%;
             flex-shrink: 0;
             background: #1a0a2e;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 36px;
+            font-size: 32px;
             font-weight: 900;
             color: #fff;
             overflow: hidden;
             position: relative;
+            margin: 8px 0 8px 8px;
         }
         #card-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
+            width: 100%; height: 100%; object-fit: cover; display: block;
         }
-        .mid-style  #card-avatar { box-shadow: 0 0 0 3px rgba(168,85,247,0.8), 0 0 20px rgba(168,85,247,0.5); }
-        .mega-style #card-avatar { box-shadow: 0 0 0 3px rgba(249,212,35,0.9), 0 0 24px rgba(249,212,35,0.6); }
+        .mid-style  #card-avatar { box-shadow: 0 0 0 3px rgba(168,85,247,0.85), 0 0 20px rgba(168,85,247,0.55); }
+        .mega-style #card-avatar { box-shadow: 0 0 0 3px rgba(249,212,35,0.95), 0 0 24px rgba(249,212,35,0.65); }
 
-        /* 오른쪽 텍스트 영역 */
+        /* 텍스트 영역 */
         #card-text {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            padding: 10px 24px 10px 16px;
-            gap: 6px;
+            padding: 10px 28px 10px 14px;
+            gap: 5px;
             min-width: 0;
         }
 
         /* 닉네임 */
         #card-nickname {
-            font-size: 42px;
             font-weight: 900;
             line-height: 1.05;
             letter-spacing: -0.02em;
             word-break: keep-all;
-            overflow-wrap: break-word;
             white-space: nowrap;
+            font-size: 40px;
         }
-        #card-nickname.len-mid  { font-size: 32px; }
-        #card-nickname.len-long { font-size: 24px; letter-spacing: -0.03em; }
+        #card-nickname.len-mid  { font-size: 30px; }
+        #card-nickname.len-long { font-size: 22px; letter-spacing: -0.03em; }
         .mid-nick {
             color: #ffffff;
-            text-shadow:
-                0 0 24px rgba(168,85,247,1),
-                0 0 48px rgba(168,85,247,0.55),
-                0 3px 0 rgba(0,0,0,1);
+            text-shadow: 0 0 24px rgba(168,85,247,1), 0 0 48px rgba(168,85,247,0.55), 0 3px 0 rgba(0,0,0,1);
         }
         .mega-nick {
             background: linear-gradient(135deg, #fff9c4 0%, #fde68a 25%, #f9d423 50%, #ff6b35 75%, #ff4e50 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
+            -webkit-background-clip: text; background-clip: text; color: transparent;
             filter: drop-shadow(0 0 16px rgba(249,212,35,0.95)) drop-shadow(0 3px 0 rgba(0,0,0,1));
         }
 
-        /* 유도 문구 */
+        /* 유도 문구 행 */
         #card-label {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 900;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
             white-space: nowrap;
             display: flex;
             align-items: center;
@@ -182,33 +148,29 @@
         }
         .mid-style  #card-label { color: #e9d5ff; }
         .mega-style #card-label { color: #fde68a; }
+
         #card-score {
-            font-size: 17px;
+            font-size: 15px;
             font-weight: 900;
-            letter-spacing: 0.02em;
             padding: 2px 9px;
             border-radius: 20px;
             white-space: nowrap;
         }
-        .mid-style  #card-score { background: rgba(168,85,247,0.25); color: #d8b4fe; border: 1px solid rgba(168,85,247,0.4); }
-        .mega-style #card-score { background: rgba(249,212,35,0.2); color: #fde68a; border: 1px solid rgba(249,212,35,0.5); }
+        .mid-style  #card-score { background:rgba(168,85,247,0.25); color:#d8b4fe; border:1px solid rgba(168,85,247,0.4); }
+        .mega-style #card-score { background:rgba(249,212,35,0.2);  color:#fde68a; border:1px solid rgba(249,212,35,0.5); }
 
         /* 광택 */
         .card-shine {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.055) 50%, transparent 70%);
+            position: absolute; inset: 0;
+            background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
             animation: shine 2.8s ease-in-out infinite;
             pointer-events: none;
         }
         @keyframes shine { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
-
-        #card-diamonds { display: none; }
     </style>
 </head>
 <body>
 
-<div id="flash"></div>
 <div id="particles"></div>
 <div id="gift-card">
     <div class="card-inner" id="card-inner">
@@ -225,11 +187,35 @@
 <script>
     const userId = '<%= userId %>';
     const socket = io();
-    const queue = [];
-    let busy = false;
+    const queue  = [];
+    let busy     = false;
+
+    // 다이아 기준 (서버에서 로드, 기본값)
+    let MID_MIN  = 100;
+    let MEGA_MIN = 1000;
+
+    // 서버에서 기준 로드
+    fetch('/api/gift-settings')
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                MID_MIN  = d.midMin  ?? 100;
+                MEGA_MIN = d.megaMin ?? 1000;
+            }
+        }).catch(() => {});
 
     socket.emit('join-overlay', userId);
-    socket.on('overlay-gift', d => { queue.push(d); if (!busy) next(); });
+    socket.on('overlay-gift', d => {
+        const pts = d.totalDiamonds || d.diamondCount || 0;
+        if (pts < MID_MIN) return; // 기준 미달 무시
+        queue.push(d);
+        if (!busy) next();
+    });
+    // 기준 변경 실시간 반영
+    socket.on('gift-settings-update', d => {
+        if (d.midMin  != null) MID_MIN  = d.midMin;
+        if (d.megaMin != null) MEGA_MIN = d.megaMin;
+    });
 
     function next() {
         if (!queue.length) { busy = false; return; }
@@ -237,33 +223,31 @@
         show(queue.shift());
     }
 
-    // ── 닉네임 안전 처리 ──
     function safeName(d) {
         const n = (d.nickname || '').trim() || (d.uniqueId || '').trim() || '익명';
-        return n.length > 20 ? n.slice(0, 20) + '…' : n;
+        return n.length > 18 ? n.slice(0, 18) + '…' : n;
     }
     function applyNameSize(el, name) {
         el.classList.remove('len-mid', 'len-long');
-        if (name.length > 10) el.classList.add('len-long');
-        else if (name.length > 6) el.classList.add('len-mid');
+        if      (name.length > 10) el.classList.add('len-long');
+        else if (name.length > 6)  el.classList.add('len-mid');
     }
 
-    // ── 랜덤 문구 ──
     const midMsgs  = ['이름을 새기다 ✨','존재감 폭발 💥','빛나는 순간 🌟','화면을 물들이다 🎨','마음을 전하다 💌','이 순간의 주인공 🎬','함께해서 빛난다 🌈','당신이 특별하다 🫶','온기를 나누다 🔥','기억에 남을 이름 📍'];
     const megaMsgs = ['전설이 되다 👑','방송을 지배하다 💎','오늘의 주인공 🔥','레전드 등극 🏆','하늘을 찌르다 🚀','영원히 기억될 이름 ⚡','이 방송의 신 🌌','모두가 주목한다 👁️','압도적 존재감 💫','역사에 남을 순간 🎆'];
     function randMsg(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-    // ── 메인 표시 ──
     function show(d) {
+        const pts    = d.totalDiamonds || d.diamondCount || 0;
+        const isMega = pts >= MEGA_MIN;
+        const dur    = isMega ? 6500 : 5000;
         const name   = safeName(d);
-        const isMega = (d.tier === 'mega') || ((d.totalDiamonds || 0) >= 1000);
-        const dur    = isMega ? 6000 : 4500;
 
-        const card      = document.getElementById('gift-card');
-        const inner     = document.getElementById('card-inner');
-        const lblEl     = document.getElementById('card-label');
-        const nickEl    = document.getElementById('card-nickname');
-        const avatarEl  = document.getElementById('card-avatar');
+        const card     = document.getElementById('gift-card');
+        const inner    = document.getElementById('card-inner');
+        const nickEl   = document.getElementById('card-nickname');
+        const avatarEl = document.getElementById('card-avatar');
+        const scoreEl  = document.getElementById('card-score');
 
         card.style.animation = 'none';
         card.style.opacity   = '0';
@@ -272,14 +256,12 @@
         inner.className  = 'card-inner ' + (isMega ? 'mega-style' : 'mid-style');
         nickEl.className = isMega ? 'mega-nick' : 'mid-nick';
         applyNameSize(nickEl, name);
-        document.getElementById('card-label-text').textContent = randMsg(isMega ? megaMsgs : midMsgs);
-        const scoreEl = document.getElementById('card-score');
-        const pts = d.totalDiamonds || d.diamondCount || 0;
-        scoreEl.textContent = pts > 0 ? '+' + Number(pts).toLocaleString() : '';
-        scoreEl.style.display = pts > 0 ? '' : 'none';
         nickEl.textContent = name;
 
-        // 프로필 이미지
+        document.getElementById('card-label-text').textContent = randMsg(isMega ? megaMsgs : midMsgs);
+        scoreEl.textContent   = pts > 0 ? '💎 ' + Number(pts).toLocaleString() : '';
+        scoreEl.style.display = pts > 0 ? '' : 'none';
+
         avatarEl.innerHTML = '';
         if (d.profilePictureUrl) {
             const img = document.createElement('img');
@@ -290,20 +272,11 @@
             avatarEl.textContent = name.charAt(0).toUpperCase();
         }
 
-        // 화면 번쩍임
-        flash(isMega);
-
-        // 파티클
         spawnParticles(isMega);
-
-
-        // 음향
         playSound(isMega);
 
-        // 등장
         card.style.animation = (isMega ? 'pop-mega' : 'pop-mid') + ' 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards';
 
-        // 퇴장
         setTimeout(() => {
             card.style.animation = 'card-out 0.5s ease forwards';
             setTimeout(() => {
@@ -315,20 +288,11 @@
         }, dur);
     }
 
-    // ── 화면 번쩍임 ──
-    function flash(isMega) {
-        const el = document.getElementById('flash');
-        el.style.background = isMega ? '#f9d423' : '#a855f7';
-        el.style.animation = 'none';
-        void el.offsetWidth;
-        el.style.animation = (isMega ? 'flash-mega' : 'flash-mid') + ' ' + (isMega ? '1.4s' : '0.9s') + ' ease forwards';
-    }
-
     // ── 파티클 ──
     function spawnParticles(isMega) {
-        const cnt = isMega ? 70 : 32;
-        const cx  = window.innerWidth / 2;
-        const cy  = window.innerHeight / 2;
+        const cnt = isMega ? 60 : 28;
+        const cx  = 400; // 소스 중앙 x
+        const cy  = 100; // 소스 중앙 y
         const con = document.getElementById('particles');
         const cols = isMega
             ? ['#f9d423','#ff4e50','#a855f7','#3b82f6','#10b981','#fbbf24','#ec4899','#fff']
@@ -337,21 +301,21 @@
 
         for (let i = 0; i < cnt; i++) {
             const ang  = (Math.PI * 2 * i / cnt) + Math.random() * 0.5;
-            const dist = 100 + Math.random() * (isMega ? 320 : 200);
+            const dist = 60 + Math.random() * (isMega ? 160 : 100);
             const tx   = Math.cos(ang) * dist;
             const ty   = Math.sin(ang) * dist;
-            const d    = (0.6 + Math.random() * 1.2).toFixed(2) + 's';
+            const dur  = (0.6 + Math.random() * 1.1).toFixed(2) + 's';
             const col  = cols[Math.floor(Math.random() * cols.length)];
             const el   = document.createElement('div');
 
-            if (isMega && Math.random() > 0.42) {
+            if (isMega && Math.random() > 0.45) {
                 el.className = 'st';
                 el.textContent = syms[Math.floor(Math.random() * syms.length)];
-                el.style.cssText = `left:${cx+(Math.random()-0.5)*50}px;top:${cy+(Math.random()-0.5)*50}px;color:${col};font-size:${13+Math.random()*16}px;--tx:${tx}px;--ty:${ty}px;--d:${d};--r:${Math.random()*400}deg`;
+                el.style.cssText = `left:${cx+(Math.random()-0.5)*40}px;top:${cy+(Math.random()-0.5)*40}px;color:${col};font-size:${11+Math.random()*14}px;--tx:${tx}px;--ty:${ty}px;--d:${dur};--r:${Math.random()*360}deg`;
             } else {
-                const sz = 4 + Math.random() * (isMega ? 9 : 6);
+                const sz = 4 + Math.random() * (isMega ? 8 : 5);
                 el.className = 'pt';
-                el.style.cssText = `width:${sz}px;height:${sz}px;left:${cx+(Math.random()-0.5)*50}px;top:${cy+(Math.random()-0.5)*50}px;background:${col};box-shadow:0 0 ${sz*2}px ${col};--tx:${tx}px;--ty:${ty}px;--d:${d}`;
+                el.style.cssText = `width:${sz}px;height:${sz}px;left:${cx+(Math.random()-0.5)*40}px;top:${cy+(Math.random()-0.5)*40}px;background:${col};box-shadow:0 0 ${sz*2}px ${col};--tx:${tx}px;--ty:${ty}px;--d:${dur}`;
             }
             con.appendChild(el);
         }
@@ -371,11 +335,11 @@
             const o = ctx.createOscillator(), g = ctx.createGain();
             o.connect(g); g.connect(ctx.destination);
             o.type = 'sine'; o.frequency.value = f;
-            const t = ctx.currentTime + i * 0.14;
+            const t = ctx.currentTime + i * 0.13;
             g.gain.setValueAtTime(0, t);
-            g.gain.linearRampToValueAtTime(0.28, t + 0.02);
-            g.gain.exponentialRampToValueAtTime(0.001, t + 1.1);
-            o.start(t); o.stop(t + 1.15);
+            g.gain.linearRampToValueAtTime(0.30, t + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+            o.start(t); o.stop(t + 1.25);
         });
     }
 
@@ -383,41 +347,47 @@
         const ctx = getCtx();
         const now = ctx.currentTime;
 
-        // 1) 저음 붐
         const mkOsc = (type, freq, vol, start, end) => {
             const o = ctx.createOscillator(), g = ctx.createGain();
             o.connect(g); g.connect(ctx.destination);
             o.type = type; o.frequency.value = freq;
             g.gain.setValueAtTime(0, start);
-            g.gain.linearRampToValueAtTime(vol, start + 0.025);
+            g.gain.linearRampToValueAtTime(vol, start + 0.02);
             g.gain.exponentialRampToValueAtTime(0.001, end);
             o.start(start); o.stop(end + 0.05);
         };
-        mkOsc('sine',   65,  0.55, now,        now + 0.6);
-        mkOsc('sine',   98,  0.35, now,        now + 0.4);
 
-        // 2) 1차 멜로디 C-E-G-C6-E6
-        [[523.25,0.10],[659.25,0.20],[783.99,0.30],[1046.5,0.40],[1318.51,0.50]]
-            .forEach(([f, dt]) => mkOsc('triangle', f, 0.32, now+dt, now+dt+0.8));
+        // 1) 저음 더블 붐 (더 강하게)
+        mkOsc('sine',   55,  0.75, now,       now + 0.5);
+        mkOsc('sine',   82,  0.55, now,       now + 0.45);
+        mkOsc('square', 55,  0.15, now,       now + 0.3);
 
-        // 3) 2차 상승 G5-C6-E6-G6
-        [[783.99,0.75],[1046.5,0.88],[1318.51,1.01],[1567.98,1.14]]
-            .forEach(([f, dt]) => mkOsc('triangle', f, 0.28, now+dt, now+dt+0.75));
+        // 2) 웅장한 브라스 코드
+        [[130.81,0.05],[164.81,0.05],[196,0.05],[261.63,0.08]]
+            .forEach(([f,dt]) => mkOsc('sawtooth', f, 0.18, now+dt, now+dt+0.9));
 
-        // 4) 최고음 마무리 C7 화음
-        [[2093,1.5],[1567.98,1.52],[1318.51,1.54]]
-            .forEach(([f, dt]) => mkOsc('sine', f, 0.22, now+dt, now+dt+1.0));
+        // 3) 1차 멜로디 상승 C-E-G-C5-E5-G5
+        [[523.25,0.12],[659.25,0.22],[783.99,0.32],[1046.5,0.44],[1318.51,0.55],[1567.98,0.65]]
+            .forEach(([f,dt]) => mkOsc('triangle', f, 0.30, now+dt, now+dt+0.85));
 
-        // 5) 반짝 스파클 (0.8초 후)
+        // 4) 2차 더 높은 상승 C6-E6-G6
+        [[2093,0.90],[2637,1.02],[3135.96,1.14]]
+            .forEach(([f,dt]) => mkOsc('sine', f, 0.22, now+dt, now+dt+0.75));
+
+        // 5) 클라이맥스 화음 (1.4초)
+        [[1046.5,1.4],[1318.51,1.42],[1567.98,1.44],[2093,1.46]]
+            .forEach(([f,dt]) => mkOsc('sine', f, 0.28, now+dt, now+dt+1.2));
+
+        // 6) 스파클 마무리 (2초)
         setTimeout(() => {
             try {
                 const c = getCtx();
-                [1046.5,1318.51,1567.98,2093].forEach((f,i) => mkOsc('sine',f,0.18,c.currentTime+i*0.06,c.currentTime+i*0.06+0.6));
+                const t = c.currentTime;
+                [2093,2637,3135.96,4186].forEach((f,i) => mkOsc('sine',f,0.20,t+i*0.055,t+i*0.055+0.7));
             } catch(e) {}
-        }, 800);
+        }, 2000);
     }
 
-    // ── AudioContext ──
     document.addEventListener('click', () => { try { getCtx().resume(); } catch(e) {} }, { once: true });
     setTimeout(() => { try { getCtx(); } catch(e) {} }, 500);
 
@@ -425,17 +395,18 @@
     const testParam = new URLSearchParams(location.search).get('test');
     if (testParam === 'mid' || testParam === 'mega') {
         const btn = document.createElement('div');
-        btn.innerHTML = testParam === 'mega' ? '💎 MEGA 효과 테스트 (클릭)' : '🎁 중간 선물 효과 테스트 (클릭)';
-        btn.style.cssText = 'position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:rgba(124,58,237,0.9);color:#fff;font-family:"Noto Sans KR",sans-serif;font-size:15px;font-weight:700;padding:13px 30px;border-radius:50px;cursor:pointer;z-index:9999;box-shadow:0 4px 24px rgba(124,58,237,0.6);pointer-events:auto;white-space:nowrap;';
+        btn.innerHTML = testParam === 'mega' ? '💎 MEGA 테스트 (클릭)' : '🎁 MID 테스트 (클릭)';
+        btn.style.cssText = 'position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(124,58,237,0.9);color:#fff;font-family:"Noto Sans KR",sans-serif;font-size:13px;font-weight:700;padding:10px 24px;border-radius:50px;cursor:pointer;z-index:9999;box-shadow:0 4px 20px rgba(124,58,237,0.6);pointer-events:auto;white-space:nowrap;';
         document.body.appendChild(btn);
         function runTest() {
             btn.remove();
             try { getCtx().resume(); } catch(e) {}
-            queue.push({ nickname: testParam === 'mega' ? '박서준' : '김지유', uniqueId:'test', profilePictureUrl: 'https://p16-sign-sg.tiktokcdn.com/aweme/100x100/tos-alisg-avt-0068/sample.jpeg', totalDiamonds: testParam==='mega'?1500:200, tier:testParam });
+            const pts = testParam === 'mega' ? 1500 : 200;
+            queue.push({ nickname: testParam === 'mega' ? '박서준' : '김지유', uniqueId:'test', profilePictureUrl:'', totalDiamonds: pts, tier: testParam });
             if (!busy) next();
         }
         btn.addEventListener('click', runTest);
-        setTimeout(() => { if (btn.parentNode) runTest(); }, 3000);
+        setTimeout(() => { if (btn.parentNode) runTest(); }, 2500);
     }
 </script>
 </body>

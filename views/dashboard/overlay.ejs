@@ -90,29 +90,49 @@
                         </div>
                     </div>
 
-                    <!-- 사이즈 안내 -->
-                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
-                        <p class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <i class="fas fa-ruler-combined text-purple-500"></i> 권장 소스 크기 (휴대폰 세로 비율)
-                        </p>
-                        <div class="flex flex-wrap gap-3 mb-3">
-                            <div class="size-badge">
-                                <i class="fas fa-mobile-alt text-purple-400"></i>
-                                너비 <span class="dim">390</span> × 높이 <span class="dim">844</span> px
-                                <span class="text-gray-400 font-normal text-xs">(iPhone 14 기준)</span>
-                            </div>
-                            <div class="size-badge">
-                                <i class="fas fa-mobile-alt text-purple-400"></i>
-                                너비 <span class="dim">360</span> × 높이 <span class="dim">800</span> px
-                                <span class="text-gray-400 font-normal text-xs">(갤럭시 기준)</span>
-                            </div>
+                    <!-- 고정 사이즈 안내 -->
+                    <div class="mb-5 p-4 bg-purple-50 border border-purple-200 rounded-xl flex items-start gap-3">
+                        <i class="fas fa-ruler-combined text-purple-500 mt-0.5"></i>
+                        <div>
+                            <p class="text-sm font-semibold text-purple-800 mb-1">고정 소스 크기 — <span class="font-mono">800 × 200 px</span></p>
+                            <p class="text-xs text-purple-600 leading-relaxed">선물 알림 위젯은 <strong>너비 800px × 높이 200px</strong> 고정 크기입니다. 배너는 닉네임 길이에 맞게 자동으로 조절되며 최대 600px를 넘지 않습니다.<br>TikTok Live Studio에서 소스를 추가한 뒤 원하는 위치에 드래그해 배치하세요.</p>
                         </div>
-                        <p class="text-xs text-gray-400 leading-relaxed">
-                            위젯은 <strong>투명 배경 전체화면</strong>으로 동작합니다. 호스트 얼굴 위에 겹쳐두면 선물이 올 때만 카드가 등장합니다.
-                        </p>
                     </div>
 
-                    <!-- 버튼 -->
+                    <!-- MID / MEGA 다이아 기준 설정 -->
+                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-gem text-purple-500"></i> 알림 노출 기준 (다이아)
+                        </h4>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-purple-700 mb-1">💜 MID 최소 다이아</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="midMin" min="0" max="9999" value="100" step="10"
+                                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-300">
+                                    <span class="text-xs text-gray-400 whitespace-nowrap">💎 이상</span>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-1">이 값 이상~MEGA 미만 선물 → 보라색 카드</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-yellow-700 mb-1">💛 MEGA 최소 다이아</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="number" id="megaMin" min="0" max="99999" value="1000" step="100"
+                                        class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-300">
+                                    <span class="text-xs text-gray-400 whitespace-nowrap">💎 이상</span>
+                                </div>
+                                <p class="text-xs text-gray-400 mt-1">이 값 이상 선물 → 금색 팡파레 카드</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button onclick="saveGiftSettings(event)"
+                                class="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm flex items-center gap-2" id="saveGiftBtn">
+                                <i class="fas fa-save"></i> 저장
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 미리보기 버튼 -->
                     <div class="flex flex-wrap gap-3 mb-6">
                         <a href="/overlay/<%= user._id %>/gift?test=mega" target="_blank"
                             class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-300 text-yellow-700 rounded-lg hover:bg-yellow-100 transition text-sm font-semibold">
@@ -146,17 +166,17 @@
                                 <span class="step-num bg-purple-500">4</span>
                                 <div class="text-sm text-gray-600 pt-0.5">
                                     <strong>해상도</strong> 입력:
-                                    <span class="size-badge ml-2">너비 <span class="dim">390</span> × 높이 <span class="dim">844</span></span>
+                                    <span class="size-badge ml-2">너비 <span class="dim">800</span> × 높이 <span class="dim">200</span></span>
                                 </div>
                             </li>
                             <li class="flex gap-3 items-start">
                                 <span class="step-num bg-purple-500">5</span>
-                                <p class="text-sm text-gray-600 pt-0.5">소스를 <strong>화면 전체에 맞게</strong> 배치 (투명 배경이므로 호스트 얼굴 위에 올려도 됩니다)</p>
+                                <p class="text-sm text-gray-600 pt-0.5">소스를 원하는 위치에 드래그해 배치하세요. 평소에는 투명하고 선물이 올 때만 카드가 나타납니다.</p>
                             </li>
                         </ol>
                         <div class="mt-4 p-3 bg-purple-50 border-l-4 border-purple-400 rounded text-xs text-purple-700">
                             <i class="fas fa-lightbulb mr-1"></i>
-                            <strong>팁:</strong> 미리보기 링크를 클릭해 버튼을 누르면 실제 효과를 확인할 수 있습니다. Chrome 자동재생 정책으로 인해 첫 클릭이 필요합니다.
+                            <strong>팁:</strong> 미리보기에서 버튼을 누르면 실제 효과를 확인할 수 있습니다. Chrome 자동재생 정책으로 인해 첫 클릭이 필요합니다.
                         </div>
                     </div>
                 </div>
@@ -341,6 +361,47 @@
                     btn.classList.add(name === 'gift' ? 'active-purple' : 'active');
                 }
             });
+        }
+
+        // ── 선물 다이아 기준 저장 ──
+        async function saveGiftSettings(event) {
+            const midMin  = parseInt(document.getElementById('midMin').value)  || 0;
+            const megaMin = parseInt(document.getElementById('megaMin').value) || 0;
+            const btn = document.getElementById('saveGiftBtn');
+            const orig = btn.innerHTML;
+            try {
+                const res = await fetch('/api/gift-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ midMin, megaMin })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    btn.innerHTML = '<i class="fas fa-check"></i> 저장됨!';
+                    btn.classList.replace('bg-purple-600','bg-green-600');
+                    btn.classList.replace('hover:bg-purple-700','hover:bg-green-700');
+                    setTimeout(() => {
+                        btn.innerHTML = orig;
+                        btn.classList.replace('bg-green-600','bg-purple-600');
+                        btn.classList.replace('hover:bg-green-700','hover:bg-purple-700');
+                    }, 2000);
+                } else {
+                    alert('저장 실패: ' + (data.message || ''));
+                }
+            } catch(e) {
+                alert('오류가 발생했습니다.');
+            }
+        }
+
+        async function loadGiftSettings() {
+            try {
+                const res  = await fetch('/api/gift-settings');
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('midMin').value  = data.midMin  ?? 100;
+                    document.getElementById('megaMin').value = data.megaMin ?? 1000;
+                }
+            } catch(e) {}
         }
 
         // ── 선물 URL 복사 ──
@@ -542,15 +603,17 @@
             loadNotices();
         }
 
-        // song 탭 활성화 시 공지 로드
+        // 탭 전환 시 각 탭 데이터 로드
         const origSwitchTab = switchTab;
         switchTab = function(name) {
             origSwitchTab(name);
             if (name === 'song') loadNotices();
+            if (name === 'gift') loadGiftSettings();
         };
 
-        // 초기 탭이 song이면 로드
+        // 초기 탭 로드
         if (document.getElementById('panel-song').classList.contains('active')) loadNotices();
+        if (document.getElementById('panel-gift').classList.contains('active')) loadGiftSettings();
     </script>
 </body>
 </html>

@@ -231,7 +231,11 @@ const userSchema = new mongoose.Schema({
         memo: { type: String },
         extendedMonths: { type: Number, default: 1 },
         adminEmail: { type: String }
-    }]
+    }],
+    giftSettings: {
+        midMin:  { type: Number, default: 100 },
+        megaMin: { type: Number, default: 1000 }
+    }
 }, {
     timestamps: true
 });

@@ -1625,4 +1625,41 @@ router.delete('/overlay-notice/:id', requireAuth, async (req, res) => {
     }
 });
 
+// ── 선물 다이아 기준 설정 ──────────────────────────────────────
+// GET /api/gift-settings?userId=xxx  (오버레이에서 공개 조회)
+router.get('/gift-settings', async (req, res) => {
+    try {
+        const uid = req.query.userId || (req.user && req.user._id);
+        if (!uid) return res.json({ success: true, midMin: 100, megaMin: 1000 });
+        const user = await User.findById(uid).select('giftSettings');
+        const s = user?.giftSettings || {};
+        res.json({ success: true, midMin: s.midMin ?? 100, megaMin: s.megaMin ?? 1000 });
+    } catch (e) {
+        res.json({ success: true, midMin: 100, megaMin: 1000 });
+    }
+});
+
+// POST /api/gift-settings  (인증 필요)
+router.post('/gift-settings', requireAuth, async (req, res) => {
+    try {
+        const { midMin, megaMin } = req.body;
+        const update = {};
+        if (midMin  != null) update['giftSettings.midMin']  = Math.max(0, parseInt(midMin)  || 0);
+        if (megaMin != null) update['giftSettings.megaMin'] = Math.max(0, parseInt(megaMin) || 0);
+        await User.findByIdAndUpdate(req.user._id, { $set: update });
+
+        // 실시간 반영: 오버레이에 소켓 emit
+        const io = req.app.get('io');
+        if (io) {
+            io.to(req.user._id.toString()).emit('gift-settings-update', {
+                midMin:  update['giftSettings.midMin']  ?? undefined,
+                megaMin: update['giftSettings.megaMin'] ?? undefined
+            });
+        }
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 module.exports = router;
