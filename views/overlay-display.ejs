@@ -92,6 +92,19 @@
             margin-right: 10px;
             font-size: 1.1em;
         }
+
+        /* 공지 마퀴 - 슬라이드인 후 2초 뒤 시작 */
+        .notice-marquee-wrap {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .notice-marquee-track {
+            display: inline-block;
+            white-space: nowrap;
+            /* JS로 동적으로 animation 설정 */
+        }
     </style>
 </head>
 <body>
@@ -171,9 +184,12 @@
         function renderItem(entry) {
             if (!entry) return;
             if (entry.type === 'notice') {
+                // 마퀴 래퍼 구조 - startNoticeMarquee에서 너비 측정 후 마퀴 적용
                 item.innerHTML =
                     '<span class="notice-icon">📢</span>'
-                    + '<span class="item-text">' + escHtml(entry.text) + '</span>';
+                    + '<div class="notice-marquee-wrap">'
+                    + '<span class="notice-marquee-track">' + escHtml(entry.text) + '</span>'
+                    + '</div>';
             } else {
                 const b = BADGE[entry.type] || BADGE.now;
                 item.innerHTML =
@@ -218,14 +234,49 @@
             void item.offsetWidth;
             item.className = 'slide-item slide-in';
 
-            // 3초 표시 후 슬라이드 아웃
+            if (entry.type === 'notice') {
+                // 공지: 슬라이드인 후 2초 대기 → 마퀴 → 슬라이드아웃
+                timer = setTimeout(() => startNoticeMarquee(entry), 350 + 2000);
+            } else {
+                // 신청곡: 5초 표시 후 슬라이드아웃
+                timer = setTimeout(doSlideOut, 350 + 5000);
+            }
+        }
+
+        function startNoticeMarquee(entry) {
+            // 현재 텍스트 너비 측정
+            const wrap = item.querySelector('.notice-marquee-wrap');
+            const track = item.querySelector('.notice-marquee-track');
+            if (!wrap || !track) { doSlideOut(); return; }
+
+            const wrapW  = wrap.offsetWidth;   // 보이는 영역 너비
+            const trackW = track.scrollWidth;  // 전체 텍스트 너비
+
+            if (trackW <= wrapW) {
+                // 짧으면 그냥 5초 후 슬라이드아웃
+                timer = setTimeout(doSlideOut, 3000);
+                return;
+            }
+
+            // 길면 마퀴로 끝까지 이동 (속도: 60px/s)
+            const distance = trackW - wrapW + 20; // 여유 20px
+            const duration = distance / 60;       // 초
+            track.style.transition = `transform ${duration.toFixed(2)}s linear`;
+            track.style.transform  = `translateX(-${distance}px)`;
+
+            // 마퀴 완료 후 1초 유지 → 슬라이드아웃
+            timer = setTimeout(doSlideOut, duration * 1000 + 1000);
+        }
+
+        function doSlideOut() {
+            item.className = 'slide-item slide-out';
+            // 마퀴 track 초기화
+            const track = item.querySelector('.notice-marquee-track');
+            if (track) { track.style.transition = ''; track.style.transform = ''; }
             timer = setTimeout(() => {
-                item.className = 'slide-item slide-out';
-                timer = setTimeout(() => {
-                    queueIdx = (queueIdx + 1) % queue.length;
-                    showNext();
-                }, 360);
-            }, 3000);
+                queueIdx = (queueIdx + 1) % queue.length;
+                showNext();
+            }, 360);
         }
 
         // 소켓 이벤트
