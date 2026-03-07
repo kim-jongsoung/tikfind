@@ -23,19 +23,21 @@
             display: flex;
             align-items: center;
             position: relative;
+            border-radius: 9999px;
         }
 
-        /* 슬라이드 아이템 - 기본은 화면 오른쪽 바깥 대기 */
+        /* 슬라이드 아이템 - 기본은 오른쪽 30px 안쪽 대기 */
         .slide-item {
             position: absolute;
-            width: 700px;
+            width: 640px;  /* 700 - 30*2 */
             height: 80px;
+            left: 30px;
             display: flex;
             align-items: center;
             padding: 0 16px;
             white-space: nowrap;
             overflow: hidden;
-            transform: translateX(700px);
+            transform: translateX(670px);
             opacity: 0;
             font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
         }
@@ -57,13 +59,13 @@
         }
 
         @keyframes slideIn {
-            from { transform: translateX(700px); opacity: 0; }
+            from { transform: translateX(670px); opacity: 0; }
             to   { transform: translateX(0);     opacity: 1; }
         }
 
         @keyframes slideOut {
-            from { transform: translateX(0);      opacity: 1; }
-            to   { transform: translateX(-700px); opacity: 0; }
+            from { transform: translateX(0);       opacity: 1; }
+            to   { transform: translateX(-670px);  opacity: 0; }
         }
 
         .item-badge {
@@ -211,9 +213,9 @@
             const entry = queue[queueIdx];
             renderItem(entry);
 
-            // 슬라이드 인
+            // 슬라이드 인 (오른쪽 30px 안쪽에서 시작)
             item.className = 'slide-item';
-            void item.offsetWidth; // reflow
+            void item.offsetWidth;
             item.className = 'slide-item slide-in';
 
             // 3초 표시 후 슬라이드 아웃
