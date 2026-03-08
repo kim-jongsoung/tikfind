@@ -1412,13 +1412,13 @@ app.post('/api/live/tiktok-data', async (req, res) => {
 
         } else if (type === 'like') {
             io.to(userId).emit('like-received', tiktokData);
-            emitModeratorActivity(userId, tiktokData.uniqueId);
+            globalEmitModeratorActivity(userId, tiktokData.uniqueId).catch(() => {});
             const sessLike = liveSessionMap.get(String(userId));
             if (sessLike) sessLike.totalLikes += (tiktokData.likeCount || 1);
 
         } else if (type === 'gift') {
             io.to(userId).emit('gift-received', tiktokData);
-            emitModeratorActivity(userId, tiktokData.uniqueId);
+            globalEmitModeratorActivity(userId, tiktokData.uniqueId).catch(() => {});
             if (tiktokData.giftType !== 1 && tiktokData.isFinal !== false) {
                 const totalDiamonds = (tiktokData.diamondCount || 0) * (tiktokData.repeatCount || 1);
                 io.to(`overlay-${userId}`).emit('overlay-gift', {
