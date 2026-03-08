@@ -239,6 +239,10 @@ const userSchema = new mongoose.Schema({
     speechLangs: {
         type: [String],
         default: ['en']
+    },
+    modInactiveAlert: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

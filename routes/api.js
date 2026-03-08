@@ -1674,11 +1674,12 @@ router.post('/gift-settings', requireAuth, async (req, res) => {
 router.get('/moderator', async (req, res) => {
     try {
         const uid = req.query.userId || (req.user && req.user._id);
-        if (!uid) return res.json({ success: true, moderators: [] });
+        if (!uid) return res.json({ success: true, moderators: [], inactiveAlert: false });
         const mods = await Moderator.find({ userId: uid }).sort({ order: 1, createdAt: 1 });
-        res.json({ success: true, moderators: mods });
+        const user = await User.findById(uid).select('modInactiveAlert').lean();
+        res.json({ success: true, moderators: mods, inactiveAlert: user?.modInactiveAlert === true });
     } catch (e) {
-        res.json({ success: true, moderators: [] });
+        res.json({ success: true, moderators: [], inactiveAlert: false });
     }
 });
 
@@ -1727,6 +1728,19 @@ router.patch('/moderator/:id', requireAuth, async (req, res) => {
         const io = req.app.get('io');
         if (io) io.to('overlay-' + req.user._id.toString()).emit('moderator-update');
         res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// PATCH /api/moderator/inactive-alert  (비활동 색상 변경 설정 저장)
+router.patch('/moderator/inactive-alert', requireAuth, async (req, res) => {
+    try {
+        const { inactiveAlert } = req.body;
+        await User.findByIdAndUpdate(req.user._id, { modInactiveAlert: !!inactiveAlert });
+        const io = req.app.get('io');
+        if (io) io.to('overlay-' + req.user._id.toString()).emit('moderator-inactive-alert', { inactiveAlert: !!inactiveAlert });
+        res.json({ success: true, inactiveAlert: !!inactiveAlert });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
     }

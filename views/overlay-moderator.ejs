@@ -10,7 +10,7 @@
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
-            width: 110px;
+            width: 180px;
             min-height: 100px;
             background: transparent;
             overflow: visible;
@@ -26,11 +26,11 @@
             padding-top: 40px;
         }
         body.preview-mode #mod-list {
-            width: 110px;
+            width: 180px;
         }
 
         #mod-list {
-            width: 110px;
+            width: 180px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -39,7 +39,7 @@
 
         /* 각 모더 카드 */
         .mod-card {
-            width: 106px;
+            width: 174px;
             margin: 0 auto;
             border-radius: 14px;
             border: 1.5px solid rgba(255,255,255,0.30);
@@ -64,16 +64,16 @@
             width: 100%;
             background: rgba(99,102,241,0.75);
             text-align: center;
-            font-size: 15px;
+            font-size: 20px;
             font-weight: 700;
             color: #fff;
-            letter-spacing: 0.08em;
+            letter-spacing: 0.05em;
             padding: 3px 0;
             border-radius: 0;
             transition: background 0.6s ease;
         }
         .mod-badge.inactive {
-            background: rgba(99,102,241,0.75);
+            background: var(--inactive-bg, rgba(99,102,241,0.75));
         }
         /* 재입장/활동 시 배지 반짝임 */
         .mod-badge.flash {
@@ -106,7 +106,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 27px;
+            font-size: 20px;
             font-weight: 900;
             color: #fff;
             overflow: hidden;
@@ -118,14 +118,14 @@
         }
 
         .mod-name {
-            font-size: 21px;
+            font-size: 20px;
             font-weight: 800;
             color: #fff;
             text-align: center;
             text-shadow: 0 1px 6px rgba(0,0,0,0.9);
             word-break: break-all;
             line-height: 1.3;
-            max-width: 100px;
+            max-width: 164px;
         }
 
     </style>
@@ -144,11 +144,26 @@
     // 서버에서 모더 목록 로드
     let modConfig = []; // [{ tiktokUniqueId, displayName, profileImg }]
 
+    // 비활동 색상 변경 여부 (기본 off = 색상 변경 안함)
+    let inactiveAlert = false;
+
+    function applyInactiveAlert(enabled) {
+        inactiveAlert = enabled;
+        // enabled=true 이면 빨간색, false 이면 파란색(변화없음)
+        document.documentElement.style.setProperty(
+            '--inactive-bg',
+            enabled ? 'rgba(220,38,38,0.85)' : 'rgba(99,102,241,0.75)'
+        );
+    }
+
     async function loadMods() {
         try {
             const res  = await fetch('/api/moderator?userId=' + userId);
             const data = await res.json();
-            if (data.success) modConfig = data.moderators;
+            if (data.success) {
+                modConfig = data.moderators;
+                applyInactiveAlert(data.inactiveAlert === true);
+            }
         } catch(e) {}
     }
 
@@ -158,6 +173,11 @@
 
     // 소켓: 모더 설정 변경 실시간 반영
     socket.on('moderator-update', () => loadMods());
+
+    // 소켓: 비활동 색상 설정 실시간 반영
+    socket.on('moderator-inactive-alert', (data) => {
+        applyInactiveAlert(data.inactiveAlert === true);
+    });
 
     // 비활성 타임아웃 (3분 = 180000ms)
     const INACTIVE_MS = 3 * 60 * 1000;

@@ -269,6 +269,22 @@
                         </div>
                     </div>
 
+                    <!-- 비활동 색상 변경 설정 -->
+                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-700">3분 미활동 시 색상 변경</p>
+                                <p class="text-xs text-gray-400 mt-0.5">켜면 모더가 3분 이상 활동 없을 때 뱃지가 빨간색으로 바뀝니다</p>
+                            </div>
+                            <button onclick="toggleInactiveAlert()" id="inactiveAlertBtn"
+                                class="relative inline-flex items-center w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none bg-gray-200"
+                                data-enabled="false">
+                                <span id="inactiveAlertThumb"
+                                    class="inline-block w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-200 translate-x-0.5"></span>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- 모더 목록 -->
                     <div class="bg-white border border-gray-200 rounded-xl p-4">
                         <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -650,10 +666,38 @@
 
         // ── 모더 관리 ──
         async function loadModerators() {
-            const res  = await fetch('/api/moderator/list');
+            const res  = await fetch('/api/moderator');
             const data = await res.json();
             if (!data.success) return;
             renderModerators(data.moderators);
+            // 비활동 색상 토글 상태 반영
+            const enabled = data.inactiveAlert === true;
+            const btn   = document.getElementById('inactiveAlertBtn');
+            const thumb = document.getElementById('inactiveAlertThumb');
+            if (btn && thumb) {
+                btn.dataset.enabled = enabled ? 'true' : 'false';
+                btn.classList.toggle('bg-blue-500', enabled);
+                btn.classList.toggle('bg-gray-200', !enabled);
+                thumb.classList.toggle('translate-x-6', enabled);
+                thumb.classList.toggle('translate-x-0.5', !enabled);
+            }
+        }
+
+        async function toggleInactiveAlert() {
+            const btn     = document.getElementById('inactiveAlertBtn');
+            const thumb   = document.getElementById('inactiveAlertThumb');
+            const current = btn.dataset.enabled === 'true';
+            const next    = !current;
+            btn.dataset.enabled = next ? 'true' : 'false';
+            btn.classList.toggle('bg-blue-500', next);
+            btn.classList.toggle('bg-gray-200', !next);
+            thumb.classList.toggle('translate-x-6', next);
+            thumb.classList.toggle('translate-x-0.5', !next);
+            await fetch('/api/moderator/inactive-alert', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inactiveAlert: next })
+            });
         }
 
         function renderModerators(mods) {
