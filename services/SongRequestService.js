@@ -239,8 +239,9 @@ class SongRequestService {
     async searchYouTube(title, artist) {
         const url = 'https://www.googleapis.com/youtube/v3/search';
         const baseQuery = artist ? `${title} ${artist}` : title;
-        // 공식 버전 우선 탐색을 위해 official 힌트 포함 쿼리 먼저 시도
+        // 1순위: official MV, 2순위: official, 3순위: 폴백
         const queries = [
+            artist ? `${title} ${artist} official MV` : `${title} official MV`,
             artist ? `${title} ${artist} official` : `${title} official`,
             baseQuery
         ];
@@ -254,8 +255,7 @@ class SongRequestService {
                     q: query,
                     part: 'snippet',
                     type: 'video',
-                    maxResults: 10,
-                    videoDuration: 'medium'  // 4분~20분만 반환 (3분 미만 제외, 쿼터 추가 없음)
+                    maxResults: 10
                 }
             });
             const items = response.data.items;
