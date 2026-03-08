@@ -238,9 +238,14 @@ class SongRequestService {
      */
     async searchYouTube(title, artist) {
         const url = 'https://www.googleapis.com/youtube/v3/search';
-        const query = artist ? `${title} ${artist}` : title;
+        const baseQuery = artist ? `${title} ${artist}` : title;
+        // 공식 버전 우선 탐색을 위해 official 힌트 포함 쿼리 먼저 시도
+        const queries = [
+            artist ? `${title} ${artist} official` : `${title} official`,
+            baseQuery
+        ];
 
-        const trySearch = async (apiKey, keyLabel) => {
+        const trySearch = async (apiKey, keyLabel, query) => {
             if (!apiKey) return null;
             console.log(`🔍 YouTube 검색 [${keyLabel}]:`, query);
             const response = await axios.get(url, {
@@ -249,38 +254,52 @@ class SongRequestService {
                     q: query,
                     part: 'snippet',
                     type: 'video',
-                    maxResults: 5,
-                    videoCategoryId: '10'
+                    maxResults: 10
                 }
             });
             const items = response.data.items;
-            if (items && items.length > 0) {
-                // 스코어링: MV/공식채널 우선, 커버/노래방 감점
-                const scored = items.map(item => {
-                    const t = item.snippet.title.toLowerCase();
-                    const ch = item.snippet.channelTitle.toLowerCase();
-                    let score = 0;
-                    if (/mv|m\/v|official music video|뮤직비디오/.test(t)) score += 4;
-                    if (/official|오피셜/.test(t)) score += 2;
-                    if (/hybe|smtown|jyp|ygentertainment|big hit|starship|kakao|stone|vevo/.test(ch)) score += 3;
-                    if (/official|레이블|records|entertainment|music/.test(ch)) score += 1;
-                    if (artist && t.includes(artist.toLowerCase())) score += 2;
-                    if (/커버|cover|노래방|karaoke|mr|inst|reaction|반응|review|리뷰|piano|guitar|violin|drum/.test(t)) score -= 3;
-                    if (/live|라이브|concert|콘서트|stage/.test(t)) score -= 1;
-                    return { item, score };
-                });
-                scored.sort((a, b) => b.score - a.score);
-                const best = scored[0].item;
-                console.log(`✅ YouTube 검색 성공 [${keyLabel}] score=${scored[0].score}:`, best.id.videoId, '-', best.snippet.title);
-                return {
-                    videoId: best.id.videoId,
-                    url: `https://www.youtube.com/watch?v=${best.id.videoId}`,
-                    thumbnail: best.snippet.thumbnails.high?.url || best.snippet.thumbnails.default?.url,
-                    channelTitle: best.snippet.channelTitle,
-                    title: best.snippet.title
-                };
-            }
-            return null;
+            if (!items || items.length === 0) return null;
+
+            const titleLower = title.toLowerCase();
+            const artistLower = artist ? artist.toLowerCase() : '';
+
+            // 스코어링: 공식/MV 우선, 커버/노래방 감점
+            const scored = items.map(item => {
+                const t = item.snippet.title.toLowerCase();
+                const ch = item.snippet.channelTitle.toLowerCase();
+                let score = 0;
+
+                // 제목 일치 보너스
+                if (t.includes(titleLower)) score += 5;
+                if (artistLower && t.includes(artistLower)) score += 3;
+                if (artistLower && ch.includes(artistLower)) score += 4;
+
+                // 공식 채널/영상 보너스
+                if (/official music video|official mv|뮤직비디오/.test(t)) score += 6;
+                if (/\bofficial\b/.test(t)) score += 3;
+                if (/official audio/.test(t)) score += 2;
+                if (/hybe|belift|smtown|jyp|ygentertainment|yg|big hit|bighit|starship|kakao|stone|vevo|warner|sony|universal/.test(ch)) score += 5;
+                if (/official|레이블|records|entertainment|music|미디어/.test(ch)) score += 2;
+
+                // 감점: 커버/반응/노래방/인스트
+                if (/커버|cover|노래방|karaoke|mr버전|\bmr\b|inst\b|반응|reaction|review|리뷰|piano ver|guitar ver|violin|drum cover/.test(t)) score -= 5;
+                if (/live ver|라이브 ver/.test(t)) score -= 1;
+                // 라이브 공연 영상은 약하게 감점 (단순 stage는 공식 무대 콘텐츠 많음)
+                if (/concert tour/.test(t)) score -= 2;
+
+                return { item, score };
+            });
+
+            scored.sort((a, b) => b.score - a.score);
+            const best = scored[0].item;
+            console.log(`✅ YouTube 검색 성공 [${keyLabel}] score=${scored[0].score}:`, best.id.videoId, '-', best.snippet.title);
+            return {
+                videoId: best.id.videoId,
+                url: `https://www.youtube.com/watch?v=${best.id.videoId}`,
+                thumbnail: best.snippet.thumbnails.high?.url || best.snippet.thumbnails.default?.url,
+                channelTitle: best.snippet.channelTitle,
+                title: best.snippet.title
+            };
         };
 
         const serverKey = process.env.YOUTUBE_API_KEY;
@@ -291,8 +310,11 @@ class SongRequestService {
                 console.error('❌ YouTube API 키가 설정되지 않았습니다.');
                 return null;
             }
-            const result = await trySearch(this.youtubeApiKey, isHostKey ? '호스트 키' : '서버 키');
-            if (result) return result;
+            // official 쿼리 먼저, 없으면 기본 쿼리로 재시도
+            for (const q of queries) {
+                const result = await trySearch(this.youtubeApiKey, isHostKey ? '호스트 키' : '서버 키', q);
+                if (result) return result;
+            }
             console.log('❌ YouTube 검색 결과 없음:', title, artist);
             return null;
         } catch (error) {
@@ -304,8 +326,10 @@ class SongRequestService {
             if (isHostKey && status === 403 && serverKey && serverKey !== this.youtubeApiKey) {
                 console.log('⚠️ 호스트 키 한도 초과 → 서버 공용 키로 재시도');
                 try {
-                    const fallback = await trySearch(serverKey, '서버 공용 키(fallback)');
-                    if (fallback) return fallback;
+                    for (const q of queries) {
+                        const fallback = await trySearch(serverKey, '서버 공용 키(fallback)', q);
+                        if (fallback) return fallback;
+                    }
                     console.log('❌ 공용 키로도 검색 결과 없음');
                 } catch (fallbackError) {
                     const fbStatus = fallbackError.response?.status;
