@@ -254,7 +254,8 @@ class SongRequestService {
                     q: query,
                     part: 'snippet',
                     type: 'video',
-                    maxResults: 10
+                    maxResults: 10,
+                    videoDuration: 'medium'  // 4분~20분만 반환 (3분 미만 제외, 쿼터 추가 없음)
                 }
             });
             const items = response.data.items;
@@ -281,10 +282,11 @@ class SongRequestService {
                 if (/hybe|belift|smtown|jyp|ygentertainment|yg|big hit|bighit|starship|kakao|stone|vevo|warner|sony|universal/.test(ch)) score += 5;
                 if (/official|레이블|records|entertainment|music|미디어/.test(ch)) score += 2;
 
-                // 감점: 커버/반응/노래방/인스트
-                if (/커버|cover|노래방|karaoke|mr버전|\bmr\b|inst\b|반응|reaction|review|리뷰|piano ver|guitar ver|violin|drum cover/.test(t)) score -= 5;
+                // 강감점: 커버/반응/노래방/인스트 (-50: 사실상 제외)
+                if (/커버|cover|노래방|karaoke|mr버전|\bmr\b|inst\b|반응|reaction|review|리뷰|piano ver|guitar ver|violin|drum cover/.test(t)) score -= 50;
+                // shorts / 짧은 영상 감점 (videoDuration=medium으로 대부분 걸러지지만 이중 안전장치)
+                if (/#shorts|쇼츠|\bshort\b/.test(t)) score -= 50;
                 if (/live ver|라이브 ver/.test(t)) score -= 1;
-                // 라이브 공연 영상은 약하게 감점 (단순 stage는 공식 무대 콘텐츠 많음)
                 if (/concert tour/.test(t)) score -= 2;
 
                 return { item, score };
