@@ -1283,6 +1283,141 @@ app.post('/api/live/viewers', async (req, res) => {
     }
 });
 
+// Desktop App → 서버 TikTok 데이터 수신 (HTTP POST 방식)
+app.post('/api/live/tiktok-data', async (req, res) => {
+    try {
+        const { userId, type, data: tiktokData } = req.body;
+        if (!userId || !type || !tiktokData) return res.json({ success: true });
+
+        if (type === 'member') {
+            // 입장 이벤트 소켓 emit
+            io.to(userId).emit('member-join', tiktokData);
+
+            // 세션 카운트
+            const sessMember = liveSessionMap.get(String(userId));
+            if (sessMember) {
+                sessMember.totalJoins = (sessMember.totalJoins || 0) + 1;
+                const cc = tiktokData.userCountry || tiktokData.countryCode || '';
+                if (cc) sessMember.countryMap[cc] = (sessMember.countryMap[cc] || 0) + 1;
+            }
+
+            // 비팔로워 시청자 DB 저장
+            try {
+                const followRole = tiktokData.followRole || 0;
+                if (tiktokData.uniqueId) {
+                    if (followRole === 0) {
+                        await AlgorithmViewer.findOneAndUpdate(
+                            { userId, uniqueId: tiktokData.uniqueId },
+                            {
+                                $set: {
+                                    nickname: tiktokData.nickname || tiktokData.uniqueId,
+                                    profilePictureUrl: tiktokData.profilePictureUrl || '',
+                                    lastSeenAt: new Date()
+                                },
+                                $inc: { visitCount: 1 },
+                                $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
+                            },
+                            { upsert: true, new: true }
+                        );
+                    } else if (followRole >= 1) {
+                        await AlgorithmViewer.findOneAndUpdate(
+                            { userId, uniqueId: tiktokData.uniqueId, status: { $in: ['pending', 'dm_sent'] } },
+                            {
+                                $set: {
+                                    status: 'followed',
+                                    nickname: tiktokData.nickname || tiktokData.uniqueId,
+                                    profilePictureUrl: tiktokData.profilePictureUrl || '',
+                                    lastSeenAt: new Date()
+                                }
+                            }
+                        );
+                    }
+                }
+            } catch (e) {
+                console.error('알고리즘 시청자 저장 오류 (HTTP):', e.message);
+            }
+
+            // 모더 감지
+            try {
+                const Moderator = require('./models/Moderator');
+                const mongoose  = require('mongoose');
+                const incomingUid = (tiktokData.uniqueId || '').trim().toLowerCase();
+                if (incomingUid) {
+                    const modUserId = mongoose.Types.ObjectId.isValid(userId)
+                        ? new mongoose.Types.ObjectId(userId) : userId;
+                    const mod = await Moderator.findOne({
+                        userId: modUserId,
+                        tiktokUniqueId: { $regex: new RegExp(`^${incomingUid}$`, 'i') }
+                    });
+                    if (mod) {
+                        io.to('overlay-' + String(userId)).emit('overlay-moderator-join', {
+                            uniqueId:    tiktokData.uniqueId,
+                            displayName: mod.displayName,
+                            profileImg:  mod.profileImg
+                        });
+                    }
+                }
+            } catch (modErr) {}
+
+        } else if (type === 'like') {
+            io.to(userId).emit('like-received', tiktokData);
+            emitModeratorActivity(userId, tiktokData.uniqueId);
+            const sessLike = liveSessionMap.get(String(userId));
+            if (sessLike) sessLike.totalLikes += (tiktokData.likeCount || 1);
+
+        } else if (type === 'gift') {
+            io.to(userId).emit('gift-received', tiktokData);
+            emitModeratorActivity(userId, tiktokData.uniqueId);
+            if (tiktokData.giftType !== 1 && tiktokData.isFinal !== false) {
+                const totalDiamonds = (tiktokData.diamondCount || 0) * (tiktokData.repeatCount || 1);
+                io.to(`overlay-${userId}`).emit('overlay-gift', {
+                    nickname: tiktokData.nickname || tiktokData.uniqueId || '익명',
+                    uniqueId: tiktokData.uniqueId || '',
+                    profilePictureUrl: tiktokData.profilePictureUrl || '',
+                    diamondCount: tiktokData.diamondCount || 0,
+                    repeatCount: tiktokData.repeatCount || 1,
+                    totalDiamonds,
+                    tier: totalDiamonds >= 1000 ? 'mega' : 'mid'
+                });
+            }
+            const sessGift = liveSessionMap.get(String(userId));
+            if (sessGift && tiktokData.isFinal !== false) {
+                sessGift.totalGifts += (tiktokData.repeatCount || 1);
+                sessGift.totalDiamonds = (sessGift.totalDiamonds || 0) + ((tiktokData.diamondCount || 0) * (tiktokData.repeatCount || 1));
+            }
+
+        } else if (type === 'social') {
+            io.to(userId).emit('social-event', tiktokData);
+            const sessSocial = liveSessionMap.get(String(userId));
+            if (sessSocial) {
+                if (tiktokData.isFollow) sessSocial.totalFollows = (sessSocial.totalFollows || 0) + 1;
+                if (tiktokData.isShare) sessSocial.totalShares = (sessSocial.totalShares || 0) + 1;
+            }
+
+        } else if (type === 'subscribe') {
+            io.to(userId).emit('subscribe-event', tiktokData);
+            const sessSub = liveSessionMap.get(String(userId));
+            if (sessSub) sessSub.totalSubscribes = (sessSub.totalSubscribes || 0) + 1;
+
+        } else if (type === 'stats') {
+            io.to(userId).emit('viewer-update', tiktokData);
+            const sessSt = liveSessionMap.get(String(userId));
+            if (sessSt) {
+                const viewers = tiktokData.viewerCount || 0;
+                if (viewers > sessSt.peakViewers) sessSt.peakViewers = viewers;
+                const hr = new Date().getHours();
+                if (!sessSt.hourlyMap[hr]) sessSt.hourlyMap[hr] = { viewerCount: 0, chatCount: 0 };
+                sessSt.hourlyMap[hr].viewerCount = Math.max(sessSt.hourlyMap[hr].viewerCount, viewers);
+            }
+        }
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('❌ /api/live/tiktok-data 처리 오류:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // 선물 수신 (무료 서비스)
 app.post('/api/live/gift', async (req, res) => {
     try {
