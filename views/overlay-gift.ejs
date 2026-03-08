@@ -211,6 +211,7 @@
         }).catch(() => {});
 
     socket.emit('join-overlay', userId);
+    socket.on('connect', () => { socket.emit('join-overlay', userId); });
     socket.on('overlay-gift', d => {
         const pts = d.totalDiamonds || d.diamondCount || 0;
         if (pts < MID_MIN) return; // 기준 미달 무시

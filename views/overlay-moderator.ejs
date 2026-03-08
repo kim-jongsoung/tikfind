@@ -154,6 +154,7 @@
 
     loadMods();
     socket.emit('join-overlay', userId);
+    socket.on('connect', () => { socket.emit('join-overlay', userId); });
 
     // 소켓: 모더 설정 변경 실시간 반영
     socket.on('moderator-update', () => loadMods());

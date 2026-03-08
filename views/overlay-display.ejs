@@ -311,6 +311,7 @@
 
         // 소켓 이벤트
         socket.emit('join-overlay', userId);
+        socket.on('connect', () => { socket.emit('join-overlay', userId); });
 
         socket.on('current-song', (data) => {
             currentSong = (data && data.title) ? data : null;
