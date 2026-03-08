@@ -52,6 +52,11 @@ router.get('/overlay/:userId/speech', (req, res) => {
     res.render('overlay-speech', { title: 'TikFind Speech Overlay', userId: req.params.userId });
 });
 
+// 번역 자막 마이크 컨트롤러 (Chrome에서 열기 - Web Speech API)
+router.get('/overlay/:userId/speech-mic', (req, res) => {
+    res.render('overlay-speech-mic', { title: 'TikFind 마이크', userId: req.params.userId });
+});
+
 router.get('/dashboard/billing', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/billing.html'));
 });

@@ -143,14 +143,8 @@
 
     // ── 설정 ──
     let activeLangs = ['en'];
-    const langNames  = { en:'EN', ja:'JA', zh:'ZH', es:'ES', fr:'FR', de:'DE', th:'TH', vi:'VI', id:'ID' };
-    const langLabels = { en:'English', ja:'日本語', zh:'中文', es:'Español', fr:'Français', de:'Deutsch', th:'ไทย', vi:'Tiếng Việt', id:'Bahasa' };
-
-    // 번역 상태 { lang: text }
-    const translations = {};
-    let interimText = '';
-    let translateTimer = null;
-    let lastFinal = '';
+    const langNames = { en:'EN', ja:'JA', zh:'ZH', es:'ES', fr:'FR', de:'DE', th:'TH', vi:'VI', id:'ID' };
+    let hideTimer = null;
 
     // ── DOM 빌드 ──
     function buildRows(langs) {
@@ -160,20 +154,15 @@
             const row = document.createElement('div');
             row.className = 'lang-row';
             row.id = 'row-' + lang;
-
             const badge = document.createElement('span');
             badge.className = 'lang-badge badge-' + lang;
             badge.textContent = langNames[lang] || lang.toUpperCase();
-
             const text = document.createElement('span');
             text.className = 'lang-text';
             text.id = 'text-' + lang;
-            text.textContent = '';
-
             row.appendChild(badge);
             row.appendChild(text);
             wrap.appendChild(row);
-            translations[lang] = '';
         });
     }
 
@@ -189,15 +178,13 @@
         buildRows(activeLangs);
     }
 
-    // ── 설정 실시간 업데이트 ──
-    socket.on('speech-settings-update', (data) => {
-        if (data.langs) {
-            activeLangs = data.langs.slice(0, 2);
-            buildRows(activeLangs);
-        }
-    });
+    function hideAll() {
+        activeLangs.forEach(lang => {
+            const row = document.getElementById('row-' + lang);
+            if (row) row.classList.remove('visible');
+        });
+    }
 
-    // ── 텍스트 표시 ──
     function showInterim(text) {
         activeLangs.slice(0, 2).forEach(lang => {
             const el = document.getElementById('text-' + lang);
@@ -218,108 +205,30 @@
             const row = document.getElementById('row-' + lang);
             if (row) row.classList.toggle('visible', !!text);
         });
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(hideAll, 6000);
     }
 
-    function hideAll() {
-        activeLangs.forEach(lang => {
-            const row = document.getElementById('row-' + lang);
-            if (row) row.classList.remove('visible');
-        });
-    }
+    // ── 소켓 이벤트 수신 (speech-mic 페이지에서 전송) ──
+    socket.on('speech-settings-update', (data) => {
+        if (data.langs) { activeLangs = data.langs.slice(0, 2); buildRows(activeLangs); }
+    });
+    socket.on('speech-interim', (data) => {
+        if (!document.body.classList.contains('preview-mode')) showInterim(data.text);
+    });
+    socket.on('speech-translated', (data) => {
+        if (!document.body.classList.contains('preview-mode')) showTranslations(data.translations);
+    });
 
-    // ── 번역 요청 ──
-    async function requestTranslation(text) {
-        if (!text || !text.trim()) return;
-        try {
-            const res  = await fetch('/api/speech/translate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text.trim(), langs: activeLangs, userId })
-            });
-            const data = await res.json();
-            if (data.success && data.translations.length) {
-                showTranslations(data.translations);
-                // 5초 후 자동 숨김
-                clearTimeout(translateTimer);
-                translateTimer = setTimeout(hideAll, 5000);
-            }
-        } catch(e) {}
-    }
-
-    // ── Web Speech API ──
-    const mic = document.getElementById('mic-indicator');
-    const permNotice = document.getElementById('permission-notice');
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-        mic.className = 'error';
-        permNotice.textContent = '⚠️ 이 브라우저는 음성 인식을 지원하지 않습니다 (Chrome 필요)';
-        permNotice.classList.remove('hidden');
-    } else {
-        const recog = new SpeechRecognition();
-        recog.continuous     = true;
-        recog.interimResults = true;
-        recog.lang           = 'ko-KR';
-        recog.maxAlternatives = 1;
-
-        recog.onstart = () => {
-            mic.className = 'active';
-            permNotice.classList.add('hidden');
-        };
-
-        recog.onerror = (e) => {
-            if (e.error === 'not-allowed') {
-                mic.className = 'error';
-                permNotice.textContent = '🚫 마이크 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.';
-                permNotice.classList.remove('hidden');
-            } else if (e.error === 'no-speech') {
-                // 무시
-            } else {
-                mic.className = 'waiting';
-            }
-        };
-
-        recog.onend = () => {
-            mic.className = 'waiting';
-            // 자동 재시작
-            setTimeout(() => {
-                try { recog.start(); } catch(e) {}
-            }, 300);
-        };
-
-        recog.onresult = (e) => {
-            let interim = '';
-            let finalText = '';
-
-            for (let i = e.resultIndex; i < e.results.length; i++) {
-                const t = e.results[i][0].transcript;
-                if (e.results[i].isFinal) {
-                    finalText += t;
-                } else {
-                    interim += t;
-                }
-            }
-
-            if (finalText) {
-                lastFinal = finalText.trim();
-                showInterim('');
-                clearTimeout(translateTimer);
-                requestTranslation(lastFinal);
-            } else if (interim) {
-                showInterim(interim);
-            }
-        };
-
-        // 시작
-        loadSettings().then(() => {
-            try { recog.start(); } catch(e) {}
-        });
-    }
+    // 초기화
+    loadSettings();
 
     // ── 테스트 모드 ──
     const testParam = new URLSearchParams(location.search).get('test');
     if (testParam === '1') {
         document.body.classList.add('preview-mode');
+        document.getElementById('mic-indicator').style.display = 'none';
+        document.getElementById('permission-notice').classList.add('hidden');
 
         const label = document.createElement('div');
         label.textContent = '🎤 번역 자막 미리보기 모드';
@@ -335,15 +244,19 @@
         let sIdx = 0;
 
         btn.addEventListener('click', async () => {
-            document.getElementById('permission-notice').classList.add('hidden');
-            mic.className = 'active';
+            await loadSettings();
             const text = samples[sIdx++ % samples.length];
             showInterim(text);
-            await loadSettings();
-            setTimeout(() => requestTranslation(text), 600);
+            try {
+                const res = await fetch('/api/speech/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text, langs: activeLangs, userId })
+                });
+                const data = await res.json();
+                if (data.success) showTranslations(data.translations);
+            } catch(e) {}
         });
-
-        loadSettings();
     }
 </script>
 </body>

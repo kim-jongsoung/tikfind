@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind 마이크 (번역 자막)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            min-height: 100vh;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Noto Sans KR', sans-serif;
+            color: #f1f5f9;
+            padding: 24px;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 20px;
+            padding: 36px 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+            text-align: center;
+        }
+        h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; color: #f8fafc; }
+        .sub { font-size: 13px; color: #94a3b8; margin-bottom: 28px; }
+
+        /* 마이크 상태 */
+        .mic-wrap {
+            width: 90px; height: 90px;
+            border-radius: 50%;
+            background: rgba(34,197,94,0.12);
+            border: 3px solid rgba(34,197,94,0.4);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px;
+            transition: all 0.3s;
+        }
+        .mic-wrap.listening {
+            background: rgba(34,197,94,0.2);
+            border-color: #22c55e;
+            animation: ring 1.5s ease-in-out infinite;
+        }
+        .mic-wrap.error {
+            background: rgba(239,68,68,0.15);
+            border-color: #ef4444;
+        }
+        .mic-wrap.waiting {
+            background: rgba(245,158,11,0.12);
+            border-color: #f59e0b;
+        }
+        @keyframes ring {
+            0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+            50%      { box-shadow: 0 0 0 14px rgba(34,197,94,0); }
+        }
+        .mic-icon { font-size: 36px; }
+
+        /* 상태 텍스트 */
+        #status { font-size: 14px; font-weight: 700; color: #22c55e; margin-bottom: 8px; }
+        #interim-box {
+            min-height: 48px;
+            background: #0f172a;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 15px;
+            color: #cbd5e1;
+            font-style: italic;
+            margin-bottom: 20px;
+            text-align: left;
+            word-break: break-all;
+        }
+
+        /* 언어 뱃지 */
+        .lang-row {
+            display: flex; align-items: center; gap: 10px;
+            background: #0f172a; border-radius: 10px;
+            padding: 10px 14px; margin-bottom: 8px;
+            text-align: left;
+        }
+        .lang-badge {
+            font-size: 11px; font-weight: 900;
+            padding: 2px 7px; border-radius: 4px;
+            text-transform: uppercase; flex-shrink: 0;
+        }
+        .badge-en { background: rgba(59,130,246,0.85); color:#fff; }
+        .badge-ja { background: rgba(239,68,68,0.85);  color:#fff; }
+        .badge-zh { background: rgba(234,179,8,0.85);  color:#fff; }
+        .badge-es { background: rgba(34,197,94,0.85);  color:#fff; }
+        .badge-fr { background: rgba(168,85,247,0.85); color:#fff; }
+        .badge-de { background: rgba(249,115,22,0.85); color:#fff; }
+        .badge-th { background: rgba(20,184,166,0.85); color:#fff; }
+        .badge-vi { background: rgba(236,72,153,0.85); color:#fff; }
+        .badge-id { background: rgba(100,116,139,0.85);color:#fff; }
+        .lang-text { font-size: 15px; color: #f1f5f9; word-break: break-all; }
+
+        #translation-wrap { margin-bottom: 20px; }
+
+        /* 버튼 */
+        .btn-start {
+            width: 100%; padding: 14px;
+            background: #22c55e; color: #fff;
+            border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 700;
+            cursor: pointer; transition: background 0.2s;
+        }
+        .btn-start:hover { background: #16a34a; }
+        .btn-start:disabled { background: #334155; color: #64748b; cursor: default; }
+
+        .notice {
+            margin-top: 16px; font-size: 12px; color: #64748b; line-height: 1.6;
+        }
+        .notice b { color: #94a3b8; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h1>🎤 번역 자막 마이크</h1>
+    <p class="sub">이 창을 열어두면 마이크 음성을 인식해 방송 화면에 자막이 표시됩니다</p>
+
+    <div class="mic-wrap waiting" id="micWrap">
+        <span class="mic-icon">🎤</span>
+    </div>
+    <div id="status">시작 버튼을 눌러주세요</div>
+    <div id="interim-box">— 음성 인식 대기 중 —</div>
+
+    <div id="translation-wrap"></div>
+
+    <button class="btn-start" id="startBtn" onclick="startMic()">▶ 마이크 시작</button>
+
+    <p class="notice">
+        <b>사용 방법:</b><br>
+        1. 이 창은 <b>방송 중 백그라운드</b>로 열어두기<br>
+        2. TikTok Live Studio에 번역 자막 위젯 URL 추가<br>
+        3. 말하면 자동으로 번역 자막이 방송에 표시됨
+    </p>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const userId = '<%= userId %>';
+    const socket = io();
+    socket.emit('join-overlay', userId);
+    socket.on('connect', () => socket.emit('join-overlay', userId));
+
+    let activeLangs = ['en'];
+    const langNames = { en:'EN', ja:'JA', zh:'ZH', es:'ES', fr:'FR', de:'DE', th:'TH', vi:'VI', id:'ID' };
+
+    // 설정 로드
+    async function loadSettings() {
+        try {
+            const res  = await fetch('/api/speech-settings?userId=' + userId);
+            const data = await res.json();
+            if (data.success && data.langs && data.langs.length) {
+                activeLangs = data.langs.slice(0, 2);
+            }
+        } catch(e) {}
+        renderLangRows();
+    }
+
+    function renderLangRows() {
+        const wrap = document.getElementById('translation-wrap');
+        wrap.innerHTML = '';
+        activeLangs.forEach(lang => {
+            const row = document.createElement('div');
+            row.className = 'lang-row';
+            row.id = 'trow-' + lang;
+            const badge = document.createElement('span');
+            badge.className = 'lang-badge badge-' + lang;
+            badge.textContent = langNames[lang] || lang.toUpperCase();
+            const text = document.createElement('span');
+            text.className = 'lang-text';
+            text.id = 'ttext-' + lang;
+            text.textContent = '—';
+            row.appendChild(badge);
+            row.appendChild(text);
+            wrap.appendChild(row);
+        });
+    }
+
+    socket.on('speech-settings-update', (data) => {
+        if (data.langs) { activeLangs = data.langs.slice(0, 2); renderLangRows(); }
+    });
+
+    // 번역 요청
+    async function requestTranslation(text) {
+        try {
+            const res = await fetch('/api/speech/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text.trim(), langs: activeLangs, userId })
+            });
+            const data = await res.json();
+            if (data.success && data.translations.length) {
+                // 위젯으로 소켓 전송
+                socket.emit('speech-translated-send', { userId, translations: data.translations });
+                // 이 창에도 표시
+                data.translations.forEach(({ lang, text: t }) => {
+                    const el = document.getElementById('ttext-' + lang);
+                    if (el) el.textContent = t;
+                });
+            }
+        } catch(e) {}
+    }
+
+    // Web Speech API
+    let recog = null;
+
+    function startMic() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            document.getElementById('status').textContent = '⚠️ Chrome 브라우저에서만 지원됩니다';
+            document.getElementById('micWrap').className = 'mic-wrap error';
+            return;
+        }
+
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('startBtn').textContent = '🎤 인식 중...';
+
+        recog = new SpeechRecognition();
+        recog.continuous     = true;
+        recog.interimResults = true;
+        recog.lang           = 'ko-KR';
+        recog.maxAlternatives = 1;
+
+        recog.onstart = () => {
+            document.getElementById('micWrap').className = 'mic-wrap listening';
+            document.getElementById('status').textContent = '🟢 음성 인식 중';
+            document.getElementById('status').style.color = '#22c55e';
+        };
+
+        recog.onerror = (e) => {
+            if (e.error === 'not-allowed') {
+                document.getElementById('micWrap').className = 'mic-wrap error';
+                document.getElementById('status').textContent = '🚫 마이크 권한이 거부되었습니다';
+                document.getElementById('status').style.color = '#ef4444';
+                document.getElementById('startBtn').disabled = false;
+                document.getElementById('startBtn').textContent = '▶ 마이크 시작';
+            }
+        };
+
+        recog.onend = () => {
+            document.getElementById('micWrap').className = 'mic-wrap waiting';
+            document.getElementById('status').textContent = '🟡 재연결 중...';
+            document.getElementById('status').style.color = '#f59e0b';
+            setTimeout(() => { try { recog.start(); } catch(e) {} }, 400);
+        };
+
+        recog.onresult = (e) => {
+            let interim = '';
+            let finalText = '';
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const t = e.results[i][0].transcript;
+                if (e.results[i].isFinal) finalText += t;
+                else interim += t;
+            }
+            if (finalText) {
+                document.getElementById('interim-box').textContent = finalText.trim();
+                // 위젯에 interim 숨김 + 번역 전송
+                socket.emit('speech-interim-send', { userId, text: '' });
+                requestTranslation(finalText.trim());
+            } else if (interim) {
+                document.getElementById('interim-box').textContent = interim;
+                socket.emit('speech-interim-send', { userId, text: interim });
+            }
+        };
+
+        recog.start();
+    }
+
+    loadSettings();
+</script>
+</body>
+</html>

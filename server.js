@@ -2061,6 +2061,19 @@ io.on('connection', (socket) => {
         })));
     });
 
+    // speech-mic 페이지 → overlay 위젯: 음성 인식 중간 결과 전달
+    socket.on('speech-interim-send', (data) => {
+        const room = `overlay-${data.userId}`;
+        io.to(room).emit('speech-interim', { text: data.text || '' });
+    });
+
+    // speech-mic 페이지 → overlay 위젯: 번역 결과 전달
+    socket.on('speech-translated-send', (data) => {
+        const room = `overlay-${data.userId}`;
+        io.to(room).emit('speech-translated', { translations: data.translations || [] });
+        console.log(`🗣️ speech-translated → ${room} (${(data.translations||[]).length}개 언어)`);
+    });
+
     // 대시보드 → 오버레이: 현재 재생 곡 전송
     socket.on('overlay-now-playing', (data) => {
         const { userId: targetUserId, title, artist, requester, thumbnail } = data;
