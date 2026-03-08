@@ -212,7 +212,14 @@
     // 소켓: 모더 활동 이벤트 (채팅/선물/좋아요)
     socket.on('overlay-moderator-activity', (data) => {
         const uid = (data.uniqueId || '').trim().toLowerCase();
-        if (!uid || !activeMods.has(uid)) return;
+        if (!uid) return;
+        if (!activeMods.has(uid)) {
+            // 카드 없으면 자동 추가 (방송 중 입장한 모더 대응)
+            addModCard(uid, {
+                displayName: data.displayName,
+                profileImg:  data.profileImg || ''
+            });
+        }
         resetActivityTimer(uid);
     });
 
