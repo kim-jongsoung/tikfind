@@ -11,7 +11,7 @@
 
         html, body {
             width: 800px;
-            height: 100px;
+            height: 150px;
             background: transparent;
             overflow: hidden;
             font-family: 'Noto Sans KR', 'Noto Sans JP', 'Noto Sans SC', sans-serif;
@@ -30,25 +30,23 @@
             width: 800px;
             display: flex;
             flex-direction: column;
+            gap: 10px;
         }
 
         /* 각 언어 행 */
         .lang-row {
-            height: 50px;
+            height: 70px;
             display: flex;
             align-items: center;
             background: rgba(0, 0, 0, 0.30);
             padding: 0 16px;
             gap: 10px;
             overflow: hidden;
+            border-radius: 8px;
             opacity: 0;
             transition: opacity 0.4s ease;
         }
         .lang-row.visible { opacity: 1; }
-        .lang-row:first-child { border-radius: 8px 8px 0 0; }
-        .lang-row:last-child  { border-radius: 0 0 8px 8px; }
-        .lang-row:only-child  { border-radius: 8px; }
-        .lang-row + .lang-row { border-top: 1px solid rgba(255,255,255,0.08); }
 
         /* 언어 배지 */
         .lang-badge {
@@ -88,31 +86,9 @@
             font-style: italic;
         }
 
-        /* 마이크 상태 인디케이터 */
-        #mic-indicator {
-            position: fixed;
-            top: 6px;
-            right: 8px;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #22c55e;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        #mic-indicator.active  { opacity: 1; animation: pulse 1.2s ease-in-out infinite; }
-        #mic-indicator.error   { opacity: 1; background: #ef4444; animation: none; }
-        #mic-indicator.waiting { opacity: 1; background: #f59e0b; animation: none; }
-        @keyframes pulse {
-            0%,100% { transform: scale(1);   opacity: 1; }
-            50%      { transform: scale(1.5); opacity: 0.6; }
-        }
-
     </style>
 </head>
 <body>
-
-<div id="mic-indicator"></div>
 
 <div id="speech-wrap">
     <!-- 언어 행은 JS에서 동적 생성 -->
@@ -170,14 +146,7 @@
     }
 
     function showInterim(text) {
-        activeLangs.slice(0, 2).forEach(lang => {
-            const el = document.getElementById('text-' + lang);
-            if (!el) return;
-            el.textContent = text || '';
-            el.className = 'lang-text interim';
-            const row = document.getElementById('row-' + lang);
-            if (row) row.classList.toggle('visible', !!text);
-        });
+        // 한국어 원문 표시 안 함
     }
 
     function showTranslations(results) {
@@ -211,7 +180,6 @@
     const testParam = new URLSearchParams(location.search).get('test');
     if (testParam === '1') {
         document.body.classList.add('preview-mode');
-        document.getElementById('mic-indicator').style.display = 'none';
 
         const label = document.createElement('div');
         label.textContent = '🎤 번역 자막 미리보기 모드';
@@ -229,7 +197,6 @@
         btn.addEventListener('click', async () => {
             await loadSettings();
             const text = samples[sIdx++ % samples.length];
-            showInterim(text);
             try {
                 const res = await fetch('/api/speech/translate', {
                     method: 'POST',
