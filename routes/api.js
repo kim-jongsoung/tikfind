@@ -1709,7 +1709,7 @@ router.post('/moderator', requireAuth, async (req, res) => {
         });
         // 실시간 반영
         const io = req.app.get('io');
-        if (io) io.to(req.user._id.toString()).emit('moderator-update');
+        if (io) io.to('overlay-' + req.user._id.toString()).emit('moderator-update');
         res.json({ success: true, moderator: mod });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
@@ -1725,7 +1725,7 @@ router.patch('/moderator/:id', requireAuth, async (req, res) => {
         if (profileImg !== undefined) update.profileImg = profileImg;
         await Moderator.findOneAndUpdate({ _id: req.params.id, userId: req.user._id }, { $set: update });
         const io = req.app.get('io');
-        if (io) io.to(req.user._id.toString()).emit('moderator-update');
+        if (io) io.to('overlay-' + req.user._id.toString()).emit('moderator-update');
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
@@ -1737,7 +1737,7 @@ router.delete('/moderator/:id', requireAuth, async (req, res) => {
     try {
         await Moderator.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
         const io = req.app.get('io');
-        if (io) io.to(req.user._id.toString()).emit('moderator-update');
+        if (io) io.to('overlay-' + req.user._id.toString()).emit('moderator-update');
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });

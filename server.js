@@ -1982,7 +1982,7 @@ io.on('connection', (socket) => {
                 tiktokUniqueId: { $regex: new RegExp(`^${uid}$`, 'i') }
             });
             if (mod) {
-                io.to(userId).emit('overlay-moderator-activity', {
+                io.to('overlay-' + String(userId)).emit('overlay-moderator-activity', {
                     uniqueId,
                     displayName: mod.displayName,
                     profileImg:  mod.profileImg
@@ -2267,7 +2267,7 @@ io.on('connection', (socket) => {
                         tiktokUniqueId: { $regex: new RegExp(`^${incomingUid}$`, 'i') }
                     });
                     if (mod) {
-                        io.to(userId).emit('overlay-moderator-join', {
+                        io.to('overlay-' + String(userId)).emit('overlay-moderator-join', {
                             uniqueId:    tiktokData.uniqueId,
                             displayName: mod.displayName,
                             profileImg:  mod.profileImg
