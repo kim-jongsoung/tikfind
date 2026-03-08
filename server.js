@@ -818,6 +818,51 @@ const songRequestService = new SongRequestService();
 // 닉네임 발음 캐시: "userId:nickname" → "발음"
 const nicknamePronunciationCache = new Map();
 
+// ===== 전역 모더 감지 헬퍼 함수 (HTTP 경로 + processChatMessage 공유) =====
+async function globalEmitModeratorJoin(userId, tiktokData) {
+    if (!tiktokData?.uniqueId) return;
+    try {
+        const Moderator = require('./models/Moderator');
+        const mongoose  = require('mongoose');
+        const incomingUid = tiktokData.uniqueId.trim().toLowerCase();
+        const modUserId = mongoose.Types.ObjectId.isValid(userId)
+            ? new mongoose.Types.ObjectId(userId) : userId;
+        const mod = await Moderator.findOne({
+            userId: modUserId,
+            tiktokUniqueId: { $regex: new RegExp(`^${incomingUid}$`, 'i') }
+        });
+        if (mod) {
+            io.to('overlay-' + String(userId)).emit('overlay-moderator-join', {
+                uniqueId:    tiktokData.uniqueId,
+                displayName: mod.displayName,
+                profileImg:  mod.profileImg
+            });
+        }
+    } catch(e) {}
+}
+
+async function globalEmitModeratorActivity(userId, uniqueId) {
+    if (!uniqueId) return;
+    try {
+        const Moderator = require('./models/Moderator');
+        const mongoose  = require('mongoose');
+        const uid = uniqueId.trim().toLowerCase();
+        const modUserId = mongoose.Types.ObjectId.isValid(userId)
+            ? new mongoose.Types.ObjectId(userId) : userId;
+        const mod = await Moderator.findOne({
+            userId: modUserId,
+            tiktokUniqueId: { $regex: new RegExp(`^${uid}$`, 'i') }
+        });
+        if (mod) {
+            io.to('overlay-' + String(userId)).emit('overlay-moderator-activity', {
+                uniqueId,
+                displayName: mod.displayName,
+                profileImg:  mod.profileImg
+            });
+        }
+    } catch(e) {}
+}
+
 // ===== 채팅 메시지 공통 처리 함수 (TikTokLiveService + /api/live/chat 공유) =====
 async function processChatMessage(chatData) {
     const { userId, username, message, uniqueId, nickname, badges, userBadges,
@@ -968,7 +1013,10 @@ async function processChatMessage(chatData) {
         }
     }
 
-    // 5. 클라이언트 전송
+    // 5. 모더 활동 emit
+    globalEmitModeratorActivity(userId, uniqueId || username).catch(() => {});
+
+    // 6. 클라이언트 전송
     io.to(userId).emit('chat-message', {
         username,
         uniqueId: uniqueId || username,
@@ -1292,6 +1340,9 @@ app.post('/api/live/tiktok-data', async (req, res) => {
         if (type === 'member') {
             // 입장 이벤트 소켓 emit
             io.to(userId).emit('member-join', tiktokData);
+
+            // 모더 입장 감지
+            globalEmitModeratorJoin(userId, tiktokData).catch(() => {});
 
             // 세션 카운트
             const sessMember = liveSessionMap.get(String(userId));
@@ -2103,27 +2154,9 @@ io.on('connection', (socket) => {
     });
     
     // Desktop App → 웹: TikTok 데이터 전송
-    // 모더 활동 감지 헬퍼 (chat/gift/like/social 공통 사용)
-    async function emitModeratorActivity(userId, uniqueId) {
-        if (!uniqueId) return;
-        try {
-            const Moderator = require('./models/Moderator');
-            const mongoose  = require('mongoose');
-            const uid = uniqueId.trim().toLowerCase();
-            const modUserId = mongoose.Types.ObjectId.isValid(userId)
-                ? new mongoose.Types.ObjectId(userId) : userId;
-            const mod = await Moderator.findOne({
-                userId: modUserId,
-                tiktokUniqueId: { $regex: new RegExp(`^${uid}$`, 'i') }
-            });
-            if (mod) {
-                io.to('overlay-' + String(userId)).emit('overlay-moderator-activity', {
-                    uniqueId,
-                    displayName: mod.displayName,
-                    profileImg:  mod.profileImg
-                });
-            }
-        } catch(e) {}
+    // 모더 활동 감지 헬퍼 → 전역 함수 위임
+    function emitModeratorActivity(userId, uniqueId) {
+        return globalEmitModeratorActivity(userId, uniqueId);
     }
 
     socket.on('tiktok-data', async (data) => {
