@@ -2013,6 +2013,9 @@ function emitQueueUpdate(userId) {
 // userId별 Desktop App 소켓 ID 추적 (첫 번째 연결된 앱만 명령 수신)
 const desktopSocketMap = new Map();
 
+// 현재 재생 중인 곡 메모리 (userId → { title, artist, requester, thumbnail })
+const currentSongMap = new Map();
+
 // 알고리즘 리포트 - 방송 세션 추적 (userId → { sessionId, startedAt, tiktokId, countryMap, hourlyMap, peakViewers, totalChats, totalGifts, totalLikes, foreignChatCount, languages })
 const liveSessionMap = new Map();
 
@@ -2042,6 +2045,12 @@ io.on('connection', (socket) => {
         socket.join(overlayRoom);
         console.log(`🎬 오버레이 룸 참가: ${overlayRoom}`);
         
+        // 현재곡 즉시 전송 (재연결 복구)
+        const savedSong = currentSongMap.get(String(overlayUserId));
+        if (savedSong) {
+            socket.emit('current-song', savedSong);
+        }
+
         // 현재 큐 즉시 전송
         const currentQueue = songRequestService.getQueue(overlayUserId);
         socket.emit('song-queue', currentQueue.map(s => ({
@@ -2057,6 +2066,14 @@ io.on('connection', (socket) => {
         const { userId: targetUserId, title, artist, requester, thumbnail } = data;
         const overlayRoom = `overlay-${targetUserId}`;
         console.log(`🎬 오버레이 현재 재생 곡 전송: ${title} - ${artist}`);
+
+        // 현재곡 메모리 저장 (재연결 시 복구용)
+        if (title) {
+            currentSongMap.set(String(targetUserId), { title, artist, requester, thumbnail });
+        } else {
+            currentSongMap.delete(String(targetUserId));
+        }
+
         io.to(overlayRoom).emit('current-song', { title, artist, requester, thumbnail });
 
         // 큐도 함께 전송
