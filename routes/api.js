@@ -1786,10 +1786,10 @@ Text to translate: "${text}"`;
     }
 });
 
-// GET /api/speech-settings?userId=xxx  (오버레이에서 공개 조회)
+// GET /api/speech-settings?userId=xxx  (오버레이에서 공개 조회 또는 로그인 유저 조회)
 router.get('/speech-settings', async (req, res) => {
     try {
-        const userId = req.query.userId;
+        const userId = req.query.userId || (req.user && req.user._id);
         if (!userId) return res.json({ success: true, langs: ['en'] });
         const user = await User.findById(userId).select('speechLangs').lean();
         res.json({ success: true, langs: (user && user.speechLangs && user.speechLangs.length) ? user.speechLangs : ['en'] });
