@@ -223,8 +223,9 @@
         recog = new SpeechRecognition();
         recog.continuous     = true;
         recog.interimResults = true;
-        recog.lang           = 'ko-KR';
+        recog.lang           = navigator.language || 'ko-KR';
         recog.maxAlternatives = 1;
+        console.log('🎤 인식 언어:', recog.lang);
 
         recog.onstart = () => {
             document.getElementById('micWrap').className = 'mic-wrap listening';
@@ -233,12 +234,19 @@
         };
 
         recog.onerror = (e) => {
+            console.error('🎤 인식 오류:', e.error);
+            document.getElementById('micWrap').className = 'mic-wrap error';
+            document.getElementById('status').style.color = '#ef4444';
             if (e.error === 'not-allowed') {
-                document.getElementById('micWrap').className = 'mic-wrap error';
                 document.getElementById('status').textContent = '🚫 마이크 권한이 거부되었습니다';
-                document.getElementById('status').style.color = '#ef4444';
                 document.getElementById('startBtn').disabled = false;
                 document.getElementById('startBtn').textContent = '▶ 마이크 시작';
+            } else if (e.error === 'no-speech') {
+                document.getElementById('status').textContent = '🔇 음성이 감지되지 않습니다 (마이크 확인)';
+            } else if (e.error === 'audio-capture') {
+                document.getElementById('status').textContent = '🎤 마이크를 찾을 수 없습니다';
+            } else {
+                document.getElementById('status').textContent = '⚠️ 오류: ' + e.error;
             }
         };
 
