@@ -144,17 +144,33 @@
                         <td class="px-4 py-3 text-center">
                             <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${s.isActive !== false ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'}">${s.isActive !== false ? '활성' : '비활성'}</span>
                         </td>
-                        <td class="px-4 py-3 text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                ${s.isActive !== false ? `
-                                <button onclick="deactivateSong('${s._id}', this)" title="비활성화 (캐시 히트 방지)"
-                                    class="px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded text-xs">
-                                    <i class="fas fa-ban"></i>
-                                </button>` : ''}
-                                <button onclick="deleteSong('${s._id}', this)" title="완전 삭제"
-                                    class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-600 rounded text-xs">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-col gap-1">
+                                <div class="flex items-center gap-1">
+                                    ${s.isActive !== false ? `
+                                    <button onclick="deactivateSong('${s._id}', this)" title="비활성화"
+                                        class="px-2 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded text-xs">
+                                        <i class="fas fa-ban"></i>
+                                    </button>` : ''}
+                                    <button onclick="deleteSong('${s._id}', this)" title="완전 삭제"
+                                        class="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-600 rounded text-xs">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    <button onclick="toggleReplaceRow('${s._id}')" title="영상 교체"
+                                        class="px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded text-xs">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </button>
+                                </div>
+                                <div id="replace-row-${s._id}" class="hidden flex gap-1 mt-1">
+                                    <input type="text" id="replace-input-${s._id}"
+                                        placeholder="YouTube URL 또는 videoId"
+                                        class="border border-gray-300 rounded px-2 py-1 text-xs flex-1 min-w-0 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                        onkeydown="if(event.key==='Enter') replaceSong('${s._id}')">
+                                    <button onclick="replaceSong('${s._id}')" 
+                                        class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs whitespace-nowrap">
+                                        교체
+                                    </button>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -191,6 +207,39 @@
                 if (data.success) { showAlert('비활성화 완료', 'green'); loadSongs(currentPage); }
                 else showAlert(data.message, 'red');
             } catch (e) { showAlert(e.message, 'red'); btn.disabled = false; }
+        }
+
+        function toggleReplaceRow(id) {
+            const row = document.getElementById(`replace-row-${id}`);
+            row.classList.toggle('hidden');
+            if (!row.classList.contains('hidden')) {
+                document.getElementById(`replace-input-${id}`).focus();
+            }
+        }
+
+        async function replaceSong(id) {
+            const input = document.getElementById(`replace-input-${id}`);
+            const url = input.value.trim();
+            if (!url) { input.focus(); return; }
+            input.disabled = true;
+            try {
+                const res = await fetch(`/admin/api/songs/cache/${id}/video`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showAlert(`교체 완료: ${data.title} - ${data.artist} → ${data.videoId}`, 'green');
+                    loadSongs(currentPage);
+                } else {
+                    showAlert(data.message, 'red');
+                    input.disabled = false;
+                }
+            } catch (e) {
+                showAlert(e.message, 'red');
+                input.disabled = false;
+            }
         }
 
         async function deleteSong(id, btn) {

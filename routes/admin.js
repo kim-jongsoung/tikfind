@@ -789,6 +789,43 @@ router.get('/songs/cache', async (req, res) => {
     }
 });
 
+// videoId 교체 (YouTube URL 또는 videoId 직접 입력)
+router.patch('/songs/cache/:id/video', async (req, res) => {
+    try {
+        const { url } = req.body;
+        if (!url) return res.status(400).json({ success: false, message: 'url 필요' });
+
+        // YouTube URL에서 videoId 추출 (다양한 형식 지원)
+        let videoId = url.trim();
+        const patterns = [
+            /[?&]v=([A-Za-z0-9_-]{11})/,
+            /youtu\.be\/([A-Za-z0-9_-]{11})/,
+            /embed\/([A-Za-z0-9_-]{11})/,
+            /shorts\/([A-Za-z0-9_-]{11})/
+        ];
+        for (const p of patterns) {
+            const m = url.match(p);
+            if (m) { videoId = m[1]; break; }
+        }
+        // 11자리 videoId만 남기기
+        if (!/^[A-Za-z0-9_-]{11}$/.test(videoId)) {
+            return res.status(400).json({ success: false, message: '유효한 YouTube URL 또는 videoId(11자리)를 입력하세요.' });
+        }
+
+        const thumbnail = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        const song = await PopularSong.findByIdAndUpdate(
+            req.params.id,
+            { $set: { videoId, thumbnail, isActive: true } },
+            { new: true }
+        );
+        if (!song) return res.status(404).json({ success: false, message: '곡을 찾을 수 없습니다.' });
+        res.json({ success: true, videoId, thumbnail, title: song.title, artist: song.artist });
+    } catch (e) {
+        if (e.code === 11000) return res.status(400).json({ success: false, message: '이미 동일한 videoId가 존재합니다.' });
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 // 개별 곡 비활성화 (isActive: false) - 캐시 히트 방지
 router.patch('/songs/cache/:id/deactivate', async (req, res) => {
     try {
