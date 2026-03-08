@@ -108,27 +108,11 @@
             50%      { transform: scale(1.5); opacity: 0.6; }
         }
 
-        /* 권한 안내 (마이크 허용 전) */
-        #permission-notice {
-            position: fixed;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0,0,0,0.7);
-            color: #fff;
-            font-size: 13px;
-            font-weight: 700;
-            gap: 8px;
-            border-radius: 8px;
-        }
-        #permission-notice.hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div id="mic-indicator"></div>
-<div id="permission-notice">🎤 마이크 권한을 허용해 주세요</div>
 
 <div id="speech-wrap">
     <!-- 언어 행은 JS에서 동적 생성 -->
@@ -228,7 +212,6 @@
     if (testParam === '1') {
         document.body.classList.add('preview-mode');
         document.getElementById('mic-indicator').style.display = 'none';
-        document.getElementById('permission-notice').classList.add('hidden');
 
         const label = document.createElement('div');
         label.textContent = '🎤 번역 자막 미리보기 모드';
