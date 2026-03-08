@@ -759,5 +759,79 @@ router.post('/plan-limits', logAdminAction('plan_limits_update'), async (req, re
     }
 });
 
+// ==================== POPULAR SONG CACHE MANAGEMENT ====================
+const PopularSong = require('../models/PopularSong');
+
+// 캐시 목록 조회 (검색/페이징)
+router.get('/songs/cache', async (req, res) => {
+    try {
+        const { q, page = 1, limit = 30, source } = req.query;
+        const query = {};
+        if (q) {
+            query.$or = [
+                { title: new RegExp(q, 'i') },
+                { artist: new RegExp(q, 'i') },
+                { videoId: new RegExp(q, 'i') }
+            ];
+        }
+        if (source) query.source = source;
+
+        const total = await PopularSong.countDocuments(query);
+        const songs = await PopularSong.find(query)
+            .sort({ requestCount: -1, updatedAt: -1 })
+            .skip((parseInt(page) - 1) * parseInt(limit))
+            .limit(parseInt(limit))
+            .select('videoId title artist thumbnail isActive source requestCount lastRequestedAt updatedAt');
+
+        res.json({ success: true, total, page: parseInt(page), songs });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 개별 곡 비활성화 (isActive: false) - 캐시 히트 방지
+router.patch('/songs/cache/:id/deactivate', async (req, res) => {
+    try {
+        const song = await PopularSong.findByIdAndUpdate(
+            req.params.id,
+            { $set: { isActive: false } },
+            { new: true }
+        );
+        if (!song) return res.status(404).json({ success: false, message: '곡을 찾을 수 없습니다.' });
+        res.json({ success: true, song });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 개별 곡 삭제
+router.delete('/songs/cache/:id', async (req, res) => {
+    try {
+        const song = await PopularSong.findByIdAndDelete(req.params.id);
+        if (!song) return res.status(404).json({ success: false, message: '곡을 찾을 수 없습니다.' });
+        res.json({ success: true, deleted: { title: song.title, artist: song.artist } });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 검색어로 일치하는 캐시 삭제 (제목+아티스트)
+router.delete('/songs/cache', async (req, res) => {
+    try {
+        const { title, artist, source } = req.body;
+        if (!title && !source) return res.status(400).json({ success: false, message: 'title 또는 source 필요' });
+
+        const query = {};
+        if (title) query.title = new RegExp(title, 'i');
+        if (artist) query.artist = new RegExp(artist, 'i');
+        if (source) query.source = source;
+
+        const result = await PopularSong.deleteMany(query);
+        res.json({ success: true, deletedCount: result.deletedCount });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 return router;
 }; // module.exports = function(io)

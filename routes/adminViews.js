@@ -64,4 +64,9 @@ router.get('/ai-curation', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/admin/ai-curation.html'));
 });
 
+// 신청곡 캐시 관리
+router.get('/songs-cache', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin/songs-cache.html'));
+});
+
 module.exports = router;
