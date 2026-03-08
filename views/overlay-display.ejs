@@ -276,6 +276,39 @@
             }, 360);
         }
 
+        // 큐 HTTP 폴링 (소켓 미수신 대비)
+        async function loadQueue() {
+            try {
+                const res  = await fetch('/api/song-queue/' + userId);
+                const data = await res.json();
+                if (!data.success) return;
+                const all = data.queue || [];
+                if (currentSong) {
+                    nextQueue = all.filter(s =>
+                        !(s.title === currentSong.title && s.requester === currentSong.requester)
+                    );
+                } else {
+                    nextQueue = all;
+                }
+            } catch(e) {}
+        }
+
+        // 데이터만 갱신하고 사이클은 건드리지 않음
+        async function refreshData() {
+            const prevNoticeCount = notices.length;
+            await loadNotices();
+            await loadQueue();
+            // 공지 수가 바뀌었거나 큐가 생겼을 때만 사이클 재빌드
+            if (notices.length !== prevNoticeCount) {
+                buildQueue();
+                // 현재 queueIdx가 범위 벗어나면 보정만
+                if (queue.length > 0) queueIdx = queueIdx % queue.length;
+            } else {
+                buildQueue();
+                if (queue.length > 0) queueIdx = queueIdx % queue.length;
+            }
+        }
+
         // 소켓 이벤트
         socket.emit('join-overlay', userId);
 
@@ -298,32 +331,16 @@
 
         socket.on('overlay-notice-update', () => {
             loadNotices().then(() => {
-                // 타이머/애니메이션 완전 리셋 후 재시작
-                if (timer) { clearTimeout(timer); timer = null; }
-                isAnimating = false;
-                queueIdx = 0;
-                item.className = 'slide-item';
-                const track = item.querySelector('.notice-marquee-track');
-                if (track) { track.style.transition = ''; track.style.transform = ''; }
-                startCycle();
+                buildQueue();
+                if (queue.length > 0) queueIdx = queueIdx % queue.length;
             });
         });
 
-        // 초기 로드
-        loadNotices().then(() => startCycle());
+        // 초기 로드 후 사이클 시작
+        Promise.all([loadNotices(), loadQueue()]).then(() => startCycle());
 
-        // 30초 주기 폴링 (소켓 미수신 대비)
-        setInterval(() => {
-            loadNotices().then(() => {
-                if (timer) { clearTimeout(timer); timer = null; }
-                isAnimating = false;
-                queueIdx = 0;
-                item.className = 'slide-item';
-                const track = item.querySelector('.notice-marquee-track');
-                if (track) { track.style.transition = ''; track.style.transform = ''; }
-                startCycle();
-            });
-        }, 30000);
+        // 15초 주기 폴링 - 데이터만 갱신, 강제 리셋 없음
+        setInterval(refreshData, 15000);
     </script>
 </body>
 </html>
