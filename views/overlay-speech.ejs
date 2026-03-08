@@ -48,26 +48,18 @@
         }
         .lang-row.visible { opacity: 1; }
 
-        /* 언어 배지 */
-        .lang-badge {
+        /* 호스트 뱃지 */
+        .host-badge {
             flex-shrink: 0;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 900;
-            letter-spacing: 0.05em;
-            padding: 2px 7px;
-            border-radius: 4px;
-            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 4px 10px;
+            border-radius: 6px;
             white-space: nowrap;
+            background: rgba(99,102,241,0.85);
+            color: #fff;
         }
-        .badge-en { background: rgba(59,130,246,0.85); color: #fff; }
-        .badge-ja { background: rgba(239,68,68,0.85);  color: #fff; }
-        .badge-zh { background: rgba(234,179,8,0.85);  color: #fff; }
-        .badge-es { background: rgba(34,197,94,0.85);  color: #fff; }
-        .badge-fr { background: rgba(168,85,247,0.85); color: #fff; }
-        .badge-de { background: rgba(249,115,22,0.85); color: #fff; }
-        .badge-th { background: rgba(20,184,166,0.85); color: #fff; }
-        .badge-vi { background: rgba(236,72,153,0.85); color: #fff; }
-        .badge-id { background: rgba(100,116,139,0.85);color: #fff; }
 
         /* 번역 텍스트 */
         .lang-text {
@@ -115,8 +107,8 @@
             row.className = 'lang-row';
             row.id = 'row-' + lang;
             const badge = document.createElement('span');
-            badge.className = 'lang-badge badge-' + lang;
-            badge.textContent = langNames[lang] || lang.toUpperCase();
+            badge.className = 'host-badge';
+            badge.textContent = 'TikFind';
             const text = document.createElement('span');
             text.className = 'lang-text';
             text.id = 'text-' + lang;
