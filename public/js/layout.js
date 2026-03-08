@@ -57,15 +57,17 @@ function loadSidebar() {
                         </a>
                     </li>
                     <li>
-                        <a href="/dashboard/report" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="report">
+                        <a href="/dashboard/report" class="nav-link unlimited-menu flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="report">
                             <i class="fas fa-chart-line mr-3 text-purple-400"></i>
                             <span>알고리즘 리포트</span>
+                            <i class="fas fa-lock ml-auto text-yellow-400 text-xs unlimited-lock-icon"></i>
                         </a>
                     </li>
                     <li>
-                        <a href="/dashboard/growth" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="growth">
+                        <a href="/dashboard/growth" class="nav-link unlimited-menu flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="growth">
                             <i class="fas fa-rocket mr-3 text-green-400"></i>
                             <span>알고리즘 확장</span>
+                            <i class="fas fa-lock ml-auto text-yellow-400 text-xs unlimited-lock-icon"></i>
                         </a>
                     </li>
                     <li>
@@ -161,10 +163,35 @@ async function loadUserInfo() {
         
         if (planData.success) {
             updatePlanBadge(planData.plan, planData.subscriptionStatus);
+            window._tikfindPlan = planData.plan;
+            window._tikfindPlanStatus = planData.subscriptionStatus;
+            applyUnlimitedMenuGuard(planData.plan);
         }
     } catch (error) {
         console.error('사용자 정보 로드 실패:', error);
     }
+}
+
+function applyUnlimitedMenuGuard(plan) {
+    const isUnlimited = (plan === 'unlimited');
+    const lockIcons = document.querySelectorAll('.unlimited-lock-icon');
+    lockIcons.forEach(icon => {
+        icon.style.display = isUnlimited ? 'none' : 'inline';
+    });
+    if (isUnlimited) return;
+    document.querySelectorAll('.unlimited-menu').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            // 각 페이지의 잠금 레이어 표시 (이미 해당 페이지면 레이어 show)
+            const lockLayer = document.getElementById('unlimited-lock-layer');
+            if (lockLayer) {
+                lockLayer.classList.remove('hidden');
+            } else {
+                // 다른 페이지에서 클릭 → 이동은 허용하되 페이지 자체에서 레이어 표시
+                window.location.href = link.getAttribute('href');
+            }
+        });
+    });
 }
 
 function updatePlanBadge(plan, subscriptionStatus) {
