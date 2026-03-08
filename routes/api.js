@@ -1744,4 +1744,74 @@ router.delete('/moderator/:id', requireAuth, async (req, res) => {
     }
 });
 
+// ══════════════════════════════════════════════════
+// 실시간 번역 자막 API
+// ══════════════════════════════════════════════════
+
+// POST /api/speech/translate  (오버레이에서 호출, 인증 불필요)
+router.post('/speech/translate', async (req, res) => {
+    try {
+        const { text, langs } = req.body;
+        if (!text || !langs || !langs.length) {
+            return res.json({ success: true, translations: [] });
+        }
+        const OpenAI = require('openai');
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        const langNames = {
+            en: 'English', ja: '日本語', zh: '中文(简体)',
+            es: 'Español', fr: 'Français', de: 'Deutsch',
+            th: 'ภาษาไทย', vi: 'Tiếng Việt', id: 'Bahasa Indonesia'
+        };
+        const targets = langs.slice(0, 2).map(l => `{"lang":"${l}","name":"${langNames[l] || l}"}`).join(', ');
+
+        const prompt = `Translate the following text into these languages: ${langs.slice(0,2).map(l => langNames[l]||l).join(' and ')}.
+Return ONLY a JSON array. Example: [{"lang":"en","text":"Hello"},{"lang":"ja","text":"こんにちは"}]
+Use the exact lang codes: ${langs.slice(0,2).join(', ')}. No explanation, no markdown.
+Text to translate: "${text}"`;
+
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 300,
+            temperature: 0.2
+        });
+
+        const raw = completion.choices[0].message.content.trim();
+        const match = raw.match(/\[[\s\S]*\]/);
+        const translations = match ? JSON.parse(match[0]) : [];
+        res.json({ success: true, translations });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// GET /api/speech-settings?userId=xxx  (오버레이에서 공개 조회)
+router.get('/speech-settings', async (req, res) => {
+    try {
+        const userId = req.query.userId;
+        if (!userId) return res.json({ success: true, langs: ['en'] });
+        const user = await User.findById(userId).select('speechLangs').lean();
+        res.json({ success: true, langs: (user && user.speechLangs && user.speechLangs.length) ? user.speechLangs : ['en'] });
+    } catch (e) {
+        res.json({ success: true, langs: ['en'] });
+    }
+});
+
+// POST /api/speech-settings  (인증 필요)
+router.post('/speech-settings', requireAuth, async (req, res) => {
+    try {
+        const { langs } = req.body;
+        if (!Array.isArray(langs)) return res.status(400).json({ success: false, message: '잘못된 요청' });
+        const validLangs = ['en','ja','zh','es','fr','de','th','vi','id'];
+        const filtered = langs.filter(l => validLangs.includes(l)).slice(0, 2);
+        await User.findByIdAndUpdate(req.user._id, { speechLangs: filtered });
+        const io = req.app.get('io');
+        if (io) io.to('overlay-' + req.user._id.toString()).emit('speech-settings-update', { langs: filtered });
+        res.json({ success: true, langs: filtered });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 module.exports = router;

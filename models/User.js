@@ -235,6 +235,10 @@ const userSchema = new mongoose.Schema({
     giftSettings: {
         midMin:  { type: Number, default: 100 },
         megaMin: { type: Number, default: 1000 }
+    },
+    speechLangs: {
+        type: [String],
+        default: ['en']
     }
 }, {
     timestamps: true

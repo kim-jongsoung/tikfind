@@ -47,6 +47,11 @@ router.get('/overlay/:userId/moderator', (req, res) => {
     res.render('overlay-moderator', { title: 'TikFind Moderator Overlay', userId: req.params.userId });
 });
 
+// 번역 자막 위젯 (인증 불필요 - OBS 브라우저 소스)
+router.get('/overlay/:userId/speech', (req, res) => {
+    res.render('overlay-speech', { title: 'TikFind Speech Overlay', userId: req.params.userId });
+});
+
 router.get('/dashboard/billing', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/billing.html'));
 });

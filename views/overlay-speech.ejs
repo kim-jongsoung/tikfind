@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind Speech Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&family=Noto+Sans+JP:wght@700&family=Noto+Sans+SC:wght@700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            width: 800px;
+            height: 100px;
+            background: transparent;
+            overflow: hidden;
+            font-family: 'Noto Sans KR', 'Noto Sans JP', 'Noto Sans SC', sans-serif;
+        }
+        body.preview-mode {
+            width: 100vw !important;
+            height: 100vh !important;
+            background: #0f172a !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 전체 래퍼 */
+        #speech-wrap {
+            width: 800px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 각 언어 행 */
+        .lang-row {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.30);
+            padding: 0 16px;
+            gap: 10px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .lang-row.visible { opacity: 1; }
+        .lang-row:first-child { border-radius: 8px 8px 0 0; }
+        .lang-row:last-child  { border-radius: 0 0 8px 8px; }
+        .lang-row:only-child  { border-radius: 8px; }
+        .lang-row + .lang-row { border-top: 1px solid rgba(255,255,255,0.08); }
+
+        /* 언어 배지 */
+        .lang-badge {
+            flex-shrink: 0;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            padding: 2px 7px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .badge-en { background: rgba(59,130,246,0.85); color: #fff; }
+        .badge-ja { background: rgba(239,68,68,0.85);  color: #fff; }
+        .badge-zh { background: rgba(234,179,8,0.85);  color: #fff; }
+        .badge-es { background: rgba(34,197,94,0.85);  color: #fff; }
+        .badge-fr { background: rgba(168,85,247,0.85); color: #fff; }
+        .badge-de { background: rgba(249,115,22,0.85); color: #fff; }
+        .badge-th { background: rgba(20,184,166,0.85); color: #fff; }
+        .badge-vi { background: rgba(236,72,153,0.85); color: #fff; }
+        .badge-id { background: rgba(100,116,139,0.85);color: #fff; }
+
+        /* 번역 텍스트 */
+        .lang-text {
+            flex: 1;
+            font-size: 22px;
+            font-weight: 700;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+            min-width: 0;
+        }
+        .lang-text.interim {
+            color: rgba(255,255,255,0.55);
+            font-style: italic;
+        }
+
+        /* 마이크 상태 인디케이터 */
+        #mic-indicator {
+            position: fixed;
+            top: 6px;
+            right: 8px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        #mic-indicator.active  { opacity: 1; animation: pulse 1.2s ease-in-out infinite; }
+        #mic-indicator.error   { opacity: 1; background: #ef4444; animation: none; }
+        #mic-indicator.waiting { opacity: 1; background: #f59e0b; animation: none; }
+        @keyframes pulse {
+            0%,100% { transform: scale(1);   opacity: 1; }
+            50%      { transform: scale(1.5); opacity: 0.6; }
+        }
+
+        /* 권한 안내 (마이크 허용 전) */
+        #permission-notice {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            gap: 8px;
+            border-radius: 8px;
+        }
+        #permission-notice.hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="mic-indicator"></div>
+<div id="permission-notice">🎤 마이크 권한을 허용해 주세요</div>
+
+<div id="speech-wrap">
+    <!-- 언어 행은 JS에서 동적 생성 -->
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const userId = '<%= userId %>';
+    const socket = io();
+    socket.emit('join-overlay', userId);
+    socket.on('connect', () => { socket.emit('join-overlay', userId); });
+
+    // ── 설정 ──
+    let activeLangs = ['en'];
+    const langNames  = { en:'EN', ja:'JA', zh:'ZH', es:'ES', fr:'FR', de:'DE', th:'TH', vi:'VI', id:'ID' };
+    const langLabels = { en:'English', ja:'日本語', zh:'中文', es:'Español', fr:'Français', de:'Deutsch', th:'ไทย', vi:'Tiếng Việt', id:'Bahasa' };
+
+    // 번역 상태 { lang: text }
+    const translations = {};
+    let interimText = '';
+    let translateTimer = null;
+    let lastFinal = '';
+
+    // ── DOM 빌드 ──
+    function buildRows(langs) {
+        const wrap = document.getElementById('speech-wrap');
+        wrap.innerHTML = '';
+        langs.slice(0, 2).forEach(lang => {
+            const row = document.createElement('div');
+            row.className = 'lang-row';
+            row.id = 'row-' + lang;
+
+            const badge = document.createElement('span');
+            badge.className = 'lang-badge badge-' + lang;
+            badge.textContent = langNames[lang] || lang.toUpperCase();
+
+            const text = document.createElement('span');
+            text.className = 'lang-text';
+            text.id = 'text-' + lang;
+            text.textContent = '';
+
+            row.appendChild(badge);
+            row.appendChild(text);
+            wrap.appendChild(row);
+            translations[lang] = '';
+        });
+    }
+
+    // ── 설정 로드 ──
+    async function loadSettings() {
+        try {
+            const res  = await fetch('/api/speech-settings?userId=' + userId);
+            const data = await res.json();
+            if (data.success && data.langs && data.langs.length) {
+                activeLangs = data.langs.slice(0, 2);
+            }
+        } catch(e) {}
+        buildRows(activeLangs);
+    }
+
+    // ── 설정 실시간 업데이트 ──
+    socket.on('speech-settings-update', (data) => {
+        if (data.langs) {
+            activeLangs = data.langs.slice(0, 2);
+            buildRows(activeLangs);
+        }
+    });
+
+    // ── 텍스트 표시 ──
+    function showInterim(text) {
+        activeLangs.slice(0, 2).forEach(lang => {
+            const el = document.getElementById('text-' + lang);
+            if (!el) return;
+            el.textContent = text || '';
+            el.className = 'lang-text interim';
+            const row = document.getElementById('row-' + lang);
+            if (row) row.classList.toggle('visible', !!text);
+        });
+    }
+
+    function showTranslations(results) {
+        results.forEach(({ lang, text }) => {
+            const el = document.getElementById('text-' + lang);
+            if (!el) return;
+            el.textContent = text || '';
+            el.className = 'lang-text';
+            const row = document.getElementById('row-' + lang);
+            if (row) row.classList.toggle('visible', !!text);
+        });
+    }
+
+    function hideAll() {
+        activeLangs.forEach(lang => {
+            const row = document.getElementById('row-' + lang);
+            if (row) row.classList.remove('visible');
+        });
+    }
+
+    // ── 번역 요청 ──
+    async function requestTranslation(text) {
+        if (!text || !text.trim()) return;
+        try {
+            const res  = await fetch('/api/speech/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: text.trim(), langs: activeLangs, userId })
+            });
+            const data = await res.json();
+            if (data.success && data.translations.length) {
+                showTranslations(data.translations);
+                // 5초 후 자동 숨김
+                clearTimeout(translateTimer);
+                translateTimer = setTimeout(hideAll, 5000);
+            }
+        } catch(e) {}
+    }
+
+    // ── Web Speech API ──
+    const mic = document.getElementById('mic-indicator');
+    const permNotice = document.getElementById('permission-notice');
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        mic.className = 'error';
+        permNotice.textContent = '⚠️ 이 브라우저는 음성 인식을 지원하지 않습니다 (Chrome 필요)';
+        permNotice.classList.remove('hidden');
+    } else {
+        const recog = new SpeechRecognition();
+        recog.continuous     = true;
+        recog.interimResults = true;
+        recog.lang           = 'ko-KR';
+        recog.maxAlternatives = 1;
+
+        recog.onstart = () => {
+            mic.className = 'active';
+            permNotice.classList.add('hidden');
+        };
+
+        recog.onerror = (e) => {
+            if (e.error === 'not-allowed') {
+                mic.className = 'error';
+                permNotice.textContent = '🚫 마이크 권한이 거부되었습니다. 브라우저 설정에서 허용해 주세요.';
+                permNotice.classList.remove('hidden');
+            } else if (e.error === 'no-speech') {
+                // 무시
+            } else {
+                mic.className = 'waiting';
+            }
+        };
+
+        recog.onend = () => {
+            mic.className = 'waiting';
+            // 자동 재시작
+            setTimeout(() => {
+                try { recog.start(); } catch(e) {}
+            }, 300);
+        };
+
+        recog.onresult = (e) => {
+            let interim = '';
+            let finalText = '';
+
+            for (let i = e.resultIndex; i < e.results.length; i++) {
+                const t = e.results[i][0].transcript;
+                if (e.results[i].isFinal) {
+                    finalText += t;
+                } else {
+                    interim += t;
+                }
+            }
+
+            if (finalText) {
+                lastFinal = finalText.trim();
+                showInterim('');
+                clearTimeout(translateTimer);
+                requestTranslation(lastFinal);
+            } else if (interim) {
+                showInterim(interim);
+            }
+        };
+
+        // 시작
+        loadSettings().then(() => {
+            try { recog.start(); } catch(e) {}
+        });
+    }
+
+    // ── 테스트 모드 ──
+    const testParam = new URLSearchParams(location.search).get('test');
+    if (testParam === '1') {
+        document.body.classList.add('preview-mode');
+
+        const label = document.createElement('div');
+        label.textContent = '🎤 번역 자막 미리보기 모드';
+        label.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:#fff;font-family:"Noto Sans KR",sans-serif;font-size:12px;font-weight:700;padding:5px 16px;border-radius:50px;z-index:9999;pointer-events:none;white-space:nowrap;';
+        document.body.appendChild(label);
+
+        const btn = document.createElement('div');
+        btn.textContent = '▶ 번역 테스트 실행';
+        btn.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(99,102,241,0.95);color:#fff;font-family:"Noto Sans KR",sans-serif;font-size:14px;font-weight:700;padding:12px 32px;border-radius:50px;cursor:pointer;z-index:9999;box-shadow:0 4px 24px rgba(0,0,0,0.4);user-select:none;white-space:nowrap;';
+        document.body.appendChild(btn);
+
+        const samples = ['안녕하세요! 오늘도 방송 와주셔서 감사합니다', '지금 신청곡 받고 있어요', '여러분 좋아요 눌러주세요'];
+        let sIdx = 0;
+
+        btn.addEventListener('click', async () => {
+            document.getElementById('permission-notice').classList.add('hidden');
+            mic.className = 'active';
+            const text = samples[sIdx++ % samples.length];
+            showInterim(text);
+            await loadSettings();
+            setTimeout(() => requestTranslation(text), 600);
+        });
+
+        loadSettings();
+    }
+</script>
+</body>
+</html>

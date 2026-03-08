@@ -19,6 +19,7 @@
         .tab-btn.active { border-bottom-color: #6366f1; color: #6366f1; font-weight: 700; }
         .tab-btn.active-purple { border-bottom-color: #a855f7; color: #a855f7; font-weight: 700; }
         .tab-btn.active-blue   { border-bottom-color: #3b82f6; color: #3b82f6; font-weight: 700; }
+        .tab-btn.active-green  { border-bottom-color: #22c55e; color: #22c55e; font-weight: 700; }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
@@ -58,6 +59,11 @@
                     <button onclick="switchTab('mod')" id="tab-mod"
                         class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
                         <i class="fas fa-shield-alt text-blue-500"></i> 모더 위젯
+                    </button>
+                    <button onclick="switchTab('speech')" id="tab-speech"
+                        class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fas fa-language text-green-500"></i> 번역 자막
+                        <span class="px-1.5 py-0.5 bg-green-100 text-green-600 text-xs rounded-full font-bold">NEW</span>
                     </button>
                 </div>
 
@@ -434,7 +440,105 @@
                         </div>
                     </div>
                 </div>
-            </div>
+
+                <!-- ══════════════════════════════════
+                     탭 4: 번역 자막 위젯
+                ══════════════════════════════════ -->
+                <div id="panel-speech" class="tab-panel p-6">
+
+                    <!-- 설명 -->
+                    <div class="flex items-start gap-4 mb-5 p-4 bg-green-50 rounded-xl border border-green-100">
+                        <div class="text-3xl">🌐</div>
+                        <div>
+                            <p class="font-semibold text-green-800 text-sm">실시간 번역 자막 위젯이란?</p>
+                            <p class="text-xs text-green-600 mt-1 leading-relaxed">
+                                호스트가 마이크로 말하면 브라우저가 음성을 인식하고, 선택한 언어로 자동 번역해 방송 화면에 자막으로 표시합니다.<br>
+                                <strong>별도 프로그램 설치 불필요</strong> · Web Speech API(무료) + GPT 번역(월 약 1,000원)
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- URL + 사이즈 -->
+                    <div class="mb-5 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
+                        <i class="fas fa-ruler-combined text-green-500 mt-0.5"></i>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-green-800 mb-1">고정 소스 크기 — <span class="font-mono">800 × 100 px</span></p>
+                            <p class="text-xs text-green-600 leading-relaxed mb-2">언어 1개 선택 시 50px, 2개 선택 시 100px. 배경 투명 블랙 30%.</p>
+                            <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-green-200">
+                                <code class="text-xs text-gray-600 flex-1 break-all select-all" id="speechUrl">https://tikfind.kr/overlay/<%= user._id %>/speech</code>
+                                <button onclick="copySpeechUrl()" id="copySpeechBtn"
+                                    class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs whitespace-nowrap flex items-center gap-1">
+                                    <i class="fas fa-copy"></i> 복사
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 언어 선택 -->
+                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-globe text-green-500"></i> 번역 언어 선택
+                            <span class="text-xs text-gray-400 font-normal">최대 2개</span>
+                        </h4>
+                        <div class="grid grid-cols-3 gap-2 mb-4" id="langCheckboxes">
+                            <% [
+                                {code:'en', label:'🇺🇸 영어 (English)'},
+                                {code:'ja', label:'🇯🇵 일본어 (日本語)'},
+                                {code:'zh', label:'🇨🇳 중국어 (中文)'},
+                                {code:'es', label:'🇪🇸 스페인어'},
+                                {code:'fr', label:'🇫🇷 프랑스어'},
+                                {code:'de', label:'🇩🇪 독일어'},
+                                {code:'th', label:'🇹🇭 태국어'},
+                                {code:'vi', label:'🇻🇳 베트남어'},
+                                {code:'id', label:'🇮🇩 인도네시아어'}
+                            ].forEach(function(l){ %>
+                            <label class="flex items-center gap-2 p-2.5 border border-gray-200 rounded-lg cursor-pointer hover:bg-green-50 hover:border-green-300 transition lang-label" data-code="<%= l.code %>">
+                                <input type="checkbox" class="lang-check" value="<%= l.code %>" onchange="onLangChange()">
+                                <span class="text-sm text-gray-700"><%= l.label %></span>
+                            </label>
+                            <% }); %>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <p class="text-xs text-gray-400" id="langCountMsg">0개 선택됨</p>
+                            <button onclick="saveSpeechSettings()"
+                                class="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm flex items-center gap-2" id="saveSpeechBtn">
+                                <i class="fas fa-save"></i> 저장
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 미리보기 -->
+                    <div class="flex flex-wrap gap-3 mb-5">
+                        <a href="/overlay/<%= user._id %>/speech?test=1" target="_blank"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 text-green-700 rounded-lg hover:bg-green-100 transition text-sm font-semibold">
+                            <i class="fas fa-eye"></i> 번역 자막 미리보기
+                        </a>
+                    </div>
+
+                    <!-- 추가 방법 -->
+                    <div class="border-t border-gray-100 pt-5">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-tv text-pink-500"></i> TikTok Live Studio 소스 추가 방법
+                        </h4>
+                        <ol class="space-y-3">
+                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">1</span><p class="text-sm text-gray-600 pt-0.5">위 <strong>번역 언어</strong>를 선택하고 저장</p></li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">2</span><p class="text-sm text-gray-600 pt-0.5">위 URL 복사 후 TikTok Live Studio → <strong>소스 추가</strong> → <strong>브라우저(URL)</strong></p></li>
+                            <li class="flex gap-3 items-start">
+                                <span class="step-num bg-green-500">3</span>
+                                <div class="text-sm text-gray-600 pt-0.5">
+                                    <strong>해상도</strong> 입력:
+                                    <span class="size-badge ml-2">너비 <span class="dim">800</span> × 높이 <span class="dim">100</span></span>
+                                </div>
+                            </li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">4</span><p class="text-sm text-gray-600 pt-0.5">소스를 화면 <strong>하단 중앙</strong>에 배치</p></li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">5</span><p class="text-sm text-gray-600 pt-0.5">브라우저 소스가 로드되면 <strong>마이크 권한 허용</strong> 팝업이 뜹니다 → 허용 클릭</p></li>
+                        </ol>
+                        <div class="mt-4 p-3 bg-green-50 border-l-4 border-green-400 rounded text-xs text-green-700">
+                            <i class="fas fa-lightbulb mr-1"></i>
+                            <strong>팁:</strong> 말을 멈추면 자막이 5초 후 자동으로 사라집니다. 마이크 인식 언어는 한국어로 고정되어 있습니다.
+                        </div>
+                    </div>
+                </div>
 
         </div>
     </main>
@@ -446,19 +550,21 @@
 
         // ── 탭 전환 ──
         function switchTab(name) {
-            ['gift','song','mod'].forEach(t => {
+            ['gift','song','mod','speech'].forEach(t => {
                 document.getElementById('panel-' + t).classList.toggle('active', t === name);
                 const btn = document.getElementById('tab-' + t);
-                btn.classList.remove('active', 'active-purple', 'active-blue');
+                btn.classList.remove('active', 'active-purple', 'active-blue', 'active-green');
                 if (t === name) {
-                    if (name === 'gift') btn.classList.add('active-purple');
-                    else if (name === 'mod') btn.classList.add('active-blue');
+                    if (name === 'gift')   btn.classList.add('active-purple');
+                    else if (name === 'mod')    btn.classList.add('active-blue');
+                    else if (name === 'speech') btn.classList.add('active-green');
                     else btn.classList.add('active');
                 }
             });
-            if (name === 'song') loadNotices();
-            if (name === 'gift') loadGiftSettings();
-            if (name === 'mod')  loadModerators();
+            if (name === 'song')   loadNotices();
+            if (name === 'gift')   loadGiftSettings();
+            if (name === 'mod')    loadModerators();
+            if (name === 'speech') loadSpeechSettings();
         }
 
         // ── 선물 다이아 기준 저장 ──
@@ -803,10 +909,89 @@
             loadNotices();
         }
 
+        // ── 번역 자막 언어 설정 ──
+        async function loadSpeechSettings() {
+            try {
+                const res  = await fetch('/api/speech-settings');
+                const data = await res.json();
+                if (data.success && data.langs) {
+                    document.querySelectorAll('.lang-check').forEach(cb => {
+                        cb.checked = data.langs.includes(cb.value);
+                    });
+                    updateLangCheckboxStyles();
+                    document.getElementById('langCountMsg').textContent = data.langs.length + '개 선택됨';
+                }
+            } catch(e) {}
+        }
+
+        function onLangChange() {
+            const checked = [...document.querySelectorAll('.lang-check:checked')];
+            if (checked.length > 2) {
+                // 마지막 체크된 것 해제
+                event.target.checked = false;
+                return;
+            }
+            updateLangCheckboxStyles();
+            document.getElementById('langCountMsg').textContent = checked.length + '개 선택됨';
+        }
+
+        function updateLangCheckboxStyles() {
+            document.querySelectorAll('.lang-label').forEach(label => {
+                const cb = label.querySelector('.lang-check');
+                if (cb.checked) {
+                    label.style.borderColor = '#22c55e';
+                    label.style.background  = '#f0fdf4';
+                } else {
+                    label.style.borderColor = '';
+                    label.style.background  = '';
+                }
+            });
+        }
+
+        async function saveSpeechSettings() {
+            const langs = [...document.querySelectorAll('.lang-check:checked')].map(cb => cb.value);
+            if (!langs.length) { alert('언어를 1개 이상 선택해주세요.'); return; }
+            const btn  = document.getElementById('saveSpeechBtn');
+            const orig = btn.innerHTML;
+            try {
+                const res  = await fetch('/api/speech-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ langs })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    btn.innerHTML = '<i class="fas fa-check"></i> 저장됨!';
+                    btn.classList.replace('bg-green-600','bg-emerald-600');
+                    setTimeout(() => {
+                        btn.innerHTML = orig;
+                        btn.classList.replace('bg-emerald-600','bg-green-600');
+                    }, 2000);
+                } else {
+                    alert('저장 실패: ' + (data.message || ''));
+                }
+            } catch(e) { alert('오류가 발생했습니다.'); }
+        }
+
+        function copySpeechUrl() {
+            const text = document.getElementById('speechUrl').textContent.trim();
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.getElementById('copySpeechBtn');
+                const orig = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
+                btn.classList.replace('bg-green-600','bg-emerald-600');
+                setTimeout(() => {
+                    btn.innerHTML = orig;
+                    btn.classList.replace('bg-emerald-600','bg-green-600');
+                }, 2000);
+            });
+        }
+
         // 초기 탭 로드
-        if (document.getElementById('panel-song').classList.contains('active')) loadNotices();
-        if (document.getElementById('panel-gift').classList.contains('active')) loadGiftSettings();
-        if (document.getElementById('panel-mod').classList.contains('active'))  loadModerators();
+        if (document.getElementById('panel-song').classList.contains('active'))   loadNotices();
+        if (document.getElementById('panel-gift').classList.contains('active'))   loadGiftSettings();
+        if (document.getElementById('panel-mod').classList.contains('active'))    loadModerators();
+        if (document.getElementById('panel-speech').classList.contains('active')) loadSpeechSettings();
 
         // mobile-overlay가 클릭을 차단하지 않도록 강제 숨김
         function fixMobileOverlay() {
