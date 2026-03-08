@@ -172,9 +172,15 @@ class SongRequestService {
                 };
             }
 
-            // 5단계: DB에 없으면 YouTube API 검색 (비용 발생!)
-            console.log('⚠️ DB 캐시 미스 - YouTube API 호출 (비용 발생)');
-            const youtubeResult = await this.searchYouTube(title, artist);
+            // 5단계: GPT로 제목/가수명 정제 후 YouTube API 검색
+            console.log('⚠️ DB 캐시 미스 - GPT 정제 후 YouTube API 호출');
+            const normalized = await this.normalizeSongRequest(title, artist);
+            const searchTitle  = normalized.title  || title;
+            const searchArtist = normalized.artist || artist;
+            if (normalized.title || normalized.artist) {
+                console.log(`🤖 GPT 정제: "${title} - ${artist}" → "${searchTitle} - ${searchArtist}"`);
+            }
+            const youtubeResult = await this.searchYouTube(searchTitle, searchArtist);
 
             if (youtubeResult && youtubeResult.quotaExceeded) {
                 return { quotaExceeded: true };
@@ -229,6 +235,55 @@ class SongRequestService {
      */
     escapeRegex(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    /**
+     * GPT로 노래 제목/가수명 정제 (오타 수정, 정확한 명칭 변환)
+     * DB 미스 시에만 호출 (비용 최소화)
+     * @param {string} title - 원본 제목
+     * @param {string} artist - 원본 가수명
+     * @returns {{ title: string, artist: string }}
+     */
+    async normalizeSongRequest(title, artist) {
+        try {
+            if (!process.env.OPENAI_API_KEY) return { title, artist };
+            const OpenAI = require('openai');
+            const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+            const prompt = `You are a music search assistant. A viewer requested a song with possible typos or informal names.
+Correct the song title and artist name to the most accurate/official form for YouTube search.
+
+Input:
+- Title: "${title}"
+- Artist: "${artist}"
+
+Rules:
+- Fix typos and spacing
+- Convert informal names to official artist names (e.g. "방탄" → "BTS", "소시" → "소녀시대")
+- Keep the original language (Korean stays Korean, English stays English)
+- If already correct, return as-is
+- Return ONLY JSON: {"title":"...","artist":"..."}`;
+
+            const completion = await openai.chat.completions.create({
+                model: 'gpt-4o-mini',
+                messages: [{ role: 'user', content: prompt }],
+                max_tokens: 80,
+                temperature: 0.1
+            });
+
+            const raw = completion.choices[0].message.content.trim();
+            const match = raw.match(/\{[\s\S]*\}/);
+            if (match) {
+                const parsed = JSON.parse(match[0]);
+                return {
+                    title:  parsed.title  || title,
+                    artist: parsed.artist || artist
+                };
+            }
+        } catch (e) {
+            console.warn('⚠️ GPT 정제 실패 (원본 사용):', e.message);
+        }
+        return { title, artist };
     }
 
     /**
