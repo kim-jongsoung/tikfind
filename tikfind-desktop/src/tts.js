@@ -136,7 +136,7 @@ class TTSService {
             `$p.Open([uri]'${tmpFile}');`,
             `$p.Volume = ${vol};`,
             '$p.Play();',
-            'Start-Sleep -Milliseconds 500;',
+            'Start-Sleep -Milliseconds 200;',
             '$dur = $p.NaturalDuration.TimeSpan.TotalMilliseconds;',
             'if ($dur -gt 0) { Start-Sleep -Milliseconds $dur } else { Start-Sleep -Milliseconds 6000 };',
             '$p.Close();'
@@ -228,7 +228,15 @@ class TTSService {
         
         // 큐에 추가 (uniqueId + userGenders 포함)
         this.queue.push({ text: cleanedText, uniqueId: uniqueId || 'unknown', userGenders: userGenders || {} });
-        
+
+        // 큐 최대 3개 제한 - 초과 시 오래된 것 드롭 (지연 방지)
+        const MAX_QUEUE = 3;
+        if (this.queue.length > MAX_QUEUE) {
+            const dropped = this.queue.length - MAX_QUEUE;
+            this.queue.splice(0, dropped);
+            console.log(`🗑️ TTS 큐 초과 - 오래된 ${dropped}개 드롭 (남은 ${this.queue.length}개)`);
+        }
+
         // 재생 중이 아니면 시작
         if (!this.isPlaying) {
             this.processQueue();
