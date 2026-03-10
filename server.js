@@ -841,7 +841,7 @@ async function globalEmitModeratorJoin(userId, tiktokData) {
     } catch(e) {}
 }
 
-async function globalEmitModeratorActivity(userId, uniqueId) {
+async function globalEmitModeratorActivity(userId, uniqueId, type) {
     if (!uniqueId) return;
     try {
         const Moderator = require('./models/Moderator');
@@ -857,7 +857,8 @@ async function globalEmitModeratorActivity(userId, uniqueId) {
             io.to('overlay-' + String(userId)).emit('overlay-moderator-activity', {
                 uniqueId,
                 displayName: mod.displayName,
-                profileImg:  mod.profileImg
+                profileImg:  mod.profileImg,
+                type:        type || 'activity'
             });
         }
     } catch(e) {}
@@ -1014,7 +1015,7 @@ async function processChatMessage(chatData) {
     }
 
     // 5. 모더 활동 emit
-    globalEmitModeratorActivity(userId, uniqueId || username).catch(() => {});
+    globalEmitModeratorActivity(userId, uniqueId || username, 'chat').catch(() => {}); // 채팅 → type:'chat'
 
     // 5-1. 모더 ## 공지 감지 → 선물 오버레이에 마퀴 표시
     if (message && message.startsWith('##')) {
