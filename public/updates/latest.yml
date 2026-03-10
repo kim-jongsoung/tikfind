@@ -1,7 +1,7 @@
-version: 1.3.0
+version: 1.3.1
 files:
-  - url: https://github.com/kim-jongsoung/tikfind/releases/download/v1.3.0/TikFind.Setup.1.3.0.exe
+  - url: https://github.com/kim-jongsoung/tikfind/releases/download/v1.3.1/TikFind.Setup.1.3.1.exe
     sha512: placeholder
     size: 0
-path: TikFind.Setup.1.3.0.exe
-releaseDate: '2026-03-01T00:00:00.000Z'
+path: TikFind.Setup.1.3.1.exe
+releaseDate: '2026-03-10T00:00:00.000Z'
