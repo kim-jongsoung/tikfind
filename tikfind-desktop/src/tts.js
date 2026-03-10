@@ -129,16 +129,18 @@ class TTSService {
         fs.writeFileSync(tmpFile, buffer);
 
         const vol = Math.min(Math.max(this.volume / 100, 0), 1).toFixed(2);
-        // MP3 실제 재생 완료까지 대기 (NaturalDuration 사용)
+        // NaturalDuration 폴링: 50ms 간격으로 최대 20번(1초) 확인 후 재생 완료까지 대기
         const psCommand = [
             'Add-Type -AssemblyName presentationCore;',
             '$p = New-Object System.Windows.Media.MediaPlayer;',
             `$p.Open([uri]'${tmpFile}');`,
             `$p.Volume = ${vol};`,
             '$p.Play();',
-            'Start-Sleep -Milliseconds 200;',
-            '$dur = $p.NaturalDuration.TimeSpan.TotalMilliseconds;',
-            'if ($dur -gt 0) { Start-Sleep -Milliseconds $dur } else { Start-Sleep -Milliseconds 6000 };',
+            '$dur = 0;',
+            'for ($i = 0; $i -lt 20; $i++) { Start-Sleep -Milliseconds 50;',
+            '$dur = try { $p.NaturalDuration.TimeSpan.TotalMilliseconds } catch { 0 };',
+            'if ($dur -gt 0) { break } };',
+            'if ($dur -gt 0) { Start-Sleep -Milliseconds ([int]$dur + 100) } else { Start-Sleep -Milliseconds 2000 };',
             '$p.Close();'
         ].join(' ');
 
