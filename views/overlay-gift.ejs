@@ -151,6 +151,14 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            max-width: 420px;
+            overflow: hidden;
+        }
+        #card-label-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
         }
         .mid-style  #card-label { color: #e9d5ff; }
         .mega-style #card-label { color: #fde68a; }
@@ -241,7 +249,7 @@
     }
 
     const midMsgs  = ['이름을 새기다 ✨','존재감 폭발 💥','빛나는 순간 🌟','화면을 물들이다 🎨','마음을 전하다 💌','이 순간의 주인공 🎬','함께해서 빛난다 🌈','당신이 특별하다 🫶','온기를 나누다 🔥','기억에 남을 이름 📍'];
-    const megaMsgs = ['전설이 되다 👑','방송을 지배하다 💎','오늘의 주인공 🔥','레전드 등극 🏆','하늘을 찌르다 🚀','영원히 기억될 이름 ⚡','이 방송의 신 🌌','모두가 주목한다 👁️','압도적 존재감 💫','역사에 남을 순간 🎆','이 방송을 빛내다 ✨','최고의 응원에 감사를 🙏','당신 없인 방송이 없다 💖','이 순간 모두가 경의를 표한다 🫅','온 방송이 당신 덕분 🌠'];
+    const megaMsgs = ['전설이 되다 👑','방송을 지배하다 💎','오늘의 주인공 🔥','레전드 등극 🏆','하늘을 찌르다 🚀','영원히 기억될 이름 ⚡','이 방송의 신 🌌','모두가 주목한다 👁️','압도적 존재감 💫','역사에 남을 순간 🎆','이 방송을 빛내다 ✨','최고 응원 감사해요 🙏','당신 없인 방송 없다 💖','경의를 표합니다 🫅','온 방송이 당신 덕분 🌠'];
     function randMsg(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
     function show(d) {
