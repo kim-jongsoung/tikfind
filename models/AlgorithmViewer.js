@@ -39,6 +39,22 @@ const algorithmViewerSchema = new mongoose.Schema({
     memo: {
         type: String,
         default: ''
+    },
+    followRole: {
+        type: Number,
+        default: 0   // 0: 비팔로워, 1: 팔로워, 2: 친구
+    },
+    sources: {
+        type: [String],  // ['member', 'chat', 'gift', 'social', 'subscribe']
+        default: []
+    },
+    chatCount: {
+        type: Number,
+        default: 0
+    },
+    giftCount: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

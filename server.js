@@ -841,6 +841,48 @@ async function globalEmitModeratorJoin(userId, tiktokData) {
     } catch(e) {}
 }
 
+// ── AlgorithmViewer 공통 upsert 헬퍼 ──────────────────────────────────────
+// source: 'member' | 'chat' | 'gift' | 'social' | 'subscribe'
+async function upsertAlgorithmViewer(userId, data, source) {
+    if (!data || !data.uniqueId) return;
+    try {
+        const followRole = data.followRole || 0;
+        const inc = {};
+        if (source === 'chat')  inc.chatCount = 1;
+        if (source === 'gift')  inc.giftCount = 1;
+        if (source === 'member') inc.visitCount = 1;
+
+        const setFields = {
+            nickname: data.nickname || data.uniqueId,
+            profilePictureUrl: data.profilePictureUrl || '',
+            followRole,
+            lastSeenAt: new Date()
+        };
+
+        await AlgorithmViewer.findOneAndUpdate(
+            { userId, uniqueId: data.uniqueId },
+            {
+                $set: setFields,
+                $addToSet: { sources: source },
+                ...(Object.keys(inc).length ? { $inc: inc } : {}),
+                $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
+            },
+            { upsert: true, new: true }
+        );
+
+        // 팔로워로 입장/활동 → 기존 pending/dm_sent 상태 자동 업데이트
+        if (followRole >= 1) {
+            await AlgorithmViewer.updateOne(
+                { userId, uniqueId: data.uniqueId, status: { $in: ['pending', 'dm_sent'] } },
+                { $set: { status: 'followed' } }
+            );
+        }
+    } catch (e) {
+        // 수집 오류는 무시 (방송 흐름에 영향 없음)
+    }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function globalEmitModeratorActivity(userId, uniqueId, type) {
     if (!uniqueId) return;
     try {
@@ -1097,6 +1139,7 @@ app.post('/api/live/chat', async (req, res) => {
         
         console.log(`💬 [${username}]: ${message} (userId: ${userId})`);
         await processChatMessage({ userId, username, message, timestamp, uniqueId, nickname, badges, userBadges, followRole, isModerator, isSubscriber, topGifterRank, teamMemberLevel });
+        if (uniqueId) upsertAlgorithmViewer(userId, { uniqueId, nickname, profilePictureUrl: '', followRole: followRole || 0 }, 'chat').catch(() => {});
         return res.json({ success: true });
     } catch (error) {
         console.error('❌ 채팅 메시지 처리 오류:', error);
@@ -1378,41 +1421,8 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 if (cc) sessMember.countryMap[cc] = (sessMember.countryMap[cc] || 0) + 1;
             }
 
-            // 비팔로워 시청자 DB 저장
-            try {
-                const followRole = tiktokData.followRole || 0;
-                if (tiktokData.uniqueId) {
-                    if (followRole === 0) {
-                        await AlgorithmViewer.findOneAndUpdate(
-                            { userId, uniqueId: tiktokData.uniqueId },
-                            {
-                                $set: {
-                                    nickname: tiktokData.nickname || tiktokData.uniqueId,
-                                    profilePictureUrl: tiktokData.profilePictureUrl || '',
-                                    lastSeenAt: new Date()
-                                },
-                                $inc: { visitCount: 1 },
-                                $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
-                            },
-                            { upsert: true, new: true }
-                        );
-                    } else if (followRole >= 1) {
-                        await AlgorithmViewer.findOneAndUpdate(
-                            { userId, uniqueId: tiktokData.uniqueId, status: { $in: ['pending', 'dm_sent'] } },
-                            {
-                                $set: {
-                                    status: 'followed',
-                                    nickname: tiktokData.nickname || tiktokData.uniqueId,
-                                    profilePictureUrl: tiktokData.profilePictureUrl || '',
-                                    lastSeenAt: new Date()
-                                }
-                            }
-                        );
-                    }
-                }
-            } catch (e) {
-                console.error('알고리즘 시청자 저장 오류 (HTTP):', e.message);
-            }
+            // 시청자 DB 저장 (팔로워 포함 전체)
+            upsertAlgorithmViewer(userId, tiktokData, 'member').catch(() => {});
 
             // 모더 감지
             try {
@@ -1462,6 +1472,9 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 sessGift.totalGifts += (tiktokData.repeatCount || 1);
                 sessGift.totalDiamonds = (sessGift.totalDiamonds || 0) + ((tiktokData.diamondCount || 0) * (tiktokData.repeatCount || 1));
             }
+            if (tiktokData.isFinal !== false) {
+                upsertAlgorithmViewer(userId, tiktokData, 'gift').catch(() => {});
+            }
 
         } else if (type === 'social') {
             io.to(userId).emit('social-event', tiktokData);
@@ -1470,11 +1483,13 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 if (tiktokData.isFollow) sessSocial.totalFollows = (sessSocial.totalFollows || 0) + 1;
                 if (tiktokData.isShare) sessSocial.totalShares = (sessSocial.totalShares || 0) + 1;
             }
+            upsertAlgorithmViewer(userId, tiktokData, 'social').catch(() => {});
 
         } else if (type === 'subscribe') {
             io.to(userId).emit('subscribe-event', tiktokData);
             const sessSub = liveSessionMap.get(String(userId));
             if (sessSub) sessSub.totalSubscribes = (sessSub.totalSubscribes || 0) + 1;
+            upsertAlgorithmViewer(userId, tiktokData, 'subscribe').catch(() => {});
 
         } else if (type === 'stats') {
             io.to(userId).emit('viewer-update', tiktokData);
@@ -2437,6 +2452,7 @@ io.on('connection', (socket) => {
                 io.to(userId).emit('chat-message', tiktokData);
             }
             emitModeratorActivity(userId, tiktokData.uniqueId);
+            upsertAlgorithmViewer(userId, tiktokData, 'chat').catch(() => {});
         } else if (type === 'stats') {
             io.to(userId).emit('viewer-update', tiktokData);
             // 알고리즘 리포트: 시청자 수 기록
@@ -2468,6 +2484,9 @@ io.on('connection', (socket) => {
             if (sessGift && tiktokData.isFinal !== false) {
                 sessGift.totalGifts += (tiktokData.repeatCount || 1);
                 sessGift.totalDiamonds = (sessGift.totalDiamonds || 0) + ((tiktokData.diamondCount || 0) * (tiktokData.repeatCount || 1));
+            }
+            if (tiktokData.isFinal !== false) {
+                upsertAlgorithmViewer(userId, tiktokData, 'gift').catch(() => {});
             }
         } else if (type === 'like') {
             io.to(userId).emit('like-received', tiktokData);
@@ -2507,43 +2526,8 @@ io.on('connection', (socket) => {
                 const cc = tiktokData.userCountry || tiktokData.countryCode || '';
                 if (cc) sessMember.countryMap[cc] = (sessMember.countryMap[cc] || 0) + 1;
             }
-            // 비팔로워 시청자 DB 저장 / 팔로워 전환 자동 감지 (알고리즘 확장)
-            try {
-                const followRole = tiktokData.followRole || 0;
-                if (tiktokData.uniqueId) {
-                    if (followRole === 0) {
-                        // 비팔로워 입장 → upsert
-                        await AlgorithmViewer.findOneAndUpdate(
-                            { userId, uniqueId: tiktokData.uniqueId },
-                            {
-                                $set: {
-                                    nickname: tiktokData.nickname || tiktokData.uniqueId,
-                                    profilePictureUrl: tiktokData.profilePictureUrl || '',
-                                    lastSeenAt: new Date()
-                                },
-                                $inc: { visitCount: 1 },
-                                $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
-                            },
-                            { upsert: true, new: true }
-                        );
-                    } else if (followRole >= 1) {
-                        // 팔로워로 입장 → 기존 레코드가 pending/dm_sent 상태면 followed 로 자동 업데이트
-                        await AlgorithmViewer.findOneAndUpdate(
-                            { userId, uniqueId: tiktokData.uniqueId, status: { $in: ['pending', 'dm_sent'] } },
-                            {
-                                $set: {
-                                    status: 'followed',
-                                    nickname: tiktokData.nickname || tiktokData.uniqueId,
-                                    profilePictureUrl: tiktokData.profilePictureUrl || '',
-                                    lastSeenAt: new Date()
-                                }
-                            }
-                        );
-                    }
-                }
-            } catch (e) {
-                console.error('알고리즘 시청자 저장 오류:', e.message);
-            }
+            // 시청자 DB 저장 (팔로워 포함 전체)
+            upsertAlgorithmViewer(userId, tiktokData, 'member').catch(() => {});
         } else if (type === 'social') {
             io.to(userId).emit('social-event', tiktokData);
             const sessSocial = liveSessionMap.get(String(userId));
@@ -2551,8 +2535,10 @@ io.on('connection', (socket) => {
                 if (tiktokData.isFollow) sessSocial.totalFollows = (sessSocial.totalFollows || 0) + 1;
                 if (tiktokData.isShare) sessSocial.totalShares = (sessSocial.totalShares || 0) + 1;
             }
+            upsertAlgorithmViewer(userId, tiktokData, 'social').catch(() => {});
         } else if (type === 'subscribe') {
             io.to(userId).emit('subscribe-event', tiktokData);
+            upsertAlgorithmViewer(userId, tiktokData, 'subscribe').catch(() => {});
             const sessSub = liveSessionMap.get(String(userId));
             if (sessSub) sessSub.totalSubscribes = (sessSub.totalSubscribes || 0) + 1;
         } else if (type === 'streamEnd') {

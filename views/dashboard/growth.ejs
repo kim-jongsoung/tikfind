@@ -181,13 +181,15 @@
                                     <th class="pb-3 w-8"><input type="checkbox" id="checkAll" onchange="toggleSelectAll(this)" class="w-4 h-4 rounded"></th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500">닉네임 / 아이디</th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500 text-center">방문</th>
+                                    <th class="pb-3 text-xs font-semibold text-gray-500 text-center">팔로워</th>
+                                    <th class="pb-3 text-xs font-semibold text-gray-500 text-center">활동</th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500">최근 방문</th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500">상태</th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500 text-right">액션</th>
                                 </tr>
                             </thead>
                             <tbody id="viewerTableBody">
-                                <tr><td colspan="6" class="py-10 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>불러오는 중...</td></tr>
+                                <tr><td colspan="8" class="py-10 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>불러오는 중...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -347,17 +349,31 @@
         function renderViewers(viewers) {
             const tbody = document.getElementById('viewerTableBody');
             if (!viewers.length) {
-                tbody.innerHTML = '<tr><td colspan="6" class="py-10 text-center text-gray-400">조건에 맞는 시청자가 없습니다.<br><span class="text-xs">방송을 시작하면 비팔로워 시청자가 자동 수집됩니다.</span></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="py-10 text-center text-gray-400">조건에 맞는 시청자가 없습니다.<br><span class="text-xs">방송을 시작하면 시청자가 자동 수집됩니다.</span></td></tr>';
                 return;
             }
             tbody.innerHTML = viewers.map((v, i) => {
-                const isFollowed = v.status === 'followed';
+                const isFollowed = v.status === 'followed' || (v.followRole >= 1);
                 const rowBg = isFollowed ? 'bg-emerald-50' : 'hover:bg-gray-50';
                 const visitBadge = v.visitCount >= 5
                     ? `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold bg-red-100 text-red-700">${v.visitCount}</span>`
                     : v.visitCount >= 3
                     ? `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold bg-orange-100 text-orange-700">${v.visitCount}</span>`
                     : `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold bg-gray-100 text-gray-600">${v.visitCount}</span>`;
+
+                // 팔로워 상태 배지
+                const followBadge = v.followRole >= 2
+                    ? `<span class="text-xs font-bold text-emerald-600">👫친구</span>`
+                    : v.followRole >= 1
+                    ? `<span class="text-xs font-bold text-blue-600">✅팔로워</span>`
+                    : `<span class="text-xs text-gray-400">비팔로워</span>`;
+
+                // 수집 소스 아이콘
+                const srcMap = { member: '👋', chat: '💬', gift: '🎁', social: '➕', subscribe: '⭐' };
+                const sources = (v.sources || []).map(s => `<span title="${s}">${srcMap[s]||s}</span>`).join('');
+                const activityBadge = `<div class="flex items-center justify-center gap-0.5 text-sm">${sources || '-'}</div>
+                    ${v.chatCount > 0 ? `<div class="text-xs text-center text-gray-400">채팅 ${v.chatCount}</div>` : ''}
+                    ${v.giftCount > 0 ? `<div class="text-xs text-center text-yellow-600">선물 ${v.giftCount}</div>` : ''}`;
 
                 return `
                 <tr class="border-b border-gray-50 transition ${rowBg}" id="row-${v._id}">
@@ -371,12 +387,14 @@
                                 ? `<img src="${v.profilePictureUrl}" class="w-8 h-8 rounded-full object-cover flex-shrink-0" onerror="this.style.display='none'">`
                                 : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 flex-shrink-0">${(v.nickname||v.uniqueId||'?')[0].toUpperCase()}</div>`}
                             <div>
-                                <p class="font-medium text-gray-800 text-sm">${v.nickname || v.uniqueId}${isFollowed ? ' <span class="text-xs text-emerald-600">✅ 팔로워됨</span>' : ''}</p>
+                                <p class="font-medium text-gray-800 text-sm">${v.nickname || v.uniqueId}</p>
                                 <p class="text-xs text-gray-400">@${v.uniqueId}</p>
                             </div>
                         </div>
                     </td>
                     <td class="py-3 text-center">${visitBadge}</td>
+                    <td class="py-3 text-center">${followBadge}</td>
+                    <td class="py-3 text-center">${activityBadge}</td>
                     <td class="py-3 text-xs text-gray-500 whitespace-nowrap">${formatDate(v.lastSeenAt)}</td>
                     <td class="py-3">
                         <select onchange="updateStatus('${v._id}', this.value)"
