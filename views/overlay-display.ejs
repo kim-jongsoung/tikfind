@@ -10,15 +10,15 @@
         html, body {
             background: transparent;
             overflow: hidden;
-            width: 750px;
-            height: 75px;
+            width: 800px;
+            height: 70px;
             margin: 0;
             padding: 0;
         }
 
         .overlay-bar {
-            width: 750px;
-            height: 75px;
+            width: 800px;
+            height: 70px;
             overflow: hidden;
             display: flex;
             align-items: center;
@@ -29,15 +29,15 @@
         /* 슬라이드 아이템 - 기본은 오른쪽 30px 안쪽 대기 */
         .slide-item {
             position: absolute;
-            width: 690px;  /* 750 - 30*2 */
-            height: 75px;
+            width: 740px;  /* 800 - 30*2 */
+            height: 70px;
             left: 30px;
             display: flex;
             align-items: center;
             padding: 0 16px;
             white-space: nowrap;
             overflow: hidden;
-            transform: translateX(720px);
+            transform: translateX(770px);
             opacity: 0;
             font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif;
         }
@@ -59,13 +59,13 @@
         }
 
         @keyframes slideIn {
-            from { transform: translateX(720px); opacity: 0; }
+            from { transform: translateX(770px); opacity: 0; }
             to   { transform: translateX(0);     opacity: 1; }
         }
 
         @keyframes slideOut {
             from { transform: translateX(0);       opacity: 1; }
-            to   { transform: translateX(-720px);  opacity: 0; }
+            to   { transform: translateX(-770px);  opacity: 0; }
         }
 
         .item-badge {
@@ -120,7 +120,7 @@
         const params   = new URLSearchParams(location.search);
         const bgColor  = decodeURIComponent(params.get('bg')    || 'rgba(0,0,0,0.30)');
         const txtColor = params.get('color') || '#ffffff';
-        const fontSize = parseInt(params.get('size') || '28');
+        const fontSize = parseInt(params.get('size') || '35');
 
         const bar  = document.getElementById('overlayBar');
         const item = document.getElementById('slideItem');
