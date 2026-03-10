@@ -130,11 +130,20 @@ class TikTokCollector extends EventEmitter {
             // 레벨 필드 탐색용 - 첫 채팅 1회만 raw 데이터 출력
             if (!_rawLogged) {
                 _rawLogged = true;
-                console.log('🔍 [RAW CHAT DATA - 레벨 필드 확인용]');
-                console.log('  userDetails:', JSON.stringify(data.userDetails, null, 2));
-                console.log('  userBadges:', JSON.stringify(data.userBadges, null, 2));
-                console.log('  followInfo:', JSON.stringify(data.followInfo, null, 2));
-                console.log('  전체 키 목록:', Object.keys(data).join(', '));
+                try {
+                    const log = require('electron-log');
+                    log.info('=== RAW CHAT DATA (레벨 필드 확인용) ===');
+                    log.info('전체 키 목록: ' + Object.keys(data).join(', '));
+                    log.info('userDetails: ' + JSON.stringify(data.userDetails));
+                    log.info('userBadges: ' + JSON.stringify(data.userBadges));
+                    log.info('followInfo: ' + JSON.stringify(data.followInfo));
+                    log.info('followRole: ' + data.followRole);
+                    log.info('level: ' + data.level);
+                    log.info('userLevel: ' + data.userLevel);
+                    log.info('=== END RAW CHAT DATA ===');
+                } catch(e) {
+                    console.log('[RAW] keys:', Object.keys(data).join(', '));
+                }
             }
             
             const chatData = {
