@@ -1763,12 +1763,26 @@ router.delete('/moderator/:id', requireAuth, async (req, res) => {
 // ══════════════════════════════════════════════════
 
 // POST /api/speech/translate  (오버레이에서 호출, 인증 불필요)
+// 성능 최적화: system 프롬프트 분리 + max_tokens 축소 + 메모리 캐시
+const _translateCache = new Map();
+const _TRANSLATE_CACHE_MAX = 300;
+
 router.post('/speech/translate', async (req, res) => {
     try {
         const { text, langs } = req.body;
         if (!text || !langs || !langs.length) {
             return res.json({ success: true, translations: [] });
         }
+
+        const targetLangs = langs.slice(0, 2);
+        const trimmed = text.trim();
+        const cacheKey = trimmed + '|' + targetLangs.join(',');
+
+        // 캐시 히트 → 즉시 반환
+        if (_translateCache.has(cacheKey)) {
+            return res.json({ success: true, translations: _translateCache.get(cacheKey) });
+        }
+
         const OpenAI = require('openai');
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -1777,23 +1791,39 @@ router.post('/speech/translate', async (req, res) => {
             es: 'Español', fr: 'Français', de: 'Deutsch',
             th: 'ภาษาไทย', vi: 'Tiếng Việt', id: 'Bahasa Indonesia'
         };
-        const targets = langs.slice(0, 2).map(l => `{"lang":"${l}","name":"${langNames[l] || l}"}`).join(', ');
-
-        const prompt = `Translate the following text into these languages: ${langs.slice(0,2).map(l => langNames[l]||l).join(' and ')}.
-Return ONLY a JSON array. Example: [{"lang":"en","text":"Hello"},{"lang":"ja","text":"こんにちは"}]
-Use the exact lang codes: ${langs.slice(0,2).join(', ')}. No explanation, no markdown.
-Text to translate: "${text}"`;
 
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: 300,
-            temperature: 0.2
+            messages: [
+                {
+                    // 역할·지시를 system에 고정 → user에는 텍스트만 → 토큰 절약 + 품질 유지
+                    role: 'system',
+                    content:
+                        'You are a professional live-stream subtitle translator. ' +
+                        'Translate the given Korean text accurately and naturally into the requested languages. ' +
+                        'Preserve the original nuance and tone. ' +
+                        'Return ONLY a compact JSON array, no explanation, no markdown. ' +
+                        'Format: [{"lang":"<code>","text":"<translation>"}]'
+                },
+                {
+                    role: 'user',
+                    content: `Translate into ${targetLangs.map(l => (langNames[l] || l) + '(' + l + ')').join(' and ')}:\n${trimmed}`
+                }
+            ],
+            max_tokens: 150,   // 2개 언어 JSON은 70~100 토큰으로 충분
+            temperature: 0.1   // 번역은 창의성 불필요 → 빠르고 일관된 응답
         });
 
         const raw = completion.choices[0].message.content.trim();
         const match = raw.match(/\[[\s\S]*\]/);
         const translations = match ? JSON.parse(match[0]) : [];
+
+        // LRU 캐시 저장
+        if (_translateCache.size >= _TRANSLATE_CACHE_MAX) {
+            _translateCache.delete(_translateCache.keys().next().value);
+        }
+        _translateCache.set(cacheKey, translations);
+
         res.json({ success: true, translations });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });

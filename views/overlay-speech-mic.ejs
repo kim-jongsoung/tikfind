@@ -193,25 +193,31 @@
         if (data.langs) { activeLangs = data.langs.slice(0, 2); renderLangRows(); }
     });
 
-    // 번역 요청
-    async function requestTranslation(text) {
-        try {
-            const res = await fetch('/api/speech/translate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text.trim(), langs: activeLangs, userId })
-            });
-            const data = await res.json();
-            if (data.success && data.translations.length) {
-                // 위젯으로 소켓 전송
-                socket.emit('speech-translated-send', { userId, translations: data.translations });
-                // 이 창에도 표시
-                data.translations.forEach(({ lang, text: t }) => {
-                    const el = document.getElementById('ttext-' + lang);
-                    if (el) el.textContent = t;
+    // 번역 요청 (디바운싱: 연속 발화 시 마지막 문장만 처리)
+    let _translateTimer = null;
+
+    function requestTranslation(text) {
+        const trimmed = text.trim();
+        if (trimmed.length < 3) return; // 너무 짧은 단어 스킵
+
+        clearTimeout(_translateTimer);
+        _translateTimer = setTimeout(async () => {
+            try {
+                const res = await fetch('/api/speech/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: trimmed, langs: activeLangs, userId })
                 });
-            }
-        } catch(e) {}
+                const data = await res.json();
+                if (data.success && data.translations.length) {
+                    socket.emit('speech-translated-send', { userId, translations: data.translations });
+                    data.translations.forEach(({ lang, text: t }) => {
+                        const el = document.getElementById('ttext-' + lang);
+                        if (el) el.textContent = t;
+                    });
+                }
+            } catch(e) {}
+        }, 300); // 300ms 내 추가 finalText가 오면 이전 요청 취소
     }
 
     // Web Speech API
