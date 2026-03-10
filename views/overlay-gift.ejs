@@ -54,15 +54,15 @@
             animation: mod-slide-out 0.45s ease-in forwards;
         }
 
-        /* 왼쪽 MOD 뱃지 */
+        /* 왼쪽 MODER 뱃지 */
         .mod-notice-badge {
             flex-shrink: 0;
-            background: rgba(99,102,241,0.85);
+            background: #2563eb;
             color: #fff;
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 900;
-            letter-spacing: 0.06em;
-            padding: 0 16px;
+            letter-spacing: 0.08em;
+            padding: 0 20px;
             height: 100%;
             display: flex;
             align-items: center;
@@ -255,7 +255,7 @@
 
 <!-- 모더 공지 배너 -->
 <div id="mod-notice-wrap">
-    <div class="mod-notice-badge" id="mod-notice-badge">📢 MOD</div>
+    <div class="mod-notice-badge" id="mod-notice-badge">MODER</div>
     <div class="mod-notice-scroll">
         <div class="mod-notice-track" id="mod-notice-track"></div>
     </div>
@@ -318,7 +318,7 @@
         if (!d.text) return;
 
         // 뱃지
-        badge.textContent = '📢 ' + (d.moderatorName || 'MOD');
+        badge.textContent = 'MODER';
 
         // 텍스트가 박스 너비(~620px)를 넘으면 마퀴, 짧으면 고정
         track.style.animation = 'none';
