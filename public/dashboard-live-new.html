@@ -413,7 +413,7 @@
                     document.getElementById('username').value = currentUser.tiktokId || '';
                     
                     // 플랜 정보 표시
-                    updatePlanBadge(currentUser.subscription);
+                    updatePlanBadge(currentUser.plan || currentUser.subscription?.plan, currentUser.subscriptionStatus || currentUser.subscription?.status);
                     
                     console.log('✅ 사용자 로드:', currentUser);
                     

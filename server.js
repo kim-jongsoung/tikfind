@@ -1061,6 +1061,18 @@ async function processChatMessage(chatData) {
             userGenders
         });
         console.log(`✅ tts-speak 전송 완료 → ${desktopSocketId}`);
+        // TTS 글자수 카운팅
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const charLen = (message || '').length;
+            if (charLen > 0) {
+                await UsageLog.findOneAndUpdate(
+                    { userId, date: today },
+                    { $inc: { ttsCharCount: charLen }, $setOnInsert: { songRequestCount: 0, gptAiCount: 0, pronunciationCoachCount: 0 } },
+                    { upsert: true }
+                );
+            }
+        } catch(e) {}
     } else if (!isCurrentlyLive) {
         console.log(`⛔ 방송 중지 상태 - tts-speak 차단 (userId=${userId})`);
     } else {
@@ -2467,6 +2479,20 @@ io.on('connection', (socket) => {
                         }
                     });
                     console.log(`🔊 tts-speak 전송 → ${desktopSid} | "${tiktokData.message}" | googleTTS=${user?.ttsSettings?.useGoogleTTS}`);
+                    // TTS 글자수 카운팅
+                    try {
+                        const UsageLog = require('./models/UsageLog');
+                        const { getTodayInUserTimezone } = require('./middleware/usageLimit') || {};
+                        const today = new Date().toISOString().split('T')[0];
+                        const charLen = (tiktokData.message || '').length;
+                        if (charLen > 0) {
+                            await UsageLog.findOneAndUpdate(
+                                { userId, date: today },
+                                { $inc: { ttsCharCount: charLen }, $setOnInsert: { songRequestCount: 0, gptAiCount: 0, pronunciationCoachCount: 0 } },
+                                { upsert: true }
+                            );
+                        }
+                    } catch(e) {}
                 }
 
                 // 알고리즘 리포트: 채팅/국가/시간대 기록
