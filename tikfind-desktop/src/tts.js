@@ -225,9 +225,18 @@ class TTSService {
             console.log('🔇 TTS 건너뜀 (기호/이모티콘만 포함)');
             return;
         }
+
+        const item = { text: cleanedText, uniqueId: uniqueId || 'unknown', userGenders: userGenders || {}, bufferPromise: null };
+
+        // ── Prefetch: 큐에 넣는 즉시 백그라운드에서 Google TTS 합성 시작 ──
+        if (this.googleTTS.enabled && this.googleTTS.apiKey) {
+            item.bufferPromise = this._fetchGoogleTTSBuffer(cleanedText, item.uniqueId, item.userGenders)
+                .catch(() => null); // 실패해도 큐는 유지
+            console.log(`⚡ Prefetch 시작: "${cleanedText}" | @${item.uniqueId}`);
+        }
         
-        // 큐에 추가 (uniqueId + userGenders 포함)
-        this.queue.push({ text: cleanedText, uniqueId: uniqueId || 'unknown', userGenders: userGenders || {} });
+        // 큐에 추가
+        this.queue.push(item);
 
         // 큐 최대 3개 제한 - 초과 시 오래된 것 드롭 (지연 방지)
         const MAX_QUEUE = 3;
@@ -241,6 +250,55 @@ class TTSService {
         if (!this.isPlaying) {
             this.processQueue();
         }
+    }
+
+    // Google TTS API 호출만 담당 (재생 없음) → Prefetch 용
+    async _fetchGoogleTTSBuffer(text, uniqueId, userGenders) {
+        return new Promise((resolve, reject) => {
+            try {
+                const vipSetting = this.googleTTS.voiceSettings.find(v => v.tiktokUniqueId === uniqueId);
+                const speed = vipSetting?.speed || this.googleTTS.defaultSpeed || 1.0;
+
+                let voiceConfig;
+                if (vipSetting?.chirpVoice) {
+                    voiceConfig = { languageCode: 'ko-KR', name: `ko-KR-Chirp3-HD-${vipSetting.chirpVoice}` };
+                } else {
+                    const waveNetVoice = this.getAutoWaveNetVoice(uniqueId, userGenders);
+                    voiceConfig = { languageCode: 'ko-KR', name: waveNetVoice };
+                }
+
+                const body = JSON.stringify({
+                    input: { text },
+                    voice: voiceConfig,
+                    audioConfig: { audioEncoding: 'MP3', speakingRate: Math.min(Math.max(speed, 0.25), 4.0) }
+                });
+
+                const options = {
+                    hostname: 'texttospeech.googleapis.com',
+                    path: `/v1/text:synthesize?key=${this.googleTTS.apiKey}`,
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
+                };
+
+                const req = https.request(options, (res) => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => {
+                        try {
+                            const json = JSON.parse(data);
+                            if (json.audioContent) {
+                                resolve(Buffer.from(json.audioContent, 'base64'));
+                            } else {
+                                reject(new Error(json.error?.message || 'No audioContent'));
+                            }
+                        } catch (e) { reject(e); }
+                    });
+                });
+                req.on('error', reject);
+                req.write(body);
+                req.end();
+            } catch (e) { reject(e); }
+        });
     }
     
     async processQueue() {
@@ -256,8 +314,18 @@ class TTSService {
             if (this._stopped) { this.isPlaying = false; return; }
             console.log(`🔊 TTS 처리: "${item.text}" | googleTTS.enabled=${this.googleTTS.enabled} | apiKey=${this.googleTTS.apiKey ? '있음' : '없음(빈값)'}`);
             if (this.googleTTS.enabled && this.googleTTS.apiKey) {
-                console.log(`🎙️ Google TTS 사용 | @${item.uniqueId}`);
-                await this.speakWithGoogleTTS(item.text, item.uniqueId, item.userGenders);
+                // Prefetch된 버퍼가 있으면 즉시 재생, 없으면 이 시점에 합성
+                const buffer = item.bufferPromise
+                    ? await item.bufferPromise
+                    : await this._fetchGoogleTTSBuffer(item.text, item.uniqueId, item.userGenders).catch(() => null);
+
+                if (buffer) {
+                    console.log(`🎙️ Google TTS 재생 (${item.bufferPromise ? 'prefetched' : 'live'}) | @${item.uniqueId}`);
+                    await new Promise(resolve => this.playMp3Buffer(buffer, resolve));
+                } else {
+                    console.log(`🔈 Google TTS 실패 → 기본 TTS 폴백`);
+                    await this.speakText(item.text);
+                }
             } else {
                 console.log(`🔈 기본 TTS 사용 (Google TTS 비활성 또는 API키 없음)`);
                 await this.speakText(item.text);
