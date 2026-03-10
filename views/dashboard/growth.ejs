@@ -182,6 +182,7 @@
                                     <th class="pb-3 text-xs font-semibold text-gray-500">닉네임 / 아이디</th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500 text-center">방문</th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500 text-center">팔로워</th>
+                                    <th class="pb-3 text-xs font-semibold text-gray-500 text-center">레벨</th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500 text-center">활동</th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500">최근 방문</th>
                                     <th class="pb-3 text-xs font-semibold text-gray-500">상태</th>
@@ -189,7 +190,7 @@
                                 </tr>
                             </thead>
                             <tbody id="viewerTableBody">
-                                <tr><td colspan="8" class="py-10 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>불러오는 중...</td></tr>
+                                <tr><td colspan="9" class="py-10 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>불러오는 중...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -349,7 +350,7 @@
         function renderViewers(viewers) {
             const tbody = document.getElementById('viewerTableBody');
             if (!viewers.length) {
-                tbody.innerHTML = '<tr><td colspan="8" class="py-10 text-center text-gray-400">조건에 맞는 시청자가 없습니다.<br><span class="text-xs">방송을 시작하면 시청자가 자동 수집됩니다.</span></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="py-10 text-center text-gray-400">조건에 맞는 시청자가 없습니다.<br><span class="text-xs">방송을 시작하면 시청자가 자동 수집됩니다.</span></td></tr>';
                 return;
             }
             tbody.innerHTML = viewers.map((v, i) => {
@@ -394,6 +395,7 @@
                     </td>
                     <td class="py-3 text-center">${visitBadge}</td>
                     <td class="py-3 text-center">${followBadge}</td>
+                    <td class="py-3 text-center">${v.gifterLevel > 0 ? `<span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700">Lv.${v.gifterLevel}</span>` : `<span class="text-xs text-gray-300">-</span>`}</td>
                     <td class="py-3 text-center">${activityBadge}</td>
                     <td class="py-3 text-xs text-gray-500 whitespace-nowrap">${formatDate(v.lastSeenAt)}</td>
                     <td class="py-3">

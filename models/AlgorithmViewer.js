@@ -55,6 +55,10 @@ const algorithmViewerSchema = new mongoose.Schema({
     giftCount: {
         type: Number,
         default: 0
+    },
+    gifterLevel: {
+        type: Number,
+        default: 0   // TikTok 방송 내 선물 기반 레벨
     }
 }, {
     timestamps: true

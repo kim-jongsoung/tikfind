@@ -80,6 +80,7 @@ class TikTokCollector extends EventEmitter {
             isNewGifter: data.isNewGifter || false,
             isSubscriber: data.isSubscriber || false,
             topGifterRank: data.topGifterRank || null,
+            gifterLevel: data.gifterLevel || 0,
             teamMemberLevel: data.teamMemberLevel || null,
             msgId: data.msgId || null,
             createTime: data.createTime || null
@@ -118,7 +119,6 @@ class TikTokCollector extends EventEmitter {
         });
         
         // 채팅 메시지
-        let _rawLogged = false;
         this.client.on('chat', (data) => {
             if (!this.isRunning) {
                 console.log('✅ TikTok Live 연결 성공 (첫 채팅 수신)');
@@ -127,24 +127,6 @@ class TikTokCollector extends EventEmitter {
                 this.broadcastStatus(true);
             }
 
-            // 레벨 필드 탐색용 - 첫 채팅 1회만 raw 데이터 출력
-            if (!_rawLogged) {
-                _rawLogged = true;
-                try {
-                    const log = require('electron-log');
-                    log.info('=== RAW CHAT DATA (레벨 필드 확인용) ===');
-                    log.info('전체 키 목록: ' + Object.keys(data).join(', '));
-                    log.info('userDetails: ' + JSON.stringify(data.userDetails));
-                    log.info('userBadges: ' + JSON.stringify(data.userBadges));
-                    log.info('followInfo: ' + JSON.stringify(data.followInfo));
-                    log.info('followRole: ' + data.followRole);
-                    log.info('level: ' + data.level);
-                    log.info('userLevel: ' + data.userLevel);
-                    log.info('=== END RAW CHAT DATA ===');
-                } catch(e) {
-                    console.log('[RAW] keys:', Object.keys(data).join(', '));
-                }
-            }
             
             const chatData = {
                 ...this.extractUser(data),

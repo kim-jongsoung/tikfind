@@ -860,19 +860,24 @@ async function upsertAlgorithmViewer(userId, data, source) {
             if (source === 'gift')   inc.giftCount  = 1;
             if (source === 'member') inc.visitCount = 1;
 
+            const gifterLevel = data.gifterLevel || 0;
+            const setFields = {
+                nickname: data.nickname || data.uniqueId,
+                profilePictureUrl: data.profilePictureUrl || '',
+                followRole,
+                lastSeenAt: new Date()
+            };
+            const updateOp = {
+                $set: setFields,
+                $addToSet: { sources: source },
+                ...(Object.keys(inc).length ? { $inc: inc } : {}),
+                $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
+            };
+            if (gifterLevel > 0) updateOp.$max = { gifterLevel };
+
             await AlgorithmViewer.findOneAndUpdate(
                 { userId, uniqueId: data.uniqueId },
-                {
-                    $set: {
-                        nickname: data.nickname || data.uniqueId,
-                        profilePictureUrl: data.profilePictureUrl || '',
-                        followRole,
-                        lastSeenAt: new Date()
-                    },
-                    $addToSet: { sources: source },
-                    ...(Object.keys(inc).length ? { $inc: inc } : {}),
-                    $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
-                },
+                updateOp,
                 { upsert: true, new: true }
             );
 
