@@ -23,6 +23,58 @@
             overflow: hidden;
         }
 
+        /* ── 모더 공지 마퀴 배너 ── */
+        #mod-notice-wrap {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 800px;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            background: rgba(8, 4, 20, 0.82);
+            border-top: 1.5px solid rgba(99,102,241,0.5);
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+        #mod-notice-wrap.visible { opacity: 1; }
+        .mod-notice-badge {
+            flex-shrink: 0;
+            background: rgba(99,102,241,0.9);
+            color: #fff;
+            font-size: 11px;
+            font-weight: 900;
+            padding: 2px 10px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            border-right: 1px solid rgba(99,102,241,0.4);
+            letter-spacing: 0.05em;
+        }
+        .mod-notice-scroll {
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+        .mod-notice-track {
+            display: inline-block;
+            white-space: nowrap;
+            color: #e0e7ff;
+            font-size: 14px;
+            font-weight: 700;
+            padding-left: 100%;
+            animation: mod-marquee 14s linear infinite;
+        }
+        @keyframes mod-marquee {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
         /* ── 파티클 (소스 내 범위만) ── */
         #particles { position:fixed; inset:0; pointer-events:none; overflow:hidden; }
         .pt { position:absolute; border-radius:50%; animation:pt-fly var(--d) ease-out forwards; }
@@ -186,6 +238,15 @@
 <body>
 
 <div id="particles"></div>
+
+<!-- 모더 공지 마퀴 배너 -->
+<div id="mod-notice-wrap">
+    <div class="mod-notice-badge" id="mod-notice-badge">📢 MOD</div>
+    <div class="mod-notice-scroll">
+        <div class="mod-notice-track" id="mod-notice-track"></div>
+    </div>
+</div>
+
 <div id="gift-card">
     <div class="card-inner" id="card-inner">
         <div class="card-shine"></div>
@@ -230,6 +291,34 @@
     socket.on('gift-settings-update', d => {
         if (d.midMin  != null) MID_MIN  = d.midMin;
         if (d.megaMin != null) MEGA_MIN = d.megaMin;
+    });
+
+    // ── 모더 공지 마퀴 ──
+    let noticeHideTimer = null;
+    socket.on('overlay-mod-notice', (d) => {
+        const wrap  = document.getElementById('mod-notice-wrap');
+        const track = document.getElementById('mod-notice-track');
+        const badge = document.getElementById('mod-notice-badge');
+        if (!d.text) return;
+
+        badge.textContent = '📢 ' + (d.moderatorName || 'MOD');
+        // 트랙 텍스트 2번 반복 (마퀴 루프용)
+        const msg = d.text + '　　　　　' + d.text;
+        track.textContent = msg;
+
+        // 애니메이션 속도: 텍스트 길이에 따라 조정
+        const spd = Math.max(8, Math.min(22, d.text.length * 0.4));
+        track.style.animationDuration = spd + 's';
+        // 재시작
+        track.style.animation = 'none';
+        void track.offsetWidth;
+        track.style.animation = 'mod-marquee ' + spd + 's linear infinite';
+
+        wrap.classList.add('visible');
+        clearTimeout(noticeHideTimer);
+        // 텍스트 길이에 따라 20~60초 표시 후 자동 숨김
+        const showMs = Math.max(20000, Math.min(60000, d.text.length * 600));
+        noticeHideTimer = setTimeout(() => wrap.classList.remove('visible'), showMs);
     });
 
     function next() {
