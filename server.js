@@ -843,39 +843,70 @@ async function globalEmitModeratorJoin(userId, tiktokData) {
 
 // ── AlgorithmViewer 공통 upsert 헬퍼 ──────────────────────────────────────
 // source: 'member' | 'chat' | 'gift' | 'social' | 'subscribe'
+// 세션 캐시: 같은 방송 중 첫 등장 → upsert(신규 가능), 이후 → 경량 update만
 async function upsertAlgorithmViewer(userId, data, source) {
     if (!data || !data.uniqueId) return;
     try {
         const followRole = data.followRole || 0;
-        const inc = {};
-        if (source === 'chat')  inc.chatCount = 1;
-        if (source === 'gift')  inc.giftCount = 1;
-        if (source === 'member') inc.visitCount = 1;
+        const sess = liveSessionMap.get(String(userId));
+        const viewerSet = sess?.viewerSet;   // Set<uniqueId> — 방송 중 처음 본 아이디
 
-        const setFields = {
-            nickname: data.nickname || data.uniqueId,
-            profilePictureUrl: data.profilePictureUrl || '',
-            followRole,
-            lastSeenAt: new Date()
-        };
+        const isFirstSeen = !viewerSet || !viewerSet.has(data.uniqueId);
 
-        await AlgorithmViewer.findOneAndUpdate(
-            { userId, uniqueId: data.uniqueId },
-            {
-                $set: setFields,
-                $addToSet: { sources: source },
-                ...(Object.keys(inc).length ? { $inc: inc } : {}),
-                $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
-            },
-            { upsert: true, new: true }
-        );
+        if (isFirstSeen) {
+            // 첫 등장: 완전 upsert (신규 등록 or 정보 갱신)
+            const inc = {};
+            if (source === 'chat')   inc.chatCount  = 1;
+            if (source === 'gift')   inc.giftCount  = 1;
+            if (source === 'member') inc.visitCount = 1;
 
-        // 팔로워로 입장/활동 → 기존 pending/dm_sent 상태 자동 업데이트
-        if (followRole >= 1) {
-            await AlgorithmViewer.updateOne(
-                { userId, uniqueId: data.uniqueId, status: { $in: ['pending', 'dm_sent'] } },
-                { $set: { status: 'followed' } }
+            await AlgorithmViewer.findOneAndUpdate(
+                { userId, uniqueId: data.uniqueId },
+                {
+                    $set: {
+                        nickname: data.nickname || data.uniqueId,
+                        profilePictureUrl: data.profilePictureUrl || '',
+                        followRole,
+                        lastSeenAt: new Date()
+                    },
+                    $addToSet: { sources: source },
+                    ...(Object.keys(inc).length ? { $inc: inc } : {}),
+                    $setOnInsert: { firstSeenAt: new Date(), status: 'pending' }
+                },
+                { upsert: true, new: true }
             );
+
+            // 팔로워로 활동 → pending/dm_sent 자동 followed 전환
+            if (followRole >= 1) {
+                await AlgorithmViewer.updateOne(
+                    { userId, uniqueId: data.uniqueId, status: { $in: ['pending', 'dm_sent'] } },
+                    { $set: { status: 'followed', followRole } }
+                );
+            }
+
+            // 세션 캐시에 등록
+            if (viewerSet) viewerSet.add(data.uniqueId);
+
+        } else {
+            // 같은 방송 중 재등장: 카운터·날짜·팔로워 상태만 경량 업데이트
+            const inc = {};
+            if (source === 'chat') inc.chatCount = 1;
+            if (source === 'gift') inc.giftCount = 1;
+
+            const update = {
+                $set: { lastSeenAt: new Date(), followRole },
+                $addToSet: { sources: source },
+                ...(Object.keys(inc).length ? { $inc: inc } : {})
+            };
+
+            await AlgorithmViewer.updateOne({ userId, uniqueId: data.uniqueId }, update);
+
+            if (followRole >= 1) {
+                await AlgorithmViewer.updateOne(
+                    { userId, uniqueId: data.uniqueId, status: { $in: ['pending', 'dm_sent'] } },
+                    { $set: { status: 'followed', followRole } }
+                );
+            }
         }
     } catch (e) {
         // 수집 오류는 무시 (방송 흐름에 영향 없음)
@@ -2617,7 +2648,8 @@ io.on('connection', (socket) => {
                 totalGifts: 0,
                 totalLikes: 0,
                 foreignChatCount: 0,
-                languages: new Set()
+                languages: new Set(),
+                viewerSet: new Set()   // 이번 방송 중 처음 본 uniqueId 캐시
             });
             console.log(`📊 LiveSession 시작: ${session._id}`);
         } catch(e) { console.error('LiveSession 시작 오류:', e); }
