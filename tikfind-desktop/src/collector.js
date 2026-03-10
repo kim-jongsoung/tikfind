@@ -118,12 +118,23 @@ class TikTokCollector extends EventEmitter {
         });
         
         // 채팅 메시지
+        let _rawLogged = false;
         this.client.on('chat', (data) => {
             if (!this.isRunning) {
                 console.log('✅ TikTok Live 연결 성공 (첫 채팅 수신)');
                 this.isRunning = true;
                 this.emit('connected');
                 this.broadcastStatus(true);
+            }
+
+            // 레벨 필드 탐색용 - 첫 채팅 1회만 raw 데이터 출력
+            if (!_rawLogged) {
+                _rawLogged = true;
+                console.log('🔍 [RAW CHAT DATA - 레벨 필드 확인용]');
+                console.log('  userDetails:', JSON.stringify(data.userDetails, null, 2));
+                console.log('  userBadges:', JSON.stringify(data.userBadges, null, 2));
+                console.log('  followInfo:', JSON.stringify(data.followInfo, null, 2));
+                console.log('  전체 키 목록:', Object.keys(data).join(', '));
             }
             
             const chatData = {
