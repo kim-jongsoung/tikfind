@@ -199,28 +199,21 @@ function updatePlanBadge(plan, subscriptionStatus) {
     const planName = document.getElementById('plan-name');
     
     if (!planIcon || !planName) return;
-    
-    // plan이 'free'이면 무료 플랜
-    // plan이 'pro'이고 subscriptionStatus가 'active' 또는 'trial'이면 UNIVERSE 플랜
-    // 나중에 UNLIMITED 플랜 추가 시 plan이 'unlimited'로 구분
-    
-    if (plan === 'free' || !subscriptionStatus || subscriptionStatus === 'expired' || subscriptionStatus === 'cancelled') {
-        // Free 플랜 - 회색
-        planIcon.style.backgroundColor = '#9ca3af';
-        planName.textContent = 'FREE';
-        planName.style.color = '#9ca3af';
-    } else if (plan === 'unlimited') {
+
+    const isActive = subscriptionStatus === 'active' || subscriptionStatus === 'trial';
+
+    if (plan === 'unlimited' && isActive) {
         // UNLIMITED 플랜 - 금색
         planIcon.style.backgroundColor = '#fbbf24';
         planName.textContent = 'UNLIMITED';
         planName.style.color = '#fbbf24';
-    } else if (plan === 'pro' && (subscriptionStatus === 'active' || subscriptionStatus === 'trial')) {
+    } else if ((plan === 'universe' || plan === 'pro') && isActive) {
         // UNIVERSE 플랜 - 보라색
         planIcon.style.backgroundColor = '#8b5cf6';
         planName.textContent = 'UNIVERSE';
         planName.style.color = '#8b5cf6';
     } else {
-        // 기본값 - Free
+        // FREE 플랜 - 회색
         planIcon.style.backgroundColor = '#9ca3af';
         planName.textContent = 'FREE';
         planName.style.color = '#9ca3af';

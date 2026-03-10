@@ -390,6 +390,11 @@
                     document.getElementById('universePlanContent').classList.remove('hidden');
                     document.getElementById('subscriptionStartDate').textContent = fmtDate(data.subscriptionStartDate);
                     document.getElementById('nextBillingDate').textContent = fmtDate(data.nextBillingDate);
+                } else if (plan === 'universe' || plan === 'pro') {
+                    // subscriptionStatus가 없거나 만료된 경우에도 plan 필드가 universe/pro면 표시
+                    document.getElementById('universePlanContent').classList.remove('hidden');
+                    document.getElementById('subscriptionStartDate').textContent = fmtDate(data.subscriptionStartDate);
+                    document.getElementById('nextBillingDate').textContent = fmtDate(data.nextBillingDate);
                 } else {
                     document.getElementById('freePlanContent').classList.remove('hidden');
                 }

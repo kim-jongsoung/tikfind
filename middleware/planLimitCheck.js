@@ -14,8 +14,9 @@ function getUserPlanName(user) {
     // plan이 'unlimited'이면 unlimited
     if (user.plan === 'unlimited') return 'unlimited';
     
-    // plan이 'pro'이고 subscriptionStatus가 'active' 또는 'trial'이면 universe
-    if (user.plan === 'pro' && (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trial')) {
+    // plan이 'universe' 또는 'pro'이고 subscriptionStatus가 'active' 또는 'trial'이면 universe
+    if ((user.plan === 'universe' || user.plan === 'pro') &&
+        (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'trial')) {
         return 'universe';
     }
     
