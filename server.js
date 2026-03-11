@@ -1454,7 +1454,27 @@ app.post('/api/live/tiktok-data', async (req, res) => {
         const { userId, type, data: tiktokData } = req.body;
         if (!userId || !type || !tiktokData) return res.json({ success: true });
 
-        if (type === 'member') {
+        if (type === 'chat') {
+            await processChatMessage({
+                userId,
+                username:        tiktokData.uniqueId || tiktokData.username,
+                message:         tiktokData.message || tiktokData.comment,
+                uniqueId:        tiktokData.uniqueId,
+                nickname:        tiktokData.nickname,
+                badges:          tiktokData.badges,
+                userBadges:      tiktokData.userBadges,
+                followRole:      tiktokData.followRole,
+                isModerator:     tiktokData.isModerator,
+                isSubscriber:    tiktokData.isSubscriber,
+                topGifterRank:   tiktokData.topGifterRank,
+                teamMemberLevel: tiktokData.teamMemberLevel,
+                gifterLevel:     tiktokData.gifterLevel,
+                profilePictureUrl: tiktokData.profilePictureUrl,
+                timestamp:       tiktokData.timestamp
+            });
+            return res.json({ success: true });
+
+        } else if (type === 'member') {
             // 입장 이벤트 소켓 emit
             io.to(userId).emit('member-join', tiktokData);
 
