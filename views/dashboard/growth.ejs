@@ -642,12 +642,11 @@
             setStatusFilter('');
             loadViewers();
 
-            // UNIVERSE 이상 플랜 체크 - free면 잠금 레이어 표시
+            // UNLIMITED 플랜만 허용
             fetch('/api/user/plan').then(r => r.json()).then(data => {
                 const plan = (data.plan || 'free').toLowerCase();
                 const isActive = data.subscriptionStatus === 'active' || data.subscriptionStatus === 'trial';
-                const hasAccess = (plan === 'unlimited') ||
-                                  ((plan === 'universe' || plan === 'pro') && isActive);
+                const hasAccess = (plan === 'unlimited') && isActive;
                 if (!data.success || !hasAccess) {
                     document.getElementById('unlimited-lock-layer').classList.remove('hidden');
                 }

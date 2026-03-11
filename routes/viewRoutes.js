@@ -74,6 +74,11 @@ router.get('/dashboard/report', requireAuth, (req, res) => {
 });
 
 router.get('/dashboard/growth', requireAuth, (req, res) => {
+    const plan = (req.user.plan || 'free').toLowerCase();
+    const isActive = req.user.subscriptionStatus === 'active' || req.user.subscriptionStatus === 'trial';
+    if (plan !== 'unlimited' || !isActive) {
+        return res.redirect('/dashboard?upgrade=growth');
+    }
     res.render('dashboard/growth', { title: '알고리즘 확장 - TikFind', user: req.user });
 });
 
