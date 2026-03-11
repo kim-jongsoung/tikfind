@@ -129,7 +129,7 @@ class TTSService {
         fs.writeFileSync(tmpFile, buffer);
 
         const vol = Math.min(Math.max(this.volume / 100, 0), 1).toFixed(2);
-        // NaturalDuration 폴링: 50ms 간격으로 최대 20번(1초) 확인 후 재생 완료까지 대기
+        // NaturalDuration 폴링: 20ms 간격으로 최대 25번(500ms) 확인 후 재생 완료까지 대기
         const psCommand = [
             'Add-Type -AssemblyName presentationCore;',
             '$p = New-Object System.Windows.Media.MediaPlayer;',
@@ -137,15 +137,15 @@ class TTSService {
             `$p.Volume = ${vol};`,
             '$p.Play();',
             '$dur = 0;',
-            'for ($i = 0; $i -lt 20; $i++) { Start-Sleep -Milliseconds 50;',
+            'for ($i = 0; $i -lt 25; $i++) { Start-Sleep -Milliseconds 20;',
             '$dur = try { $p.NaturalDuration.TimeSpan.TotalMilliseconds } catch { 0 };',
             'if ($dur -gt 0) { break } };',
-            'if ($dur -gt 0) { Start-Sleep -Milliseconds ([int]$dur + 100) } else { Start-Sleep -Milliseconds 2000 };',
+            'if ($dur -gt 0) { Start-Sleep -Milliseconds ([int]$dur + 50) } else { Start-Sleep -Milliseconds 2000 };',
             '$p.Close();'
         ].join(' ');
 
         console.log(`🎵 MP3 재생 시작: ${tmpFile} (${buffer.length} bytes)`);
-        exec(`powershell -Command "${psCommand}"`, (err) => {
+        exec(`powershell -NoProfile -NonInteractive -Command "${psCommand}"`, (err) => {
             if (err) console.error('❌ MP3 재생 오류:', err.message);
             else console.log('✅ MP3 재생 완료');
             setTimeout(() => { try { fs.unlinkSync(tmpFile); } catch (e) {} }, 3000);
@@ -403,13 +403,13 @@ class TTSService {
                     psCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Rate = ${rate}; $synth.Volume = ${vol}; $synth.Speak('${text.replace(/'/g, "''")}')`;  
                 }
                 
-                const proc = exec(`powershell -Command "${psCommand}"`, (err) => {
+                const proc = exec(`powershell -NoProfile -NonInteractive -Command "${psCommand}"`, (err) => {
                     this._currentProcess = null;
                     if (err) {
                         console.error('TTS 오류:', err);
                         // 오류 발생 시 기본 음성으로 재시도
                         const fallbackCommand = `Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Rate = ${rate}; $synth.Volume = ${vol}; $synth.Speak('${text.replace(/'/g, "''")}')`;  
-                        exec(`powershell -Command "${fallbackCommand}"`, (err2) => {
+                        exec(`powershell -NoProfile -NonInteractive -Command "${fallbackCommand}"`, (err2) => {
                             if (err2) reject(err2);
                             else resolve();
                         });
