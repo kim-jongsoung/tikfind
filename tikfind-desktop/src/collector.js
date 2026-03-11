@@ -191,12 +191,6 @@ class TikTokCollector extends EventEmitter {
             
             this.emit('gift', giftData);
             this.emit('stats', this.stats);
-
-            this.sendToServer('/api/live/tiktok-data', {
-                userId: this.userId,
-                type: 'gift',
-                data: giftData
-            });
         });
         
         // 좋아요 (전체 필드)

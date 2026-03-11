@@ -346,16 +346,14 @@ async function startLive(tiktokId, googleTTS) {
         
         collector.on('chat', (chatData) => {
             log.info('📤 채팅 데이터 서버 전송:', chatData.username);
-            if (socket) {
-                socket.emit('tiktok-data', {
-                    userId: userConfig.userId,
-                    type: 'chat',
-                    data: chatData
-                });
+            const serverUrl = userConfig.serverUrl || process.env.SERVER_URL || 'https://tikfind.kr';
+            fetch(`${serverUrl}/api/live/tiktok-data`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userConfig.userId, type: 'chat', data: chatData })
+            }).then(() => {
                 log.info('✅ 채팅 데이터 전송 완료');
-            } else {
-                log.error('❌ Socket 연결 없음');
-            }
+            }).catch(e => log.error('❌ 채팅 전송 오류:', e.message));
         });
         
         collector.on('stats', (stats) => {

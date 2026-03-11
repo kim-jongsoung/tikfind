@@ -2303,6 +2303,9 @@ io.on('connection', (socket) => {
         console.log(`📡 TikTok 데이터 수신 (${type}):`, userId);
         
         if (type === 'chat') {
+            // chat은 HTTP /api/live/tiktok-data로 처리됨 (중복 방지)
+            return;
+        } else if (false && type === 'chat_disabled') {
             try {
                 // 팀/배지 확인용 로그
                 console.log(`📦 userBadges:`, JSON.stringify(tiktokData.userBadges));
