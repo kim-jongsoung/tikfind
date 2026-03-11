@@ -253,15 +253,13 @@
             });
         }
         resetActivityTimer(uid);
-        // 채팅 활동 시 카드 배경 5번 반짝임
-        if (data.type === 'chat') {
-            const entry = activeMods.get(uid);
-            if (entry) {
-                const card = entry.cardEl;
-                card.classList.remove('chat-flash');
-                void card.offsetWidth;
-                card.classList.add('chat-flash');
-            }
+        // 모든 활동(채팅/좋아요/선물)에서 카드 배경 반짝임
+        const entry = activeMods.get(uid);
+        if (entry) {
+            const card = entry.cardEl;
+            card.classList.remove('chat-flash');
+            void card.offsetWidth;
+            card.classList.add('chat-flash');
         }
     });
 
