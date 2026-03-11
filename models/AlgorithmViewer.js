@@ -59,6 +59,10 @@ const algorithmViewerSchema = new mongoose.Schema({
     gifterLevel: {
         type: Number,
         default: 0   // TikTok 방송 내 선물 기반 레벨
+    },
+    followRequestedAt: {
+        type: Date,
+        default: null  // 팔로우 신청 버튼 클릭 시각
     }
 }, {
     timestamps: true

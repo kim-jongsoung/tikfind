@@ -1476,6 +1476,72 @@ router.delete('/growth/viewers/:id', requireAuth, async (req, res) => {
     }
 });
 
+// 팔로우 신청 대상 추천 리스트 (프로필이미지 있음 + 레벨 높은 순, 하루 100명)
+router.get('/growth/follow-targets', requireAuth, async (req, res) => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // 오늘 이미 신청한 수
+        const todayCount = await AlgorithmViewer.countDocuments({
+            userId: req.user._id,
+            followRequestedAt: { $gte: today }
+        });
+
+        // 팔로우 신청 안 한 비팔로워 중 프로필이미지 있는 사람 우선, 레벨 높은 순, 방문 많은 순
+        const targets = await AlgorithmViewer.find({
+            userId: req.user._id,
+            followRole: { $lt: 1 },           // 비팔로워만
+            status: { $nin: ['followed', 'ignored'] },
+            followRequestedAt: null            // 아직 신청 안 한 사람
+        })
+        .sort({ gifterLevel: -1, visitCount: -1, lastSeenAt: -1 })
+        .limit(100);
+
+        // 프로필 이미지 있는 사람 먼저 정렬
+        const withPhoto = targets.filter(v => v.profilePictureUrl && v.profilePictureUrl.trim());
+        const withoutPhoto = targets.filter(v => !v.profilePictureUrl || !v.profilePictureUrl.trim());
+        const sorted = [...withPhoto, ...withoutPhoto].slice(0, 100);
+
+        // 효과 통계
+        const stats = {
+            totalFollowRequested: await AlgorithmViewer.countDocuments({ userId: req.user._id, followRequestedAt: { $ne: null } }),
+            totalFollowedBack: await AlgorithmViewer.countDocuments({ userId: req.user._id, followRequestedAt: { $ne: null }, followRole: { $gte: 1 } }),
+            totalRevisitAfterFollow: await AlgorithmViewer.countDocuments({ userId: req.user._id, followRequestedAt: { $ne: null }, visitCount: { $gte: 2 } }),
+            todayRequested: todayCount,
+            remaining: Math.max(0, 100 - todayCount)
+        };
+
+        res.json({ success: true, targets: sorted, stats });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 팔로우 신청 완료 처리 (버튼 클릭 시)
+router.post('/growth/viewers/:id/follow-request', requireAuth, async (req, res) => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayCount = await AlgorithmViewer.countDocuments({
+            userId: req.user._id,
+            followRequestedAt: { $gte: today }
+        });
+        if (todayCount >= 100) {
+            return res.json({ success: false, message: '오늘 팔로우 신청 한도(100명)에 도달했습니다.' });
+        }
+        const viewer = await AlgorithmViewer.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user._id },
+            { $set: { followRequestedAt: new Date(), status: 'followed' } },
+            { new: true }
+        );
+        if (!viewer) return res.status(404).json({ success: false, message: '없는 시청자입니다.' });
+        res.json({ success: true, viewer });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 // 메시지 템플릿 목록
 router.get('/growth/templates', requireAuth, async (req, res) => {
     try {

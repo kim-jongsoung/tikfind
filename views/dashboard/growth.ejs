@@ -52,50 +52,76 @@
         <div class="max-w-5xl mx-auto">
 
             <!-- 헤더 -->
-            <div class="mb-6">
-                <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-rocket text-green-500"></i> 알고리즘 확장
-                </h2>
-                <p class="text-gray-500 mt-1 text-sm">방송에 방문한 비팔로워 시청자를 관리하고 팔로우·DM으로 알고리즘을 확장하세요</p>
+            <div class="mb-6 flex items-center justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-rocket text-green-500"></i> 알고리즘 확장
+                    </h2>
+                    <p class="text-gray-500 mt-1 text-sm">방송에 방문한 비팔로워를 팔로우해 맞팔·재방문 전환율을 높이세요</p>
+                </div>
+                <button onclick="loadFollowTargets()" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i> 새로고침
+                </button>
+            </div>
+
+            <!-- 틱파인드 효과 지표 카드 -->
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 text-center">
+                    <div class="text-3xl font-extrabold text-green-500 mb-1" id="statTotalRequested">-</div>
+                    <div class="text-xs text-gray-500 font-medium">누적 팔로우 신청</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-emerald-200 p-5 text-center" style="background: linear-gradient(135deg,#f0fdf4,#dcfce7);">
+                    <div class="text-3xl font-extrabold text-emerald-600 mb-1" id="statFollowedBack">-</div>
+                    <div class="text-xs text-emerald-700 font-medium">✅ 맞팔로우 전환</div>
+                    <div class="text-xs text-emerald-500 mt-0.5" id="statFollowBackRate">전환율 -</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-blue-200 p-5 text-center" style="background: linear-gradient(135deg,#eff6ff,#dbeafe);">
+                    <div class="text-3xl font-extrabold text-blue-600 mb-1" id="statRevisit">-</div>
+                    <div class="text-xs text-blue-700 font-medium">🔁 팔로우 후 재방문</div>
+                    <div class="text-xs text-blue-500 mt-0.5" id="statRevisitRate">재방문율 -</div>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-amber-200 p-5 text-center" style="background: linear-gradient(135deg,#fffbeb,#fef3c7);">
+                    <div class="text-3xl font-extrabold text-amber-600 mb-1" id="statTodayRemaining">-</div>
+                    <div class="text-xs text-amber-700 font-medium">오늘 남은 신청</div>
+                    <div class="text-xs text-amber-500 mt-0.5" id="statTodayDone">오늘 <span id="statTodayCount">0</span>명 완료</div>
+                </div>
             </div>
 
             <!-- 안내 박스 -->
-            <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
-                <i class="fas fa-info-circle text-green-500 mt-0.5"></i>
-                <div class="text-sm text-green-800">
-                    <strong>작동 방식:</strong> 방송 중 채팅방에 입장한 <strong>비팔로워</strong> 시청자가 자동으로 수집됩니다.
-                    이 목록에서 TikTok 프로필을 방문해 팔로우하거나, AI가 생성한 DM을 보내 재방문을 유도할 수 있습니다.
+            <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
+                <i class="fas fa-info-circle text-blue-500 mt-0.5 flex-shrink-0"></i>
+                <div class="text-sm text-blue-800">
+                    <strong>팔로우 전략:</strong> 프로필 사진이 있고 레벨이 높은 활성 시청자 순으로 정렬됩니다.
+                    <strong>팔로우 신청</strong> 버튼 클릭 → TikTok 프로필 새 탭 열림 → 직접 팔로우 → 완료.
+                    하루 <strong>100명</strong> 제한으로 자연스럽게 진행하세요. 이미 신청한 시청자는 목록에서 제외됩니다.
                 </div>
             </div>
 
-            <!-- 탭 -->
-            <div class="bg-white rounded-xl shadow mb-6">
-                <div class="flex border-b border-gray-200 px-2">
-                    <button onclick="switchTab('viewers')" id="tab-viewers" class="tab-btn active px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
-                        <i class="fas fa-users text-green-500"></i> 시청자 목록
-                        <span class="px-1.5 py-0.5 bg-green-100 text-green-700 text-xs rounded-full" id="totalBadge">0</span>
-                    </button>
-                    <button onclick="switchTab('templates')" id="tab-templates" class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
-                        <i class="fas fa-comment-dots text-indigo-500"></i> 메시지 템플릿
-                    </button>
-                </div>
-
-                <!-- ══ 탭1: 시청자 목록 ══ -->
-                <div id="panel-viewers" class="tab-panel active p-6">
-
-                    <!-- 상태별 통계 배지 -->
-                    <div class="flex flex-wrap gap-2 mb-4" id="statusStatsRow">
-                        <button onclick="setStatusFilter('')" id="statAll" class="stat-chip active px-3 py-1.5 rounded-full text-xs font-semibold border transition">전체 <span id="statAllN">0</span></button>
-                        <button onclick="setStatusFilter('pending')" id="statPending" class="stat-chip px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-amber-50 border-amber-200 text-amber-700">미처리 <span id="statPendingN">0</span></button>
-                        <button onclick="setStatusFilter('followed')" id="statFollowed" class="stat-chip px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-emerald-50 border-emerald-200 text-emerald-700">✅ 팔로우됨 <span id="statFollowedN">0</span></button>
-                        <button onclick="setStatusFilter('dm_sent')" id="statDm" class="stat-chip px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-blue-50 border-blue-200 text-blue-700">DM발송 <span id="statDmN">0</span></button>
-                        <button onclick="setStatusFilter('ignored')" id="statIgnored" class="stat-chip px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-gray-100 border-gray-200 text-gray-500">무시 <span id="statIgnoredN">0</span></button>
+            <!-- 팔로우 대상 리스트 -->
+            <div class="bg-white rounded-xl shadow border border-gray-100">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <div class="flex items-center gap-2">
+                        <i class="fas fa-user-plus text-green-500"></i>
+                        <span class="font-semibold text-gray-700 text-sm">팔로우 추천 대상</span>
+                        <span class="px-2 py-0.5 bg-green-100 text-green-700 text-xs rounded-full font-bold" id="targetCount">0명</span>
                     </div>
+                    <span class="text-xs text-gray-400">프로필 사진 有 · 레벨 높은 순 · 방문 많은 순</span>
+                </div>
+                <div id="followTargetList" class="divide-y divide-gray-50">
+                    <div class="py-12 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>불러오는 중...</div>
+                </div>
+            </div>
 
+            <!-- 기존 시청자 전체 목록 (접기/펼치기) -->
+            <div class="mt-6">
+                <button onclick="toggleAllViewers()" class="w-full flex items-center justify-between px-5 py-4 bg-white rounded-xl shadow border border-gray-100 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">
+                    <span><i class="fas fa-list mr-2 text-gray-400"></i>전체 수집 시청자 목록 (검색·필터)</span>
+                    <i class="fas fa-chevron-down text-gray-400" id="allViewersChevron"></i>
+                </button>
+                <div id="allViewersPanel" class="hidden mt-3 bg-white rounded-xl shadow border border-gray-100 p-6">
                     <!-- 검색 필터 -->
                     <div class="bg-gray-50 rounded-xl p-4 mb-5 border border-gray-100">
                         <div class="flex flex-wrap gap-3 items-end">
-                            <!-- 키워드 -->
                             <div class="flex-1 min-w-40">
                                 <label class="block text-xs text-gray-500 mb-1 font-medium">닉네임/아이디 검색</label>
                                 <div class="relative">
@@ -105,7 +131,6 @@
                                         onkeydown="if(event.key==='Enter') loadViewers()">
                                 </div>
                             </div>
-                            <!-- 방문횟수 -->
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1 font-medium">방문횟수</label>
                                 <select id="filterMinVisit" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
@@ -116,7 +141,6 @@
                                     <option value="10">10회 이상</option>
                                 </select>
                             </div>
-                            <!-- 날짜 -->
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1 font-medium">최근 방문 날짜</label>
                                 <div class="flex items-center gap-1">
@@ -125,7 +149,6 @@
                                     <input type="date" id="filterTo" class="border border-gray-200 rounded-lg px-2 py-2 text-sm">
                                 </div>
                             </div>
-                            <!-- 정렬 -->
                             <div>
                                 <label class="block text-xs text-gray-500 mb-1 font-medium">정렬</label>
                                 <select id="filterSort" class="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white">
@@ -135,7 +158,6 @@
                                     <option value="firstSeenAt_asc">첫 방문순</option>
                                 </select>
                             </div>
-                            <!-- 버튼 -->
                             <div class="flex gap-2">
                                 <button onclick="loadViewers()" class="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition flex items-center gap-1">
                                     <i class="fas fa-search"></i> 검색
@@ -146,33 +168,14 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- 일괄 액션 바 (선택 시 노출) -->
-                    <div id="bulkActionBar" class="hidden mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center gap-3 flex-wrap">
-                        <span class="text-sm font-semibold text-indigo-700"><span id="selectedCount">0</span>명 선택됨</span>
-                        <select id="bulkStatus" class="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm bg-white">
-                            <option value="">상태 변경...</option>
-                            <option value="followed">팔로우함</option>
-                            <option value="dm_sent">DM발송</option>
-                            <option value="ignored">무시</option>
-                            <option value="pending">미처리로 초기화</option>
-                        </select>
-                        <button onclick="applyBulkStatus()" class="px-4 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition">적용</button>
-                        <button onclick="clearSelection()" class="px-3 py-1.5 border border-indigo-200 text-indigo-600 rounded-lg text-sm hover:bg-indigo-100 transition">선택 해제</button>
-                        <button onclick="generateAiMessages()" class="ml-auto px-4 py-1.5 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 transition flex items-center gap-1">
-                            <i class="fas fa-magic"></i> AI 메시지 생성
-                        </button>
+                    <!-- 상태 필터 -->
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button onclick="setStatusFilter('')" id="statAll" class="stat-chip active px-3 py-1.5 rounded-full text-xs font-semibold border transition">전체 <span id="statAllN">0</span></button>
+                        <button onclick="setStatusFilter('pending')" id="statPending" class="stat-chip px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-amber-50 border-amber-200 text-amber-700">미처리 <span id="statPendingN">0</span></button>
+                        <button onclick="setStatusFilter('followed')" id="statFollowed" class="stat-chip px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-emerald-50 border-emerald-200 text-emerald-700">✅ 팔로우됨 <span id="statFollowedN">0</span></button>
+                        <button onclick="setStatusFilter('dm_sent')" id="statDm" class="stat-chip px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-blue-50 border-blue-200 text-blue-700">DM발송 <span id="statDmN">0</span></button>
+                        <button onclick="setStatusFilter('ignored')" id="statIgnored" class="stat-chip px-3 py-1.5 rounded-full text-xs font-semibold border transition bg-gray-100 border-gray-200 text-gray-500">무시 <span id="statIgnoredN">0</span></button>
                     </div>
-                    <div id="topActionRow" class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <input type="checkbox" id="checkAll" onchange="toggleSelectAll(this)" class="w-4 h-4 rounded">
-                            <label for="checkAll" class="text-xs text-gray-500 cursor-pointer">전체 선택</label>
-                        </div>
-                        <button onclick="generateAiMessages()" class="px-4 py-1.5 bg-purple-600 text-white rounded-lg text-sm hover:bg-purple-700 transition flex items-center gap-1">
-                            <i class="fas fa-magic"></i> AI 메시지 생성
-                        </button>
-                    </div>
-
                     <!-- 시청자 테이블 -->
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
@@ -200,24 +203,8 @@
                         <p class="text-xs text-gray-400" id="paginationInfo"></p>
                         <div class="flex gap-2" id="paginationBtns"></div>
                     </div>
-                </div>
-
-                <!-- ══ 탭2: 메시지 템플릿 ══ -->
-                <div id="panel-templates" class="tab-panel p-6">
-                    <div class="flex items-center justify-between mb-5">
-                        <div>
-                            <h4 class="text-sm font-semibold text-gray-700">저장된 메시지 템플릿</h4>
-                            <p class="text-xs text-gray-400 mt-0.5">최대 10개까지 저장 가능. 복사 후 TikTok DM에 붙여넣으세요.</p>
-                        </div>
-                        <button onclick="openTemplateModal()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition flex items-center gap-1">
-                            <i class="fas fa-plus"></i> 새 템플릿
-                        </button>
-                    </div>
-                    <div id="templateList" class="space-y-3">
-                        <div class="text-center py-8 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>불러오는 중...</div>
-                    </div>
-                </div>
-            </div>
+                </div><!-- /allViewersPanel -->
+            </div><!-- /접기펼치기 -->
         </div>
     </main>
 
@@ -270,15 +257,128 @@
         const PAGE_SIZE = 50;
         let selectedIds = new Set();
         let activeStatusFilter = '';
+        let allViewersOpen = false;
 
-        // ── 탭 전환 ──
-        function switchTab(name) {
-            ['viewers', 'templates'].forEach(t => {
-                document.getElementById('panel-' + t).classList.toggle('active', t === name);
-                document.getElementById('tab-' + t).classList.toggle('active', t === name);
-            });
-            if (name === 'templates') loadTemplates();
+        // ── 전체 시청자 패널 토글 ──
+        function toggleAllViewers() {
+            allViewersOpen = !allViewersOpen;
+            const panel = document.getElementById('allViewersPanel');
+            const chevron = document.getElementById('allViewersChevron');
+            panel.classList.toggle('hidden', !allViewersOpen);
+            chevron.style.transform = allViewersOpen ? 'rotate(180deg)' : '';
+            if (allViewersOpen) loadViewers();
         }
+
+        // ── 팔로우 추천 대상 로드 ──
+        async function loadFollowTargets() {
+            const list = document.getElementById('followTargetList');
+            list.innerHTML = '<div class="py-12 text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>불러오는 중...</div>';
+            try {
+                const res = await fetch('/api/growth/follow-targets');
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message);
+                renderStats(data.stats);
+                renderFollowTargets(data.targets);
+            } catch (e) {
+                list.innerHTML = `<div class="py-12 text-center text-red-400">오류: ${e.message}</div>`;
+            }
+        }
+
+        // ── 효과 지표 카드 업데이트 ──
+        function renderStats(s) {
+            document.getElementById('statTotalRequested').textContent = s.totalFollowRequested.toLocaleString();
+            document.getElementById('statFollowedBack').textContent   = s.totalFollowedBack.toLocaleString();
+            document.getElementById('statRevisit').textContent        = s.totalRevisitAfterFollow.toLocaleString();
+            document.getElementById('statTodayRemaining').textContent = s.remaining;
+            document.getElementById('statTodayCount').textContent     = s.todayRequested;
+
+            const fbRate = s.totalFollowRequested > 0
+                ? Math.round(s.totalFollowedBack / s.totalFollowRequested * 100) : 0;
+            const rvRate = s.totalFollowRequested > 0
+                ? Math.round(s.totalRevisitAfterFollow / s.totalFollowRequested * 100) : 0;
+            document.getElementById('statFollowBackRate').textContent = `전환율 ${fbRate}%`;
+            document.getElementById('statRevisitRate').textContent    = `재방문율 ${rvRate}%`;
+        }
+
+        // ── 팔로우 대상 카드 렌더링 ──
+        function renderFollowTargets(targets) {
+            const list = document.getElementById('followTargetList');
+            document.getElementById('targetCount').textContent = targets.length + '명';
+            if (!targets.length) {
+                list.innerHTML = '<div class="py-12 text-center text-gray-400">팔로우할 대상이 없습니다.<br><span class="text-xs mt-1 block">방송을 시작하면 비팔로워 시청자가 자동 수집됩니다.</span></div>';
+                return;
+            }
+            list.innerHTML = targets.map((v, i) => {
+                const hasPhoto = v.profilePictureUrl && v.profilePictureUrl.trim();
+                const avatar = hasPhoto
+                    ? `<img src="${v.profilePictureUrl}" class="w-11 h-11 rounded-full object-cover flex-shrink-0" onerror="this.style.display='none'">`
+                    : `<div class="w-11 h-11 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold text-gray-500 flex-shrink-0">${(v.nickname||v.uniqueId||'?')[0].toUpperCase()}</div>`;
+                const levelBadge = v.gifterLevel > 0
+                    ? `<span class="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full">Lv.${v.gifterLevel}</span>` : '';
+                const visitBadge = v.visitCount >= 3
+                    ? `<span class="px-1.5 py-0.5 bg-red-100 text-red-600 text-xs font-bold rounded-full">${v.visitCount}회 방문</span>`
+                    : `<span class="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full">${v.visitCount}회 방문</span>`;
+                const srcMap = { member:'👋', chat:'💬', gift:'🎁', social:'➕', subscribe:'⭐' };
+                const sources = (v.sources||[]).map(s => srcMap[s]||s).join(' ');
+                const rankNum = `<span class="text-xs font-bold text-gray-300 w-6 flex-shrink-0">${i+1}</span>`;
+
+                return `
+                <div class="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 transition" id="target-row-${v._id}">
+                    ${rankNum}
+                    ${avatar}
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold text-gray-800 text-sm truncate">${v.nickname || v.uniqueId}</span>
+                            ${levelBadge}
+                            ${visitBadge}
+                            ${sources ? `<span class="text-sm">${sources}</span>` : ''}
+                        </div>
+                        <div class="text-xs text-gray-400 mt-0.5">@${v.uniqueId}</div>
+                    </div>
+                    <a href="https://www.tiktok.com/@${v.uniqueId}" target="_blank"
+                        onclick="requestFollow('${v._id}', this)"
+                        class="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-xl transition shadow-sm">
+                        <i class="fas fa-user-plus"></i> 팔로우 신청
+                    </a>
+                </div>`;
+            }).join('');
+        }
+
+        // ── 팔로우 신청 처리 ──
+        async function requestFollow(id, btn) {
+            try {
+                const res = await fetch(`/api/growth/viewers/${id}/follow-request`, { method: 'POST' });
+                const data = await res.json();
+                if (!data.success) {
+                    alert(data.message);
+                    return;
+                }
+                // 행 즉시 제거 + 카운트 업데이트
+                const row = document.getElementById(`target-row-${id}`);
+                if (row) {
+                    row.style.opacity = '0';
+                    row.style.transition = 'opacity 0.3s';
+                    setTimeout(() => {
+                        row.remove();
+                        const cnt = document.getElementById('targetCount');
+                        const n = parseInt(cnt.textContent) - 1;
+                        cnt.textContent = n + '명';
+                    }, 300);
+                }
+                // 오늘 카운트 업데이트
+                const todayEl = document.getElementById('statTodayCount');
+                const remEl = document.getElementById('statTodayRemaining');
+                const totalEl = document.getElementById('statTotalRequested');
+                todayEl.textContent = parseInt(todayEl.textContent) + 1;
+                remEl.textContent = Math.max(0, parseInt(remEl.textContent) - 1);
+                totalEl.textContent = (parseInt(totalEl.textContent.replace(/,/g,'')) + 1).toLocaleString();
+            } catch(e) {
+                console.error(e);
+            }
+        }
+
+        // ── 탭 전환 (기존 호환) ──
+        function switchTab(name) {}
 
         // ── 상태 배지 필터 ──
         function setStatusFilter(val) {
@@ -636,11 +736,7 @@
 
         // ── 초기화 ──
         document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('templateContent').addEventListener('input', function() {
-                document.getElementById('templateCharCount').textContent = this.value.length;
-            });
-            setStatusFilter('');
-            loadViewers();
+            loadFollowTargets();
 
             // UNLIMITED 플랜만 허용
             fetch('/api/user/plan').then(r => r.json()).then(data => {
