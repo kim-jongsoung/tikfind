@@ -21,7 +21,7 @@ router.get('/dashboard', requireAuth, (req, res) => {
     if (!req.user.tiktokId) {
         return res.redirect('/onboarding');
     }
-    res.render('dashboard/main', { title: '대시보드 - TikFind', user: req.user });
+    res.render('dashboard/main', { title: '대시보드 - TikFind', user: req.user, upgrade: req.query.upgrade || '' });
 });
 
 router.get('/dashboard/live', requireAuth, (req, res) => {
