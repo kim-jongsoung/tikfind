@@ -264,6 +264,27 @@
                                         </button>
                                     </div>
                                 </div>
+
+                                <!-- 🎤 번역 자막 마이크 컨트롤 -->
+                                <div style="margin-top: 8px; background: #0a1a0f; border: 1px solid #166534; border-radius: 6px; padding: 10px;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                        <span style="font-size:11px; color:#4ade80; font-weight:bold;">🎤 번역 자막 마이크</span>
+                                        <span id="micStatusBadge" style="font-size:10px; color:#64748b; background:#1e293b; padding:2px 8px; border-radius:10px;">대기 중</span>
+                                    </div>
+                                    <div style="display:flex; gap:6px; align-items:center;">
+                                        <button id="micStartBtn" onclick="toggleMic()"
+                                            style="flex:1; padding:8px 0; background:#22c55e; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:12px; font-weight:700;">
+                                            🎤 마이크 시작
+                                        </button>
+                                        <button id="priorityBtn" onclick="togglePriority()"
+                                            style="flex:1; padding:8px 0; background:#1e293b; color:#94a3b8; border:2px solid #334155; border-radius:6px; cursor:pointer; font-size:12px; font-weight:700; transition:all 0.2s;">
+                                            🔴 우선번역 OFF
+                                        </button>
+                                    </div>
+                                    <div id="micInterimBox" style="margin-top:6px; min-height:28px; background:#0f172a; border-radius:4px; padding:5px 8px; font-size:11px; color:#94a3b8; font-style:italic;">
+                                        — 마이크 대기 중 —
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2287,6 +2308,132 @@ async function sendHostQuestion() {
 
 // ── 초기화 ──────────────────────────────────
 loadUserGenders();
+
+// ── 번역 자막 마이크 컨트롤 ──────────────────────────────────
+let micRecognition = null;
+let micActive = false;
+let priorityMode = false;
+
+function togglePriority() {
+    priorityMode = !priorityMode;
+    const btn = document.getElementById('priorityBtn');
+    if (priorityMode) {
+        btn.textContent = '🔴 우선번역 ON';
+        btn.style.background = '#dc2626';
+        btn.style.color = '#fff';
+        btn.style.borderColor = '#ef4444';
+    } else {
+        btn.textContent = '🔴 우선번역 OFF';
+        btn.style.background = '#1e293b';
+        btn.style.color = '#94a3b8';
+        btn.style.borderColor = '#334155';
+    }
+}
+
+function toggleMic() {
+    if (micActive) {
+        stopMic();
+    } else {
+        startMic();
+    }
+}
+
+function startMic() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('이 기능은 Chrome 브라우저에서만 사용 가능합니다.');
+        return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    micRecognition = new SpeechRecognition();
+    micRecognition.lang = 'ko-KR';
+    micRecognition.continuous = true;
+    micRecognition.interimResults = true;
+
+    micRecognition.onstart = () => {
+        micActive = true;
+        document.getElementById('micStartBtn').textContent = '⏹ 마이크 종료';
+        document.getElementById('micStartBtn').style.background = '#ef4444';
+        document.getElementById('micStatusBadge').textContent = '🔴 인식 중';
+        document.getElementById('micStatusBadge').style.color = '#4ade80';
+    };
+
+    micRecognition.onend = () => {
+        // 강제 종료가 아닌 경우 자동 재시작
+        if (micActive) micRecognition.start();
+    };
+
+    micRecognition.onerror = (e) => {
+        if (e.error === 'not-allowed') {
+            alert('마이크 권한을 허용해주세요.');
+            stopMic();
+        }
+    };
+
+    micRecognition.onresult = async (event) => {
+        let interim = '';
+        let final = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const t = event.results[i][0].transcript;
+            if (event.results[i].isFinal) final += t;
+            else interim += t;
+        }
+
+        // 중간 결과 표시 + 소켓 전송
+        const display = final || interim;
+        document.getElementById('micInterimBox').textContent = display || '— 인식 중 —';
+
+        if (interim) {
+            const userId = currentUser ? String(currentUser._id || currentUser.id) : null;
+            if (userId) socket.emit('speech-interim-send', { userId, text: interim });
+        }
+
+        // 최종 결과 → 번역 요청
+        if (final.trim()) {
+            const userId = currentUser ? String(currentUser._id || currentUser.id) : null;
+            if (!userId) return;
+
+            try {
+                // speech-mic 페이지의 설정(언어)을 서버에서 가져와 번역
+                const settingsRes = await fetch('/api/speech-settings?userId=' + userId);
+                const settingsData = await settingsRes.json();
+                const langs = settingsData.success ? (settingsData.settings?.langs || ['en']) : ['en'];
+
+                const transRes = await fetch('/api/speech-translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: final.trim(), langs, userId })
+                });
+                const transData = await transRes.json();
+                if (transData.success && transData.translations) {
+                    socket.emit('speech-translated-send', {
+                        userId,
+                        translations: transData.translations,
+                        priority: priorityMode
+                    });
+                    document.getElementById('micInterimBox').textContent = '✅ ' + final.trim();
+                }
+            } catch (e) {
+                console.error('번역 오류:', e);
+            }
+        }
+    };
+
+    micRecognition.start();
+}
+
+function stopMic() {
+    micActive = false;
+    if (micRecognition) {
+        micRecognition.onend = null;
+        micRecognition.stop();
+        micRecognition = null;
+    }
+    document.getElementById('micStartBtn').textContent = '🎤 마이크 시작';
+    document.getElementById('micStartBtn').style.background = '#22c55e';
+    document.getElementById('micStatusBadge').textContent = '대기 중';
+    document.getElementById('micStatusBadge').style.color = '#64748b';
+    document.getElementById('micInterimBox').textContent = '— 마이크 대기 중 —';
+}
 
 // ── 공통 토스트 ──────────────────────────────────
 function mhToast(msg,isError=false){

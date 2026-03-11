@@ -47,6 +47,13 @@
             transition: opacity 0.4s ease;
         }
         .lang-row.visible { opacity: 1; }
+        .lang-row.priority {
+            background: rgba(220, 38, 38, 0.88) !important;
+            border: 2px solid rgba(255, 80, 80, 0.9);
+            box-shadow: 0 0 18px rgba(220,38,38,0.5);
+        }
+        .lang-row.priority .lang-text { font-size: 135% !important; font-weight: 900 !important; color: #fff !important; }
+        .lang-row.priority .host-badge { background: rgba(255,255,255,0.25) !important; }
 
         /* 호스트 뱃지 */
         .host-badge {
@@ -187,7 +194,7 @@
         marqueeTimers.set(lang + '_1', t1);
     }
 
-    function showTranslations(results) {
+    function showTranslations(results, priority) {
         results.forEach(({ lang, text }) => {
             const el   = document.getElementById('text-' + lang);
             const wrap = document.getElementById('wrap-' + lang);
@@ -203,7 +210,10 @@
 
             el.textContent = text || '';
             el.className   = 'lang-text';
-            if (row) row.classList.toggle('visible', !!text);
+            if (row) {
+                row.classList.toggle('visible', !!text);
+                row.classList.toggle('priority', !!priority && !!text);
+            }
 
             if (text) {
                 // 레이아웃 후 마퀴 여부 판단
@@ -212,7 +222,8 @@
             }
         });
         clearTimeout(hideTimer);
-        hideTimer = setTimeout(hideAll, 6000);
+        // 우선번역이면 8초, 일반이면 6초
+        hideTimer = setTimeout(hideAll, priority ? 8000 : 6000);
     }
 
     // ── 소켓 이벤트 수신 (speech-mic 페이지에서 전송) ──
@@ -223,7 +234,7 @@
         if (!document.body.classList.contains('preview-mode')) showInterim(data.text);
     });
     socket.on('speech-translated', (data) => {
-        if (!document.body.classList.contains('preview-mode')) showTranslations(data.translations);
+        if (!document.body.classList.contains('preview-mode')) showTranslations(data.translations, data.priority);
     });
 
     // 초기화

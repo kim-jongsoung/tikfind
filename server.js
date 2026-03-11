@@ -2179,8 +2179,11 @@ io.on('connection', (socket) => {
     // speech-mic 페이지 → overlay 위젯: 번역 결과 전달
     socket.on('speech-translated-send', (data) => {
         const room = `overlay-${data.userId}`;
-        io.to(room).emit('speech-translated', { translations: data.translations || [] });
-        console.log(`🗣️ speech-translated → ${room} (${(data.translations||[]).length}개 언어)`);
+        io.to(room).emit('speech-translated', {
+            translations: data.translations || [],
+            priority: data.priority === true
+        });
+        console.log(`🗣️ speech-translated → ${room} (${(data.translations||[]).length}개 언어, priority:${data.priority})`);
     });
 
     // 대시보드 → 오버레이: 현재 재생 곡 전송
