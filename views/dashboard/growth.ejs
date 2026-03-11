@@ -430,7 +430,8 @@
                 const data = await res.json();
                 if (!data.success) throw new Error(data.message);
 
-                document.getElementById('totalBadge').textContent = data.total;
+                const tb = document.getElementById('totalBadge');
+                if (tb) tb.textContent = data.total;
                 updateStatusStats(data.statusStats, data.total);
                 renderViewers(data.viewers);
                 renderPagination(data.total, page);
@@ -576,7 +577,9 @@
 
         function updateBulkBar() {
             const bar = document.getElementById('bulkActionBar');
-            document.getElementById('selectedCount').textContent = selectedIds.size;
+            const sc = document.getElementById('selectedCount');
+            if (!bar || !sc) return;
+            sc.textContent = selectedIds.size;
             bar.classList.toggle('hidden', selectedIds.size === 0);
         }
 
