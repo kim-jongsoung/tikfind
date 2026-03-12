@@ -62,12 +62,14 @@
             font-size: 15px;
             font-weight: 900;
             letter-spacing: 0.08em;
-            padding: 0 20px;
+            padding: 0 22px 0 26px;
             height: 100%;
             display: flex;
             align-items: center;
             white-space: nowrap;
             border-radius: 21px 0 0 21px;
+            min-width: 90px;
+            justify-content: center;
         }
         /* 스크롤 영역 */
         .mod-notice-scroll {
@@ -307,9 +309,9 @@
         if (d.megaMin != null) MEGA_MIN = d.megaMin;
     });
 
-    // ── 모더 공지 배너 (슬라이드인 + 6초 후 슬라이드아웃) ──
+    // ── 모더 공지 배너 (슬라이드인 + 8초 후 슬라이드아웃) ──
     let noticeHideTimer = null;
-    const NOTICE_SHOW_MS = 6000; // 총 노출 6초
+    const NOTICE_SHOW_MS = 8000; // 총 노출 8초
 
     function showModNotice(d) {
         const wrap  = document.getElementById('mod-notice-wrap');
