@@ -2396,9 +2396,9 @@ function startMic() {
                 // speech-mic 페이지의 설정(언어)을 서버에서 가져와 번역
                 const settingsRes = await fetch('/api/speech-settings?userId=' + userId);
                 const settingsData = await settingsRes.json();
-                const langs = settingsData.success ? (settingsData.settings?.langs || ['en']) : ['en'];
+                const langs = settingsData.success ? (settingsData.langs || ['en']) : ['en'];
 
-                const transRes = await fetch('/api/speech-translate', {
+                const transRes = await fetch('/api/speech/translate', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ text: final.trim(), langs, userId })
