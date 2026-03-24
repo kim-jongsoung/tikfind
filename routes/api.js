@@ -1735,6 +1735,26 @@ router.post('/gift-settings', requireAuth, async (req, res) => {
     }
 });
 
+// ── 룰렛 미션 문구 ────────────────────────────────────────────
+// POST /api/roulette-items  (인증 필요)
+router.post('/roulette-items', requireAuth, async (req, res) => {
+    try {
+        const { items } = req.body;
+        if (!Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, message: 'items 필요' });
+        }
+        // 오버레이에 소켓으로 즉시 전달
+        const io = req.app.get('io');
+        const userId = req.user._id.toString();
+        if (io) {
+            io.to(`overlay-${userId}`).emit('roulette-items-update', { items });
+        }
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 // ── 모더 위젯 ─────────────────────────────────────────────────
 // GET /api/moderator?userId=xxx  (오버레이 공개 조회)
 router.get('/moderator', async (req, res) => {

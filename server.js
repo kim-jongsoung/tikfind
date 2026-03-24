@@ -2260,6 +2260,13 @@ io.on('connection', (socket) => {
         console.log(`🎰 룰렛 스핀 [${targetUserId}]: 당첨=${winIndex} (${items?.[winIndex]?.label})`);
     });
 
+    // 대시보드 → 오버레이: 룰렛 미션 문구 업데이트
+    socket.on('roulette-items-update', (data) => {
+        const { userId: targetUserId, items } = data;
+        io.to(`overlay-${targetUserId}`).emit('roulette-items-update', { items });
+        console.log(`🎰 룰렛 미션 업데이트 [${targetUserId}]:`, items?.map(i => i.label));
+    });
+
     // 대시보드 → 오버레이: 현재 재생 곡 전송
     socket.on('overlay-now-playing', (data) => {
         const { userId: targetUserId, title, artist, requester, thumbnail } = data;

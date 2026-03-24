@@ -636,25 +636,44 @@
                         </div>
                     </div>
 
-                    <!-- 미션 목록 -->
+                    <!-- 미션 문구 편집 -->
                     <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <i class="fas fa-list text-yellow-500"></i> 기본 미션 5개
-                        </h4>
-                        <div class="space-y-2">
-                            <% [
-                                {icon:'🎤', label:'노래 한 소절', color:'bg-red-100 text-red-700'},
-                                {icon:'💃', label:'댄스 10초', color:'bg-purple-100 text-purple-700'},
-                                {icon:'😂', label:'웃긴 표정 최고', color:'bg-blue-100 text-blue-700'},
-                                {icon:'🎁', label:'1위에게 선물하기', color:'bg-orange-100 text-orange-700'},
-                                {icon:'🔥', label:'하트 10초 연속', color:'bg-red-100 text-red-800'},
-                            ].forEach(function(m){ %>
-                            <div class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 bg-gray-50">
-                                <span class="text-xl"><%= m.icon %></span>
-                                <span class="text-sm font-semibold text-gray-700 flex-1"><%= m.label %></span>
-                                <span class="px-2 py-0.5 rounded-full text-xs font-bold <%= m.color %>">미션</span>
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                <i class="fas fa-edit text-yellow-500"></i> 미션 문구 편집
+                            </h4>
+                            <button onclick="saveRouletteItems()" id="saveRouletteItemsBtn"
+                                class="px-4 py-1.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-xs font-bold flex items-center gap-1">
+                                <i class="fas fa-save"></i> 저장 &amp; 적용
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-3">이모지 포함해서 자유롭게 수정하세요. 저장하면 오버레이에 즉시 반영됩니다.</p>
+                        <div class="space-y-2" id="rouletteItemList">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-red-500 flex-shrink-0" style="min-width:1.5rem;"></span>
+                                <input type="text" value="🎤 노래 한 소절" data-color="#e74c3c"
+                                    class="roulette-item-input flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-yellow-400">
                             </div>
-                            <% }); %>
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-purple-500 flex-shrink-0" style="min-width:1.5rem;"></span>
+                                <input type="text" value="💃 댄스 10초" data-color="#9b59b6"
+                                    class="roulette-item-input flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-yellow-400">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-blue-500 flex-shrink-0" style="min-width:1.5rem;"></span>
+                                <input type="text" value="😂 웃긴 표정 최고" data-color="#2980b9"
+                                    class="roulette-item-input flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-yellow-400">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-orange-500 flex-shrink-0" style="min-width:1.5rem;"></span>
+                                <input type="text" value="🎁 1위에게 선물하기" data-color="#e67e22"
+                                    class="roulette-item-input flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-yellow-400">
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-full bg-red-700 flex-shrink-0" style="min-width:1.5rem;"></span>
+                                <input type="text" value="🔥 하트 10초 연속" data-color="#c0392b"
+                                    class="roulette-item-input flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-yellow-400">
+                            </div>
                         </div>
                     </div>
 
@@ -723,6 +742,35 @@
                 btn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
                 setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> 복사'; }, 2000);
             });
+        }
+
+        function saveRouletteItems() {
+            const inputs = document.querySelectorAll('.roulette-item-input');
+            const items = Array.from(inputs).map(inp => ({
+                label: inp.value.trim() || inp.defaultValue,
+                color: inp.dataset.color
+            }));
+            const userId = '<%= user._id %>';
+            // 소켓으로 오버레이에 직접 전달 (서버를 통해 relay)
+            fetch('/api/roulette-items', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, items })
+            }).then(r => r.json()).then(data => {
+                const btn = document.getElementById('saveRouletteItemsBtn');
+                if (data.success) {
+                    btn.innerHTML = '<i class="fas fa-check"></i> 적용됨!';
+                    btn.classList.replace('bg-yellow-500','bg-green-500');
+                    btn.classList.replace('hover:bg-yellow-600','hover:bg-green-600');
+                    setTimeout(() => {
+                        btn.innerHTML = '<i class="fas fa-save"></i> 저장 &amp; 적용';
+                        btn.classList.replace('bg-green-500','bg-yellow-500');
+                        btn.classList.replace('hover:bg-green-600','hover:bg-yellow-600');
+                    }, 2000);
+                } else {
+                    alert('저장 실패');
+                }
+            }).catch(() => alert('오류가 발생했습니다.'));
         }
 
         // ── 선물 다이아 기준 저장 ──
