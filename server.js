@@ -1185,10 +1185,10 @@ async function processChatMessage(chatData) {
                             },
                             { role: 'user', content: questionText }
                         ],
-                        max_tokens: 30,
+                        max_tokens: 50,
                         temperature: 1.0
                     });
-                    const aiAnswer = completion.choices[0].message.content.trim().slice(0, 35);
+                    const aiAnswer = completion.choices[0].message.content.trim().slice(0, 40);
                     io.to('overlay-' + String(userId)).emit('overlay-mod-notice', {
                         text: `Q: ${questionText} → ${aiAnswer}`,
                         moderatorName: '🤖 AI'
