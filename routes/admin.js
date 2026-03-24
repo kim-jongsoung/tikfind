@@ -852,6 +852,17 @@ router.delete('/songs/cache/:id', async (req, res) => {
     }
 });
 
+// 전체 캐시 삭제
+router.delete('/songs/cache-all', async (req, res) => {
+    try {
+        const result = await PopularSong.deleteMany({});
+        console.log(`🗑️ 신청곡 캐시 전체 삭제: ${result.deletedCount}건`);
+        res.json({ success: true, deletedCount: result.deletedCount });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 // 검색어로 일치하는 캐시 삭제 (제목+아티스트)
 router.delete('/songs/cache', async (req, res) => {
     try {
