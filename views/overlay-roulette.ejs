@@ -96,24 +96,26 @@
             white-space: nowrap;
         }
 
-        /* 당첨 결과 배너 */
-        #result-banner {
+        /* 당첨 칸 번쩍임 오버레이 */
+        #flash-overlay {
             position: absolute;
-            right: -10px; top: calc(50% + 160px);
-            background: linear-gradient(135deg, #1a1a2e, #16213e);
-            border: 2px solid #ffd700;
-            border-radius: 0 14px 14px 0;
-            padding: 12px 16px 12px 10px;
+            left: 8px; top: 8px;
+            width: 606px; height: 606px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 19;
             opacity: 0;
-            transform: translateX(20px);
-            transition: opacity 0.5s, transform 0.5s;
-            box-shadow: 4px 4px 20px rgba(255,215,0,0.3);
-            z-index: 30;
-            min-width: 150px;
         }
-        #result-banner.show { opacity: 1; transform: translateX(0); }
-        #result-label { font-size: 10px; color: #ffd700; font-weight: 700; letter-spacing: 2px; margin-bottom: 3px; }
-        #result-text  { font-size: 15px; font-weight: 900; color: #fff; text-shadow: 0 1px 6px rgba(255,215,0,0.4); }
+        @keyframes winFlash {
+            0%   { opacity: 0; }
+            15%  { opacity: 0.82; }
+            30%  { opacity: 0.1; }
+            45%  { opacity: 0.75; }
+            60%  { opacity: 0.1; }
+            75%  { opacity: 0.65; }
+            88%  { opacity: 0.1; }
+            100% { opacity: 0; }
+        }
 
         /* 파티클 */
         .spark { position: absolute; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; animation: sparkFly 1.2s ease-out forwards; }
@@ -127,15 +129,12 @@
         <canvas id="roulette" width="606" height="606"></canvas>
     </div>
     <div id="pointer"></div>
+    <div id="flash-overlay"></div>
     <div id="center-badge">
         <span class="cb-icon">🎯</span>
-        <span class="cb-text">TikFind</span>
+        <span class="cb-text">TIKFIND</span>
     </div>
-    <div id="title-banner">⚔️ 매치승리 룰렛미션</div>
-    <div id="result-banner">
-        <div id="result-label">🎉 미션 당첨!</div>
-        <div id="result-text"></div>
-    </div>
+    <div id="title-banner">TIKFIND</div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -307,7 +306,6 @@ function spin(targetItems, winIndex) {
     items = (targetItems && targetItems.length) ? targetItems : pickRandom(MISSION_POOL, 5);
 
     wrap.classList.add('spinning');
-    document.getElementById('result-banner').classList.remove('show');
 
     const n     = items.length;
     const slice = (2 * Math.PI) / n;
@@ -320,7 +318,10 @@ function spin(targetItems, winIndex) {
     const SPIN_DURATION = 14400;
     const SPIN_EXTRA    = (15 + Math.floor(Math.random() * 4)) * 2 * Math.PI;
 
-    const targetAngle = Math.PI / 2 - (winIndex + 0.5) * slice;
+    // 아슬아슬하게: 당첨 칸 경계에서 slice의 8~15% 안쪽에 멈춤
+    const edgeOffset = slice * (0.08 + Math.random() * 0.07);
+    const side = Math.random() < 0.5 ? 1 : -1; // 왼쪽/오른쪽 경계 랜덤
+    const targetAngle = Math.PI / 2 - (winIndex + 0.5) * slice + side * (slice / 2 - edgeOffset);
 
     // 효과음: 프리뷰부터 천천히 시작
     setTickInterval(300);
@@ -387,17 +388,24 @@ function spin(targetItems, winIndex) {
 }
 
 function showResult(item) {
-    document.getElementById('result-text').textContent = item.label;
-    document.getElementById('result-banner').classList.add('show');
     playWinSound();
     spawnSparks();
-    // 9초 유지 후 결과 배너 숨기고 룰렛도 슬라이딩 아웃
-    setTimeout(() => {
-        document.getElementById('result-banner').classList.remove('show');
-    }, 9000);
+    flashWinSlice(item);
+    // 9초 유지 후 룰렛 슬라이딩 아웃
     setTimeout(() => {
         wrap.classList.remove('spinning');
-    }, 9600); // 배너 페이드 후 0.6초 뒤 슬라이딩 아웃
+    }, 9000);
+}
+
+function flashWinSlice(item) {
+    const overlay = document.getElementById('flash-overlay');
+    // 당첨 칸 색상으로 방사형 그라디언트 설정
+    overlay.style.background =
+        `radial-gradient(circle at center, ${item.color}dd 0%, ${item.color}55 45%, transparent 70%)`;
+    overlay.style.animation = 'none';
+    // 강제 리플로우 후 애니메이션 재시작
+    void overlay.offsetWidth;
+    overlay.style.animation = 'winFlash 2.4s ease-out forwards';
 }
 
 function spawnSparks() {
