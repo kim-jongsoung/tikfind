@@ -1146,6 +1146,58 @@ async function processChatMessage(chatData) {
         } catch(e) {}
     }
 
+    // 5-2. 호스트/모더 ** AI 질문 감지 → 35자 이내 AI 답변 공지창 표시
+    if (message && message.startsWith('**')) {
+        try {
+            const questionText = message.slice(2).trim();
+            if (questionText) {
+                const uid = (uniqueId || username || '').trim().toLowerCase();
+                const hostTiktokId = (user?.tiktokId || '').trim().toLowerCase();
+                const isHost = hostTiktokId && uid === hostTiktokId;
+
+                let isAllowed = isHost;
+                if (!isAllowed) {
+                    const Moderator = require('./models/Moderator');
+                    const mongoose  = require('mongoose');
+                    const modUserId = mongoose.Types.ObjectId.isValid(userId)
+                        ? new mongoose.Types.ObjectId(userId) : userId;
+                    const mod = await Moderator.findOne({
+                        userId: modUserId,
+                        tiktokUniqueId: { $regex: new RegExp(`^${uid}$`, 'i') }
+                    });
+                    if (mod) isAllowed = true;
+                }
+
+                if (isAllowed) {
+                    const OpenAI = require('openai');
+                    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+                    const completion = await openai.chat.completions.create({
+                        model: 'gpt-4o-mini',
+                        messages: [
+                            {
+                                role: 'system',
+                                content:
+                                    'You are a fun, energetic live-stream assistant. ' +
+                                    'Answer the question in the SAME language it was asked. ' +
+                                    'Keep the answer under 35 characters total (including emojis). ' +
+                                    'Be concise, witty, and add 1-2 emojis. No punctuation at the end unless needed.'
+                            },
+                            { role: 'user', content: questionText }
+                        ],
+                        max_tokens: 30,
+                        temperature: 0.8
+                    });
+                    const aiAnswer = completion.choices[0].message.content.trim().slice(0, 35);
+                    io.to('overlay-' + String(userId)).emit('overlay-mod-notice', {
+                        text: `Q: ${questionText} → ${aiAnswer}`,
+                        moderatorName: '🤖 AI'
+                    });
+                    console.log(`🤖 AI 공지 답변 [${questionText}]: ${aiAnswer}`);
+                }
+            }
+        } catch(e) { console.error('AI 공지 답변 오류:', e.message); }
+    }
+
     // 6. 클라이언트 전송
     io.to(userId).emit('chat-message', {
         username,
