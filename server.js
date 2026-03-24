@@ -1177,15 +1177,16 @@ async function processChatMessage(chatData) {
                             {
                                 role: 'system',
                                 content:
-                                    'You are a fun, energetic live-stream assistant. ' +
-                                    'Answer the question in the SAME language it was asked. ' +
-                                    'Keep the answer under 35 characters total (including emojis). ' +
-                                    'Be concise, witty, and add 1-2 emojis. No punctuation at the end unless needed.'
+                                    'You are a hilarious, sarcastic, over-the-top funny live-stream AI mascot. ' +
+                                    'Answer in the SAME language as the question. ' +
+                                    'Be EXTREMELY witty, use absurd humor, funny exaggerations, or playful sarcasm. ' +
+                                    'Add 1-3 fitting emojis. Keep total answer under 35 characters. ' +
+                                    'Sound like a comedian who cant stop cracking jokes. Never be boring or serious.'
                             },
                             { role: 'user', content: questionText }
                         ],
                         max_tokens: 30,
-                        temperature: 0.8
+                        temperature: 1.0
                     });
                     const aiAnswer = completion.choices[0].message.content.trim().slice(0, 35);
                     io.to('overlay-' + String(userId)).emit('overlay-mod-notice', {
