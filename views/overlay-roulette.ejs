@@ -217,16 +217,38 @@ function drawWheel(angle) {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // 레이블 텍스트
+        // 레이블 텍스트 (2줄 지원)
         ctx.save();
         ctx.translate(cx, cy);
         ctx.rotate(start + slice / 2);
         ctx.textAlign = 'right';
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 17px "Noto Sans KR", "Segoe UI", sans-serif';
-        ctx.shadowColor = 'rgba(0,0,0,0.7)';
-        ctx.shadowBlur = 6;
-        ctx.fillText(item.label, r - 16, 7);
+        ctx.shadowColor = 'rgba(0,0,0,0.8)';
+        ctx.shadowBlur = 8;
+
+        const FONT_SIZE = 34;
+        const MAX_WIDTH = r - 80; // 텍스트 최대 너비
+        ctx.font = `bold ${FONT_SIZE}px "Noto Sans KR", "Segoe UI", sans-serif`;
+
+        // 긴 텍스트는 단어 단위로 2줄로 분할
+        const words = item.label.split(' ');
+        let line1 = '', line2 = '';
+        if (words.length > 1 && ctx.measureText(item.label).width > MAX_WIDTH) {
+            // 절반 위치에서 줄 나누기
+            const mid = Math.ceil(words.length / 2);
+            line1 = words.slice(0, mid).join(' ');
+            line2 = words.slice(mid).join(' ');
+        } else {
+            line1 = item.label;
+        }
+
+        const lineH = FONT_SIZE * 1.15;
+        if (line2) {
+            ctx.fillText(line1, r - 16, -lineH / 2 + FONT_SIZE * 0.35);
+            ctx.fillText(line2, r - 16,  lineH / 2 + FONT_SIZE * 0.35);
+        } else {
+            ctx.fillText(line1, r - 16, FONT_SIZE * 0.35);
+        }
         ctx.restore();
     });
 
