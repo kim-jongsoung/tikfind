@@ -2334,6 +2334,8 @@ loadUserGenders();
 let micRecognition = null;
 let micActive = false;
 let priorityMode = false;
+let micLangs = ['en']; // 마이크 시작 시 1회만 로드
+let _micTranslateTimer = null; // 디바운스 타이머
 
 function togglePriority() {
     priorityMode = !priorityMode;
@@ -2359,11 +2361,22 @@ function toggleMic() {
     }
 }
 
-function startMic() {
+async function startMic() {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
         alert('이 기능은 Chrome 브라우저에서만 사용 가능합니다.');
         return;
     }
+
+    // 언어 설정 1회만 로드
+    try {
+        const userId = currentUser ? String(currentUser._id || currentUser.id) : null;
+        if (userId) {
+            const settingsRes = await fetch('/api/speech-settings?userId=' + userId);
+            const settingsData = await settingsRes.json();
+            micLangs = settingsData.success ? (settingsData.langs || ['en']) : ['en'];
+        }
+    } catch(e) { micLangs = ['en']; }
+
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     micRecognition = new SpeechRecognition();
     micRecognition.lang = 'ko-KR';
@@ -2390,7 +2403,7 @@ function startMic() {
         }
     };
 
-    micRecognition.onresult = async (event) => {
+    micRecognition.onresult = (event) => {
         let interim = '';
         let final = '';
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -2408,34 +2421,33 @@ function startMic() {
             if (userId) socket.emit('speech-interim-send', { userId, text: interim });
         }
 
-        // 최종 결과 → 번역 요청
+        // 최종 결과 → 디바운스 후 번역 요청 (300ms)
         if (final.trim()) {
+            const finalText = final.trim();
             const userId = currentUser ? String(currentUser._id || currentUser.id) : null;
             if (!userId) return;
 
-            try {
-                // speech-mic 페이지의 설정(언어)을 서버에서 가져와 번역
-                const settingsRes = await fetch('/api/speech-settings?userId=' + userId);
-                const settingsData = await settingsRes.json();
-                const langs = settingsData.success ? (settingsData.langs || ['en']) : ['en'];
-
-                const transRes = await fetch('/api/speech/translate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ text: final.trim(), langs, userId })
-                });
-                const transData = await transRes.json();
-                if (transData.success && transData.translations) {
-                    socket.emit('speech-translated-send', {
-                        userId,
-                        translations: transData.translations,
-                        priority: priorityMode
+            clearTimeout(_micTranslateTimer);
+            _micTranslateTimer = setTimeout(async () => {
+                try {
+                    const transRes = await fetch('/api/speech/translate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: finalText, langs: micLangs, userId })
                     });
-                    document.getElementById('micInterimBox').textContent = '✅ ' + final.trim();
+                    const transData = await transRes.json();
+                    if (transData.success && transData.translations) {
+                        socket.emit('speech-translated-send', {
+                            userId,
+                            translations: transData.translations,
+                            priority: priorityMode
+                        });
+                        document.getElementById('micInterimBox').textContent = '✅ ' + finalText;
+                    }
+                } catch (e) {
+                    console.error('번역 오류:', e);
                 }
-            } catch (e) {
-                console.error('번역 오류:', e);
-            }
+            }, 300);
         }
     };
 
