@@ -2480,21 +2480,32 @@ function stopMic() {
     document.getElementById('micInterimBox').textContent = '— 마이크 대기 중 —';
 }
 
-// ── 룰렛 미션 ──────────────────────────────────
-const ROULETTE_ITEMS = [
-    { label: '🎤 노래 한 소절',      color: '#e74c3c' },
-    { label: '💃 댄스 10초',         color: '#9b59b6' },
-    { label: '😂 웃긴 표정 최고',     color: '#2980b9' },
-    { label: '🎁 1위에게 선물하기',   color: '#e67e22' },
-    { label: '🔥 하트 10초 연속',     color: '#c0392b' },
+// ── 룰렛 미션 (10개 풀 → 매번 랜덤 5개 추출) ──
+const ROULETTE_POOL = [
+    { label: '🎤 강제 삼행시',         color: '#e74c3c' },
+    { label: '🎭 복불복 성대모사',      color: '#9b59b6' },
+    { label: '🤣 웃긴 필터 방송',       color: '#2980b9' },
+    { label: '🎶 한 소절 라이브',       color: '#27ae60' },
+    { label: '👆 손가락 댄스',          color: '#e67e22' },
+    { label: '👁️ 강철 눈싸움',          color: '#c0392b' },
+    { label: '💕 치명적 애교 3종',      color: '#e91e8c' },
+    { label: '🔮 신비로운 타로',        color: '#8e44ad' },
+    { label: '🎙️ 초밀착 ASMR',          color: '#16a085' },
+    { label: '🎵 오늘의 엔딩곡 선곡',   color: '#d35400' },
 ];
+
+function pickRandomItems(pool, count) {
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+}
 
 function spinRoulette() {
     const userId = currentUser ? String(currentUser._id || currentUser.id) : null;
     if (!userId) return;
-    const winIndex = Math.floor(Math.random() * ROULETTE_ITEMS.length);
-    socket.emit('roulette-spin', { userId, items: ROULETTE_ITEMS, winIndex });
-    console.log(`🎰 룰렛 발사! 당첨: ${ROULETTE_ITEMS[winIndex].label}`);
+    const items = pickRandomItems(ROULETTE_POOL, 5);
+    const winIndex = Math.floor(Math.random() * items.length);
+    socket.emit('roulette-spin', { userId, items, winIndex });
+    console.log(`🎰 룰렛 발사! 당첨: ${items[winIndex].label}`);
 }
 
 // ── 공통 토스트 ──────────────────────────────────

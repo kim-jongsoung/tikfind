@@ -145,13 +145,24 @@ const socket = io();
 socket.emit('join-overlay', userId);
 socket.on('connect', () => socket.emit('join-overlay', userId));
 
-const DEFAULT_ITEMS = [
-    { label: '🎤 노래 한 소절',      color: '#e74c3c' },
-    { label: '💃 댄스 10초',         color: '#9b59b6' },
-    { label: '😂 웃긴 표정 최고',     color: '#2980b9' },
-    { label: '🎁 1위에게 선물하기',   color: '#e67e22' },
-    { label: '🔥 하트 10초 연속',     color: '#c0392b' },
+const MISSION_POOL = [
+    { label: '🎤 강제 삼행시',         color: '#e74c3c' },
+    { label: '🎭 복불복 성대모사',      color: '#9b59b6' },
+    { label: '🤣 웃긴 필터 방송',       color: '#2980b9' },
+    { label: '� 한 소절 라이브',       color: '#27ae60' },
+    { label: '👆 손가락 댄스',          color: '#e67e22' },
+    { label: '�️ 강철 눈싸움',          color: '#c0392b' },
+    { label: '💕 치명적 애교 3종',      color: '#e91e8c' },
+    { label: '🔮 신비로운 타로',        color: '#8e44ad' },
+    { label: '🎙️ 초밀착 ASMR',          color: '#16a085' },
+    { label: '🎵 오늘의 엔딩곡 선곡',   color: '#d35400' },
 ];
+
+function pickRandom(pool, count) {
+    return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+}
+
+const DEFAULT_ITEMS = pickRandom(MISSION_POOL, 5);
 
 let items       = [...DEFAULT_ITEMS];
 let currentAngle = 0;   // 누적 회전 각도 (라디안)
@@ -293,7 +304,7 @@ function setTickInterval(ms) {
 function spin(targetItems, winIndex) {
     if (spinning) return;
     spinning = true;
-    items = (targetItems && targetItems.length) ? targetItems : [...DEFAULT_ITEMS];
+    items = (targetItems && targetItems.length) ? targetItems : pickRandom(MISSION_POOL, 5);
 
     wrap.classList.add('spinning');
     document.getElementById('result-banner').classList.remove('show');
@@ -427,7 +438,8 @@ if (urlParams.get('test') === '1') {
     document.body.addEventListener('click', () => audioCtx.resume(), { once: true });
     setTimeout(() => {
         wrap.classList.add('spinning');
-        setTimeout(() => spin(null, Math.floor(Math.random() * DEFAULT_ITEMS.length)), 800);
+        const testItems = pickRandom(MISSION_POOL, 5);
+        setTimeout(() => spin(testItems, Math.floor(Math.random() * testItems.length)), 800);
     }, 400);
 }
 </script>
