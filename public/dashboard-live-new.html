@@ -213,6 +213,14 @@
                                 <p id="currentSongTitle" style="font-size: 11px; font-weight: 600; color: white; margin: 0 0 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</p>
                                 <p style="font-size: 9px; color: #666; margin: 0;">신청: <span id="currentRequester">-</span></p>
                             </div>
+                            <!-- 볼륨 컨트롤 -->
+                            <div style="padding: 6px 8px; background: #0f0f0f; border-top: 1px solid #1a1a1a; display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 11px;">🔊</span>
+                                <input type="range" id="ytVolumeSlider" min="0" max="100" value="80"
+                                    oninput="setYtVolume(this.value)"
+                                    style="flex:1; height:4px; accent-color:#4ade80; cursor:pointer;">
+                                <span id="ytVolumeLabel" style="font-size: 10px; color: #aaa; min-width: 28px; text-align:right;">80%</span>
+                            </div>
                             <!-- YouTube Premium 안내 -->
                             <div style="padding: 5px 8px; background: #0d0d0d; border-top: 1px solid #1a1a1a; display: flex; align-items: center; gap: 6px;">
                                 <span style="font-size: 9px; color: #555;">&#9654; 유튜브 재생 중 광고가 보이나요?</span>
@@ -1473,6 +1481,15 @@
             console.log('✅ YouTube IFrame API 준비 완료');
         };
 
+        // 볼륨 제어
+        function setYtVolume(val) {
+            const v = parseInt(val);
+            document.getElementById('ytVolumeLabel').textContent = v + '%';
+            if (ytPlayer && typeof ytPlayer.setVolume === 'function') {
+                ytPlayer.setVolume(v);
+            }
+        }
+
         // 신청곡 재생
         async function playSong(songId) {
             if (!currentUser) return;
@@ -1522,7 +1539,11 @@
                     videoId: song.videoId,
                     playerVars: { autoplay: 1, controls: 1, rel: 0 },
                     events: {
-                        onReady: (e) => { e.target.playVideo(); },
+                        onReady: (e) => {
+                            e.target.playVideo();
+                            const vol = parseInt(document.getElementById('ytVolumeSlider').value || 80);
+                            e.target.setVolume(vol);
+                        },
                         onStateChange: (e) => {
                             // 재생 종료(0) 시 다음 곡 자동재생
                             if (e.data === YT.PlayerState.ENDED) {
