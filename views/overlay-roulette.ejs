@@ -279,9 +279,16 @@ drawWheel(0);
 //   회전 후 angle의 "3시" 위치에 해당하는 슬라이스 인덱스
 //   = (angle의 12시 기준으로) +π/2 지점 → 즉 포인터 지점에는 angle=π/2 오프셋을 더해야 함
 //   winSlice 중심이 포인터에 오도록: angle = π/2 − (winIndex + 0.5) × slice
-function easeOut(t) { return 1 - Math.pow(1 - t, 5); }
+function easeOut(t)     { return 1 - Math.pow(1 - t, 5); }
+function easeInOut(t)   { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+function easeLinear(t)  { return t; }
 
 let tickTimer = null;
+
+function setTickInterval(ms) {
+    clearInterval(tickTimer);
+    tickTimer = setInterval(() => playSpinTick(), ms);
+}
 
 function spin(targetItems, winIndex) {
     if (spinning) return;
@@ -294,55 +301,78 @@ function spin(targetItems, winIndex) {
     const n     = items.length;
     const slice = (2 * Math.PI) / n;
 
-    // 포인터(3시, 0rad) 기준 당첨 슬라이스 중심이 오도록 목표 각도 계산
-    // drawWheel에서 슬라이스 i 의 중심 각도(12시기준) = angle + i*slice − π/2 + slice/2
-    // 이 중심이 0(3시) 가 되려면: angle = π/2 − (i + 0.5)*slice
+    // ── Phase 1: 프리뷰 (천천히 1.5바퀴 회전, 10초) ─────────────
+    const PREVIEW_DURATION = 10000; // 10초
+    const PREVIEW_DELTA    = 1.5 * 2 * Math.PI; // 1.5바퀴
+
+    // ── Phase 2: 본 스핀 (빠르게 당첨 위치로, 14.4초) ────────────
+    const SPIN_DURATION = 14400;
+    const SPIN_EXTRA    = (15 + Math.floor(Math.random() * 4)) * 2 * Math.PI;
+
     const targetAngle = Math.PI / 2 - (winIndex + 0.5) * slice;
 
-    // 현재 각도에서 targetAngle 까지의 차이를 항상 양방향(시계방향)으로 계산
-    let delta = ((targetAngle - currentAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-    if (delta < 0.1) delta += 2 * Math.PI; // 너무 가까우면 한 바퀴 추가
+    // 효과음: 프리뷰부터 천천히 시작
+    setTickInterval(300);
 
-    // 회전 3배: 스핀 기본 15바퀴 + 랜덤 0~3바퀴
-    const extraSpins = (15 + Math.floor(Math.random() * 4)) * 2 * Math.PI;
-    const totalDelta = extraSpins + delta;
-    const duration   = 14400; // 14.4초 (기존 4.8s × 3)
+    // ── Phase 1 애니메이션 ─────────────────────────────────────
+    const previewStartAngle = currentAngle;
+    const previewStartTime  = performance.now();
 
-    const startAngle = currentAngle;
-    const startTime  = performance.now();
-    let lastTickAt   = 0;
-    let tickInterval = 80; // ms
-
-    // 회전 효과음 틱 시작
-    if (tickTimer) clearInterval(tickTimer);
-    tickTimer = setInterval(() => playSpinTick(), tickInterval);
-
-    function frame(now) {
-        const elapsed = now - startTime;
-        const t = Math.min(elapsed / duration, 1);
-        const angle = startAngle + totalDelta * easeOut(t);
+    function previewFrame(now) {
+        const t = Math.min((now - previewStartTime) / PREVIEW_DURATION, 1);
+        const angle = previewStartAngle + PREVIEW_DELTA * easeInOut(t);
         drawWheel(angle);
 
-        // 속도에 따라 틱 간격 조절 (느려질수록 간격 늘림)
-        const newInterval = Math.max(80, Math.floor(80 + 500 * easeOut(t)));
-        if (newInterval !== tickInterval) {
-            tickInterval = newInterval;
-            clearInterval(tickTimer);
-            if (t < 1) tickTimer = setInterval(() => playSpinTick(), tickInterval);
-        }
+        // 속도에 비례해서 틱 간격 조절 (중간이 가장 빠름)
+        const speed = Math.abs(easeInOut(Math.min(t + 0.01, 1)) - easeInOut(t)) / 0.01;
+        const interval = Math.max(120, Math.min(500, Math.round(180 / (speed * 50 + 0.1))));
+        clearInterval(tickTimer);
+        tickTimer = setInterval(() => playSpinTick(), interval);
 
         if (t < 1) {
-            requestAnimationFrame(frame);
+            requestAnimationFrame(previewFrame);
         } else {
             currentAngle = angle;
-            spinning = false;
-            clearInterval(tickTimer);
-            tickTimer = null;
-            // spinning 클래스는 showResult 타이머에서 제거 (바로 사라지지 않도록)
-            showResult(items[winIndex]);
+            startMainSpin();
         }
     }
-    requestAnimationFrame(frame);
+    requestAnimationFrame(previewFrame);
+
+    // ── Phase 2 애니메이션 ─────────────────────────────────────
+    function startMainSpin() {
+        // 현재 각도 기준으로 targetAngle 까지 시계방향 delta 계산
+        let delta = ((targetAngle - currentAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+        if (delta < 0.1) delta += 2 * Math.PI;
+        const totalDelta  = SPIN_EXTRA + delta;
+        const spinStart   = currentAngle;
+        const spinStartT  = performance.now();
+        let tickInterval  = 80;
+        setTickInterval(tickInterval);
+
+        function spinFrame(now) {
+            const t     = Math.min((now - spinStartT) / SPIN_DURATION, 1);
+            const angle = spinStart + totalDelta * easeOut(t);
+            drawWheel(angle);
+
+            // 감속에 따라 틱 간격 늘리기
+            const newInterval = Math.max(80, Math.floor(80 + 500 * easeOut(t)));
+            if (newInterval !== tickInterval) {
+                tickInterval = newInterval;
+                setTickInterval(tickInterval);
+            }
+
+            if (t < 1) {
+                requestAnimationFrame(spinFrame);
+            } else {
+                currentAngle = angle;
+                spinning = false;
+                clearInterval(tickTimer);
+                tickTimer = null;
+                showResult(items[winIndex]);
+            }
+        }
+        requestAnimationFrame(spinFrame);
+    }
 }
 
 function showResult(item) {
