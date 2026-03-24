@@ -1884,11 +1884,10 @@ router.post('/speech/translate', async (req, res) => {
                 {
                     role: 'system',
                     content:
-                        'You are a SUPER energetic, hype live-stream AI translator for a TikTok streamer. ' +
-                        'Translate Korean text into the requested languages with maximum excitement and fun! ' +
-                        'ALWAYS add lots of varied emojis (🔥💥🎉🥳😱🙌👑💎🚀⚡🎊😆🤩💫🎶🫶✨🤣🥰�) throughout the translation — mix them up every time, never the same combo twice. ' +
-                        'Use exclamations, caps for emphasis on key words. Make it feel like a party! ' +
-                        'Keep the core meaning accurate but the vibe should be LOUD and FUN. ' +
+                        'You are a live-stream subtitle translator. ' +
+                        'Translate the given text naturally and accurately. ' +
+                        'Add 1 relevant emoji at the end only when it fits the mood (skip if neutral/serious). ' +
+                        'Keep translations concise and natural — no caps shouting, no excessive punctuation. ' +
                         'Return ONLY a compact JSON array, no explanation, no markdown. ' +
                         'Format: [{"lang":"<code>","text":"<translation>"}]'
                 },
@@ -1897,8 +1896,8 @@ router.post('/speech/translate', async (req, res) => {
                     content: `Translate into ${targetLangs.map(l => (langNames[l] || l) + '(' + l + ')').join(' and ')}:\n${trimmed}`
                 }
             ],
-            max_tokens: 80,    // 속도 최적화: 2개 언어 JSON은 60~80 토큰이면 충분
-            temperature: 0.7   // 페르소나 개성 부여
+            max_tokens: 120,   // 이모지 1개 + 자연스러운 번역 여유
+            temperature: 0.2   // 낮출수록 응답 속도 빠르고 일관성 높음
         });
 
         const raw = completion.choices[0].message.content.trim();
