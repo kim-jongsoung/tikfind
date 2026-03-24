@@ -190,15 +190,20 @@
         applyInactiveAlert(data.inactiveAlert === true);
     });
 
-    // 비활성 타임아웃 (3분 = 180000ms)
+    // 비활성 타임아웃 (3분 = 180000ms), 퇴장 타임아웃 (5분 = 300000ms)
     const INACTIVE_MS = 3 * 60 * 1000;
+    const REMOVE_MS   = 5 * 60 * 1000;
 
-    // 활동 타이머 맵 { uid: timeoutId }
+    // 활동 타이머 맵 { uid: { inactiveId, removeId } }
     const activityTimers = new Map();
 
     function resetActivityTimer(uid) {
         // 기존 타이머 클리어
-        if (activityTimers.has(uid)) clearTimeout(activityTimers.get(uid));
+        const existing = activityTimers.get(uid);
+        if (existing) {
+            clearTimeout(existing.inactiveId);
+            clearTimeout(existing.removeId);
+        }
         // 배지 활성(파란색)
         const entry = activeMods.get(uid);
         if (entry) {
@@ -206,14 +211,18 @@
             if (badge) badge.classList.remove('inactive');
         }
         // 3분 후 비활성(빨간색)
-        const t = setTimeout(() => {
+        const inactiveId = setTimeout(() => {
             const e = activeMods.get(uid);
             if (e) {
                 const b = e.cardEl.querySelector('.mod-badge');
                 if (b) b.classList.add('inactive');
             }
         }, INACTIVE_MS);
-        activityTimers.set(uid, t);
+        // 5분 후 카드 자동 제거 (방에서 나간 것으로 간주)
+        const removeId = setTimeout(() => {
+            removeModCard(uid);
+        }, REMOVE_MS);
+        activityTimers.set(uid, { inactiveId, removeId });
     }
 
     // 소켓: 모더 입장 이벤트
