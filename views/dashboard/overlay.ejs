@@ -486,27 +486,17 @@
                         <div>
                             <p class="font-semibold text-green-800 text-sm">실시간 번역 자막 위젯이란?</p>
                             <p class="text-xs text-green-600 mt-1 leading-relaxed">
-                                Chrome에서 마이크 페이지를 열어두면 음성을 인식해 방송 화면에 자동 번역 자막이 표시됩니다.<br>
+                                라이브 방송 중 음성을 인식해 방송 화면에 자동 번역 자막이 표시됩니다.<br>
                                 <strong>별도 프로그램 설치 불필요</strong> · 말하는 즉시 선택한 언어로 자막 표시
                             </p>
                         </div>
                     </div>
 
-                    <!-- 주의사항 -->
-                    <div class="mb-5 p-3 bg-red-50 border border-red-300 rounded-xl flex items-start gap-2">
-                        <i class="fas fa-exclamation-circle text-red-500 mt-0.5 flex-shrink-0 text-base"></i>
-                        <div class="text-xs text-red-700 leading-relaxed">
-                            <p class="font-bold text-sm mb-1">⚠️ 마이크 URL은 TikTok Studio 소스에 추가하면 안 됩니다!</p>
-                            <p>TikTok Studio에는 <strong>① 자막 위젯 URL만</strong> 소스로 추가하세요.<br>
-                            <strong>② 마이크 URL</strong>은 반드시 <strong>Chrome 브라우저에서 직접 열어서</strong> 사용해야 합니다.</p>
-                        </div>
-                    </div>
-
-                    <!-- ① 자막 위젯 URL -->
+                    <!-- 자막 위젯 URL -->
                     <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
                         <i class="fas fa-tv text-green-500 mt-0.5 flex-shrink-0"></i>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-green-800 mb-1">① 자막 위젯 — TikTok Live Studio에 추가</p>
+                            <p class="text-sm font-semibold text-green-800 mb-1">자막 위젯 — TikTok Live Studio에 추가</p>
                             <div class="mb-2 flex flex-wrap gap-2 text-xs">
                                 <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded font-mono font-semibold">1개 언어: 800 × 70 px</span>
                                 <span class="bg-green-200 text-green-900 px-2 py-0.5 rounded font-mono font-semibold">2개 언어: 800 × 150 px</span>
@@ -515,21 +505,6 @@
                                 <code class="text-xs text-gray-600 flex-1 break-all select-all" id="speechUrl">https://tikfind.kr/overlay/<%= user._id %>/speech</code>
                                 <button onclick="copySpeechUrl()" id="copySpeechBtn"
                                     class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs whitespace-nowrap flex items-center gap-1">
-                                    <i class="fas fa-copy"></i> 복사
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ② 마이크 URL -->
-                    <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
-                        <i class="fas fa-microphone text-blue-500 mt-0.5 flex-shrink-0"></i>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-blue-800 mb-1">② 마이크 페이지 — <span class="text-red-500">Chrome에서만 열기</span> (TikTok Studio 소스 추가 ❌)</p>
-                            <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-blue-200">
-                                <code class="text-xs text-gray-600 flex-1 break-all select-all" id="speechMicUrl">https://tikfind.kr/overlay/<%= user._id %>/speech-mic</code>
-                                <button onclick="copySpeechMicUrl()" id="copySpeechMicBtn"
-                                    class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs whitespace-nowrap flex items-center gap-1">
                                     <i class="fas fa-copy"></i> 복사
                                 </button>
                             </div>
@@ -584,20 +559,19 @@
                         </h4>
                         <ol class="space-y-3">
                             <li class="flex gap-3 items-start"><span class="step-num bg-green-500">1</span><p class="text-sm text-gray-600 pt-0.5">위 <strong>번역 언어</strong>를 선택하고 저장</p></li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-blue-500">2</span><p class="text-sm text-gray-600 pt-0.5"><strong>② 마이크 URL</strong> 복사 후 Chrome에서 새 탭으로 열기 → <strong>마이크 시작</strong> 버튼 클릭 → 방송 중 백그라운드로 유지</p></li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">3</span><p class="text-sm text-gray-600 pt-0.5"><strong>① 자막 위젯 URL</strong> 복사 후 TikTok Live Studio → <strong>소스 추가</strong> → <strong>브라우저(URL)</strong></p></li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">2</span><p class="text-sm text-gray-600 pt-0.5"><strong>자막 위젯 URL</strong> 복사 후 TikTok Live Studio → <strong>소스 추가</strong> → <strong>브라우저(URL)</strong></p></li>
                             <li class="flex gap-3 items-start">
-                                <span class="step-num bg-green-500">4</span>
+                                <span class="step-num bg-green-500">3</span>
                                 <div class="text-sm text-gray-600 pt-0.5">
                                     소스 <strong>해상도</strong> 입력:
                                     <span class="size-badge ml-2">너비 <span class="dim">800</span> × 높이 <span class="dim">100</span></span>
                                 </div>
                             </li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">5</span><p class="text-sm text-gray-600 pt-0.5">소스를 화면 <strong>하단 중앙</strong>에 배치 → 완료!</p></li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">4</span><p class="text-sm text-gray-600 pt-0.5">소스를 화면 <strong>하단 중앙</strong>에 배치 → 완료!</p></li>
                         </ol>
                         <div class="mt-4 p-3 bg-green-50 border-l-4 border-green-400 rounded text-xs text-green-700">
                             <i class="fas fa-lightbulb mr-1"></i>
-                            <strong>팁:</strong> 말을 멈추면 자막이 6초 후 자동으로 사라집니다. Chrome 마이크 페이지는 방송 내내 열어두세요.
+                            <strong>팁:</strong> 말을 멈추면 자막이 6초 후 자동으로 사라집니다.
                         </div>
                     </div>
                 </div>
@@ -1205,16 +1179,6 @@
             });
         }
 
-        function copySpeechMicUrl() {
-            const text = document.getElementById('speechMicUrl').textContent.trim();
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('copySpeechMicBtn');
-                const orig = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
-                btn.classList.replace('bg-blue-600','bg-blue-400');
-                setTimeout(() => { btn.innerHTML = orig; btn.classList.replace('bg-blue-400','bg-blue-600'); }, 2000);
-            });
-        }
 
         // 초기 탭 로드
         if (document.getElementById('panel-song').classList.contains('active'))   loadNotices();
