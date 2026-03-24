@@ -1146,8 +1146,8 @@ async function processChatMessage(chatData) {
         } catch(e) {}
     }
 
-    // 5-2. 호스트/모더 ** AI 질문 감지 → 35자 이내 AI 답변 공지창 표시
-    if (message && message.startsWith('**')) {
+    // 5-2. 호스트/모더 ?? AI 질문 감지 → 35자 이내 AI 답변 공지창 표시
+    if (message && message.startsWith('??')) {
         try {
             const questionText = message.slice(2).trim();
             if (questionText) {
