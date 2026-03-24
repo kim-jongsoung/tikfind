@@ -273,6 +273,18 @@
                                     </div>
                                 </div>
 
+                                <!-- 🎰 룰렛 미션 -->
+                                <div style="margin-top: 8px; background: #1a0a2e; border: 1px solid #7c3aed; border-radius: 6px; padding: 10px;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                                        <span style="font-size:11px; color:#a78bfa; font-weight:bold;">⚔️ 매치승리 룰렛미션</span>
+                                        <span style="font-size:9px; color:#6d28d9; background:#2e1065; padding:2px 6px; border-radius:10px;">매치 이겼을 때 사용</span>
+                                    </div>
+                                    <button onclick="spinRoulette()"
+                                        style="width:100%; padding:10px 0; background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#ffd700; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:900; letter-spacing:1px; box-shadow:0 4px 14px rgba(124,58,237,0.5);">
+                                        🎰 룰렛 돌리기!
+                                    </button>
+                                </div>
+
                                 <!-- 🎤 번역 자막 마이크 컨트롤 -->
                                 <div style="margin-top: 8px; background: #0a1a0f; border: 1px solid #166534; border-radius: 6px; padding: 10px;">
                                     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
@@ -2466,6 +2478,23 @@ function stopMic() {
     document.getElementById('micStatusBadge').textContent = '대기 중';
     document.getElementById('micStatusBadge').style.color = '#64748b';
     document.getElementById('micInterimBox').textContent = '— 마이크 대기 중 —';
+}
+
+// ── 룰렛 미션 ──────────────────────────────────
+const ROULETTE_ITEMS = [
+    { label: '🎤 노래 한 소절',      color: '#e74c3c' },
+    { label: '💃 댄스 10초',         color: '#9b59b6' },
+    { label: '😂 웃긴 표정 최고',     color: '#2980b9' },
+    { label: '🎁 1위에게 선물하기',   color: '#e67e22' },
+    { label: '🔥 하트 10초 연속',     color: '#c0392b' },
+];
+
+function spinRoulette() {
+    const userId = currentUser ? String(currentUser._id || currentUser.id) : null;
+    if (!userId) return;
+    const winIndex = Math.floor(Math.random() * ROULETTE_ITEMS.length);
+    socket.emit('roulette-spin', { userId, items: ROULETTE_ITEMS, winIndex });
+    console.log(`🎰 룰렛 발사! 당첨: ${ROULETTE_ITEMS[winIndex].label}`);
 }
 
 // ── 공통 토스트 ──────────────────────────────────

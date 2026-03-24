@@ -57,6 +57,11 @@ router.get('/overlay/:userId/speech-mic', (req, res) => {
     res.render('overlay-speech-mic', { title: 'TikFind 마이크', userId: req.params.userId });
 });
 
+// 룰렛 미션 위젯 (인증 불필요 - OBS 브라우저 소스)
+router.get('/overlay/:userId/roulette', (req, res) => {
+    res.render('overlay-roulette', { title: 'TikFind 룰렛', userId: req.params.userId });
+});
+
 router.get('/dashboard/billing', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/billing.html'));
 });

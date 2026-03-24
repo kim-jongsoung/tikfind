@@ -65,6 +65,11 @@
                         <i class="fas fa-language text-green-500"></i> 번역 자막
                         <span class="px-1.5 py-0.5 bg-green-100 text-green-600 text-xs rounded-full font-bold">NEW</span>
                     </button>
+                    <button onclick="switchTab('roulette')" id="tab-roulette"
+                        class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fas fa-dharmachakra text-yellow-500"></i> 룰렛 미션
+                        <span class="px-1.5 py-0.5 bg-yellow-100 text-yellow-600 text-xs rounded-full font-bold">NEW</span>
+                    </button>
                 </div>
 
                 <!-- ══════════════════════════════════
@@ -597,6 +602,93 @@
                     </div>
                 </div>
 
+                <!-- ══════════════════════════════════
+                     탭 5: 룰렛 미션 위젯
+                ══════════════════════════════════ -->
+                <div id="panel-roulette" class="tab-panel p-6">
+
+                    <!-- 설명 -->
+                    <div class="flex items-start gap-4 mb-5 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                        <div class="text-3xl">🎰</div>
+                        <div>
+                            <p class="font-semibold text-yellow-800 text-sm">⚔️ 매치승리 룰렛미션이란?</p>
+                            <p class="text-xs text-yellow-700 mt-1 leading-relaxed">
+                                TikTok 매치에서 이겼을 때 대시보드의 <strong>🎰 룰렛 돌리기!</strong> 버튼을 누르면<br>
+                                방송 화면 왼쪽에 반원형 룰렛이 나타나 랜덤으로 미션을 추첨합니다.<br>
+                                <strong>시청자들이 미션 결과를 함께 기대하며 방송이 더 재미있어집니다!</strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- URL -->
+                    <div class="mb-5 p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3">
+                        <i class="fas fa-ruler-combined text-yellow-500 mt-0.5"></i>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-semibold text-yellow-800 mb-1">고정 소스 크기 — <span class="font-mono">340 × 520 px</span></p>
+                            <p class="text-xs text-yellow-600 mb-2">화면 왼쪽에 배치 · 평소엔 투명 · 돌릴 때만 반원 등장</p>
+                            <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-yellow-200">
+                                <code class="text-xs text-gray-600 flex-1 break-all select-all" id="rouletteUrl">https://tikfind.kr/overlay/<%= user._id %>/roulette</code>
+                                <button onclick="copyRouletteUrl()" id="copyRouletteBtn"
+                                    class="px-3 py-1.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-xs whitespace-nowrap flex items-center gap-1">
+                                    <i class="fas fa-copy"></i> 복사
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 미션 목록 -->
+                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-list text-yellow-500"></i> 기본 미션 5개
+                        </h4>
+                        <div class="space-y-2">
+                            <% [
+                                {icon:'🎤', label:'노래 한 소절', color:'bg-red-100 text-red-700'},
+                                {icon:'💃', label:'댄스 10초', color:'bg-purple-100 text-purple-700'},
+                                {icon:'😂', label:'웃긴 표정 최고', color:'bg-blue-100 text-blue-700'},
+                                {icon:'🎁', label:'1위에게 선물하기', color:'bg-orange-100 text-orange-700'},
+                                {icon:'🔥', label:'하트 10초 연속', color:'bg-red-100 text-red-800'},
+                            ].forEach(function(m){ %>
+                            <div class="flex items-center gap-3 p-2.5 rounded-lg border border-gray-100 bg-gray-50">
+                                <span class="text-xl"><%= m.icon %></span>
+                                <span class="text-sm font-semibold text-gray-700 flex-1"><%= m.label %></span>
+                                <span class="px-2 py-0.5 rounded-full text-xs font-bold <%= m.color %>">미션</span>
+                            </div>
+                            <% }); %>
+                        </div>
+                    </div>
+
+                    <!-- 미리보기 -->
+                    <div class="flex flex-wrap gap-3 mb-5">
+                        <a href="/overlay/<%= user._id %>/roulette?test=1" target="_blank"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-yellow-50 border border-yellow-300 text-yellow-700 rounded-lg hover:bg-yellow-100 transition text-sm font-semibold">
+                            <i class="fas fa-eye"></i> 룰렛 미리보기
+                        </a>
+                    </div>
+
+                    <!-- 추가 방법 -->
+                    <div class="border-t border-gray-100 pt-5">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                            <i class="fas fa-tv text-pink-500"></i> TikTok Live Studio 소스 추가 방법
+                        </h4>
+                        <ol class="space-y-3">
+                            <li class="flex gap-3 items-start"><span class="step-num bg-yellow-500">1</span><p class="text-sm text-gray-600 pt-0.5">위 URL 복사 → TikTok Live Studio → <strong>소스 추가</strong> → <strong>브라우저(URL)</strong></p></li>
+                            <li class="flex gap-3 items-start">
+                                <span class="step-num bg-yellow-500">2</span>
+                                <div class="text-sm text-gray-600 pt-0.5">소스 해상도 입력:
+                                    <span class="size-badge ml-2">너비 <span class="dim">340</span> × 높이 <span class="dim">520</span></span>
+                                </div>
+                            </li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-yellow-500">3</span><p class="text-sm text-gray-600 pt-0.5">소스를 <strong>화면 왼쪽 가장자리</strong>에 배치 (반원이 왼쪽에서 나타남)</p></li>
+                            <li class="flex gap-3 items-start"><span class="step-num bg-yellow-500">4</span><p class="text-sm text-gray-600 pt-0.5">매치에서 이겼을 때 대시보드 라이브 페이지의 <strong>🎰 룰렛 돌리기!</strong> 버튼 클릭</p></li>
+                        </ol>
+                        <div class="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded text-xs text-yellow-700">
+                            <i class="fas fa-lightbulb mr-1"></i>
+                            <strong>팁:</strong> 룰렛은 당첨 후 9초 뒤 자동으로 사라집니다. 여러 번 연속으로 돌릴 수도 있어요!
+                        </div>
+                    </div>
+                </div>
+
         </div>
     </main>
 
@@ -607,14 +699,14 @@
 
         // ── 탭 전환 ──
         function switchTab(name) {
-            ['gift','song','mod','speech'].forEach(t => {
+            ['gift','song','mod','speech','roulette'].forEach(t => {
                 document.getElementById('panel-' + t).classList.toggle('active', t === name);
                 const btn = document.getElementById('tab-' + t);
                 btn.classList.remove('active', 'active-purple', 'active-blue', 'active-green');
                 if (t === name) {
-                    if (name === 'gift')   btn.classList.add('active-purple');
-                    else if (name === 'mod')    btn.classList.add('active-blue');
-                    else if (name === 'speech') btn.classList.add('active-green');
+                    if (name === 'gift')     btn.classList.add('active-purple');
+                    else if (name === 'mod')      btn.classList.add('active-blue');
+                    else if (name === 'speech')   btn.classList.add('active-green');
                     else btn.classList.add('active');
                 }
             });
@@ -622,6 +714,15 @@
             if (name === 'gift')   loadGiftSettings();
             if (name === 'mod')    loadModerators();
             if (name === 'speech') loadSpeechSettings();
+        }
+
+        function copyRouletteUrl() {
+            const url = document.getElementById('rouletteUrl').textContent.trim();
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = document.getElementById('copyRouletteBtn');
+                btn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
+                setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> 복사'; }, 2000);
+            });
         }
 
         // ── 선물 다이아 기준 저장 ──

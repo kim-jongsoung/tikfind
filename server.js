@@ -2253,6 +2253,13 @@ io.on('connection', (socket) => {
         console.log(`🗣️ speech-translated → ${room} (${(data.translations||[]).length}개 언어, priority:${data.priority})`);
     });
 
+    // 대시보드 → 오버레이: 룰렛 돌리기
+    socket.on('roulette-spin', (data) => {
+        const { userId: targetUserId, items, winIndex } = data;
+        io.to(`overlay-${targetUserId}`).emit('roulette-spin', { items, winIndex });
+        console.log(`🎰 룰렛 스핀 [${targetUserId}]: 당첨=${winIndex} (${items?.[winIndex]?.label})`);
+    });
+
     // 대시보드 → 오버레이: 현재 재생 곡 전송
     socket.on('overlay-now-playing', (data) => {
         const { userId: targetUserId, title, artist, requester, thumbnail } = data;

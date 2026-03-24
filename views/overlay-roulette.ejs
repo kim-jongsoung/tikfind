@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>룰렛 오버레이</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { background: transparent; overflow: hidden; width: 340px; height: 520px; }
+
+        /* 반원 래퍼 - 왼쪽 가장자리에 붙음 */
+        #wheel-wrap {
+            position: absolute;
+            left: -310px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 620px; height: 620px;
+            transition: left 0.6s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #wheel-wrap.visible { left: -310px; }
+        #wheel-wrap.spinning { left: -280px; }
+
+        /* 외곽 빛나는 링 */
+        #ring {
+            position: absolute;
+            width: 620px; height: 620px;
+            border-radius: 50%;
+            background: conic-gradient(#ffd700, #ff6b6b, #a855f7, #3b82f6, #22c55e, #ffd700);
+            animation: ringGlow 1.8s ease-in-out infinite alternate;
+        }
+        @keyframes ringGlow {
+            from { box-shadow: 0 0 30px #ffd70099, 0 0 60px #ff6b6b44; }
+            to   { box-shadow: 0 0 60px #ffd700cc, 0 0 100px #a855f766; }
+        }
+
+        #canvas-wrap {
+            position: absolute;
+            left: 8px; top: 8px;
+            width: 604px; height: 604px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        /* 포인터 - 오른쪽 (반원의 평면 쪽) */
+        #pointer {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0; height: 0;
+            border-top: 16px solid transparent;
+            border-bottom: 16px solid transparent;
+            border-right: 44px solid #ffd700;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.7));
+            z-index: 20;
+        }
+
+        /* 중앙 원 */
+        #center-dot {
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff 20%, #ffd700 100%);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            z-index: 20;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+
+        /* 타이틀 배너 */
+        #title-banner {
+            position: absolute;
+            right: -10px; top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            border: 2px solid #ffd700;
+            border-radius: 0 12px 12px 0;
+            padding: 10px 14px 10px 8px;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            color: #ffd700;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            box-shadow: 4px 0 16px rgba(124,58,237,0.5);
+            z-index: 30;
+            white-space: nowrap;
+        }
+
+        /* 당첨 결과 배너 */
+        #result-banner {
+            position: absolute;
+            right: -10px; top: calc(50% + 160px);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #ffd700;
+            border-radius: 0 14px 14px 0;
+            padding: 12px 16px 12px 10px;
+            opacity: 0;
+            transform: translateX(20px);
+            transition: opacity 0.5s, transform 0.5s;
+            box-shadow: 4px 4px 20px rgba(255,215,0,0.3);
+            z-index: 30;
+            min-width: 150px;
+        }
+        #result-banner.show { opacity: 1; transform: translateX(0); }
+        #result-label { font-size: 10px; color: #ffd700; font-weight: 700; letter-spacing: 2px; margin-bottom: 3px; }
+        #result-text  { font-size: 15px; font-weight: 900; color: #fff; text-shadow: 0 1px 6px rgba(255,215,0,0.4); }
+
+        /* 파티클 */
+        .spark { position: absolute; width: 7px; height: 7px; border-radius: 50%; pointer-events: none; animation: sparkFly 1.1s ease-out forwards; }
+        @keyframes sparkFly { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)} }
+    </style>
+</head>
+<body>
+<div id="wheel-wrap">
+    <div id="ring"></div>
+    <div id="canvas-wrap">
+        <canvas id="roulette" width="604" height="604"></canvas>
+    </div>
+    <div id="pointer"></div>
+    <div id="center-dot">🎯</div>
+    <div id="title-banner">⚔️ 매치승리 룰렛미션</div>
+    <div id="result-banner">
+        <div id="result-label">🎉 미션 당첨!</div>
+        <div id="result-text"></div>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const userId = '<%= userId %>';
+const socket = io();
+socket.emit('join-overlay', userId);
+
+const DEFAULT_ITEMS = [
+    { label: '🎤 노래 한 소절',       color: '#e74c3c' },
+    { label: '💃 댄스 10초',          color: '#9b59b6' },
+    { label: '😂 웃긴 표정 최고',      color: '#2980b9' },
+    { label: '🎁 1위에게 선물하기',    color: '#e67e22' },
+    { label: '🔥 하트 10초 연속',      color: '#c0392b' },
+];
+
+let items = [...DEFAULT_ITEMS];
+let currentAngle = 0;
+let spinning = false;
+
+const canvas = document.getElementById('roulette');
+const ctx    = canvas.getContext('2d');
+const wrap   = document.getElementById('wheel-wrap');
+
+function drawWheel(angle) {
+    const cx = 302, cy = 302, r = 298;
+    const n = items.length;
+    const slice = (2 * Math.PI) / n;
+    ctx.clearRect(0, 0, 604, 604);
+
+    // 오른쪽 반원만 그리기 위한 클리핑 (실제로는 전체를 그리되 왼쪽이 화면 밖)
+    items.forEach((item, i) => {
+        const start = angle + i * slice - Math.PI / 2;
+        const end   = start + slice;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, start, end);
+        ctx.closePath();
+
+        // 그라데이션 채우기
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        grad.addColorStop(0, lighten(item.color, 40));
+        grad.addColorStop(1, item.color);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 텍스트
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(start + slice / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 18px "Segoe UI", sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 5;
+        ctx.fillText(item.label, r - 18, 7);
+        ctx.restore();
+    });
+
+    // 중앙 원
+    ctx.beginPath();
+    ctx.arc(cx, cy, 34, 0, 2 * Math.PI);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fill();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+}
+
+function lighten(hex, amount) {
+    const num = parseInt(hex.slice(1), 16);
+    const r = Math.min(255, (num >> 16) + amount);
+    const g = Math.min(255, ((num >> 8) & 0xff) + amount);
+    const b = Math.min(255, (num & 0xff) + amount);
+    return `rgb(${r},${g},${b})`;
+}
+
+drawWheel(0);
+
+function easeOut(t) { return 1 - Math.pow(1 - t, 4); }
+
+function spin(targetItems, winIndex) {
+    if (spinning) return;
+    spinning = true;
+    items = (targetItems && targetItems.length) ? targetItems : [...DEFAULT_ITEMS];
+
+    wrap.classList.add('spinning');
+    document.getElementById('result-banner').classList.remove('show');
+
+    const n = items.length;
+    const slice = (2 * Math.PI) / n;
+    // 포인터가 오른쪽(0도)에 있으므로 당첨 칸이 오른쪽에 오도록
+    const targetAngle = -(winIndex * slice + slice / 2);
+    const extraSpins  = (5 + Math.floor(Math.random() * 4)) * 2 * Math.PI;
+    const normalizedTarget = ((targetAngle - currentAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    const totalDelta = extraSpins + normalizedTarget;
+
+    const duration  = 4800;
+    const startAngle = currentAngle;
+    const startTime  = performance.now();
+
+    function frame(now) {
+        const t = Math.min((now - startTime) / duration, 1);
+        const angle = startAngle + totalDelta * easeOut(t);
+        drawWheel(angle);
+        if (t < 1) {
+            requestAnimationFrame(frame);
+        } else {
+            currentAngle = angle;
+            spinning = false;
+            wrap.classList.remove('spinning');
+            showResult(items[winIndex]);
+        }
+    }
+    requestAnimationFrame(frame);
+}
+
+function showResult(item) {
+    document.getElementById('result-text').textContent = item.label;
+    document.getElementById('result-banner').classList.add('show');
+    spawnSparks();
+    setTimeout(() => {
+        document.getElementById('result-banner').classList.remove('show');
+    }, 9000);
+}
+
+function spawnSparks() {
+    const colors = ['#ffd700','#ff6b6b','#a855f7','#22c55e','#3b82f6'];
+    for (let i = 0; i < 20; i++) {
+        const s = document.createElement('div');
+        s.className = 'spark';
+        s.style.background = colors[i % colors.length];
+        s.style.left = '310px'; s.style.top = '310px';
+        const ang = Math.random() * 2 * Math.PI;
+        const dist = 80 + Math.random() * 160;
+        s.style.setProperty('--tx', Math.cos(ang) * dist + 'px');
+        s.style.setProperty('--ty', Math.sin(ang) * dist + 'px');
+        wrap.appendChild(s);
+        setTimeout(() => s.remove(), 1200);
+    }
+}
+
+socket.on('roulette-spin', (data) => {
+    spin(data.items || null, data.winIndex);
+});
+
+// 테스트
+const urlParams = new URLSearchParams(location.search);
+if (urlParams.get('test') === '1') {
+    setTimeout(() => spin(null, Math.floor(Math.random() * DEFAULT_ITEMS.length)), 600);
+}
+</script>
+</body>
+</html>
