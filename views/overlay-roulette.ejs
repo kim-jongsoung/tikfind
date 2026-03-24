@@ -316,7 +316,7 @@ function spin(targetItems, winIndex) {
             spinning = false;
             clearInterval(tickTimer);
             tickTimer = null;
-            wrap.classList.remove('spinning');
+            // spinning 클래스는 showResult 타이머에서 제거 (바로 사라지지 않도록)
             showResult(items[winIndex]);
         }
     }
@@ -328,10 +328,13 @@ function showResult(item) {
     document.getElementById('result-banner').classList.add('show');
     playWinSound();
     spawnSparks();
+    // 9초 유지 후 결과 배너 숨기고 룰렛도 슬라이딩 아웃
     setTimeout(() => {
         document.getElementById('result-banner').classList.remove('show');
-        wrap.classList.remove('spinning');
     }, 9000);
+    setTimeout(() => {
+        wrap.classList.remove('spinning');
+    }, 9600); // 배너 페이드 후 0.6초 뒤 슬라이딩 아웃
 }
 
 function spawnSparks() {
