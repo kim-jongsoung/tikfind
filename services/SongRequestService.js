@@ -294,8 +294,9 @@ Rules:
     async searchYouTube(title, artist) {
         const url = 'https://www.googleapis.com/youtube/v3/search';
         const baseQuery = artist ? `${title} ${artist}` : title;
-        // 1순위: official MV, 2순위: official, 3순위: 폴백
+        // 1순위: topic (공식 음원 채널), 2순위: official MV, 3순위: official, 4순위: 폴백
         const queries = [
+            artist ? `${title} ${artist} topic` : `${title} topic`,
             artist ? `${title} ${artist} official MV` : `${title} official MV`,
             artist ? `${title} ${artist} official` : `${title} official`,
             baseQuery
