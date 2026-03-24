@@ -13,6 +13,8 @@ class SongRequestService {
         this.songQueue = new Map(); // userId -> 신청곡 배열
         this.settings = new Map(); // userId -> { isAccepting, cooldownMinutes }
         this.lastRequestTime = new Map(); // `${userId}:${uniqueId}` -> timestamp
+        // 캐시 사용 여부 (어드민에서 제어 가능)
+        this.useCache = process.env.SONG_CACHE_ENABLED !== 'false';
     }
 
     getSettings(userId) {
@@ -105,124 +107,108 @@ class SongRequestService {
 
     async searchSong(title, artist) {
         try {
-            console.log('🔍 DB 검색 시작:', title, '-', artist);
-            
-            // 정규화 (대소문자, 공백 제거)
-            const normalizedTitle = title.toLowerCase().trim();
-            const normalizedArtist = artist ? artist.toLowerCase().trim() : '';
-            
-            // 1단계: 정확한 매칭 (제목 + 아티스트)
-            let dbSong = null;
-            
-            if (normalizedArtist) {
-                dbSong = await PopularSong.findOne({
-                    title: new RegExp(`^${this.escapeRegex(normalizedTitle)}$`, 'i'),
-                    artist: new RegExp(`^${this.escapeRegex(normalizedArtist)}$`, 'i'),
-                    isActive: true
-                }).sort({ requestCount: -1 });
-            }
-            
-            // 2단계: 제목만 정확 매칭 (아티스트 정보 없거나 매칭 실패)
-            if (!dbSong) {
-                dbSong = await PopularSong.findOne({
-                    title: new RegExp(`^${this.escapeRegex(normalizedTitle)}$`, 'i'),
-                    isActive: true
-                }).sort({ requestCount: -1 });
-            }
-            
-            // 3단계: 부분 매칭 (제목 포함)
-            if (!dbSong) {
-                dbSong = await PopularSong.findOne({
-                    title: new RegExp(this.escapeRegex(normalizedTitle), 'i'),
-                    isActive: true
-                }).sort({ requestCount: -1 });
-            }
-            
-            // 4단계: 텍스트 검색 (키워드 기반)
-            if (!dbSong && normalizedTitle.length >= 3) {
-                const textSearchResults = await PopularSong.find({
-                    $text: { $search: normalizedTitle },
-                    isActive: true
-                }).limit(5).sort({ score: { $meta: 'textScore' }, requestCount: -1 });
-                
-                if (textSearchResults.length > 0) {
-                    dbSong = textSearchResults[0];
-                    console.log('✅ 텍스트 검색으로 찾음:', dbSong.title);
-                }
-            }
+            // 캐시 사용 시: DB 조회 → 미스 시 YouTube
+            // 캐시 미사용 시: YouTube 직접 호출 (DB 저장도 스킵)
+            if (this.useCache) {
+                console.log('🔍 DB 검색 시작:', title, '-', artist);
 
-            if (dbSong) {
-                console.log('✅ DB 캐시 히트 (비용 0원):', dbSong.title, '-', dbSong.artist);
-                
-                // 신청 횟수 증가 (실패해도 검색 결과는 반환)
-                try {
-                    await dbSong.incrementRequestCount();
-                } catch (countError) {
-                    console.warn('⚠️ 신청 횟수 증가 실패 (무시):', countError.message);
-                }
-                
-                return {
-                    videoId: dbSong.videoId,
-                    url: `https://www.youtube.com/watch?v=${dbSong.videoId}`,
-                    thumbnail: dbSong.thumbnail,
-                    title: dbSong.title,
-                    artist: dbSong.artist,
-                    channelTitle: dbSong.artist,
-                    fromDB: true
-                };
-            }
+                const normalizedTitle = title.toLowerCase().trim();
+                const normalizedArtist = artist ? artist.toLowerCase().trim() : '';
+                let dbSong = null;
 
-            // 5단계: GPT로 제목/가수명 정제 후 YouTube API 검색
-            console.log('⚠️ DB 캐시 미스 - GPT 정제 후 YouTube API 호출');
-            const normalized = await this.normalizeSongRequest(title, artist);
-            const searchTitle  = normalized.title  || title;
-            const searchArtist = normalized.artist || artist;
-            if (normalized.title || normalized.artist) {
-                console.log(`🤖 GPT 정제: "${title} - ${artist}" → "${searchTitle} - ${searchArtist}"`);
-            }
-            const youtubeResult = await this.searchYouTube(searchTitle, searchArtist);
-
-            if (youtubeResult && youtubeResult.quotaExceeded) {
-                return { quotaExceeded: true };
-            }
-            
-            if (youtubeResult) {
-                // YouTube 검색 결과를 DB에 저장 (다음번엔 비용 0원)
-                try {
-                    const newSong = await PopularSong.create({
-                        videoId: youtubeResult.videoId,
-                        title: title,
-                        artist: artist || youtubeResult.channelTitle,
-                        thumbnail: youtubeResult.thumbnail,
-                        keywords: [
-                            title.toLowerCase(),
-                            (artist || youtubeResult.channelTitle).toLowerCase()
-                        ],
-                        source: 'user',
-                        popularity: 1,
-                        requestCount: 1,
-                        lastRequestedAt: new Date(),
+                if (normalizedArtist) {
+                    dbSong = await PopularSong.findOne({
+                        title: new RegExp(`^${this.escapeRegex(normalizedTitle)}$`, 'i'),
+                        artist: new RegExp(`^${this.escapeRegex(normalizedArtist)}$`, 'i'),
                         isActive: true
-                    });
-                    console.log('💾 DB에 저장 완료 - 다음번엔 비용 0원:', newSong.title);
-                } catch (saveError) {
-                    // 중복 키 에러는 무시 (동시 요청)
-                    if (saveError.code !== 11000) {
-                        console.error('⚠️ DB 저장 실패:', saveError.message);
+                    }).sort({ requestCount: -1 });
+                }
+                if (!dbSong) {
+                    dbSong = await PopularSong.findOne({
+                        title: new RegExp(`^${this.escapeRegex(normalizedTitle)}$`, 'i'),
+                        isActive: true
+                    }).sort({ requestCount: -1 });
+                }
+                if (!dbSong) {
+                    dbSong = await PopularSong.findOne({
+                        title: new RegExp(this.escapeRegex(normalizedTitle), 'i'),
+                        isActive: true
+                    }).sort({ requestCount: -1 });
+                }
+                if (!dbSong && normalizedTitle.length >= 3) {
+                    const textSearchResults = await PopularSong.find({
+                        $text: { $search: normalizedTitle },
+                        isActive: true
+                    }).limit(5).sort({ score: { $meta: 'textScore' }, requestCount: -1 });
+                    if (textSearchResults.length > 0) {
+                        dbSong = textSearchResults[0];
+                        console.log('✅ 텍스트 검색으로 찾음:', dbSong.title);
                     }
                 }
-                
-                return {
-                    videoId: youtubeResult.videoId,
-                    title: title,
-                    artist: artist,
-                    channelTitle: youtubeResult.channelTitle,
-                    thumbnail: youtubeResult.thumbnail,
-                    url: youtubeResult.url,
-                    fromDB: false
-                };
+
+                if (dbSong) {
+                    console.log('✅ DB 캐시 히트 (비용 0원):', dbSong.title, '-', dbSong.artist);
+                    try { await dbSong.incrementRequestCount(); } catch (e) {}
+                    return {
+                        videoId: dbSong.videoId,
+                        url: `https://www.youtube.com/watch?v=${dbSong.videoId}`,
+                        thumbnail: dbSong.thumbnail,
+                        title: dbSong.title,
+                        artist: dbSong.artist,
+                        channelTitle: dbSong.artist,
+                        fromDB: true
+                    };
+                }
+
+                console.log('⚠️ DB 캐시 미스 - GPT 정제 후 YouTube API 호출');
+                const normalized = await this.normalizeSongRequest(title, artist);
+                const searchTitle  = normalized.title  || title;
+                const searchArtist = normalized.artist || artist;
+                if (normalized.title || normalized.artist) {
+                    console.log(`🤖 GPT 정제: "${title} - ${artist}" → "${searchTitle} - ${searchArtist}"`);
+                }
+                const youtubeResult = await this.searchYouTube(searchTitle, searchArtist);
+                if (youtubeResult && youtubeResult.quotaExceeded) return { quotaExceeded: true };
+                if (youtubeResult) {
+                    try {
+                        await PopularSong.create({
+                            videoId: youtubeResult.videoId,
+                            title,
+                            artist: artist || youtubeResult.channelTitle,
+                            thumbnail: youtubeResult.thumbnail,
+                            keywords: [title.toLowerCase(), (artist || youtubeResult.channelTitle).toLowerCase()],
+                            source: 'user',
+                            popularity: 1,
+                            requestCount: 1,
+                            lastRequestedAt: new Date(),
+                            isActive: true
+                        });
+                        console.log('💾 DB에 저장 완료:', title);
+                    } catch (saveError) {
+                        if (saveError.code !== 11000) console.error('⚠️ DB 저장 실패:', saveError.message);
+                    }
+                    return {
+                        videoId: youtubeResult.videoId, title, artist,
+                        channelTitle: youtubeResult.channelTitle,
+                        thumbnail: youtubeResult.thumbnail,
+                        url: youtubeResult.url, fromDB: false
+                    };
+                }
+                return null;
             }
 
+            // ── 캐시 비사용: YouTube 직접 호출, DB 저장 없음 ──
+            console.log('🔍 YouTube 직접 검색 (캐시 OFF):', title, '-', artist);
+            const youtubeResult = await this.searchYouTube(title, artist);
+            if (youtubeResult && youtubeResult.quotaExceeded) return { quotaExceeded: true };
+            if (youtubeResult) {
+                return {
+                    videoId: youtubeResult.videoId, title, artist,
+                    channelTitle: youtubeResult.channelTitle,
+                    thumbnail: youtubeResult.thumbnail,
+                    url: youtubeResult.url, fromDB: false
+                };
+            }
             return null;
         } catch (error) {
             console.error('❌ 곡 검색 오류:', error.message);
@@ -293,16 +279,16 @@ Rules:
      */
     async searchYouTube(title, artist) {
         const url = 'https://www.googleapis.com/youtube/v3/search';
-        const baseQuery = artist ? `${title} ${artist}` : title;
-        // 1순위: topic (공식 음원 채널), 2순위: official MV, 3순위: official, 4순위: 폴백
+        // topic 쿼리: "#제목 #가수이름 topic" 형식 → YouTube 공식 음원 채널 우선
+        const topicQuery = artist ? `#${title} #${artist} topic` : `#${title} topic`;
         const queries = [
-            artist ? `${title} ${artist} topic` : `${title} topic`,
+            topicQuery,
             artist ? `${title} ${artist} official MV` : `${title} official MV`,
             artist ? `${title} ${artist} official` : `${title} official`,
-            baseQuery
+            artist ? `${title} ${artist}` : title
         ];
 
-        const trySearch = async (apiKey, keyLabel, query) => {
+        const trySearch = async (apiKey, keyLabel, query, isTopicQuery) => {
             if (!apiKey) return null;
             console.log(`🔍 YouTube 검색 [${keyLabel}]:`, query);
             const response = await axios.get(url, {
@@ -311,11 +297,24 @@ Rules:
                     q: query,
                     part: 'snippet',
                     type: 'video',
-                    maxResults: 10
+                    maxResults: 5
                 }
             });
             const items = response.data.items;
             if (!items || items.length === 0) return null;
+
+            // topic 쿼리는 첫 번째 결과 바로 사용 (YouTube가 공식 음원 우선 정렬)
+            if (isTopicQuery) {
+                const best = items[0];
+                console.log(`✅ YouTube topic 검색 성공 [${keyLabel}] (첫 번째):`, best.id.videoId, '-', best.snippet.title);
+                return {
+                    videoId: best.id.videoId,
+                    url: `https://www.youtube.com/watch?v=${best.id.videoId}`,
+                    thumbnail: best.snippet.thumbnails.high?.url || best.snippet.thumbnails.default?.url,
+                    channelTitle: best.snippet.channelTitle,
+                    title: best.snippet.title
+                };
+            }
 
             const titleLower = title.toLowerCase();
             const artistLower = artist ? artist.toLowerCase() : '';
@@ -326,21 +325,15 @@ Rules:
                 const ch = item.snippet.channelTitle.toLowerCase();
                 let score = 0;
 
-                // 제목 일치 보너스
                 if (t.includes(titleLower)) score += 5;
                 if (artistLower && t.includes(artistLower)) score += 3;
                 if (artistLower && ch.includes(artistLower)) score += 4;
-
-                // 공식 채널/영상 보너스
                 if (/official music video|official mv|뮤직비디오/.test(t)) score += 6;
                 if (/\bofficial\b/.test(t)) score += 3;
                 if (/official audio/.test(t)) score += 2;
                 if (/hybe|belift|smtown|jyp|ygentertainment|yg|big hit|bighit|starship|kakao|stone|vevo|warner|sony|universal/.test(ch)) score += 5;
                 if (/official|레이블|records|entertainment|music|미디어/.test(ch)) score += 2;
-
-                // 강감점: 커버/반응/노래방/인스트 (-50: 사실상 제외)
                 if (/커버|cover|노래방|karaoke|mr버전|\bmr\b|inst\b|반응|reaction|review|리뷰|piano ver|guitar ver|violin|drum cover/.test(t)) score -= 50;
-                // shorts / 짧은 영상 감점 (videoDuration=medium으로 대부분 걸러지지만 이중 안전장치)
                 if (/#shorts|쇼츠|\bshort\b/.test(t)) score -= 50;
                 if (/live ver|라이브 ver/.test(t)) score -= 1;
                 if (/concert tour/.test(t)) score -= 2;
@@ -368,9 +361,9 @@ Rules:
                 console.error('❌ YouTube API 키가 설정되지 않았습니다.');
                 return null;
             }
-            // official 쿼리 먼저, 없으면 기본 쿼리로 재시도
-            for (const q of queries) {
-                const result = await trySearch(this.youtubeApiKey, isHostKey ? '호스트 키' : '서버 키', q);
+            // topic 쿼리 우선, 없으면 순서대로 재시도
+            for (let i = 0; i < queries.length; i++) {
+                const result = await trySearch(this.youtubeApiKey, isHostKey ? '호스트 키' : '서버 키', queries[i], i === 0);
                 if (result) return result;
             }
             console.log('❌ YouTube 검색 결과 없음:', title, artist);
@@ -384,8 +377,8 @@ Rules:
             if (isHostKey && status === 403 && serverKey && serverKey !== this.youtubeApiKey) {
                 console.log('⚠️ 호스트 키 한도 초과 → 서버 공용 키로 재시도');
                 try {
-                    for (const q of queries) {
-                        const fallback = await trySearch(serverKey, '서버 공용 키(fallback)', q);
+                    for (let i = 0; i < queries.length; i++) {
+                        const fallback = await trySearch(serverKey, '서버 공용 키(fallback)', queries[i], i === 0);
                         if (fallback) return fallback;
                     }
                     console.log('❌ 공용 키로도 검색 결과 없음');

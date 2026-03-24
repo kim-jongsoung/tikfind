@@ -814,6 +814,7 @@ const { checkSubscription, checkAdmin, checkHWID } = require('./middleware/check
 const aiService = new AIService();
 const pronunciationCoach = new PronunciationCoachService();
 const songRequestService = new SongRequestService();
+app.set('songRequestService', songRequestService); // admin 라우터에서 접근 가능
 
 // 닉네임 발음 캐시: "userId:nickname" → "발음"
 const nicknamePronunciationCache = new Map();
@@ -1023,6 +1024,7 @@ async function processChatMessage(chatData) {
                 hostSongService.songQueue = songRequestService.songQueue;
                 hostSongService.settings = songRequestService.settings;
                 hostSongService.lastRequestTime = songRequestService.lastRequestTime;
+                hostSongService.useCache = songRequestService.useCache; // 캐시 설정 상속
                 const result = await hostSongService.addSongRequest(userId, songData, {
                     username, uniqueId: uniqueId || username, nickname: nickname || username, badges: badges || [], isVIP: false, level: 1
                 });

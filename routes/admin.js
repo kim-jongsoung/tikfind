@@ -881,5 +881,31 @@ router.delete('/songs/cache', async (req, res) => {
     }
 });
 
+// 신청곡 캐시 사용 여부 조회
+router.get('/songs/cache-setting', (req, res) => {
+    try {
+        const songRequestService = req.app.get('songRequestService');
+        if (!songRequestService) return res.status(500).json({ success: false, message: 'songRequestService 없음' });
+        res.json({ success: true, useCache: songRequestService.useCache });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// 신청곡 캐시 사용 여부 변경
+router.post('/songs/cache-setting', (req, res) => {
+    try {
+        const { useCache } = req.body;
+        if (typeof useCache !== 'boolean') return res.status(400).json({ success: false, message: 'useCache (boolean) 필요' });
+        const songRequestService = req.app.get('songRequestService');
+        if (!songRequestService) return res.status(500).json({ success: false, message: 'songRequestService 없음' });
+        songRequestService.useCache = useCache;
+        console.log(`🎵 신청곡 캐시 ${useCache ? '활성화' : '비활성화'} (어드민 설정)`);
+        res.json({ success: true, useCache });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 return router;
 }; // module.exports = function(io)
