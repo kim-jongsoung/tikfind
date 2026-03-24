@@ -1107,26 +1107,40 @@ async function processChatMessage(chatData) {
     // 5. 모더 활동 emit
     globalEmitModeratorActivity(userId, uniqueId || username, 'chat').catch(() => {}); // 채팅 → type:'chat'
 
-    // 5-1. 모더 ## 공지 감지 → 선물 오버레이에 마퀴 표시
+    // 5-1. 모더/호스트 ## 공지 감지 → 선물 오버레이에 마퀴 표시
     if (message && message.startsWith('##')) {
         try {
-            const Moderator = require('./models/Moderator');
-            const mongoose  = require('mongoose');
-            const uid = (uniqueId || username || '').trim().toLowerCase();
-            const modUserId = mongoose.Types.ObjectId.isValid(userId)
-                ? new mongoose.Types.ObjectId(userId) : userId;
-            const mod = await Moderator.findOne({
-                userId: modUserId,
-                tiktokUniqueId: { $regex: new RegExp(`^${uid}$`, 'i') }
-            });
-            if (mod) {
-                const noticeText = message.slice(2).trim();
-                if (noticeText) {
+            const noticeText = message.slice(2).trim();
+            if (noticeText) {
+                const uid = (uniqueId || username || '').trim().toLowerCase();
+
+                // 호스트 본인 여부 확인
+                const hostTiktokId = (user?.tiktokId || '').trim().toLowerCase();
+                const isHost = hostTiktokId && uid === hostTiktokId;
+
+                if (isHost) {
                     io.to('overlay-' + String(userId)).emit('overlay-mod-notice', {
                         text: noticeText,
-                        moderatorName: mod.displayName || uniqueId || username
+                        moderatorName: uniqueId || username
                     });
-                    console.log(`📢 모더 공지 [${mod.displayName}]: ${noticeText}`);
+                    console.log(`📢 호스트 공지 [${uniqueId}]: ${noticeText}`);
+                } else {
+                    // 모더 확인
+                    const Moderator = require('./models/Moderator');
+                    const mongoose  = require('mongoose');
+                    const modUserId = mongoose.Types.ObjectId.isValid(userId)
+                        ? new mongoose.Types.ObjectId(userId) : userId;
+                    const mod = await Moderator.findOne({
+                        userId: modUserId,
+                        tiktokUniqueId: { $regex: new RegExp(`^${uid}$`, 'i') }
+                    });
+                    if (mod) {
+                        io.to('overlay-' + String(userId)).emit('overlay-mod-notice', {
+                            text: noticeText,
+                            moderatorName: mod.displayName || uniqueId || username
+                        });
+                        console.log(`📢 모더 공지 [${mod.displayName}]: ${noticeText}`);
+                    }
                 }
             }
         } catch(e) {}
