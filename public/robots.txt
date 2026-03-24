@@ -4,4 +4,7 @@ Disallow: /dashboard/
 Disallow: /api/
 Disallow: /auth/
 
+User-agent: Yeti
+Allow: /
+
 Sitemap: https://tikfind.kr/sitemap.xml
