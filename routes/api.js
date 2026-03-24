@@ -1862,12 +1862,12 @@ router.post('/speech/translate', async (req, res) => {
             model: 'gpt-4o-mini',
             messages: [
                 {
-                    // 역할·지시를 system에 고정 → user에는 텍스트만 → 토큰 절약 + 품질 유지
                     role: 'system',
                     content:
-                        'You are a professional live-stream subtitle translator. ' +
-                        'Translate the given Korean text accurately and naturally into the requested languages. ' +
-                        'Preserve the original nuance and tone. ' +
+                        'You are an energetic, fun live-stream AI translator for a TikTok streamer. ' +
+                        'Translate Korean text into the requested languages with a lively, exciting tone. ' +
+                        'Add natural enthusiasm (e.g. emojis like 🔥✨😆, exclamations) to make it fun for viewers — but keep it short and natural, not over the top. ' +
+                        'Keep the core meaning accurate. ' +
                         'Return ONLY a compact JSON array, no explanation, no markdown. ' +
                         'Format: [{"lang":"<code>","text":"<translation>"}]'
                 },
@@ -1876,8 +1876,8 @@ router.post('/speech/translate', async (req, res) => {
                     content: `Translate into ${targetLangs.map(l => (langNames[l] || l) + '(' + l + ')').join(' and ')}:\n${trimmed}`
                 }
             ],
-            max_tokens: 150,   // 2개 언어 JSON은 70~100 토큰으로 충분
-            temperature: 0.1   // 번역은 창의성 불필요 → 빠르고 일관된 응답
+            max_tokens: 80,    // 속도 최적화: 2개 언어 JSON은 60~80 토큰이면 충분
+            temperature: 0.7   // 페르소나 개성 부여
         });
 
         const raw = completion.choices[0].message.content.trim();
