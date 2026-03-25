@@ -7,18 +7,21 @@ const { EventEmitter } = require('events');
 const TTSService = require('./tts');
 
 class TikTokCollector extends EventEmitter {
-    constructor(username, userId, serverUrl, sessionId) {
+    constructor(username, userId, serverUrl, sessionId, ttTargetIdc) {
         super();
         this.username = username;
         this.userId = userId;
         this.serverUrl = serverUrl || 'http://localhost:3001';
-        this.sessionId = (sessionId && sessionId.trim()) ? sessionId.trim() : null;
+        const sid = (sessionId && sessionId.trim()) ? sessionId.trim() : null;
+        const idc = (ttTargetIdc && ttTargetIdc.trim()) ? ttTargetIdc.trim() : null;
+        this.sessionId = sid;
         this.client = new WebcastPushConnection(username, {
             enableExtendedGiftInfo: true,
             processInitialData: false,
             fetchRoomInfoOnConnect: true,
             disableEulerFallbacks: true,
-            sessionId: (sessionId && sessionId.trim()) ? sessionId.trim() : null,
+            sessionId: sid,
+            ttTargetIdc: idc,
             webClientParams: { appLanguage: 'ko-KR', devicePlatform: 'web' },
             webClientHeaders: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',

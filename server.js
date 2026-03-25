@@ -2816,6 +2816,7 @@ io.on('connection', (socket) => {
                 io.to(desktopSocketId).emit('start-live', {
                     tiktokId,
                     sessionId: process.env.TIKTOK_SESSION_ID || user?.tiktokSessionId || null,
+                    ttTargetIdc: process.env.TIKTOK_TARGET_IDC || null,
                     googleTTS: {
                         enabled: user?.ttsSettings?.useGoogleTTS || false,
                         apiKey: process.env.GOOGLE_TTS_API_KEY || '',

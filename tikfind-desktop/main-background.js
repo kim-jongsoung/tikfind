@@ -192,7 +192,7 @@ function connectToServer() {
             standaloneTTS.updateGoogleTTSSettings(data.googleTTS);
             log.info(`🔊 standaloneTTS Google TTS: ${data.googleTTS.enabled ? '활성화' : '비활성화'} | apiKey=${data.googleTTS.apiKey ? '있음' : '없음'}`);
         }
-        await startLive(data.tiktokId, data.googleTTS, data.sessionId);
+        await startLive(data.tiktokId, data.googleTTS, data.sessionId, data.ttTargetIdc);
     });
     
     // 라이브 종료 명령
@@ -294,7 +294,7 @@ function connectToServer() {
 }
 
 // 라이브 시작
-async function startLive(tiktokId, googleTTS, sessionId) {
+async function startLive(tiktokId, googleTTS, sessionId, ttTargetIdc) {
     try {
         if (collector) {
             log.warn('⚠️ 이미 라이브 연결 중입니다.');
@@ -306,7 +306,8 @@ async function startLive(tiktokId, googleTTS, sessionId) {
         
         const serverUrl = userConfig.serverUrl || process.env.SERVER_URL || 'https://tikfind.kr';
         const sid = sessionId || userConfig.sessionId || null;
-        collector = new TikTokCollector(tiktokId, userConfig.userId, serverUrl, sid);
+        const idc = ttTargetIdc || null;
+        collector = new TikTokCollector(tiktokId, userConfig.userId, serverUrl, sid, idc);
 
         // Google TTS 설정 전달
         if (googleTTS) {
