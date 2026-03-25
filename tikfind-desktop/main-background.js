@@ -186,13 +186,13 @@ function connectToServer() {
     
     // 라이브 시작 명령
     socket.on('start-live', async (data) => {
-        log.info('🎥 라이브 시작 명령 수신:', data.tiktokId);
+        log.info('🎥 라이브 시작 명령 수신:', data.tiktokId, '| sessionId:', data.sessionId ? '있음' : '없음');
         // standaloneTTS에도 Google TTS 설정 전달
         if (data.googleTTS) {
             standaloneTTS.updateGoogleTTSSettings(data.googleTTS);
             log.info(`🔊 standaloneTTS Google TTS: ${data.googleTTS.enabled ? '활성화' : '비활성화'} | apiKey=${data.googleTTS.apiKey ? '있음' : '없음'}`);
         }
-        await startLive(data.tiktokId, data.googleTTS);
+        await startLive(data.tiktokId, data.googleTTS, data.sessionId);
     });
     
     // 라이브 종료 명령
@@ -294,18 +294,19 @@ function connectToServer() {
 }
 
 // 라이브 시작
-async function startLive(tiktokId, googleTTS) {
+async function startLive(tiktokId, googleTTS, sessionId) {
     try {
         if (collector) {
             log.warn('⚠️ 이미 라이브 연결 중입니다.');
             return;
         }
         
-        log.info('📡 TikTok Live 연결 시작:', tiktokId);
+        log.info('📡 TikTok Live 연결 시작:', tiktokId, '| sessionId:', sessionId ? '있음' : '없음(비로그인 모드)');
         updateTrayMenu('연결 중...', tiktokId);
         
         const serverUrl = userConfig.serverUrl || process.env.SERVER_URL || 'https://tikfind.kr';
-        collector = new TikTokCollector(tiktokId, userConfig.userId, serverUrl);
+        const sid = sessionId || userConfig.sessionId || null;
+        collector = new TikTokCollector(tiktokId, userConfig.userId, serverUrl, sid);
 
         // Google TTS 설정 전달
         if (googleTTS) {
