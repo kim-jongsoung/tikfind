@@ -2813,10 +2813,13 @@ io.on('connection', (socket) => {
                 const user = await User.findById(userId).select('ttsSettings tiktokSessionId');
                 const voiceSettings = await VoiceSettings.find({ userId });
 
+                const sessionIdToSend = process.env.TIKTOK_SESSION_ID || user?.tiktokSessionId || null;
+                const ttTargetIdcToSend = process.env.TIKTOK_TARGET_IDC || null;
+                console.log(`🔑 start-live 전달 - sessionId: ${sessionIdToSend ? '있음('+sessionIdToSend.substring(0,8)+'...)' : '없음'}, ttTargetIdc: ${ttTargetIdcToSend || '없음'}`);
                 io.to(desktopSocketId).emit('start-live', {
                     tiktokId,
-                    sessionId: process.env.TIKTOK_SESSION_ID || user?.tiktokSessionId || null,
-                    ttTargetIdc: process.env.TIKTOK_TARGET_IDC || null,
+                    sessionId: sessionIdToSend,
+                    ttTargetIdc: ttTargetIdcToSend,
                     googleTTS: {
                         enabled: user?.ttsSettings?.useGoogleTTS || false,
                         apiKey: process.env.GOOGLE_TTS_API_KEY || '',
