@@ -410,6 +410,18 @@ router.post('/user/youtube-api-key', requireAuth, async (req, res) => {
     }
 });
 
+// TikTok Session ID 저장
+router.post('/user/tiktok-session-id', requireAuth, async (req, res) => {
+    try {
+        const sessionId = (req.body.sessionId || '').trim();
+        await User.findByIdAndUpdate(req.user._id, { tiktokSessionId: sessionId });
+        console.log('✅ TikTok Session ID 저장:', req.user._id, sessionId ? '(있음)' : '(삭제)');
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // 사용자 설정 저장
 router.post('/user/settings', requireAuth, async (req, res) => {
     try {

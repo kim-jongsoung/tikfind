@@ -2810,11 +2810,12 @@ io.on('connection', (socket) => {
             try {
                 const User = require('./models/User');
                 const VoiceSettings = require('./models/VoiceSettings');
-                const user = await User.findById(userId).select('ttsSettings');
+                const user = await User.findById(userId).select('ttsSettings tiktokSessionId');
                 const voiceSettings = await VoiceSettings.find({ userId });
 
                 io.to(desktopSocketId).emit('start-live', {
                     tiktokId,
+                    sessionId: user?.tiktokSessionId || '',
                     googleTTS: {
                         enabled: user?.ttsSettings?.useGoogleTTS || false,
                         apiKey: process.env.GOOGLE_TTS_API_KEY || '',

@@ -90,6 +90,39 @@
                     <% } %>
                 </div>
 
+                <!-- TikTok Session ID -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-1 flex items-center">
+                        <i class="fas fa-key mr-2 text-orange-500"></i>
+                        TikTok Session ID
+                        <span class="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">연결 안 될 때 필수</span>
+                    </h3>
+                    <p class="text-sm text-gray-500 mb-4">TikTok이 로그인 인증을 요구할 때 Session ID를 입력하면 연결 오류가 해결됩니다.</p>
+
+                    <div class="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <p class="text-xs text-orange-800 font-semibold mb-1">📋 Session ID 찾는 방법</p>
+                        <ol class="text-xs text-orange-700 space-y-1 list-decimal list-inside">
+                            <li>Chrome에서 <strong>tiktok.com</strong> 로그인</li>
+                            <li>F12 → <strong>Application</strong> 탭 → Cookies → <strong>https://www.tiktok.com</strong></li>
+                            <li><strong>sessionid</strong> 항목의 Value 복사</li>
+                        </ol>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input type="password" id="tiktok-session-id" value="<%= user.tiktokSessionId || '' %>"
+                            placeholder="sessionid 값 붙여넣기..."
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-400 font-mono text-sm"
+                            autocomplete="off" spellcheck="false">
+                        <button onclick="toggleSessionIdVisibility()" class="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition" title="보기/숨기기">
+                            <i class="fas fa-eye" id="session-id-eye"></i>
+                        </button>
+                        <button onclick="saveSessionId()" class="px-5 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition font-medium">
+                            <i class="fas fa-save mr-1"></i>저장
+                        </button>
+                    </div>
+                    <p id="session-id-msg" class="text-xs mt-2 hidden"></p>
+                </div>
+
                 <!-- 언어 설정 -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
@@ -478,6 +511,42 @@
             } else {
                 input.type = 'password';
                 eye.className = 'fas fa-eye';
+            }
+        }
+
+        function toggleSessionIdVisibility() {
+            const input = document.getElementById('tiktok-session-id');
+            const eye = document.getElementById('session-id-eye');
+            if (input.type === 'password') {
+                input.type = 'text';
+                eye.className = 'fas fa-eye-slash';
+            } else {
+                input.type = 'password';
+                eye.className = 'fas fa-eye';
+            }
+        }
+
+        async function saveSessionId() {
+            const sessionId = document.getElementById('tiktok-session-id').value.trim();
+            const msg = document.getElementById('session-id-msg');
+            try {
+                const res = await fetch('/api/user/tiktok-session-id', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sessionId })
+                });
+                const data = await res.json();
+                msg.classList.remove('hidden', 'text-red-500', 'text-green-600');
+                if (data.success) {
+                    msg.className = 'text-xs mt-2 text-green-600';
+                    msg.textContent = '✅ Session ID가 저장되었습니다. 다음 방송 시작부터 적용됩니다.';
+                } else {
+                    msg.className = 'text-xs mt-2 text-red-500';
+                    msg.textContent = '❌ 저장 실패: ' + (data.message || '');
+                }
+            } catch(e) {
+                msg.className = 'text-xs mt-2 text-red-500';
+                msg.textContent = '❌ 오류: ' + e.message;
             }
         }
 
