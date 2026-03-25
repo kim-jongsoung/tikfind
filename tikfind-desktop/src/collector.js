@@ -17,6 +17,7 @@ class TikTokCollector extends EventEmitter {
             enableExtendedGiftInfo: true,
             processInitialData: false,
             fetchRoomInfoOnConnect: true,
+            disableEulerFallbacks: true,
             sessionId: sessionId || null,
             webClientParams: { appLanguage: 'ko-KR', devicePlatform: 'web' },
             webClientHeaders: {
