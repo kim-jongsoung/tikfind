@@ -110,7 +110,8 @@
 
     // ── 설정 ──
     let activeLangs = ['en'];
-    const langNames = { en:'EN', ja:'JA', zh:'ZH', es:'ES', fr:'FR', de:'DE', th:'TH', vi:'VI', id:'ID' };
+    const langNames  = { en:'EN', ja:'JA', zh:'ZH', es:'ES', fr:'FR', de:'DE', th:'TH', vi:'VI', id:'ID' };
+    const langEmojis = { en:'🇺🇸', ja:'🇯🇵', zh:'🇨🇳', es:'🇪🇸', fr:'🇫🇷', de:'🇩🇪', th:'🇹🇭', vi:'🇻🇳', id:'🇮🇩' };
     let hideTimer = null;
 
     // ── DOM 빌드 ──
@@ -208,7 +209,8 @@
             el.style.transition = 'none';
             el.style.transform  = 'translateX(0)';
 
-            el.textContent = text || '';
+            const emoji = langEmojis[lang] || '';
+            el.textContent = text ? (emoji + ' ' + text) : '';
             el.className   = 'lang-text';
             if (row) {
                 row.classList.toggle('visible', !!text);
