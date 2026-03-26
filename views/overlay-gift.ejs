@@ -295,8 +295,9 @@
             }
         }).catch(() => {});
 
-    socket.emit('join-overlay', userId);
-    socket.on('connect', () => { socket.emit('join-overlay', userId); });
+    function joinOverlay() { socket.emit('join-overlay', userId); }
+    socket.on('connect', joinOverlay);
+    joinOverlay();
     socket.on('overlay-gift', d => {
         const pts = d.totalDiamonds || d.diamondCount || 0;
         if (pts < MID_MIN) return; // 기준 미달 무시
@@ -361,6 +362,7 @@
 
     // ── AI 매치 코치 (선물 위젯 배너에 표시) ──
     socket.on('match-coach', (data) => {
+        console.log('🤖 match-coach 수신:', data.situation, data.message);
         const situationIcon = data.situation === 'start' ? '⚔️' :
                               data.situation === 'early' ? '🔥' :
                               data.situation === 'mid'   ? '📊' : '🚀';
