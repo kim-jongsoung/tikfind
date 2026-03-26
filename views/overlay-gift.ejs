@@ -359,6 +359,14 @@
 
     socket.on('overlay-mod-notice', showModNotice);
 
+    // ── AI 매치 코치 (선물 위젯 배너에 표시) ──
+    socket.on('match-coach', (data) => {
+        const situationIcon = data.situation === 'start' ? '⚔️' :
+                              data.situation === 'early' ? '🔥' :
+                              data.situation === 'mid'   ? '📊' : '🚀';
+        showModNotice({ text: situationIcon + ' ' + data.message });
+    });
+
     function next() {
         if (!queue.length) { busy = false; return; }
         busy = true;

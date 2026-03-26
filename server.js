@@ -28,6 +28,9 @@ const liveConnections = new Map();
 // 라이브 상태 저장 (userId → { isLive, tiktokId })
 const liveStatusMap = new Map();
 
+// 매치 상태 저장 (userId → { battleId, participants, startTime, armies, lastCoachTime, coachCount })
+let matchStateMap = new Map();
+
 // AI 발음 코치 캐시 시스템
 const pronunciationCache = new Map();
 const MAX_CACHE_SIZE = 10000; // 최대 10,000개 캐시
@@ -943,6 +946,86 @@ async function globalEmitModeratorActivity(userId, uniqueId, type) {
     } catch(e) {}
 }
 
+// ===== AI 매치 코치 함수 =====
+async function processMatchCoach(userId, triggerType, matchState) {
+    try {
+        const OpenAI = require('openai');
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+        let situation = '';
+        let myPoints = 0, opponentPoints = 0, totalPoints = 0, myRatio = 0.5;
+        let elapsedSec = 0, remainingSec = 300;
+        const MATCH_DURATION = 300; // 5분
+
+        if (triggerType === 'start') {
+            situation = 'start';
+        } else if (matchState) {
+            elapsedSec = Math.floor((Date.now() - matchState.startTime) / 1000);
+            remainingSec = Math.max(0, MATCH_DURATION - elapsedSec);
+            const armies = matchState.armies || [];
+            if (armies.length >= 2) {
+                myPoints = armies[0].points || 0;
+                opponentPoints = armies[1].points || 0;
+                totalPoints = myPoints + opponentPoints;
+                myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
+            }
+
+            if (elapsedSec <= 60) situation = 'early';
+            else if (elapsedSec <= 240) situation = 'mid';
+            else situation = 'late';
+        }
+
+        // 트리거별 프롬프트 상황 설명
+        let contextDesc = '';
+        if (situation === 'start') {
+            contextDesc = '매치가 방금 시작됐습니다.';
+        } else {
+            const timeDesc = situation === 'early' ? '초반' : situation === 'mid' ? '중반' : '후반';
+            const scoreDesc = myRatio >= 0.6 ? `리드 중 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
+                              myRatio <= 0.4 ? `뒤처지는 중 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
+                              `박빙 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)`;
+            contextDesc = `매치 ${timeDesc} (경과 ${Math.floor(elapsedSec/60)}분 ${elapsedSec%60}초, 남은 시간 ${Math.floor(remainingSec/60)}분 ${remainingSec%60}초), 현재 점수 ${scoreDesc}.`;
+        }
+
+        const prompt = `당신은 TikTok 라이브 매치에서 호스트를 응원하고 전략을 안내하는 AI 코치 "틱파인드"입니다.
+항상 호스트 옆에서 함께한다는 따뜻하고 활기찬 톤으로 말해주세요.
+시청자들에게도 응원을 유도하는 멘트를 포함하세요.
+한국어로 2~3문장 이내로 짧고 임팩트 있게 작성하세요.
+
+현재 상황: ${contextDesc}
+
+이 상황에 맞는 자연스러운 매치 코치 메시지를 작성해주세요.`;
+
+        const completion = await openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 150,
+            temperature: 0.8
+        });
+
+        const coachMessage = completion.choices[0]?.message?.content?.trim();
+        if (!coachMessage) return;
+
+        console.log(`🤖 [${userId}] AI 매치 코치 (${situation}): ${coachMessage}`);
+
+        const coachPayload = {
+            type: 'match-coach',
+            situation,
+            elapsedSec,
+            remainingSec,
+            myRatio,
+            message: coachMessage,
+            timestamp: Date.now()
+        };
+        // 대시보드 + 오버레이 둘 다 emit
+        io.to(userId).emit('match-coach', coachPayload);
+        io.to(`overlay-${userId}`).emit('match-coach', coachPayload);
+
+    } catch (e) {
+        console.error('❌ AI 매치 코치 오류:', e.message);
+    }
+}
+
 // ===== 채팅 메시지 공통 처리 함수 (TikTokLiveService + /api/live/chat 공유) =====
 async function processChatMessage(chatData) {
     const { userId, username, message, uniqueId, nickname, badges, userBadges,
@@ -1637,6 +1720,36 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 const hr = new Date().getHours();
                 if (!sessSt.hourlyMap[hr]) sessSt.hourlyMap[hr] = { viewerCount: 0, chatCount: 0 };
                 sessSt.hourlyMap[hr].viewerCount = Math.max(sessSt.hourlyMap[hr].viewerCount, viewers);
+            }
+
+        } else if (type === 'matchStart') {
+            // 매치 시작 - 상태 저장
+            if (!matchStateMap) matchStateMap = new Map();
+            matchStateMap.set(String(userId), {
+                battleId: tiktokData.battleId,
+                participants: tiktokData.participants || [],
+                startTime: tiktokData.timestamp || Date.now(),
+                armies: [],
+                lastCoachTime: 0,
+                coachCount: 0
+            });
+            io.to(userId).emit('match-start', tiktokData);
+            console.log(`⚔️ [${userId}] 매치 시작 감지: ${JSON.stringify(tiktokData.participants?.map(p => p.uniqueId))}`);
+            // 매치 시작 AI 코치 메시지
+            processMatchCoach(userId, 'start', null).catch(() => {});
+
+        } else if (type === 'matchScore') {
+            if (!matchStateMap) matchStateMap = new Map();
+            const matchState = matchStateMap.get(String(userId));
+            if (matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
+                matchState.armies = tiktokData.armies;
+                io.to(userId).emit('match-score', tiktokData);
+                // 30초마다 한 번씩 AI 코치 트리거
+                const now = Date.now();
+                if (now - matchState.lastCoachTime > 30000) {
+                    matchState.lastCoachTime = now;
+                    processMatchCoach(userId, 'score', matchState).catch(() => {});
+                }
             }
         }
 

@@ -372,6 +372,50 @@ class TikTokCollector extends EventEmitter {
             });
         });
         
+        // 매치 시작 (linkMicBattle)
+        this.client.on('linkMicBattle', (data) => {
+            const battleData = {
+                battleId: data.battleId || null,
+                participants: Object.values(data.anchorInfo || {}).map(info => ({
+                    uniqueId: info.user?.displayId || info.user?.uniqueId || '',
+                    nickname: info.user?.nickName || info.user?.nickname || '',
+                    profilePictureUrl: info.user?.profilePicture?.urls?.[0] || ''
+                })),
+                timestamp: Date.now()
+            };
+            console.log(`⚔️ 매치 시작: battleId=${battleData.battleId} | 참가자: ${battleData.participants.map(p => p.uniqueId).join(' VS ')}`);
+            this.emit('matchStart', battleData);
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'matchStart',
+                data: battleData
+            });
+        });
+
+        // 매치 점수 업데이트 (linkMicArmies)
+        this.client.on('linkMicArmies', (data) => {
+            const armies = (data.battleArmies || data.armies || []).map(army => ({
+                hostUniqueId: army.hostUser?.displayId || army.hostUser?.uniqueId || '',
+                points: army.totalScore || army.totalPoints || army.points || 0,
+                teamMembers: (army.participants || []).map(p => ({
+                    uniqueId: p.user?.displayId || p.user?.uniqueId || '',
+                    points: p.score || p.points || 0
+                }))
+            }));
+            const armiesData = {
+                battleId: data.battleId || null,
+                armies,
+                timestamp: Date.now()
+            };
+            console.log(`📊 매치 점수: ${armies.map(a => `${a.hostUniqueId}:${a.points}`).join(' vs ')}`);
+            this.emit('matchScore', armiesData);
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'matchScore',
+                data: armiesData
+            });
+        });
+
         // 에러
         this.client.on('error', (error) => {
             console.error('❌ TikTok Live 오류:', error);
