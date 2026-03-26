@@ -1740,7 +1740,20 @@ app.post('/api/live/tiktok-data', async (req, res) => {
 
         } else if (type === 'matchScore') {
             if (!matchStateMap) matchStateMap = new Map();
-            const matchState = matchStateMap.get(String(userId));
+            let matchState = matchStateMap.get(String(userId));
+            // matchStart를 못 받았어도 matchScore가 오면 상태 자동 생성
+            if (!matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
+                matchState = {
+                    battleId: tiktokData.battleId || null,
+                    participants: [],
+                    startTime: Date.now(),
+                    armies: [],
+                    lastCoachTime: 0,
+                    coachCount: 0
+                };
+                matchStateMap.set(String(userId), matchState);
+                console.log(`⚔️ [${userId}] matchScore로 매치 상태 자동 생성`);
+            }
             if (matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
                 matchState.armies = tiktokData.armies;
                 io.to(userId).emit('match-score', tiktokData);
@@ -1758,6 +1771,27 @@ app.post('/api/live/tiktok-data', async (req, res) => {
         console.error('❌ /api/live/tiktok-data 처리 오류:', error);
         res.status(500).json({ success: false, message: error.message });
     }
+});
+
+// 매치 코치 강제 테스트 (개발용)
+app.get('/api/test/match-coach/:userId', async (req, res) => {
+    const userId = req.params.userId;
+    if (!matchStateMap) matchStateMap = new Map();
+    let matchState = matchStateMap.get(String(userId));
+    if (!matchState) {
+        matchState = {
+            battleId: 'test',
+            participants: [],
+            startTime: Date.now() - 90000, // 1분30초 경과 가정
+            armies: [{ hostUniqueId: 'host', points: 3000 }, { hostUniqueId: 'opponent', points: 7000 }],
+            lastCoachTime: 0,
+            coachCount: 0
+        };
+        matchStateMap.set(String(userId), matchState);
+    }
+    matchState.lastCoachTime = 0; // 강제 발동
+    await processMatchCoach(userId, 'score', matchState).catch(e => console.error(e));
+    res.json({ success: true, message: '매치 코치 강제 발동' });
 });
 
 // 선물 수신 (무료 서비스)
