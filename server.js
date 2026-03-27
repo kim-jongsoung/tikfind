@@ -959,6 +959,17 @@ async function processMatchCoach(userId, triggerType, matchState) {
 
         if (triggerType === 'start') {
             situation = 'start';
+        } else if (triggerType === 'end') {
+            situation = 'end';
+            if (matchState) {
+                const armies = matchState.armies || [];
+                if (armies.length >= 2) {
+                    myPoints = armies[0].points || 0;
+                    opponentPoints = armies[1].points || 0;
+                    totalPoints = myPoints + opponentPoints;
+                    myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
+                }
+            }
         } else if (matchState) {
             elapsedSec = Math.floor((Date.now() - matchState.startTime) / 1000);
             remainingSec = Math.max(0, MATCH_DURATION - elapsedSec);
@@ -978,7 +989,11 @@ async function processMatchCoach(userId, triggerType, matchState) {
         // 트리거별 프롬프트 상황 설명
         let contextDesc = '';
         if (situation === 'start') {
-            contextDesc = '매치가 방금 시작됐습니다.';
+            contextDesc = '매치가 방금 시작됐습니다. 다음 판도 이어서 진행될 수 있습니다.';
+        } else if (situation === 'end') {
+            const resultDesc = myRatio >= 0.5 ? `승리 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
+                                                `패배 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)`;
+            contextDesc = `매치가 방금 종료됐습니다. 결과: ${resultDesc}. 다음 판이 이어질 수 있습니다.`;
         } else {
             const timeDesc = situation === 'early' ? '초반' : situation === 'mid' ? '중반' : '후반';
             const scoreDesc = myRatio >= 0.6 ? `리드 중 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
@@ -1742,11 +1757,18 @@ app.post('/api/live/tiktok-data', async (req, res) => {
             if (!matchStateMap) matchStateMap = new Map();
             const battleStatus = tiktokData.battleStatus || 1; // 1=진행중, 2=종료
 
-            // 매치 종료 시 상태 제거하고 종료
+            // 매치 종료 시 마무리 코치 발동 후 상태 제거
             if (battleStatus === 2) {
-                matchStateMap.delete(String(userId));
-                console.log(`🏁 [${userId}] 매치 종료 감지 - 코치 중단`);
+                const endState = matchStateMap.get(String(userId));
+                console.log(`🏁 [${userId}] 매치 종료 감지 - 마무리 코치 발동`);
                 io.to(userId).emit('match-end', tiktokData);
+                // 마무리 코치 메시지 (종료 직후 1회)
+                if (endState) {
+                    endState.armies = tiktokData.armies || endState.armies;
+                    endState.lastCoachTime = 0; // 강제 발동
+                    processMatchCoach(userId, 'end', endState).catch(() => {});
+                }
+                matchStateMap.delete(String(userId));
             } else {
                 let matchState = matchStateMap.get(String(userId));
                 // matchStart를 못 받았어도 matchScore가 오면 상태 자동 생성
