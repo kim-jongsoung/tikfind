@@ -959,6 +959,18 @@ async function processMatchCoach(userId, triggerType, matchState) {
 
         if (triggerType === 'start') {
             situation = 'start';
+        } else if (triggerType === 'quiet') {
+            situation = 'quiet';
+            if (matchState) {
+                const armies = matchState.armies || [];
+                if (armies.length >= 2) {
+                    myPoints = armies[0].points || 0;
+                    opponentPoints = armies[1].points || 0;
+                    totalPoints = myPoints + opponentPoints;
+                    myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
+                }
+                elapsedSec = Math.floor((Date.now() - matchState.startTime) / 1000);
+            }
         } else if (triggerType === 'end') {
             situation = 'end';
             if (matchState) {
@@ -990,6 +1002,9 @@ async function processMatchCoach(userId, triggerType, matchState) {
         let contextDesc = '';
         if (situation === 'start') {
             contextDesc = '매치가 방금 시작됐습니다. 다음 판도 이어서 진행될 수 있습니다.';
+        } else if (situation === 'quiet') {
+            const scoreDesc = myRatio >= 0.6 ? '리드 중' : myRatio <= 0.4 ? '뒤처지는 중' : '박빙';
+            contextDesc = `매치 ${Math.floor(elapsedSec/60)}분 경과, 약 45초 이상 점수 변동이 없는 고요한 상황입니다. 현재 점수: ${scoreDesc}.`;
         } else if (situation === 'end') {
             const resultDesc = myRatio >= 0.5 ? `승리 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
                                                 `패배 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)`;
@@ -1004,7 +1019,17 @@ async function processMatchCoach(userId, triggerType, matchState) {
 
         // 상황별 전략 힌트 (미라클/스나이퍼 등 실제 용어 포함)
         const strategyHint = (() => {
-            if (situation === 'start') {
+            if (situation === 'quiet') {
+                const quietJokes = [
+                    '양쪽 다 너무 조용합니다. 마치 시험 전날 도서관 같은 분위기네요. 누가 먼저 움직일까요?',
+                    '점수가 얼어붙었습니다. 혹시 두 팀 다 잠든 건 아닐까요? 시청자 여러분이 깨워주세요!',
+                    '이 고요함은 폭풍 전야입니다. 미라클이나 스나이퍼가 등장하기 딱 좋은 타이밍이에요!',
+                    '아무도 안 움직이네요. 이거 혹시 눈치 게임인가요? 먼저 선물 보내는 팀이 이기는 거예요!',
+                    '고요하다고요? 이럴 때일수록 한 방이 터집니다. 미라클 어디 계세요?',
+                    '두 팀 모두 전략적 침묵 중입니다. 근데 이거 너무 조용한 거 아닌가요? 시청자 여러분 출동!',
+                ];
+                return quietJokes[Math.floor(Math.random() * quietJokes.length)];
+            } else if (situation === 'start') {
                 return '판이 시작됐으니 초반 기세를 잡는 게 중요합니다. 시청자들에게 선물 응원을 유도하세요.';
             } else if (situation === 'end') {
                 return myRatio >= 0.5
@@ -1809,16 +1834,36 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                         startTime: Date.now(),
                         armies: [],
                         lastCoachTime: 0,
-                        coachCount: 0
+                        coachCount: 0,
+                        lastScores: null,   // 이전 점수 스냅샷
+                        quietSince: Date.now() // 점수 변동 없기 시작한 시각
                     };
                     matchStateMap.set(String(userId), matchState);
                     console.log(`⚔️ [${userId}] matchScore로 매치 상태 자동 생성`);
                 }
                 if (matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
+                    const now = Date.now();
+                    const newScores = tiktokData.armies.map(a => a.points || 0).join(',');
+
+                    // 점수 변동 감지
+                    if (matchState.lastScores !== newScores) {
+                        // 점수 바뀜 → quietSince 리셋
+                        matchState.lastScores = newScores;
+                        matchState.quietSince = now;
+                    } else {
+                        // 점수 그대로 → 고요함 지속 시간 체크 (45초 이상이면 유머 멘트)
+                        const quietSec = (now - (matchState.quietSince || now)) / 1000;
+                        if (quietSec >= 45 && now - matchState.lastCoachTime > 45000) {
+                            matchState.lastCoachTime = now;
+                            matchState.quietSince = now; // 한 번 발동 후 리셋
+                            processMatchCoach(userId, 'quiet', matchState).catch(() => {});
+                            return res.json({ success: true });
+                        }
+                    }
+
                     matchState.armies = tiktokData.armies;
                     io.to(userId).emit('match-score', tiktokData);
-                    // 30초마다 한 번씩 AI 코치 트리거
-                    const now = Date.now();
+                    // 30초마다 한 번씩 AI 코치 트리거 (quiet 트리거 아닐 때)
                     if (now - matchState.lastCoachTime > 30000) {
                         matchState.lastCoachTime = now;
                         processMatchCoach(userId, 'score', matchState).catch(() => {});
