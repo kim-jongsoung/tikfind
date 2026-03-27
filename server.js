@@ -1851,9 +1851,9 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                         matchState.lastScores = newScores;
                         matchState.quietSince = now;
                     } else {
-                        // 점수 그대로 → 고요함 지속 시간 체크 (45초 이상이면 유머 멘트)
+                        // 점수 그대로 → 고요함 지속 시간 체크 (25초 이상이면 유머 멘트)
                         const quietSec = (now - (matchState.quietSince || now)) / 1000;
-                        if (quietSec >= 45 && now - matchState.lastCoachTime > 45000) {
+                        if (quietSec >= 25 && now - matchState.lastCoachTime > 25000) {
                             matchState.lastCoachTime = now;
                             matchState.quietSince = now; // 한 번 발동 후 리셋
                             processMatchCoach(userId, 'quiet', matchState).catch(() => {});
