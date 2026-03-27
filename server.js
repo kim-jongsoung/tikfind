@@ -1740,28 +1740,37 @@ app.post('/api/live/tiktok-data', async (req, res) => {
 
         } else if (type === 'matchScore') {
             if (!matchStateMap) matchStateMap = new Map();
-            let matchState = matchStateMap.get(String(userId));
-            // matchStart를 못 받았어도 matchScore가 오면 상태 자동 생성
-            if (!matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
-                matchState = {
-                    battleId: tiktokData.battleId || null,
-                    participants: [],
-                    startTime: Date.now(),
-                    armies: [],
-                    lastCoachTime: 0,
-                    coachCount: 0
-                };
-                matchStateMap.set(String(userId), matchState);
-                console.log(`⚔️ [${userId}] matchScore로 매치 상태 자동 생성`);
-            }
-            if (matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
-                matchState.armies = tiktokData.armies;
-                io.to(userId).emit('match-score', tiktokData);
-                // 30초마다 한 번씩 AI 코치 트리거
-                const now = Date.now();
-                if (now - matchState.lastCoachTime > 30000) {
-                    matchState.lastCoachTime = now;
-                    processMatchCoach(userId, 'score', matchState).catch(() => {});
+            const battleStatus = tiktokData.battleStatus || 1; // 1=진행중, 2=종료
+
+            // 매치 종료 시 상태 제거하고 종료
+            if (battleStatus === 2) {
+                matchStateMap.delete(String(userId));
+                console.log(`🏁 [${userId}] 매치 종료 감지 - 코치 중단`);
+                io.to(userId).emit('match-end', tiktokData);
+            } else {
+                let matchState = matchStateMap.get(String(userId));
+                // matchStart를 못 받았어도 matchScore가 오면 상태 자동 생성
+                if (!matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
+                    matchState = {
+                        battleId: tiktokData.battleId || null,
+                        participants: [],
+                        startTime: Date.now(),
+                        armies: [],
+                        lastCoachTime: 0,
+                        coachCount: 0
+                    };
+                    matchStateMap.set(String(userId), matchState);
+                    console.log(`⚔️ [${userId}] matchScore로 매치 상태 자동 생성`);
+                }
+                if (matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
+                    matchState.armies = tiktokData.armies;
+                    io.to(userId).emit('match-score', tiktokData);
+                    // 30초마다 한 번씩 AI 코치 트리거
+                    const now = Date.now();
+                    if (now - matchState.lastCoachTime > 30000) {
+                        matchState.lastCoachTime = now;
+                        processMatchCoach(userId, 'score', matchState).catch(() => {});
+                    }
                 }
             }
         }

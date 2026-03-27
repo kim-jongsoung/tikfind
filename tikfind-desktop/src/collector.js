@@ -376,10 +376,10 @@ class TikTokCollector extends EventEmitter {
         this.client.on('linkMicBattle', (data) => {
             const battleData = {
                 battleId: data.battleId || null,
-                participants: Object.values(data.anchorInfo || {}).map(info => ({
-                    uniqueId: info.user?.displayId || info.user?.uniqueId || '',
-                    nickname: info.user?.nickName || info.user?.nickname || '',
-                    profilePictureUrl: info.user?.profilePicture?.urls?.[0] || ''
+                participants: (data.battleUsers || []).map(u => ({
+                    uniqueId: u.uniqueId || '',
+                    nickname: u.nickname || '',
+                    profilePictureUrl: u.profilePictureUrl || ''
                 })),
                 timestamp: Date.now()
             };
@@ -394,20 +394,22 @@ class TikTokCollector extends EventEmitter {
 
         // 매치 점수 업데이트 (linkMicArmies)
         this.client.on('linkMicArmies', (data) => {
-            const armies = (data.battleArmies || data.armies || []).map(army => ({
-                hostUniqueId: army.hostUser?.displayId || army.hostUser?.uniqueId || '',
-                points: army.totalScore || army.totalPoints || army.points || 0,
-                teamMembers: (army.participants || []).map(p => ({
-                    uniqueId: p.user?.displayId || p.user?.uniqueId || '',
-                    points: p.score || p.points || 0
+            const battleStatus = data.battleStatus || 1; // 1=진행중, 2=종료
+            const armies = (data.battleArmies || []).map(army => ({
+                hostUserId: army.hostUserId || '',
+                points: army.points || 0,
+                participants: (army.participants || []).map(p => ({
+                    uniqueId: p.uniqueId || '',
+                    nickname: p.nickname || ''
                 }))
             }));
             const armiesData = {
                 battleId: data.battleId || null,
+                battleStatus,
                 armies,
                 timestamp: Date.now()
             };
-            console.log(`📊 매치 점수: ${armies.map(a => `${a.hostUniqueId}:${a.points}`).join(' vs ')}`);
+            console.log(`📊 매치 점수(status=${battleStatus}): ${armies.map(a => `${a.hostUserId}:${a.points}`).join(' vs ')}`);
             this.emit('matchScore', armiesData);
             this.sendToServer('/api/live/tiktok-data', {
                 userId: this.userId,
