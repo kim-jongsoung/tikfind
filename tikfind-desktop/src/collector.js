@@ -375,16 +375,23 @@ class TikTokCollector extends EventEmitter {
         // 매치 시작 (linkMicBattle)
         this.client.on('linkMicBattle', (data) => {
             console.log(`⚔️ [RAW linkMicBattle]:`, JSON.stringify(data).slice(0, 1000));
+            const users = data.battleUsers || [];
+            // 화면 좌측(짝수인덱스)=팀A, 우측(홀수인덱스)=팀B
+            // 1:1이면 [0]=팀A, [1]=팀B / 2:2이면 [0][1]=팀A, [2][3]=팀B
+            const teamSize = users.length <= 2 ? 1 : 2;
+            const participants = users.map((u, i) => ({
+                uniqueId: u.uniqueId || '',
+                nickname: u.nickname || '',
+                profilePictureUrl: u.profilePictureUrl || '',
+                teamId: i < teamSize ? 'A' : 'B'
+            }));
             const battleData = {
                 battleId: data.battleId || null,
-                participants: (data.battleUsers || []).map(u => ({
-                    uniqueId: u.uniqueId || '',
-                    nickname: u.nickname || '',
-                    profilePictureUrl: u.profilePictureUrl || ''
-                })),
+                participants,
+                teamSize,
                 timestamp: Date.now()
             };
-            console.log(`⚔️ 매치 시작: battleId=${battleData.battleId} | 참가자: ${battleData.participants.map(p => p.uniqueId).join(' VS ')}`);
+            console.log(`⚔️ 매치 시작: battleId=${battleData.battleId} | 팀A: ${participants.filter(p=>p.teamId==='A').map(p=>p.uniqueId).join('+')} vs 팀B: ${participants.filter(p=>p.teamId==='B').map(p=>p.uniqueId).join('+')}`);
             this.emit('matchStart', battleData);
             this.sendToServer('/api/live/tiktok-data', {
                 userId: this.userId,
@@ -395,22 +402,29 @@ class TikTokCollector extends EventEmitter {
 
         // 매치 점수 업데이트 (linkMicArmies)
         this.client.on('linkMicArmies', (data) => {
+            console.log(`📊 [RAW linkMicArmies]:`, JSON.stringify(data).slice(0, 1500));
             const battleStatus = data.battleStatus || 1; // 1=진행중, 2=종료
-            const armies = (data.battleArmies || []).map(army => ({
-                hostUserId: army.hostUserId || '',
-                points: army.points || 0,
+            const rawArmies = data.battleArmies || data.armies || [];
+            const armies = rawArmies.map((army, i) => ({
+                hostUserId: army.hostUserId || army.hostUser?.uniqueId || army.hostUser?.displayId || '',
+                points: army.points || army.totalScore || army.totalPoints || 0,
+                teamId: i < Math.ceil(rawArmies.length / 2) ? 'A' : 'B',
                 participants: (army.participants || []).map(p => ({
                     uniqueId: p.uniqueId || '',
                     nickname: p.nickname || ''
                 }))
             }));
+            const teamAPoints = armies.filter(a => a.teamId === 'A').reduce((s, a) => s + a.points, 0);
+            const teamBPoints = armies.filter(a => a.teamId === 'B').reduce((s, a) => s + a.points, 0);
             const armiesData = {
                 battleId: data.battleId || null,
                 battleStatus,
                 armies,
+                teamAPoints,
+                teamBPoints,
                 timestamp: Date.now()
             };
-            console.log(`📊 매치 점수(status=${battleStatus}): ${armies.map(a => `${a.hostUserId}:${a.points}`).join(' vs ')}`);
+            console.log(`📊 매치 점수(status=${battleStatus}, ${armies.length}명): 팀A=${teamAPoints} vs 팀B=${teamBPoints}`);
             this.emit('matchScore', armiesData);
             this.sendToServer('/api/live/tiktok-data', {
                 userId: this.userId,

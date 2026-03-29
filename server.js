@@ -957,18 +957,30 @@ async function processMatchCoach(userId, triggerType, matchState) {
         let elapsedSec = 0, remainingSec = 300;
         const MATCH_DURATION = 300; // 5분
 
-        // hostTiktokId로 우리팀/상대팀 구분하는 헬퍼
-        const resolvePoints = (armies, hostTiktokId) => {
-            if (!armies || armies.length === 0) return { myPoints: 0, opponentPoints: 0 };
-            if (hostTiktokId) {
+        // hostTiktokId로 우리팀(A/B) 판단 후 팀별 합산 점수 반환
+        const resolvePoints = (matchState) => {
+            const armies = matchState?.armies || [];
+            const teamAPoints = matchState?.teamAPoints ?? null;
+            const teamBPoints = matchState?.teamBPoints ?? null;
+            if (armies.length === 0) return { myPoints: 0, opponentPoints: 0 };
+
+            // teamAPoints/teamBPoints가 있으면 팀 합산 사용
+            if (teamAPoints !== null && teamBPoints !== null) {
+                const hostTiktokId = (matchState.hostTiktokId || '').toLowerCase();
                 const myArmy = armies.find(a => (a.hostUserId || '').toLowerCase() === hostTiktokId);
-                if (myArmy) {
-                    const my = myArmy.points || 0;
-                    const opp = armies.filter(a => a !== myArmy).reduce((s, a) => s + (a.points || 0), 0);
-                    return { myPoints: my, opponentPoints: opp };
-                }
+                const myTeam = myArmy?.teamId || 'A';
+                return myTeam === 'A'
+                    ? { myPoints: teamAPoints, opponentPoints: teamBPoints }
+                    : { myPoints: teamBPoints, opponentPoints: teamAPoints };
             }
-            // hostTiktokId 매핑 실패 시 배열 순서 사용
+            // fallback: 개인 점수 기준
+            const hostTiktokId = (matchState?.hostTiktokId || '').toLowerCase();
+            const myArmy = hostTiktokId ? armies.find(a => (a.hostUserId || '').toLowerCase() === hostTiktokId) : null;
+            if (myArmy) {
+                const my = myArmy.points || 0;
+                const opp = armies.filter(a => a !== myArmy).reduce((s, a) => s + (a.points || 0), 0);
+                return { myPoints: my, opponentPoints: opp };
+            }
             return { myPoints: armies[0]?.points || 0, opponentPoints: armies[1]?.points || 0 };
         };
 
@@ -977,7 +989,7 @@ async function processMatchCoach(userId, triggerType, matchState) {
         } else if (triggerType === 'quiet') {
             situation = 'quiet';
             if (matchState) {
-                const r = resolvePoints(matchState.armies, matchState.hostTiktokId);
+                const r = resolvePoints(matchState);
                 myPoints = r.myPoints; opponentPoints = r.opponentPoints;
                 totalPoints = myPoints + opponentPoints;
                 myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
@@ -986,7 +998,7 @@ async function processMatchCoach(userId, triggerType, matchState) {
         } else if (triggerType === 'end') {
             situation = 'end';
             if (matchState) {
-                const r = resolvePoints(matchState.armies, matchState.hostTiktokId);
+                const r = resolvePoints(matchState);
                 myPoints = r.myPoints; opponentPoints = r.opponentPoints;
                 totalPoints = myPoints + opponentPoints;
                 myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
@@ -994,7 +1006,7 @@ async function processMatchCoach(userId, triggerType, matchState) {
         } else if (matchState) {
             elapsedSec = Math.floor((Date.now() - matchState.startTime) / 1000);
             remainingSec = Math.max(0, MATCH_DURATION - elapsedSec);
-            const r = resolvePoints(matchState.armies, matchState.hostTiktokId);
+            const r = resolvePoints(matchState);
             myPoints = r.myPoints; opponentPoints = r.opponentPoints;
             totalPoints = myPoints + opponentPoints;
             myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
@@ -1866,6 +1878,9 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 }
                 if (matchState && tiktokData.armies && tiktokData.armies.length >= 1) {
                     const now = Date.now();
+                    // 팀별 합산 점수 업데이트
+                    if (tiktokData.teamAPoints != null) matchState.teamAPoints = tiktokData.teamAPoints;
+                    if (tiktokData.teamBPoints != null) matchState.teamBPoints = tiktokData.teamBPoints;
                     const newScores = tiktokData.armies.map(a => a.points || 0).join(',');
 
                     // 점수 변동 감지
