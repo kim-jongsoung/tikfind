@@ -267,11 +267,16 @@ router.post('/setup-tiktok', requireAuth, async (req, res) => {
     try {
         const { tiktokId } = req.body;
         
-        if (!tiktokId || !tiktokId.startsWith('@')) {
-            return res.status(400).json({ success: false, message: 'TikTok ID는 @로 시작해야 합니다.' });
+        if (!tiktokId) {
+            return res.status(400).json({ success: false, message: 'TikTok ID를 입력하세요.' });
         }
         
-        req.user.tiktokId = tiktokId;
+        const cleanTiktokId = tiktokId.replace(/^@+/, '').trim();
+        if (!cleanTiktokId) {
+            return res.status(400).json({ success: false, message: 'TikTok ID를 입력하세요.' });
+        }
+        
+        req.user.tiktokId = cleanTiktokId;
         await req.user.save();
         
         res.json({ success: true, message: 'TikTok ID가 설정되었습니다.' });
@@ -290,8 +295,8 @@ router.post('/change-tiktok', requireAuth, async (req, res) => {
             return res.status(400).json({ success: false, message: 'TikTok ID를 입력하세요.' });
         }
         
-        // @ 기호 제거
-        const cleanTiktokId = tiktokId.replace('@', '').trim();
+        // @ 기호 제거 (앞에 붙은 @ 모두 제거)
+        const cleanTiktokId = tiktokId.replace(/^@+/, '').trim();
         
         req.user.tiktokId = cleanTiktokId;
         
@@ -313,11 +318,12 @@ router.post('/update-tiktok', requireAuth, async (req, res) => {
     try {
         const { tiktokId } = req.body;
         
-        if (!tiktokId || !tiktokId.startsWith('@')) {
-            return res.status(400).json({ success: false, message: 'TikTok ID는 @로 시작해야 합니다.' });
+        if (!tiktokId) {
+            return res.status(400).json({ success: false, message: 'TikTok ID를 입력하세요.' });
         }
         
-        req.user.tiktokId = tiktokId;
+        const cleanId = tiktokId.replace(/^@+/, '').trim();
+        req.user.tiktokId = cleanId;
         
         // MongoDB 날짜 필드 형식 오류 수정 - timestamps 비활성화
         req.user.set('createdAt', new Date(), { strict: false });

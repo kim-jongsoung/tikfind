@@ -759,6 +759,25 @@ router.post('/plan-limits', logAdminAction('plan_limits_update'), async (req, re
     }
 });
 
+// TikTok ID @ 일괄 정리 (기존 DB 데이터 수정)
+router.post('/fix-tiktok-ids', logAdminAction('fix_tiktok_ids'), async (req, res) => {
+    try {
+        const users = await User.find({ tiktokId: /^@/ }).lean();
+        let fixedCount = 0;
+        for (const u of users) {
+            const cleaned = u.tiktokId.replace(/^@+/, '').trim();
+            if (cleaned !== u.tiktokId) {
+                await User.updateOne({ _id: u._id }, { $set: { tiktokId: cleaned } });
+                fixedCount++;
+            }
+        }
+        console.log(`✅ tiktokId @ 정리 완료: ${fixedCount}건`);
+        res.json({ success: true, fixedCount });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 // ==================== POPULAR SONG CACHE MANAGEMENT ====================
 const PopularSong = require('../models/PopularSong');
 

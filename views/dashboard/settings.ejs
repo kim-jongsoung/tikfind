@@ -355,7 +355,7 @@
         }
 
         function saveTikTokId() {
-            const tiktokId = document.getElementById('tiktok-id-input').value.trim().replace('@', '');
+            const tiktokId = document.getElementById('tiktok-id-input').value.trim().replace(/^@+/, '');
             
             if (!tiktokId) {
                 alert('TikTok ID를 입력하세요.');
