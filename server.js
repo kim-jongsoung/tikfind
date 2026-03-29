@@ -1885,6 +1885,8 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                     if (tiktokData.teamAPoints != null) matchState.teamAPoints = tiktokData.teamAPoints;
                     if (tiktokData.teamBPoints != null) matchState.teamBPoints = tiktokData.teamBPoints;
                     const newScores = tiktokData.armies.map(a => a.points || 0).join(',');
+                    const sinceLastCoach = Math.floor((now - matchState.lastCoachTime) / 1000);
+                    console.log(`📊 [${userId}] matchScore 수신 | 점수: ${newScores} | 팀A=${matchState.teamAPoints} 팀B=${matchState.teamBPoints} | 마지막코치: ${sinceLastCoach}초전`);
 
                     // 점수 변동 감지
                     if (matchState.lastScores !== newScores) {
@@ -1894,9 +1896,10 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                     } else {
                         // 점수 그대로 → 고요함 지속 시간 체크 (25초 이상이면 유머 멘트)
                         const quietSec = (now - (matchState.quietSince || now)) / 1000;
+                        console.log(`🔇 [${userId}] 고요함 ${Math.floor(quietSec)}초 지속 중`);
                         if (quietSec >= 25 && now - matchState.lastCoachTime > 25000) {
                             matchState.lastCoachTime = now;
-                            matchState.quietSince = now; // 한 번 발동 후 리셋
+                            matchState.quietSince = now;
                             processMatchCoach(userId, 'quiet', matchState).catch(() => {});
                             return res.json({ success: true });
                         }
@@ -1906,9 +1909,12 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                     io.to(userId).emit('match-score', tiktokData);
                     // 30초마다 한 번씩 AI 코치 트리거 (quiet 트리거 아닐 때)
                     if (now - matchState.lastCoachTime > 30000) {
+                        console.log(`🤖 [${userId}] score 코치 트리거 (${sinceLastCoach}초 경과)`);
                         matchState.lastCoachTime = now;
                         processMatchCoach(userId, 'score', matchState).catch(() => {});
                     }
+                } else {
+                    console.log(`⚠️ [${userId}] matchScore 무시 - matchState=${!!matchState} armies=${tiktokData.armies?.length}`);
                 }
             }
         }
