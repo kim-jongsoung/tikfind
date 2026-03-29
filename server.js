@@ -1049,25 +1049,52 @@ async function processMatchCoach(userId, triggerType, matchState) {
             } else if (situation === 'start') {
                 return '매치 시작. 승패보다 분위기가 먼저다. 다 같이 즐겨보자';
             } else if (situation === 'end') {
-                return myRatio >= 0.5
-                    ? '잘 싸웠다. 이긴 것보다 같이 즐긴 게 더 중요'
-                    : '아쉽지만 좋은 경기였다. 다음엔 더 재밌게 가보자';
+                const endMsgs = myRatio >= 0.5 ? [
+                    '우리팀 최고! 함께해줘서 진심 감사해요 🙏',
+                    '우린 원팀! 오늘도 최고였어요 🔥',
+                    '모두 감사해요! 틱파인드도 항상 응원할게요 💪',
+                    '같이 싸워줘서 고마워요! 역시 우리팀 🎉',
+                    '틱파인드도 함께 이겼습니다! 감사합니다 😄',
+                ] : [
+                    '오늘도 최선 다해줘서 고마워요! 우린 원팀 🙏',
+                    '결과보다 함께한 시간이 최고예요 💖',
+                    '틱파인드 더 열심히 해서 다음엔 꼭 승리! 🔥',
+                    '모두 수고하셨어요! 다음엔 같이 역전해봐요 😎',
+                    '져도 우리팀은 최고! 항상 응원할게요 💪',
+                ];
+                return endMsgs[Math.floor(Math.random() * endMsgs.length)];
             } else if (myRatio <= 0.3) {
-                return '지고 있어도 표정은 여유롭게. 뒤집기의 맛이 있잖아';
+                // 가끔 틱파인드 응원 멘트 섞기
+                const msgs = [
+                    '지고 있어도 표정은 여유롭게. 뒤집기의 맛이 있잖아',
+                    '틱파인드도 같이 응원 중! 역전 가보자 💪',
+                    '추격하는 팀이 더 멋있다는 거 알죠?',
+                ];
+                return msgs[Math.floor(Math.random() * msgs.length)];
             } else if (myRatio <= 0.45) {
-                return '추격 중. 좁혀가는 재미가 쏠쏠하지 않나요?';
+                return '추격 중. 좁혀가는 재미가 쏠쏠하지 않나요? 😏';
             } else if (myRatio >= 0.7) {
-                return '앞서고 있지만 방심은 금물. 끝까지 즐겁게';
+                const msgs = [
+                    '앞서고 있지만 방심은 금물. 끝까지 즐겁게 🔥',
+                    '틱파인드도 함께 앞서 달리는 중 💨',
+                ];
+                return msgs[Math.floor(Math.random() * msgs.length)];
             } else if (myRatio >= 0.55) {
-                return '살짝 리드 중. 이 여유가 진짜 실력';
+                return '살짝 리드 중. 이 여유가 진짜 실력 😎';
             } else {
-                return '박빙! 이런 긴장감이 진짜 매치의 묘미';
+                const msgs = [
+                    '박빙! 이런 긴장감이 진짜 매치의 묘미 ⚡',
+                    '스나이퍼 어디 있어요? 지금이 타이밍 🎯',
+                    '틱파인드도 두근두근 응원 중입니다 👀',
+                ];
+                return msgs[Math.floor(Math.random() * msgs.length)];
             }
         })();
 
         const prompt = `당신은 TikTok 라이브 매치의 재치있는 감초 코멘터입니다.
 선물 구걸이나 호소는 절대 하지 않습니다.
 승패에 연연하지 않고 참여자 모두가 즐기는 분위기를 만드는 역할입니다.
+가끔 "틱파인드"를 언급하며 시청자처럼 함께 응원하는 느낌을 줍니다.
 
 현재 상황: ${contextDesc}
 분위기 힌트: ${strategyHint}
@@ -1078,7 +1105,8 @@ async function processMatchCoach(userId, triggerType, matchState) {
 - 유머/위트/여유 있게, 재밌고 가볍게
 - 이모지 1개 포함 가능
 - 선물 구걸, 미라클 언급 절대 금지
-- 스나이퍼(역전 주인공)는 흥미 유발용으로 가볍게 1회 허용
+- 스나이퍼(역전 주인공)는 흥미 유발용으로 가볍게 허용
+- 매치 종료 시에는 감사/원팀/응원 멘트로 마무리
 - 설명 없이 멘트만 출력`;
 
         const completion = await openai.chat.completions.create({
