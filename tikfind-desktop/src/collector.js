@@ -374,6 +374,7 @@ class TikTokCollector extends EventEmitter {
         
         // 매치 시작 (linkMicBattle)
         this.client.on('linkMicBattle', (data) => {
+            console.log(`⚔️ [RAW linkMicBattle]:`, JSON.stringify(data).slice(0, 1000));
             const battleData = {
                 battleId: data.battleId || null,
                 participants: (data.battleUsers || []).map(u => ({
