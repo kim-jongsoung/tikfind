@@ -1841,6 +1841,7 @@ app.post('/api/live/tiktok-data', async (req, res) => {
 
         } else if (type === 'matchScore') {
             if (!matchStateMap) matchStateMap = new Map();
+            console.log(`📦 [RAW matchScore] ${userId}:`, JSON.stringify(tiktokData).slice(0, 800));
             const battleStatus = tiktokData.battleStatus || 1; // 1=진행중, 2=종료
 
             // 매치 종료 시 마무리 코치 발동 후 상태 제거
