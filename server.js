@@ -1839,6 +1839,9 @@ app.post('/api/live/tiktok-data', async (req, res) => {
             // 매치 시작 AI 코치 메시지
             processMatchCoach(userId, 'start', null).catch(() => {});
 
+        } else if (type === 'matchScoreRaw') {
+            console.log(`🔍 [linkMicArmies RAW] ${userId}:`, tiktokData.raw);
+
         } else if (type === 'matchScore') {
             if (!matchStateMap) matchStateMap = new Map();
             console.log(`📦 [RAW matchScore] ${userId}:`, JSON.stringify(tiktokData).slice(0, 800));

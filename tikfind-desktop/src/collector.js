@@ -402,9 +402,17 @@ class TikTokCollector extends EventEmitter {
 
         // 매치 점수 업데이트 (linkMicArmies)
         this.client.on('linkMicArmies', (data) => {
-            console.log(`📊 [RAW linkMicArmies]:`, JSON.stringify(data).slice(0, 1500));
+            const rawJson = JSON.stringify(data);
+            console.log(`📊 [RAW linkMicArmies]:`, rawJson.slice(0, 2000));
+            // RAW 데이터를 서버로 전송해서 실제 필드 확인
+            this.sendToServer('/api/live/tiktok-data', {
+                userId: this.userId,
+                type: 'matchScoreRaw',
+                data: { raw: rawJson.slice(0, 2000) }
+            });
             const battleStatus = data.battleStatus || 1; // 1=진행중, 2=종료
-            const rawArmies = data.battleArmies || data.armies || [];
+            // 가능한 모든 필드명 시도
+            const rawArmies = data.battleArmies || data.armies || data.armyList || data.battleArmyList || data.items || [];
             const armies = rawArmies.map((army, i) => ({
                 hostUserId: army.hostUserId || army.hostUser?.uniqueId || army.hostUser?.displayId || '',
                 points: army.points || army.totalScore || army.totalPoints || 0,
