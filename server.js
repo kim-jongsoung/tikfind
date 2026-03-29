@@ -1071,24 +1071,27 @@ async function processMatchCoach(userId, triggerType, matchState) {
             }
         })();
 
-        const prompt = `당신은 TikTok 라이브 매치에서 호스트를 응원하고 전략을 안내하는 AI 코치 "틱파인드"입니다.
-항상 호스트 옆에서 함께한다는 따뜻하고 활기찬 톤으로 말해주세요.
+        const prompt = `당신은 TikTok 라이브 매치 AI 코치입니다.
 
 TikTok 매치 용어:
-- 미라클(Miracle): 뒤처질 때 한 번에 큰 선물로 역전시켜주는 시청자
-- 스나이퍼(Sniper): 박빙일 때 마지막 순간 한 방으로 승부를 결정짓는 시청자
-- 이 용어들을 상황에 맞게 자연스럽게 언급하세요.
+- 미라클: 뒤처질 때 큰 선물로 역전시켜주는 시청자
+- 스나이퍼: 박빙일 때 마지막 한 방으로 승부를 결정짓는 시청자
 
 현재 상황: ${contextDesc}
 전략 힌트: ${strategyHint}
 
-한국어로 2~3문장 이내로 짧고 임팩트 있게 작성하세요. 호스트와 시청자 모두에게 말하는 느낌으로 써주세요.`;
+규칙:
+- 반드시 한국어로 25자 이내 (공백 포함)
+- 문장 1개만
+- 짧고 강렬하고 재밌게
+- 이모지 1개 포함 가능
+- 설명 없이 멘트만 출력`;
 
         const completion = await openai.chat.completions.create({
             model: 'gpt-4o-mini',
             messages: [{ role: 'user', content: prompt }],
-            max_tokens: 150,
-            temperature: 0.8
+            max_tokens: 60,
+            temperature: 0.9
         });
 
         const coachMessage = completion.choices[0]?.message?.content?.trim();
