@@ -4,8 +4,7 @@ const subscriptionSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
-        index: true
+        required: true
     },
     
     // Subscription Info
@@ -18,8 +17,7 @@ const subscriptionSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['active', 'cancelled', 'expired', 'past_due', 'trialing'],
-        default: 'trialing',
-        index: true
+        default: 'trialing'
     },
     
     // Billing
@@ -54,8 +52,7 @@ const subscriptionSchema = new mongoose.Schema({
         type: Date
     },
     nextBillingDate: {
-        type: Date,
-        index: true
+        type: Date
     },
     cancelledAt: {
         type: Date
@@ -67,14 +64,12 @@ const subscriptionSchema = new mongoose.Schema({
     
     // Stripe Info
     stripeCustomerId: {
-        type: String,
-        index: true
+        type: String
     },
     stripeSubscriptionId: {
         type: String,
         unique: true,
-        sparse: true,
-        index: true
+        sparse: true
     },
     stripeProductId: {
         type: String
@@ -108,10 +103,9 @@ const subscriptionSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Indexes for performance
+// Indexes for performance (index:true 중복 제거)
 subscriptionSchema.index({ userId: 1, status: 1 });
 subscriptionSchema.index({ status: 1, nextBillingDate: 1 });
-subscriptionSchema.index({ stripeSubscriptionId: 1 });
 subscriptionSchema.index({ status: 1, currentPeriodEnd: 1 });
 
 // Virtual for checking if subscription is active

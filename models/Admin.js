@@ -58,8 +58,8 @@ const adminSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Indexes
-adminSchema.index({ email: 1 });
+// Indexes (email은 unique:true로 자동 생성됨)
+adminSchema.index({ name: 1 });
 adminSchema.index({ isActive: 1 });
 
 // Virtual for checking if account is locked

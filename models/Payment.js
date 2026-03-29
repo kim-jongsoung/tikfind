@@ -4,8 +4,7 @@ const paymentSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
-        index: true
+        required: true
     },
     subscriptionId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -25,16 +24,14 @@ const paymentSchema = new mongoose.Schema({
     status: {
         type: String,
         enum: ['pending', 'succeeded', 'failed', 'refunded', 'cancelled'],
-        default: 'pending',
-        index: true
+        default: 'pending'
     },
     
     // Stripe Info
     stripePaymentIntentId: {
         type: String,
         unique: true,
-        sparse: true,
-        index: true
+        sparse: true
     },
     stripeChargeId: {
         type: String
@@ -99,10 +96,9 @@ const paymentSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Indexes for performance
+// Indexes for performance (index:true 중복 제거)
 paymentSchema.index({ userId: 1, createdAt: -1 });
 paymentSchema.index({ status: 1, createdAt: -1 });
-paymentSchema.index({ stripePaymentIntentId: 1 });
 paymentSchema.index({ userId: 1, status: 1 });
 
 // Methods

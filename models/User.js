@@ -252,10 +252,7 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 });
 
-// Indexes for performance
-userSchema.index({ email: 1 });
-userSchema.index({ googleId: 1 });
-userSchema.index({ tiktokId: 1 });
+// Indexes for performance (email/googleId/tiktokId는 unique:true로 자동 생성됨)
 userSchema.index({ isAdmin: 1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ subscriptionStatus: 1, subscriptionEndDate: 1 });
