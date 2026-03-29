@@ -1857,8 +1857,8 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 matchStateMap.delete(String(userId));
             } else {
                 let matchState = matchStateMap.get(String(userId));
-                // matchStart를 못 받았어도 matchScore가 오면 상태 자동 생성
-                if (!matchState && tiktokData.armies && tiktokData.armies.length >= 1) {
+                // matchStart를 못 받았어도 matchScore가 오면 상태 자동 생성 (armies 없어도)
+                if (!matchState) {
                     let hostTiktokId = '';
                     try {
                         const User = require('./models/User');
@@ -1878,15 +1878,18 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                     };
                     matchStateMap.set(String(userId), matchState);
                     console.log(`⚔️ [${userId}] matchScore로 매치 상태 자동 생성 | 호스트: ${hostTiktokId}`);
+                    // 첫 수신 시 start 코치 1회 발동
+                    processMatchCoach(userId, 'start', null).catch(() => {});
                 }
-                if (matchState && tiktokData.armies && tiktokData.armies.length >= 1) {
+                if (matchState) {
                     const now = Date.now();
+                    const armies = tiktokData.armies || [];
                     // 팀별 합산 점수 업데이트
                     if (tiktokData.teamAPoints != null) matchState.teamAPoints = tiktokData.teamAPoints;
                     if (tiktokData.teamBPoints != null) matchState.teamBPoints = tiktokData.teamBPoints;
-                    const newScores = tiktokData.armies.map(a => a.points || 0).join(',');
+                    const newScores = armies.map(a => a.points || 0).join(',');
                     const sinceLastCoach = Math.floor((now - matchState.lastCoachTime) / 1000);
-                    console.log(`📊 [${userId}] matchScore 수신 | 점수: ${newScores} | 팀A=${matchState.teamAPoints} 팀B=${matchState.teamBPoints} | 마지막코치: ${sinceLastCoach}초전`);
+                    console.log(`📊 [${userId}] matchScore 수신 | 점수: ${newScores || '(없음)'} | 팀A=${matchState.teamAPoints||0} 팀B=${matchState.teamBPoints||0} | 마지막코치: ${sinceLastCoach}초전`);
 
                     // 점수 변동 감지
                     if (matchState.lastScores !== newScores) {
@@ -1905,7 +1908,7 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                         }
                     }
 
-                    matchState.armies = tiktokData.armies;
+                    if (armies.length > 0) matchState.armies = armies;
                     io.to(userId).emit('match-score', tiktokData);
                     // 30초마다 한 번씩 AI 코치 트리거 (quiet 트리거 아닐 때)
                     if (now - matchState.lastCoachTime > 30000) {
@@ -1913,8 +1916,6 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                         matchState.lastCoachTime = now;
                         processMatchCoach(userId, 'score', matchState).catch(() => {});
                     }
-                } else {
-                    console.log(`⚠️ [${userId}] matchScore 무시 - matchState=${!!matchState} armies=${tiktokData.armies?.length}`);
                 }
             }
         }
