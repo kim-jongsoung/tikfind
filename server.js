@@ -1113,9 +1113,6 @@ async function processMatchCoach(userId, triggerType, matchState) {
                 ];
                 return msgs[Math.floor(Math.random() * msgs.length)];
             }
-            if (situation === 'start') {
-                return '매치 시작! 승패보다 분위기가 먼저다. 다 같이 즐겨보자 🎉';
-            }
             if (situation === 'end') {
                 const endMsgs = [
                     '오늘 함께해줘서 진심으로 감사해요 💖',
@@ -1915,12 +1912,13 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 const hostUser = await User.findById(userId).lean();
                 hostTiktokId = (hostUser?.tiktokId || '').toLowerCase();
             } catch(e) {}
+            const matchStartTime = tiktokData.timestamp || Date.now();
             matchStateMap.set(String(userId), {
                 battleId: tiktokData.battleId,
                 participants: tiktokData.participants || [],
-                startTime: tiktokData.timestamp || Date.now(),
+                startTime: matchStartTime,
                 armies: [],
-                lastCoachTime: 0,
+                lastCoachTime: matchStartTime + 30000, // 시작 후 30초 이내 멘트 차단
                 coachCount: 0,
                 lastScores: null,
                 quietSince: Date.now(),
@@ -1928,8 +1926,7 @@ app.post('/api/live/tiktok-data', async (req, res) => {
             });
             io.to(userId).emit('match-start', tiktokData);
             console.log(`⚔️ [${userId}] 매치 시작 감지: ${JSON.stringify(tiktokData.participants?.map(p => p.uniqueId))} | 호스트: ${hostTiktokId}`);
-            // 매치 시작 AI 코치 메시지
-            processMatchCoach(userId, 'start', null).catch(() => {});
+            // 시작 후 30초 이내 멘트 차단 (lastCoachTime = startTime + 30초)
 
         } else if (type === 'matchScoreRaw') {
             console.log(`🔍 [linkMicArmies RAW] ${userId}:`, tiktokData.raw);
@@ -1961,12 +1958,13 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                         const hostUser = await User.findById(userId).lean();
                         hostTiktokId = (hostUser?.tiktokId || '').toLowerCase();
                     } catch(e) {}
+                    const autoStartTime = Date.now();
                     matchState = {
                         battleId: tiktokData.battleId || null,
                         participants: [],
-                        startTime: Date.now(),
+                        startTime: autoStartTime,
                         armies: [],
-                        lastCoachTime: 0,
+                        lastCoachTime: autoStartTime + 30000, // 시작 후 30초 이내 멘트 차단
                         coachCount: 0,
                         lastScores: null,
                         quietSince: Date.now(),
@@ -1974,8 +1972,6 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                     };
                     matchStateMap.set(String(userId), matchState);
                     console.log(`⚔️ [${userId}] matchScore로 매치 상태 자동 생성 | 호스트: ${hostTiktokId}`);
-                    // 첫 수신 시 start 코치 1회 발동
-                    processMatchCoach(userId, 'start', null).catch(() => {});
                 }
                 if (matchState) {
                     const now = Date.now();
