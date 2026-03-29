@@ -1077,7 +1077,8 @@ async function processMatchCoach(userId, triggerType, matchState) {
 - 문장 1개만
 - 유머/위트/여유 있게, 재밌고 가볍게
 - 이모지 1개 포함 가능
-- 선물 요청, 미라클, 스나이퍼 언급 절대 금지
+- 선물 구걸, 미라클 언급 절대 금지
+- 스나이퍼(역전 주인공)는 흥미 유발용으로 가볍게 1회 허용
 - 설명 없이 멘트만 출력`;
 
         const completion = await openai.chat.completions.create({
