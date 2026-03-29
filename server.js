@@ -1091,6 +1091,17 @@ async function processMatchCoach(userId, triggerType, matchState) {
                     return msgs[Math.floor(Math.random() * msgs.length)];
                 }
             }
+            // 틱파인드 언급 (20% 확률로만)
+            const tikfindMsgs = [
+                '틱파인드도 옆에서 응원 중이에요 💪',
+                '틱파인드도 두근두근 기다리는 중 👀',
+                '틱파인드도 함께 뛰어서 행복해요 😄',
+                '틱파인드도 항상 여러분 편이에요 🙏',
+            ];
+            if (Math.random() < 0.2) {
+                return tikfindMsgs[Math.floor(Math.random() * tikfindMsgs.length)];
+            }
+
             // ── 일반 진행 중
             if (situation === 'quiet') {
                 const msgs = [
@@ -1098,7 +1109,7 @@ async function processMatchCoach(userId, triggerType, matchState) {
                     '점수 멈춤. 이 침묵 뭔가 음모 같은데? 😏',
                     '조용할수록 다음 터짐이 더 크다는 거 알죠?',
                     '두 팀 다 전략적 여유 중. 여유 있는 쪽이 이긴다',
-                    '틱파인드도 두근두근 기다리는 중 👀',
+                    '숨죽이는 이 순간, 뭔가 터질 것 같은 느낌 ⚡',
                 ];
                 return msgs[Math.floor(Math.random() * msgs.length)];
             }
@@ -1111,12 +1122,10 @@ async function processMatchCoach(userId, triggerType, matchState) {
                     '우린 언제나 원팀! 정말 고마워요 🙏',
                     '여러분 덕분에 오늘도 최고였어요 🔥',
                     '함께한 모든 순간이 소중했어요 감사합니다 😊',
-                    '틱파인드도 항상 여러분 편이에요 💪',
                     '결과보다 함께한 시간이 더 빛났어요 ✨',
                     '오늘도 최선을 다해줘서 너무 고마워요 🙏',
                     '우리 모두 최고야! 다음에도 함께해요 🎉',
                     '이 매치, 잊지 못할 거예요. 감사합니다 💖',
-                    '틱파인드도 함께 뛰어서 행복했어요 😄',
                 ];
                 return endMsgs[Math.floor(Math.random() * endMsgs.length)];
             }
@@ -1124,16 +1133,20 @@ async function processMatchCoach(userId, triggerType, matchState) {
             if (myRatio <= 0.3) {
                 const msgs = [
                     '지고 있어도 표정은 여유롭게. 뒤집기의 맛이 있잖아 😎',
-                    '틱파인드도 같이 응원 중! 역전 가보자 💪',
                     '추격하는 팀이 더 멋있다는 거 알죠?',
+                    '역전의 드라마는 지금부터 시작이에요 🔥',
                 ];
                 return msgs[Math.floor(Math.random() * msgs.length)];
             } else if (myRatio <= 0.45) {
-                return '추격 중! 좁혀가는 재미가 쏠쏠하지 않나요? 😏';
+                const msgs = [
+                    '추격 중! 좁혀가는 재미가 쏠쏠하지 않나요? 😏',
+                    '차이가 줄고 있어요. 이 긴장감이 진짜 매치 ⚡',
+                ];
+                return msgs[Math.floor(Math.random() * msgs.length)];
             } else if (myRatio >= 0.7) {
                 const msgs = [
                     '앞서고 있지만 방심은 금물. 끝까지 즐겁게 🔥',
-                    '틱파인드도 함께 앞서 달리는 중 💨',
+                    '이 여유로움이 진짜 강팀의 품격 😎',
                 ];
                 return msgs[Math.floor(Math.random() * msgs.length)];
             } else if (myRatio >= 0.55) {
@@ -1141,8 +1154,8 @@ async function processMatchCoach(userId, triggerType, matchState) {
             } else {
                 const msgs = [
                     '박빙! 이런 긴장감이 진짜 매치의 묘미 ⚡',
-                    '틱파인드도 두근두근 응원 중입니다 👀',
                     '어느 팀이든 분위기 잡는 쪽이 이긴다!',
+                    '지금 이 순간이 매치의 하이라이트 🎯',
                 ];
                 return msgs[Math.floor(Math.random() * msgs.length)];
             }
