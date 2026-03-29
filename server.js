@@ -957,41 +957,47 @@ async function processMatchCoach(userId, triggerType, matchState) {
         let elapsedSec = 0, remainingSec = 300;
         const MATCH_DURATION = 300; // 5분
 
+        // hostTiktokId로 우리팀/상대팀 구분하는 헬퍼
+        const resolvePoints = (armies, hostTiktokId) => {
+            if (!armies || armies.length === 0) return { myPoints: 0, opponentPoints: 0 };
+            if (hostTiktokId) {
+                const myArmy = armies.find(a => (a.hostUserId || '').toLowerCase() === hostTiktokId);
+                if (myArmy) {
+                    const my = myArmy.points || 0;
+                    const opp = armies.filter(a => a !== myArmy).reduce((s, a) => s + (a.points || 0), 0);
+                    return { myPoints: my, opponentPoints: opp };
+                }
+            }
+            // hostTiktokId 매핑 실패 시 배열 순서 사용
+            return { myPoints: armies[0]?.points || 0, opponentPoints: armies[1]?.points || 0 };
+        };
+
         if (triggerType === 'start') {
             situation = 'start';
         } else if (triggerType === 'quiet') {
             situation = 'quiet';
             if (matchState) {
-                const armies = matchState.armies || [];
-                if (armies.length >= 2) {
-                    myPoints = armies[0].points || 0;
-                    opponentPoints = armies[1].points || 0;
-                    totalPoints = myPoints + opponentPoints;
-                    myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
-                }
+                const r = resolvePoints(matchState.armies, matchState.hostTiktokId);
+                myPoints = r.myPoints; opponentPoints = r.opponentPoints;
+                totalPoints = myPoints + opponentPoints;
+                myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
                 elapsedSec = Math.floor((Date.now() - matchState.startTime) / 1000);
             }
         } else if (triggerType === 'end') {
             situation = 'end';
             if (matchState) {
-                const armies = matchState.armies || [];
-                if (armies.length >= 2) {
-                    myPoints = armies[0].points || 0;
-                    opponentPoints = armies[1].points || 0;
-                    totalPoints = myPoints + opponentPoints;
-                    myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
-                }
+                const r = resolvePoints(matchState.armies, matchState.hostTiktokId);
+                myPoints = r.myPoints; opponentPoints = r.opponentPoints;
+                totalPoints = myPoints + opponentPoints;
+                myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
             }
         } else if (matchState) {
             elapsedSec = Math.floor((Date.now() - matchState.startTime) / 1000);
             remainingSec = Math.max(0, MATCH_DURATION - elapsedSec);
-            const armies = matchState.armies || [];
-            if (armies.length >= 2) {
-                myPoints = armies[0].points || 0;
-                opponentPoints = armies[1].points || 0;
-                totalPoints = myPoints + opponentPoints;
-                myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
-            }
+            const r = resolvePoints(matchState.armies, matchState.hostTiktokId);
+            myPoints = r.myPoints; opponentPoints = r.opponentPoints;
+            totalPoints = myPoints + opponentPoints;
+            myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
 
             if (elapsedSec <= 60) situation = 'early';
             else if (elapsedSec <= 240) situation = 'mid';
@@ -1795,16 +1801,26 @@ app.post('/api/live/tiktok-data', async (req, res) => {
         } else if (type === 'matchStart') {
             // 매치 시작 - 상태 저장
             if (!matchStateMap) matchStateMap = new Map();
+            // 호스트 tiktokId DB에서 조회해서 저장 (armies 팀 구분용)
+            let hostTiktokId = '';
+            try {
+                const User = require('./models/User');
+                const hostUser = await User.findById(userId).lean();
+                hostTiktokId = (hostUser?.tiktokId || '').toLowerCase();
+            } catch(e) {}
             matchStateMap.set(String(userId), {
                 battleId: tiktokData.battleId,
                 participants: tiktokData.participants || [],
                 startTime: tiktokData.timestamp || Date.now(),
                 armies: [],
                 lastCoachTime: 0,
-                coachCount: 0
+                coachCount: 0,
+                lastScores: null,
+                quietSince: Date.now(),
+                hostTiktokId
             });
             io.to(userId).emit('match-start', tiktokData);
-            console.log(`⚔️ [${userId}] 매치 시작 감지: ${JSON.stringify(tiktokData.participants?.map(p => p.uniqueId))}`);
+            console.log(`⚔️ [${userId}] 매치 시작 감지: ${JSON.stringify(tiktokData.participants?.map(p => p.uniqueId))} | 호스트: ${hostTiktokId}`);
             // 매치 시작 AI 코치 메시지
             processMatchCoach(userId, 'start', null).catch(() => {});
 
@@ -1827,7 +1843,13 @@ app.post('/api/live/tiktok-data', async (req, res) => {
             } else {
                 let matchState = matchStateMap.get(String(userId));
                 // matchStart를 못 받았어도 matchScore가 오면 상태 자동 생성
-                if (!matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
+                if (!matchState && tiktokData.armies && tiktokData.armies.length >= 1) {
+                    let hostTiktokId = '';
+                    try {
+                        const User = require('./models/User');
+                        const hostUser = await User.findById(userId).lean();
+                        hostTiktokId = (hostUser?.tiktokId || '').toLowerCase();
+                    } catch(e) {}
                     matchState = {
                         battleId: tiktokData.battleId || null,
                         participants: [],
@@ -1835,13 +1857,14 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                         armies: [],
                         lastCoachTime: 0,
                         coachCount: 0,
-                        lastScores: null,   // 이전 점수 스냅샷
-                        quietSince: Date.now() // 점수 변동 없기 시작한 시각
+                        lastScores: null,
+                        quietSince: Date.now(),
+                        hostTiktokId
                     };
                     matchStateMap.set(String(userId), matchState);
-                    console.log(`⚔️ [${userId}] matchScore로 매치 상태 자동 생성`);
+                    console.log(`⚔️ [${userId}] matchScore로 매치 상태 자동 생성 | 호스트: ${hostTiktokId}`);
                 }
-                if (matchState && tiktokData.armies && tiktokData.armies.length >= 2) {
+                if (matchState && tiktokData.armies && tiktokData.armies.length >= 1) {
                     const now = Date.now();
                     const newScores = tiktokData.armies.map(a => a.points || 0).join(',');
 
