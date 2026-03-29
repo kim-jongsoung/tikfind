@@ -1011,9 +1011,10 @@ async function processMatchCoach(userId, triggerType, matchState) {
             totalPoints = myPoints + opponentPoints;
             myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
 
-            if (elapsedSec <= 60) situation = 'early';
-            else if (elapsedSec <= 240) situation = 'mid';
-            else situation = 'late';
+            if (remainingSec <= 50) situation = 'globe';       // 50초 이하: 글로브 멘트
+            else if (remainingSec <= 120) situation = 'sniper'; // 2분 이하: 스나이퍼 멘트
+            else if (elapsedSec <= 60) situation = 'early';
+            else situation = 'mid';
         }
 
         // 트리거별 프롬프트 상황 설명
@@ -1028,27 +1029,83 @@ async function processMatchCoach(userId, triggerType, matchState) {
                                                 `패배 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)`;
             contextDesc = `매치가 방금 종료됐습니다. 결과: ${resultDesc}. 다음 판이 이어질 수 있습니다.`;
         } else {
-            const timeDesc = situation === 'early' ? '초반' : situation === 'mid' ? '중반' : '후반';
             const scoreDesc = myRatio >= 0.6 ? `리드 중 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
                               myRatio <= 0.4 ? `뒤처지는 중 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
                               `박빙 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)`;
-            contextDesc = `매치 ${timeDesc} (경과 ${Math.floor(elapsedSec/60)}분 ${elapsedSec%60}초, 남은 시간 ${Math.floor(remainingSec/60)}분 ${remainingSec%60}초), 현재 점수 ${scoreDesc}.`;
+            if (situation === 'globe') {
+                contextDesc = `매치 종료 ${remainingSec}초 전! 현재 점수 ${scoreDesc}. 마지막 역전 기회, 글로브 선물이 판세를 바꿀 수 있는 순간.`;
+            } else if (situation === 'sniper') {
+                contextDesc = `매치 종료 ${remainingSec}초 전 (${Math.floor(remainingSec/60)}분 ${remainingSec%60}초). 현재 점수 ${scoreDesc}. 마지막 역전 스나이퍼가 나올 타이밍.`;
+            } else {
+                const timeDesc = situation === 'early' ? '초반' : '중반';
+                contextDesc = `매치 ${timeDesc} (경과 ${Math.floor(elapsedSec/60)}분 ${elapsedSec%60}초, 남은 시간 ${Math.floor(remainingSec/60)}분 ${remainingSec%60}초), 현재 점수 ${scoreDesc}.`;
+            }
         }
 
-        // 상황별 분위기 힌트 (구걸/호소 없이 모두가 즐기는 감초 역할)
+        // 상황별 분위기 힌트 (시간 + 점수 기반)
         const strategyHint = (() => {
+            // ── 50초 이하: 글로브 멘트 (지고 있을 때 더 강하게)
+            if (situation === 'globe') {
+                if (myRatio <= 0.45) {
+                    // 지고 있을 때 → 글로브 강조
+                    const msgs = [
+                        `${remainingSec}초 남았어요! 글로브 있으신 분 지금이에요 🌍`,
+                        `마지막 ${remainingSec}초! 글로브 한 방이면 뒤집힙니다 🌍`,
+                        `${remainingSec}초! 글로브 있으신 분 지금 아니면 후회해요 💥`,
+                        `종료 ${remainingSec}초 전! 글로브 주인공 지금 나와주세요 🌍`,
+                    ];
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                } else {
+                    // 이기고 있을 때 → 마무리 집중
+                    const msgs = [
+                        `${remainingSec}초만 더! 끝까지 함께해줘서 고마워요 🔥`,
+                        `종료 ${remainingSec}초 전! 이 기세 그대로 마무리 💪`,
+                        `${remainingSec}초 남았어요! 다들 최고예요 🎉`,
+                    ];
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                }
+            }
+            // ── 2분 이하: 스나이퍼 멘트
+            if (situation === 'sniper') {
+                if (myRatio <= 0.4) {
+                    // 뒤처지는 중 → 역전 스나이퍼 기대
+                    const msgs = [
+                        '마지막 역전 스나이퍼! 지금 이 순간을 위해 기다렸어요 🎯',
+                        '2분 안에 뒤집은 팀이 진짜 강팀! 스나이퍼 출동 🎯',
+                        '스나이퍼 한 방이면 판 뒤집힙니다. 지금이에요 ⚡',
+                    ];
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                } else if (myRatio >= 0.6) {
+                    // 앞서는 중 → 상대 스나이퍼 경계
+                    const msgs = [
+                        '2분 남았어요! 상대 스나이퍼 조심, 끝까지 집중 🔥',
+                        '마지막 스퍼트! 이 리드 그대로 가져가봐요 💨',
+                    ];
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                } else {
+                    // 박빙 → 스나이퍼 타이밍 강조
+                    const msgs = [
+                        '박빙 승부! 마지막 스나이퍼가 승부를 가릅니다 🎯',
+                        '지금 이 박빙, 스나이퍼 한 방으로 끝납니다 ⚡',
+                    ];
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                }
+            }
+            // ── 일반 진행 중
             if (situation === 'quiet') {
-                const quietJokes = [
+                const msgs = [
                     '양쪽 다 숨 참고 있는 분위기. 이럴 때 웃음 한 번이 최고',
-                    '점수 멈춤. 이 침묵 뭔가 음모 같은데?',
+                    '점수 멈춤. 이 침묵 뭔가 음모 같은데? 😏',
                     '조용할수록 다음 터짐이 더 크다는 거 알죠?',
-                    '두 팀 다 전략적 여유 부리는 중. 여유 있는 쪽이 이긴다',
-                    '고요한 바다가 더 깊다더니. 지금이 딱 그 느낌',
+                    '두 팀 다 전략적 여유 중. 여유 있는 쪽이 이긴다',
+                    '틱파인드도 두근두근 기다리는 중 👀',
                 ];
-                return quietJokes[Math.floor(Math.random() * quietJokes.length)];
-            } else if (situation === 'start') {
-                return '매치 시작. 승패보다 분위기가 먼저다. 다 같이 즐겨보자';
-            } else if (situation === 'end') {
+                return msgs[Math.floor(Math.random() * msgs.length)];
+            }
+            if (situation === 'start') {
+                return '매치 시작! 승패보다 분위기가 먼저다. 다 같이 즐겨보자 🎉';
+            }
+            if (situation === 'end') {
                 const endMsgs = myRatio >= 0.5 ? [
                     '우리팀 최고! 함께해줘서 진심 감사해요 🙏',
                     '우린 원팀! 오늘도 최고였어요 🔥',
@@ -1063,16 +1120,17 @@ async function processMatchCoach(userId, triggerType, matchState) {
                     '져도 우리팀은 최고! 항상 응원할게요 💪',
                 ];
                 return endMsgs[Math.floor(Math.random() * endMsgs.length)];
-            } else if (myRatio <= 0.3) {
-                // 가끔 틱파인드 응원 멘트 섞기
+            }
+            // early / mid
+            if (myRatio <= 0.3) {
                 const msgs = [
-                    '지고 있어도 표정은 여유롭게. 뒤집기의 맛이 있잖아',
+                    '지고 있어도 표정은 여유롭게. 뒤집기의 맛이 있잖아 😎',
                     '틱파인드도 같이 응원 중! 역전 가보자 💪',
                     '추격하는 팀이 더 멋있다는 거 알죠?',
                 ];
                 return msgs[Math.floor(Math.random() * msgs.length)];
             } else if (myRatio <= 0.45) {
-                return '추격 중. 좁혀가는 재미가 쏠쏠하지 않나요? 😏';
+                return '추격 중! 좁혀가는 재미가 쏠쏠하지 않나요? 😏';
             } else if (myRatio >= 0.7) {
                 const msgs = [
                     '앞서고 있지만 방심은 금물. 끝까지 즐겁게 🔥',
@@ -1084,15 +1142,14 @@ async function processMatchCoach(userId, triggerType, matchState) {
             } else {
                 const msgs = [
                     '박빙! 이런 긴장감이 진짜 매치의 묘미 ⚡',
-                    '스나이퍼 어디 있어요? 지금이 타이밍 🎯',
                     '틱파인드도 두근두근 응원 중입니다 👀',
+                    '어느 팀이든 분위기 잡는 쪽이 이긴다!',
                 ];
                 return msgs[Math.floor(Math.random() * msgs.length)];
             }
         })();
 
         const prompt = `당신은 TikTok 라이브 매치의 재치있는 감초 코멘터입니다.
-선물 구걸이나 호소는 절대 하지 않습니다.
 승패에 연연하지 않고 참여자 모두가 즐기는 분위기를 만드는 역할입니다.
 가끔 "틱파인드"를 언급하며 시청자처럼 함께 응원하는 느낌을 줍니다.
 
@@ -1105,7 +1162,8 @@ async function processMatchCoach(userId, triggerType, matchState) {
 - 유머/위트/여유 있게, 재밌고 가볍게
 - 이모지 1개 포함 가능
 - 선물 구걸, 미라클 언급 절대 금지
-- 스나이퍼(역전 주인공)는 흥미 유발용으로 가볍게 허용
+- 스나이퍼(마지막 역전 주인공): 종료 2분 이내 상황에서만 언급
+- 글로브 선물: 종료 50초 이내 지고 있을 때 자연스럽게 언급
 - 매치 종료 시에는 감사/원팀/응원 멘트로 마무리
 - 설명 없이 멘트만 출력`;
 
