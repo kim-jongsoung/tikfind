@@ -91,7 +91,7 @@ router.get('/desktop/token/:token', (req, res) => {
 // Desktop App 다운로드 - GitHub Releases로 리다이렉트 (신뢰도 높음)
 router.get('/download-app', (req, res) => {
     // GitHub Releases는 브라우저 신뢰도가 높아 SmartScreen 차단 최소화
-    res.redirect('https://github.com/kim-jongsoung/tikfind/releases/download/v1.3.10/TikFind.Setup.1.3.10.exe');
+    res.redirect('https://github.com/kim-jongsoung/tikfind/releases/download/v1.3.11/TikFind.Setup.1.3.11.exe');
 });
 
 // 현재 로그인 유저 정보 (Desktop App 연결용)
