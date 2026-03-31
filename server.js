@@ -957,31 +957,28 @@ async function processMatchCoach(userId, triggerType, matchState) {
         let elapsedSec = 0, remainingSec = 300;
         const MATCH_DURATION = 300; // 5분
 
-        // hostTiktokId로 우리팀(A/B) 판단 후 팀별 합산 점수 반환
+        // 호스트는 항상 teamArmies[0] = 팀A (좌측상단 고정)
         const resolvePoints = (matchState) => {
             const armies = matchState?.armies || [];
             const teamAPoints = matchState?.teamAPoints ?? null;
             const teamBPoints = matchState?.teamBPoints ?? null;
-            if (armies.length === 0) return { myPoints: 0, opponentPoints: 0 };
 
-            // teamAPoints/teamBPoints가 있으면 팀 합산 사용
+            // teamAPoints/teamBPoints가 있으면 팀A = 우리팀으로 고정
             if (teamAPoints !== null && teamBPoints !== null) {
-                const hostTiktokId = (matchState.hostTiktokId || '').toLowerCase();
-                const myArmy = armies.find(a => (a.hostUserId || '').toLowerCase() === hostTiktokId);
-                const myTeam = myArmy?.teamId || 'A';
-                return myTeam === 'A'
-                    ? { myPoints: teamAPoints, opponentPoints: teamBPoints }
-                    : { myPoints: teamBPoints, opponentPoints: teamAPoints };
+                return { myPoints: teamAPoints, opponentPoints: teamBPoints };
             }
-            // fallback: 개인 점수 기준
-            const hostTiktokId = (matchState?.hostTiktokId || '').toLowerCase();
-            const myArmy = hostTiktokId ? armies.find(a => (a.hostUserId || '').toLowerCase() === hostTiktokId) : null;
-            if (myArmy) {
-                const my = myArmy.points || 0;
-                const opp = armies.filter(a => a !== myArmy).reduce((s, a) => s + (a.points || 0), 0);
-                return { myPoints: my, opponentPoints: opp };
+            // fallback: armies 배열에서 팀A 합산
+            if (armies.length > 0) {
+                const teamA = armies.filter(a => a.teamId === 'A');
+                const teamB = armies.filter(a => a.teamId === 'B');
+                if (teamA.length > 0) {
+                    const my = teamA.reduce((s, a) => s + (a.points || 0), 0);
+                    const opp = teamB.reduce((s, a) => s + (a.points || 0), 0);
+                    return { myPoints: my, opponentPoints: opp };
+                }
+                return { myPoints: armies[0]?.points || 0, opponentPoints: armies[1]?.points || 0 };
             }
-            return { myPoints: armies[0]?.points || 0, opponentPoints: armies[1]?.points || 0 };
+            return { myPoints: 0, opponentPoints: 0 };
         };
 
         if (triggerType === 'start') {
@@ -1158,8 +1155,9 @@ async function processMatchCoach(userId, triggerType, matchState) {
             }
         })();
 
-        const prompt = `당신은 TikTok 라이브 매치의 재치있는 감초 코멘터입니다.
-승패에 연연하지 않고 참여자 모두가 즐기는 분위기를 만드는 역할입니다.
+        const prompt = `당신은 TikTok 라이브 매치를 현장감 있게 중계하는 코멘터입니다.
+지금 이 순간의 점수와 시간을 바탕으로 시청자의 후원을 자연스럽게 유도합니다.
+억지 유머 없이 실황 중계하듯 짧고 강렬하게 말합니다.
 
 현재 상황: ${contextDesc}
 분위기 힌트: ${strategyHint}
@@ -1167,7 +1165,7 @@ async function processMatchCoach(userId, triggerType, matchState) {
 규칙:
 - 반드시 한국어로 25자 이내 (공백 포함)
 - 문장 1개만
-- 유머/위트/여유 있게, 재밌고 가볍게
+- 현장감 있는 중계 톤, 자연스러운 후원 유도
 - 이모지 1개 포함 가능
 - 선물 구걸, 미라클 언급 절대 금지
 - "틱파인드" 언급은 분위기 힌트에 틱파인드가 포함된 경우에만 허용, 그 외 절대 금지
