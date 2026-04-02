@@ -1049,7 +1049,16 @@ async function processMatchCoach(userId, triggerType, matchState) {
             if (remainingSec <= 50) situation = 'globe';       // 50초 이하: 글로브 멘트
             else if (remainingSec <= 120) situation = 'sniper'; // 2분 이하: 스나이퍼 멘트
             else if (elapsedSec <= 60) situation = 'early';
-            else situation = 'mid';
+            else {
+                // 3분 이상 경과 + 크게 지고 있음 + 앞선 판 있음 → 다음 판 집중 멘트
+                const rw = matchState?.roundWins || { my: 0, opp: 0 };
+                const roundNum = matchState?.roundNumber || 1;
+                if (elapsedSec >= 180 && myRatio <= 0.35 && roundNum >= 2 && rw.my >= 1) {
+                    situation = 'concede';
+                } else {
+                    situation = 'mid';
+                }
+            }
         }
 
         // 트리거별 프롬프트 상황 설명
@@ -1059,6 +1068,10 @@ async function processMatchCoach(userId, triggerType, matchState) {
         } else if (situation === 'quiet') {
             const scoreDesc = myRatio >= 0.6 ? '리드 중' : myRatio <= 0.4 ? '뒤처지는 중' : '박빙';
             contextDesc = `매치 ${Math.floor(elapsedSec/60)}분 경과, 약 45초 이상 점수 변동이 없는 고요한 상황입니다. 현재 점수: ${scoreDesc}.`;
+        } else if (situation === 'concede') {
+            const rn = matchState?.roundNumber || 1;
+            const rw = matchState?.roundWins || { my: 0, opp: 0 };
+            contextDesc = `${rn}판 3분 경과, 현재 점수 크게 뒤처지는 중(${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%). 시리즈 ${rw.my}:${rw.opp}로 앞서고 있어 이번 판은 내주더라도 다음 판에 집중하자는 분위기.`;
         } else if (situation === 'roundEnd') {
             const rn = matchState?.roundNumber || 1;
             const rw = matchState?.roundWins || { my: 0, opp: 0 };
@@ -1107,6 +1120,20 @@ async function processMatchCoach(userId, triggerType, matchState) {
                     ];
                     return msgs[Math.floor(Math.random() * msgs.length)];
                 }
+            }
+            // ── 이번 판 포기, 다음 판 집중
+            if (situation === 'concede') {
+                const rn = matchState?.roundNumber || 1;
+                const rw = matchState?.roundWins || { my: 0, opp: 0 };
+                const nextRound = rn + 1;
+                const msgs = [
+                    `${rn}판은 내주고 ${nextRound}판에서 결판내요 💪`,
+                    `이번 판은 쉬어가요. ${nextRound}판이 진짜예요 🔥`,
+                    `${rw.my}:${rw.opp} 앞서요! ${nextRound}판만 이기면 돼요 ⚡`,
+                    `${rn}판 여기까지. ${nextRound}판 전력 집중합니다 🎯`,
+                    `잠깐 내줘도 괜찮아요. ${nextRound}판에서 뒤집어요 💪`,
+                ];
+                return msgs[Math.floor(Math.random() * msgs.length)];
             }
             // ── 시리즈 최종 종료
             if (situation === 'seriesEnd') {
