@@ -1048,7 +1048,7 @@ async function processMatchCoach(userId, triggerType, matchState) {
             myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
 
             if (remainingSec <= 50) situation = 'globe';       // 50초 이하: 글로브 멘트
-            else if (remainingSec <= 120) situation = 'sniper'; // 2분 이하: 스나이퍼 멘트
+            else if (remainingSec <= 120 && myRatio <= 0.45) situation = 'sniper'; // 2분 이하 + 지고 있을 때만 스나이퍼 멘트
             else if (elapsedSec <= 60) situation = 'early';
             else {
                 // 3분 이상 경과 + 크게 지고 있음 + 앞선 판 있음 → 다음 판 집중 멘트
@@ -1181,31 +1181,17 @@ async function processMatchCoach(userId, triggerType, matchState) {
                     return msgs[Math.floor(Math.random() * msgs.length)];
                 }
             }
-            // ── 2분 이하: 스나이퍼 멘트
+            // ── 2분 이하 + 지고 있을 때만: 스나이퍼 역전 기대 멘트
             if (situation === 'sniper') {
-                if (myRatio <= 0.4) {
-                    // 뒤처지는 중 → 역전 스나이퍼 기대
-                    const msgs = [
-                        '마지막 역전 스나이퍼! 지금 이 순간을 위해 기다렸어요 🎯',
-                        '2분 안에 뒤집은 팀이 진짜 강팀! 스나이퍼 출동 🎯',
-                        '스나이퍼 한 방이면 판 뒤집힙니다. 지금이에요 ⚡',
-                    ];
-                    return msgs[Math.floor(Math.random() * msgs.length)];
-                } else if (myRatio >= 0.6) {
-                    // 앞서는 중 → 상대 스나이퍼 경계
-                    const msgs = [
-                        '2분 남았어요! 상대 스나이퍼 조심, 끝까지 집중 🔥',
-                        '마지막 스퍼트! 이 리드 그대로 가져가봐요 💨',
-                    ];
-                    return msgs[Math.floor(Math.random() * msgs.length)];
-                } else {
-                    // 박빙 → 스나이퍼 타이밍 강조
-                    const msgs = [
-                        '박빙 승부! 마지막 스나이퍼가 승부를 가릅니다 🎯',
-                        '지금 이 박빙, 스나이퍼 한 방으로 끝납니다 ⚡',
-                    ];
-                    return msgs[Math.floor(Math.random() * msgs.length)];
-                }
+                // situation 자체가 myRatio <= 0.45일 때만 발동됨
+                const msgs = [
+                    `${remainingSec}초 남았어요! 역전 스나이퍼 지금이에요 🎯`,
+                    `마지막 ${Math.floor(remainingSec/60)}분! 스나이퍼 한 방이면 뒤집힙니다 ⚡`,
+                    `${remainingSec}초 안에 나타날 스나이퍼 기다립니다 🎯`,
+                    `역전의 스나이퍼! 지금 이 순간을 위해 기다려왔어요 🔥`,
+                    `${remainingSec}초! 스나이퍼 주인공 지금 나와주세요 ⚡`,
+                ];
+                return msgs[Math.floor(Math.random() * msgs.length)];
             }
             // 틱파인드 언급 (20% 확률로만)
             const tikfindMsgs = [
