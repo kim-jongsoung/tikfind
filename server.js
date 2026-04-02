@@ -1111,14 +1111,26 @@ async function processMatchCoach(userId, triggerType, matchState) {
             // ── 시리즈 최종 종료
             if (situation === 'seriesEnd') {
                 const rw = matchState?.roundWins || { my: 0, opp: 0 };
-                const endMsgs = [
-                    '오늘 매치 함께해줘서 진심으로 감사해요 💖',
-                    `${rw.my}:${rw.opp}로 마무리! 모두 수고했어요 🙏`,
-                    '끝까지 함께해주신 모든 분 감사합니다 🎉',
-                    '오늘 이 순간 잊지 못할 거예요. 고마워요 💖',
-                    '우리 모두 최고였어요! 다음에 또 만나요 🔥',
-                ];
-                return endMsgs[Math.floor(Math.random() * endMsgs.length)];
+                const seriesWon = rw.my >= 2;
+                if (seriesWon) {
+                    const msgs = [
+                        `${rw.my}:${rw.opp} 승리! 오늘 함께해줘서 고마워요 💖`,
+                        '시리즈 우승! 여러분 덕분이에요 🏆',
+                        `${rw.my}:${rw.opp}로 마무리! 최고였어요 🔥`,
+                        '끝까지 응원해줘서 진심으로 감사해요 🙏',
+                        '오늘 이 승리, 다 함께 만든 거예요 💪',
+                    ];
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                } else {
+                    const msgs = [
+                        `${rw.my}:${rw.opp} 아쉬웠지만 함께해줘서 고마워요 💖`,
+                        '오늘 결과보다 함께한 시간이 더 빛났어요 ✨',
+                        '다음엔 꼭 뒤집어요! 응원 감사해요 🙏',
+                        '끝까지 자리 지켜줘서 진심 고마워요 💪',
+                        '다음 매치엔 더 강해질 거예요! 고마워요 🔥',
+                    ];
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                }
             }
             // ── 50초 이하: 글로브 멘트 (지고 있을 때 더 강하게)
             if (situation === 'globe') {
@@ -2039,7 +2051,7 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                     const myTeam = hostPart?.teamId || 'A';
                     const myRoundPts = myTeam === 'A' ? tA : tB;
                     const oppRoundPts = myTeam === 'A' ? tB : tA;
-                    const roundWon = myRoundPts >= oppRoundPts;
+                    const roundWon = myRoundPts > oppRoundPts;
 
                     const roundWins = endState.roundWins || { my: 0, opp: 0 };
                     if (roundWon) roundWins.my += 1;
