@@ -957,6 +957,7 @@ async function processMatchCoach(userId, triggerType, matchState) {
         let myPoints = 0, opponentPoints = 0, totalPoints = 0, myRatio = 0.5;
         let elapsedSec = 0, remainingSec = 300;
         const MATCH_DURATION = 300; // 5분
+        const roundLabel = (n) => ['첫째', '둘째', '셋째'][n - 1] || `${n}번째`;
 
         // participants + hostTiktokId 대조로 호스트 팀 정확히 판별
         const resolvePoints = (matchState) => {
@@ -1071,12 +1072,12 @@ async function processMatchCoach(userId, triggerType, matchState) {
         } else if (situation === 'concede') {
             const rn = matchState?.roundNumber || 1;
             const rw = matchState?.roundWins || { my: 0, opp: 0 };
-            contextDesc = `${rn}판 3분 경과, 현재 점수 크게 뒤처지는 중(${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%). 시리즈 ${rw.my}:${rw.opp}로 앞서고 있어 이번 판은 내주더라도 다음 판에 집중하자는 분위기.`;
+            contextDesc = `${roundLabel(rn)}판 3분 경과, 현재 점수 크게 뒤처지는 중(${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%). 시리즈 ${rw.my}:${rw.opp}로 앞서고 있어 이번 판은 내주더라도 다음 판에 집중하자는 분위기.`;
         } else if (situation === 'roundEnd') {
             const rn = matchState?.roundNumber || 1;
             const rw = matchState?.roundWins || { my: 0, opp: 0 };
             const roundResult = myRatio >= 0.5 ? '승' : '패';
-            contextDesc = `${rn}판이 끝났습니다. 이번 판 결과: ${roundResult}. 현재 시리즈 스코어 ${rw.my}:${rw.opp}. 다음 판을 앞두고 있습니다.`;
+            contextDesc = `${roundLabel(rn)}판이 끝났습니다. 이번 판 결과: ${roundResult}. 현재 시리즈 스코어 ${rw.my}:${rw.opp}. 다음 판을 앞두고 있습니다.`;
         } else if (situation === 'seriesEnd') {
             const rw = matchState?.roundWins || { my: 0, opp: 0 };
             const seriesResult = rw.my >= 2 ? '최종 승리' : '최종 패배';
@@ -1107,16 +1108,16 @@ async function processMatchCoach(userId, triggerType, matchState) {
                 const nextRound = rn + 1;
                 if (myRatio >= 0.5) {
                     const msgs = [
-                        `${rn}판 승리! ${nextRound}판도 이 기세 이어가요 🔥`,
-                        `${rn}판 가져왔어요! ${nextRound}판 시작합니다 💪`,
-                        `${rn}판 승! 시리즈 ${rw.my}:${rw.opp}로 앞서요 ⚡`,
+                        `${roundLabel(rn)}판 승리! ${roundLabel(nextRound)}판도 이 기세 이어가요 🔥`,
+                        `${roundLabel(rn)}판 가져왔어요! ${roundLabel(nextRound)}판 시작합니다 💪`,
+                        `${roundLabel(rn)}판 승! 시리즈 ${rw.my}:${rw.opp}로 앞서요 ⚡`,
                     ];
                     return msgs[Math.floor(Math.random() * msgs.length)];
                 } else {
                     const msgs = [
-                        `${rn}판 아쉬웠어요! ${nextRound}판에서 뒤집어요 🔥`,
-                        `${rn}판 졌지만 아직 끝 아니에요! ${nextRound}판 가보자 💪`,
-                        `시리즈 ${rw.my}:${rw.opp}. ${nextRound}판이 진짜 승부예요 ⚡`,
+                        `${roundLabel(rn)}판 아쉬웠어요! ${roundLabel(nextRound)}판에서 뒤집어요 🔥`,
+                        `${roundLabel(rn)}판 졌지만 아직 끝 아니에요! ${roundLabel(nextRound)}판 가보자 💪`,
+                        `시리즈 ${rw.my}:${rw.opp}. ${roundLabel(nextRound)}판이 진짜 승부예요 ⚡`,
                     ];
                     return msgs[Math.floor(Math.random() * msgs.length)];
                 }
@@ -1127,11 +1128,11 @@ async function processMatchCoach(userId, triggerType, matchState) {
                 const rw = matchState?.roundWins || { my: 0, opp: 0 };
                 const nextRound = rn + 1;
                 const msgs = [
-                    `${rn}판은 내주고 ${nextRound}판에서 결판내요 💪`,
-                    `이번 판은 쉬어가요. ${nextRound}판이 진짜예요 🔥`,
-                    `${rw.my}:${rw.opp} 앞서요! ${nextRound}판만 이기면 돼요 ⚡`,
-                    `${rn}판 여기까지. ${nextRound}판 전력 집중합니다 🎯`,
-                    `잠깐 내줘도 괜찮아요. ${nextRound}판에서 뒤집어요 💪`,
+                    `${roundLabel(rn)}판은 내주고 ${roundLabel(nextRound)}판에서 결판내요 💪`,
+                    `이번 판은 쉬어가요. ${roundLabel(nextRound)}판이 진짜예요 🔥`,
+                    `${rw.my}:${rw.opp} 앞서요! ${roundLabel(nextRound)}판만 이기면 돼요 ⚡`,
+                    `${roundLabel(rn)}판 여기까지. ${roundLabel(nextRound)}판 전력 집중합니다 🎯`,
+                    `잠깐 내줘도 괜찮아요. ${roundLabel(nextRound)}판에서 뒤집어요 💪`,
                 ];
                 return msgs[Math.floor(Math.random() * msgs.length)];
             }
