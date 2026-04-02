@@ -50,12 +50,7 @@ function loadSidebar() {
                             <span data-i18n="billing">구독 관리</span>
                         </a>
                     </li>
-                    <li>
-                        <a href="/dashboard/history" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="history">
-                            <i class="fas fa-history mr-3"></i>
-                            <span data-i18n="history">히스토리</span>
-                        </a>
-                    </li>
+
                     <li>
                         <a href="/dashboard/report" class="nav-link unlimited-menu flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="report">
                             <i class="fas fa-chart-line mr-3 text-purple-400"></i>
