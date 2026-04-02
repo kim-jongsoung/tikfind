@@ -1047,8 +1047,8 @@ async function processMatchCoach(userId, triggerType, matchState) {
             totalPoints = myPoints + opponentPoints;
             myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
 
-            if (remainingSec <= 50) situation = 'globe';       // 50초 이하: 글로브 멘트
-            else if (remainingSec <= 120 && myRatio <= 0.45) situation = 'sniper'; // 2분 이하 + 지고 있을 때만 스나이퍼 멘트
+            if (remainingSec <= 45 && myRatio <= 0.45) situation = 'sniper';       // 45초 이하 + 지고 있을 때: 스나이퍼 역전 멘트
+            else if (remainingSec <= 90 && myRatio <= 0.55) situation = 'globe';  // 90초 이하 + 박빙/지고 있을 때: 글로브 멘트
             else if (elapsedSec <= 60) situation = 'early';
             else {
                 // 3분 이상 경과 + 크게 지고 있음 + 앞선 판 있음 → 다음 판 집중 멘트
@@ -1090,9 +1090,9 @@ async function processMatchCoach(userId, triggerType, matchState) {
                               myRatio <= 0.4 ? `뒤처지는 중 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
                               `박빙 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)`;
             if (situation === 'globe') {
-                contextDesc = `매치 종료 ${remainingSec}초 전! 현재 점수 ${scoreDesc}. 마지막 역전 기회, 글로브 선물이 판세를 바꿀 수 있는 순간.`;
+                contextDesc = `매치 종료 ${remainingSec}초 전 (1분 30초 이하). 현재 점수 ${scoreDesc}. 글로브 아이템은 구매 시 점수 최대 5배, 지금이 역전할 수 있는 최고의 방어선.`;
             } else if (situation === 'sniper') {
-                contextDesc = `매치 종료 ${remainingSec}초 전 (${Math.floor(remainingSec/60)}분 ${remainingSec%60}초). 현재 점수 ${scoreDesc}. 마지막 역전 스나이퍼가 나올 타이밍.`;
+                contextDesc = `매치 종료 ${remainingSec}초 전! 현재 점수 ${scoreDesc}. 지금 이 순간 마지막 스나이퍼가 나타나 역전시켜줄 타이밍.`;
             } else {
                 const timeDesc = situation === 'early' ? '초반' : '중반';
                 contextDesc = `매치 ${timeDesc} (경과 ${Math.floor(elapsedSec/60)}분 ${elapsedSec%60}초, 남은 시간 ${Math.floor(remainingSec/60)}분 ${remainingSec%60}초), 현재 점수 ${scoreDesc}.`;
@@ -1274,8 +1274,8 @@ async function processMatchCoach(userId, triggerType, matchState) {
 - 이모지 1개 포함 가능
 - 선물 구걸, 미라클 언급 절대 금지
 - "틱파인드" 언급은 분위기 힌트에 틱파인드가 포함된 경우에만 허용, 그 외 절대 금지
-- 스나이퍼(마지막 역전 주인공): 종료 2분 이내 상황에서만 언급
-- 글로브 선물: 종료 50초 이내 지고 있을 때 자연스럽게 언급
+- 스나이퍼(마지막 역전 주인공): 종료 45초 이내 + 지고 있을 때만 언급
+- 글로브 선물(구매 시 점수 최대 5배): 종료 90초 이내 + 박빙이거나 지고 있을 때 자연스럽게 언급
 - 매치 종료 시에는 감사/원팀/응원 멘트로 마무리
 - 설명 없이 멘트만 출력`;
 
