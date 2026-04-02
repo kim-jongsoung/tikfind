@@ -957,25 +957,43 @@ async function processMatchCoach(userId, triggerType, matchState) {
         let elapsedSec = 0, remainingSec = 300;
         const MATCH_DURATION = 300; // 5분
 
-        // 호스트는 항상 teamArmies[0] = 팀A (좌측상단 고정)
+        // participants + hostTiktokId 대조로 호스트 팀 정확히 판별
         const resolvePoints = (matchState) => {
             const armies = matchState?.armies || [];
             const teamAPoints = matchState?.teamAPoints ?? null;
             const teamBPoints = matchState?.teamBPoints ?? null;
+            const hostTiktokId = (matchState?.hostTiktokId || '').toLowerCase().replace(/^@+/, '');
 
-            // teamAPoints/teamBPoints가 있으면 팀A = 우리팀으로 고정
-            if (teamAPoints !== null && teamBPoints !== null) {
-                console.log(`🔍 [resolvePoints] teamA=${teamAPoints} teamB=${teamBPoints} → my=${teamAPoints} opp=${teamBPoints}`);
-                return { myPoints: teamAPoints, opponentPoints: teamBPoints };
+            // 호스트 팀 판별: participants에서 hostTiktokId와 uniqueId 매칭
+            let myTeam = 'A'; // 기본값
+            const participants = matchState?.participants || [];
+            if (hostTiktokId && participants.length > 0) {
+                const hostParticipant = participants.find(p =>
+                    (p.uniqueId || '').toLowerCase().replace(/^@+/, '') === hostTiktokId
+                );
+                if (hostParticipant) {
+                    myTeam = hostParticipant.teamId || 'A';
+                    console.log(`🔍 [resolvePoints] 호스트 "${hostTiktokId}" → 팀${myTeam} 확인`);
+                } else {
+                    console.log(`🔍 [resolvePoints] 호스트 "${hostTiktokId}" participants에서 못 찾음 → 팀A 기본값. participants: ${JSON.stringify(participants.map(p=>p.uniqueId))}`);
+                }
             }
-            // fallback: armies 배열에서 팀A 합산
+
+            // teamAPoints/teamBPoints가 있으면 팀 판별 결과로 my/opp 결정
+            if (teamAPoints !== null && teamBPoints !== null) {
+                const my = myTeam === 'A' ? teamAPoints : teamBPoints;
+                const opp = myTeam === 'A' ? teamBPoints : teamAPoints;
+                console.log(`🔍 [resolvePoints] teamA=${teamAPoints} teamB=${teamBPoints} 호스트팀=${myTeam} → my=${my} opp=${opp}`);
+                return { myPoints: my, opponentPoints: opp };
+            }
+            // fallback: armies 배열에서 myTeam 합산
             if (armies.length > 0) {
-                const teamA = armies.filter(a => a.teamId === 'A');
-                const teamB = armies.filter(a => a.teamId === 'B');
+                const myArmies = armies.filter(a => a.teamId === myTeam);
+                const oppArmies = armies.filter(a => a.teamId !== myTeam);
                 console.log(`🔍 [resolvePoints fallback] armies=${JSON.stringify(armies.map(a=>({id:a.hostUserId,team:a.teamId,pts:a.points})))}`);
-                if (teamA.length > 0) {
-                    const my = teamA.reduce((s, a) => s + (a.points || 0), 0);
-                    const opp = teamB.reduce((s, a) => s + (a.points || 0), 0);
+                if (myArmies.length > 0) {
+                    const my = myArmies.reduce((s, a) => s + (a.points || 0), 0);
+                    const opp = oppArmies.reduce((s, a) => s + (a.points || 0), 0);
                     return { myPoints: my, opponentPoints: opp };
                 }
                 return { myPoints: armies[0]?.points || 0, opponentPoints: armies[1]?.points || 0 };
