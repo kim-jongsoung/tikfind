@@ -28,7 +28,8 @@ const liveConnections = new Map();
 // 라이브 상태 저장 (userId → { isLive, tiktokId })
 const liveStatusMap = new Map();
 
-// 매치 상태 저장 (userId → { battleId, participants, startTime, armies, lastCoachTime, coachCount })
+// 매치 상태 저장 (userId → { battleId, participants, startTime, armies, lastCoachTime, coachCount, roundNumber, roundWins })
+// roundWins: { my: 0, opp: 0 } - 3판 2승제 시리즈 스코어
 let matchStateMap = new Map();
 
 // AI 발음 코치 캐시 시스템
@@ -1013,6 +1014,22 @@ async function processMatchCoach(userId, triggerType, matchState) {
                 myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
                 elapsedSec = Math.floor((Date.now() - matchState.startTime) / 1000);
             }
+        } else if (triggerType === 'roundEnd') {
+            situation = 'roundEnd';
+            if (matchState) {
+                const r = resolvePoints(matchState);
+                myPoints = r.myPoints; opponentPoints = r.opponentPoints;
+                totalPoints = myPoints + opponentPoints;
+                myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
+            }
+        } else if (triggerType === 'seriesEnd') {
+            situation = 'seriesEnd';
+            if (matchState) {
+                const r = resolvePoints(matchState);
+                myPoints = r.myPoints; opponentPoints = r.opponentPoints;
+                totalPoints = myPoints + opponentPoints;
+                myRatio = totalPoints > 0 ? myPoints / totalPoints : 0.5;
+            }
         } else if (triggerType === 'end') {
             situation = 'end';
             if (matchState) {
@@ -1042,10 +1059,18 @@ async function processMatchCoach(userId, triggerType, matchState) {
         } else if (situation === 'quiet') {
             const scoreDesc = myRatio >= 0.6 ? '리드 중' : myRatio <= 0.4 ? '뒤처지는 중' : '박빙';
             contextDesc = `매치 ${Math.floor(elapsedSec/60)}분 경과, 약 45초 이상 점수 변동이 없는 고요한 상황입니다. 현재 점수: ${scoreDesc}.`;
+        } else if (situation === 'roundEnd') {
+            const rn = matchState?.roundNumber || 1;
+            const rw = matchState?.roundWins || { my: 0, opp: 0 };
+            const roundResult = myRatio >= 0.5 ? '승' : '패';
+            contextDesc = `${rn}판이 끝났습니다. 이번 판 결과: ${roundResult}. 현재 시리즈 스코어 ${rw.my}:${rw.opp}. 다음 판을 앞두고 있습니다.`;
+        } else if (situation === 'seriesEnd') {
+            const rw = matchState?.roundWins || { my: 0, opp: 0 };
+            const seriesResult = rw.my >= 2 ? '최종 승리' : '최종 패배';
+            contextDesc = `3판 2승 매치가 모두 끝났습니다. 최종 시리즈 스코어 ${rw.my}:${rw.opp}, ${seriesResult}. 오늘 함께한 모든 분들께 감사 멘트를 전합니다.`;
         } else if (situation === 'end') {
-            const resultDesc = myRatio >= 0.5 ? `승리 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
-                                                `패배 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)`;
-            contextDesc = `매치가 방금 종료됐습니다. 결과: ${resultDesc}. 다음 판이 이어질 수 있습니다.`;
+            const resultDesc = myRatio >= 0.5 ? `승리` : `패배`;
+            contextDesc = `매치가 방금 종료됐습니다. 결과: ${resultDesc}. 시청자들에게 감사 멘트를 전합니다.`;
         } else {
             const scoreDesc = myRatio >= 0.6 ? `리드 중 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
                               myRatio <= 0.4 ? `뒤처지는 중 (${Math.round(myRatio*100)}% : ${Math.round((1-myRatio)*100)}%)` :
@@ -1062,6 +1087,39 @@ async function processMatchCoach(userId, triggerType, matchState) {
 
         // 상황별 분위기 힌트 (시간 + 점수 기반)
         const strategyHint = (() => {
+            // ── 판 종료 (다음 판 남음)
+            if (situation === 'roundEnd') {
+                const rn = matchState?.roundNumber || 1;
+                const rw = matchState?.roundWins || { my: 0, opp: 0 };
+                const nextRound = rn + 1;
+                if (myRatio >= 0.5) {
+                    const msgs = [
+                        `${rn}판 승리! ${nextRound}판도 이 기세 이어가요 🔥`,
+                        `${rn}판 가져왔어요! ${nextRound}판 시작합니다 💪`,
+                        `${rn}판 승! 시리즈 ${rw.my}:${rw.opp}로 앞서요 ⚡`,
+                    ];
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                } else {
+                    const msgs = [
+                        `${rn}판 아쉬웠어요! ${nextRound}판에서 뒤집어요 🔥`,
+                        `${rn}판 졌지만 아직 끝 아니에요! ${nextRound}판 가보자 💪`,
+                        `시리즈 ${rw.my}:${rw.opp}. ${nextRound}판이 진짜 승부예요 ⚡`,
+                    ];
+                    return msgs[Math.floor(Math.random() * msgs.length)];
+                }
+            }
+            // ── 시리즈 최종 종료
+            if (situation === 'seriesEnd') {
+                const rw = matchState?.roundWins || { my: 0, opp: 0 };
+                const endMsgs = [
+                    '오늘 매치 함께해줘서 진심으로 감사해요 💖',
+                    `${rw.my}:${rw.opp}로 마무리! 모두 수고했어요 🙏`,
+                    '끝까지 함께해주신 모든 분 감사합니다 🎉',
+                    '오늘 이 순간 잊지 못할 거예요. 고마워요 💖',
+                    '우리 모두 최고였어요! 다음에 또 만나요 🔥',
+                ];
+                return endMsgs[Math.floor(Math.random() * endMsgs.length)];
+            }
             // ── 50초 이하: 글로브 멘트 (지고 있을 때 더 강하게)
             if (situation === 'globe') {
                 if (myRatio <= 0.45) {
@@ -1932,6 +1990,10 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 hostTiktokId = (hostUser?.tiktokId || '').toLowerCase();
             } catch(e) {}
             const matchStartTime = tiktokData.timestamp || Date.now();
+            // 기존 시리즈 스코어 유지 (연속 판 진행 시)
+            const prevState = matchStateMap.get(String(userId));
+            const roundWins = prevState?.roundWins || { my: 0, opp: 0 };
+            const roundNumber = prevState ? (prevState.roundNumber || 1) : 1;
             matchStateMap.set(String(userId), {
                 battleId: tiktokData.battleId,
                 participants: tiktokData.participants || [],
@@ -1941,8 +2003,11 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 coachCount: 0,
                 lastScores: null,
                 quietSince: Date.now(),
-                hostTiktokId
+                hostTiktokId,
+                roundNumber,
+                roundWins
             });
+            console.log(`⚔️ [${userId}] ${roundNumber}판 시작 | 시리즈: ${roundWins.my}:${roundWins.opp}`);
             io.to(userId).emit('match-start', tiktokData);
             console.log(`⚔️ [${userId}] 매치 시작 감지: ${JSON.stringify(tiktokData.participants?.map(p => p.uniqueId))} | 호스트: ${hostTiktokId}`);
             // 시작 후 30초 이내 멘트 차단 (lastCoachTime = startTime + 30초)
@@ -1958,15 +2023,58 @@ app.post('/api/live/tiktok-data', async (req, res) => {
             // 매치 종료 시 마무리 코치 발동 후 상태 제거
             if (battleStatus === 2) {
                 const endState = matchStateMap.get(String(userId));
-                console.log(`🏁 [${userId}] 매치 종료 감지 - 마무리 코치 발동`);
                 io.to(userId).emit('match-end', tiktokData);
-                // 마무리 코치 메시지 (종료 직후 1회)
+
                 if (endState) {
                     endState.armies = tiktokData.armies || endState.armies;
-                    endState.lastCoachTime = 0; // 강제 발동
-                    processMatchCoach(userId, 'end', endState).catch(() => {});
+                    if (tiktokData.teamAPoints != null) endState.teamAPoints = tiktokData.teamAPoints;
+                    if (tiktokData.teamBPoints != null) endState.teamBPoints = tiktokData.teamBPoints;
+
+                    // 이번 판 승패 판별 (resolvePoints 없이 직접 계산)
+                    const tA = endState.teamAPoints || 0;
+                    const tB = endState.teamBPoints || 0;
+                    const hostP = endState.participants || [];
+                    const hostId = (endState.hostTiktokId || '').toLowerCase().replace(/^@+/, '');
+                    const hostPart = hostP.find(p => (p.uniqueId||'').toLowerCase().replace(/^@+/,'') === hostId);
+                    const myTeam = hostPart?.teamId || 'A';
+                    const myRoundPts = myTeam === 'A' ? tA : tB;
+                    const oppRoundPts = myTeam === 'A' ? tB : tA;
+                    const roundWon = myRoundPts >= oppRoundPts;
+
+                    const roundWins = endState.roundWins || { my: 0, opp: 0 };
+                    if (roundWon) roundWins.my += 1;
+                    else roundWins.opp += 1;
+                    const roundNumber = endState.roundNumber || 1;
+
+                    console.log(`🏁 [${userId}] ${roundNumber}판 종료 | 판결과: ${roundWon?'승':'패'} | 시리즈: ${roundWins.my}:${roundWins.opp}`);
+
+                    const seriesOver = roundWins.my >= 2 || roundWins.opp >= 2;
+                    endState.roundWins = roundWins;
+                    endState.roundNumber = roundNumber;
+                    endState.seriesOver = seriesOver;
+                    endState.lastCoachTime = 0;
+
+                    if (seriesOver) {
+                        // 시리즈 최종 종료 멘트
+                        processMatchCoach(userId, 'seriesEnd', endState).catch(() => {});
+                        matchStateMap.delete(String(userId));
+                    } else {
+                        // 판 종료 멘트 후 다음 판 준비 상태 유지
+                        processMatchCoach(userId, 'roundEnd', endState).catch(() => {});
+                        // 다음 판을 위해 roundNumber 증가, 점수 초기화
+                        endState.roundNumber = roundNumber + 1;
+                        endState.teamAPoints = 0;
+                        endState.teamBPoints = 0;
+                        endState.armies = [];
+                        endState.lastScores = null;
+                        endState.startTime = Date.now();
+                        endState.lastCoachTime = Date.now() + 30000;
+                        endState.quietSince = Date.now();
+                        matchStateMap.set(String(userId), endState);
+                    }
+                } else {
+                    matchStateMap.delete(String(userId));
                 }
-                matchStateMap.delete(String(userId));
             } else {
                 let matchState = matchStateMap.get(String(userId));
                 // matchStart를 못 받았어도 matchScore가 오면 상태 자동 생성 (armies 없어도)
