@@ -965,12 +965,14 @@ async function processMatchCoach(userId, triggerType, matchState) {
 
             // teamAPoints/teamBPoints가 있으면 팀A = 우리팀으로 고정
             if (teamAPoints !== null && teamBPoints !== null) {
+                console.log(`🔍 [resolvePoints] teamA=${teamAPoints} teamB=${teamBPoints} → my=${teamAPoints} opp=${teamBPoints}`);
                 return { myPoints: teamAPoints, opponentPoints: teamBPoints };
             }
             // fallback: armies 배열에서 팀A 합산
             if (armies.length > 0) {
                 const teamA = armies.filter(a => a.teamId === 'A');
                 const teamB = armies.filter(a => a.teamId === 'B');
+                console.log(`🔍 [resolvePoints fallback] armies=${JSON.stringify(armies.map(a=>({id:a.hostUserId,team:a.teamId,pts:a.points})))}`);
                 if (teamA.length > 0) {
                     const my = teamA.reduce((s, a) => s + (a.points || 0), 0);
                     const opp = teamB.reduce((s, a) => s + (a.points || 0), 0);
@@ -978,6 +980,7 @@ async function processMatchCoach(userId, triggerType, matchState) {
                 }
                 return { myPoints: armies[0]?.points || 0, opponentPoints: armies[1]?.points || 0 };
             }
+            console.log(`🔍 [resolvePoints] 데이터 없음 → 0:0`);
             return { myPoints: 0, opponentPoints: 0 };
         };
 
@@ -1184,7 +1187,7 @@ async function processMatchCoach(userId, triggerType, matchState) {
         const coachMessage = completion.choices[0]?.message?.content?.trim();
         if (!coachMessage) return;
 
-        console.log(`🤖 [${userId}] AI 매치 코치 (${situation}): ${coachMessage}`);
+        console.log(`🤖 [${userId}] AI 매치 코치 (${situation}) | my=${myPoints} opp=${opponentPoints} ratio=${myRatio.toFixed(2)} | 경과=${elapsedSec}s 남은=${remainingSec}s | 멘트: ${coachMessage}`);
 
         const coachPayload = {
             type: 'match-coach',
