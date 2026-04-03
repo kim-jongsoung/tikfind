@@ -252,6 +252,7 @@ app.get('/api/current_user', async (req, res) => {
                 profileImage: req.user.profileImage,
                 plan: req.user.plan,
                 tiktokId: req.user.tiktokId,
+                tiktokUserId: req.user.tiktokUserId || '',
                 streamerPersona: req.user.streamerPersona || '',
                 isSetupComplete: req.user.isSetupComplete,
                 authProvider: req.user.authProvider,
