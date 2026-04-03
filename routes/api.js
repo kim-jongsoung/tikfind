@@ -313,9 +313,12 @@ router.post('/change-tiktok', requireAuth, async (req, res) => {
                 const tempClient = new WebcastPushConnection(cleanTiktokId, { fetchRoomInfoOnConnect: false });
                 const roomData = await tempClient.fetchRoomInfo().catch(() => null);
                 if (roomData) {
+                    console.log(`🔍 [change-tiktok] roomData 전체: ${JSON.stringify(roomData).slice(0, 500)}`);
                     const numId = String(
                         roomData?.data?.owner?.id || roomData?.data?.owner?.user_id ||
-                        roomData?.owner?.id || roomData?.owner?.user_id || ''
+                        roomData?.owner?.id || roomData?.owner?.user_id ||
+                        roomData?.message?.owner?.id || roomData?.message?.owner?.user_id ||
+                        ''
                     );
                     if (numId && numId !== 'undefined') {
                         console.log(`🔑 [change-tiktok] "${cleanTiktokId}" → ${numId}`);
