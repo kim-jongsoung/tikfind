@@ -2195,14 +2195,61 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                     const now = Date.now();
                     const armies = tiktokData.armies || [];
 
-                    // myTeam 미확정 상태면 armies.hostUserId로 즉시 확정
-                    if (!matchState.myTeam && armies.length > 0 && matchState.hostTiktokUserId) {
-                        const aFound = armies.find(a => String(a.hostUserId) === String(matchState.hostTiktokUserId));
-                        if (aFound) {
-                            matchState.myTeam = aFound.teamId;
-                            console.log(`✅ [matchScore] armies hostUserId 매칭으로 myTeam 확정: "${matchState.hostTiktokUserId}" → 팀${matchState.myTeam}`);
-                        } else {
-                            console.log(`⚠️ [matchScore] hostUserId="${matchState.hostTiktokUserId}" armies에서 못 찾음 | armies=${JSON.stringify(armies.map(a=>({hid:a.hostUserId,team:a.teamId})))}`);
+                    // myTeam 미확정 상태면 hostUserId로 확정 시도
+                    if (!matchState.myTeam && armies.length > 0) {
+                        // ① DB에 이미 tiktokUserId 있으면 바로 매칭
+                        if (matchState.hostTiktokUserId) {
+                            const aFound = armies.find(a => String(a.hostUserId) === String(matchState.hostTiktokUserId));
+                            if (aFound) {
+                                matchState.myTeam = aFound.teamId;
+                                console.log(`✅ [matchScore] armies hostUserId 매칭: "${matchState.hostTiktokUserId}" → 팀${matchState.myTeam}`);
+                            } else {
+                                console.log(`⚠️ [matchScore] hostUserId="${matchState.hostTiktokUserId}" armies에서 못 찾음`);
+                            }
+                        }
+                        // ② tiktokUserId 없으면 tiktok-live-connector로 자동 조회 (1회만)
+                        if (!matchState.myTeam && matchState.hostTiktokId && !matchState._fetchingUserId) {
+                            matchState._fetchingUserId = true;
+                            (async () => {
+                                try {
+                                    const { WebcastPushConnection } = require('tiktok-live-connector');
+                                    const tid = matchState.hostTiktokId.replace(/^@+/, '');
+                                    const tempClient = new WebcastPushConnection(tid, { fetchRoomInfoOnConnect: false });
+                                    // roomInfo 직접 조회 (연결 없이)
+                                    const roomData = await tempClient.fetchRoomInfo().catch(() => null);
+                                    let numId = '';
+                                    if (roomData) {
+                                        // 다양한 경로에서 숫자 userId 추출
+                                        numId = String(
+                                            roomData?.data?.owner?.id ||
+                                            roomData?.data?.owner?.user_id ||
+                                            roomData?.owner?.id ||
+                                            roomData?.owner?.user_id ||
+                                            ''
+                                        );
+                                        console.log(`🔑 [matchScore] fetchRoomInfo 결과 keys: ${Object.keys(roomData?.data||roomData||{}).join(',')}`);
+                                    }
+                                    if (numId && numId !== '' && numId !== 'undefined') {
+                                        console.log(`🔑 [matchScore] tiktok-live-connector 조회로 userId 발견: "${tid}" → ${numId}`);
+                                        const User = require('./models/User');
+                                        await User.findByIdAndUpdate(userId, { tiktokUserId: numId });
+                                        matchState.hostTiktokUserId = numId;
+                                        const cur = matchStateMap.get(String(userId));
+                                        if (cur && !cur.myTeam) {
+                                            const curArmies = cur.armies || [];
+                                            const af = curArmies.find(a => String(a.hostUserId) === numId);
+                                            if (af) {
+                                                cur.myTeam = af.teamId;
+                                                console.log(`✅ [matchScore] connector 조회 후 myTeam 확정: 팀${cur.myTeam}`);
+                                            }
+                                        }
+                                    } else {
+                                        console.log(`⚠️ [matchScore] connector roomInfo에서 userId 못 찾음 (tid="${tid}") roomData=${JSON.stringify(roomData).slice(0,200)}`);
+                                    }
+                                } catch(e) {
+                                    console.log(`⚠️ [matchScore] connector 조회 오류: ${e.message}`);
+                                }
+                            })();
                         }
                     }
 
