@@ -31,6 +31,10 @@ const userSchema = new mongoose.Schema({
         sparse: true,
         trim: true
     },
+    tiktokUserId: {
+        type: String,
+        default: ''
+    },
     tiktokSessionId: {
         type: String,
         default: ''

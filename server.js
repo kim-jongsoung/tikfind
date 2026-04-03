@@ -964,16 +964,32 @@ async function processMatchCoach(userId, triggerType, matchState) {
             const armies = matchState?.armies || [];
             const teamAPoints = matchState?.teamAPoints ?? null;
             const teamBPoints = matchState?.teamBPoints ?? null;
-            // matchStart에서 확정된 myTeam 사용, 없으면 participants 재매칭 시도
+            // matchStart에서 확정된 myTeam 사용
             let myTeam = matchState?.myTeam || null;
             if (!myTeam) {
                 const hostTiktokId = (matchState?.hostTiktokId || '').toLowerCase().replace(/^@+/, '');
+                const hostUserId = matchState?.hostTiktokUserId || '';
                 const participants = matchState?.participants || [];
-                const found = participants.find(p =>
+                // ① participants uniqueId
+                const pFound = participants.find(p =>
                     (p.uniqueId || '').toLowerCase().replace(/^@+/, '') === hostTiktokId
                 );
-                myTeam = found?.teamId || 'A';
-                console.log(`⚠️ [resolvePoints] myTeam 미확정 → 재매칭: 호스트="${hostTiktokId}" → 팀${myTeam}`);
+                if (pFound) {
+                    myTeam = pFound.teamId;
+                    console.log(`✅ [resolvePoints] participants 매칭: "${hostTiktokId}" → 팀${myTeam}`);
+                }
+                // ② armies hostUserId(숫자) 매칭
+                if (!myTeam && hostUserId && armies.length > 0) {
+                    const aFound = armies.find(a => String(a.hostUserId) === String(hostUserId));
+                    if (aFound) {
+                        myTeam = aFound.teamId;
+                        console.log(`✅ [resolvePoints] armies hostUserId 매칭: "${hostUserId}" → 팀${myTeam}`);
+                    }
+                }
+                if (!myTeam) {
+                    myTeam = 'A';
+                    console.log(`⚠️ [resolvePoints] 호스트 팀 판별 실패 → 팀A 기본값 | tiktokId="${hostTiktokId}" tiktokUserId="${hostUserId}"`);
+                }
             }
 
             if (teamAPoints !== null && teamBPoints !== null) {
@@ -1307,6 +1323,8 @@ async function processMatchCoach(userId, triggerType, matchState) {
 async function processChatMessage(chatData) {
     const { userId, username, message, uniqueId, nickname, badges, userBadges,
             followRole, isModerator, isSubscriber, topGifterRank, teamMemberLevel, timestamp } = chatData;
+
+    if (!message || typeof message !== 'string') return;
 
     const User = require('./models/User');
     const UsageLog = require('./models/UsageLog');
@@ -1877,6 +1895,25 @@ app.post('/api/live/viewers', async (req, res) => {
     }
 });
 
+// 호스트 TikTok 숫자 userId DB 저장 (연결 시 1회)
+app.post('/api/live/tiktok-user-id', async (req, res) => {
+    try {
+        const { userId, tiktokUserId } = req.body;
+        if (!userId || !tiktokUserId) return res.json({ success: false });
+        const User = require('./models/User');
+        await User.findByIdAndUpdate(userId, { tiktokUserId: String(tiktokUserId) });
+        // 메모리의 matchState에도 즉시 반영
+        if (matchStateMap?.has(String(userId))) {
+            matchStateMap.get(String(userId)).hostTiktokUserId = String(tiktokUserId);
+        }
+        console.log(`🔑 [tiktok-user-id] ${userId} → tiktokUserId=${tiktokUserId} 저장 완료`);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('❌ tiktok-user-id 저장 오류:', e.message);
+        res.status(500).json({ success: false });
+    }
+});
+
 // Desktop App → 서버 TikTok 데이터 수신 (HTTP POST 방식)
 app.post('/api/live/tiktok-data', async (req, res) => {
     try {
@@ -2002,12 +2039,14 @@ app.post('/api/live/tiktok-data', async (req, res) => {
         } else if (type === 'matchStart') {
             // 매치 시작 - 상태 저장
             if (!matchStateMap) matchStateMap = new Map();
-            // DB에서 호스트 tiktokId 조회
+            // DB에서 호스트 tiktokId + tiktokUserId 조회
             let hostTiktokId = '';
+            let hostTiktokUserId = '';
             try {
                 const User = require('./models/User');
                 const hostUser = await User.findById(userId).lean();
                 hostTiktokId = (hostUser?.tiktokId || '').toLowerCase().replace(/^@+/, '');
+                hostTiktokUserId = hostUser?.tiktokUserId || '';
             } catch(e) {}
 
             // participants에서 hostTiktokId 매칭으로 myTeam 즉시 확정
@@ -2023,8 +2062,8 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 }
             }
             if (!myTeam) {
-                myTeam = 'A';
-                console.log(`⚠️ [matchStart] 호스트 "${hostTiktokId}" 팀 판별 실패 → 팀A 기본값`);
+                myTeam = null; // armies가 오면 hostUserId로 재확정
+                console.log(`⚠️ [matchStart] 호스트 "${hostTiktokId}" 팀 판별 보류 → armies 수신 시 재확정`);
                 console.log(`   participants: ${JSON.stringify(participants.map(p => ({ uid: p.uniqueId, team: p.teamId })))}`);
             }
 
@@ -2036,7 +2075,7 @@ app.post('/api/live/tiktok-data', async (req, res) => {
             matchStateMap.set(String(userId), {
                 battleId: tiktokData.battleId,
                 participants,
-                myTeam,          // ← 호스트 팀 고정 저장
+                myTeam,
                 startTime: matchStartTime,
                 armies: [],
                 lastCoachTime: matchStartTime + 30000,
@@ -2044,6 +2083,7 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 lastScores: null,
                 quietSince: Date.now(),
                 hostTiktokId,
+                hostTiktokUserId,
                 roundNumber,
                 roundWins
             });
@@ -2117,22 +2157,26 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 // matchStart를 못 받았어도 matchScore가 오면 상태 자동 생성 (armies 없어도)
                 if (!matchState) {
                     let hostTiktokId = '';
+                    let hostTiktokUserId = '';
                     try {
                         const User = require('./models/User');
                         const hostUser = await User.findById(userId).lean();
-                        hostTiktokId = (hostUser?.tiktokId || '').toLowerCase();
+                        hostTiktokId = (hostUser?.tiktokId || '').toLowerCase().replace(/^@+/, '');
+                        hostTiktokUserId = hostUser?.tiktokUserId || '';
                     } catch(e) {}
                     const autoStartTime = Date.now();
                     matchState = {
                         battleId: tiktokData.battleId || null,
                         participants: [],
+                        myTeam: null,
                         startTime: autoStartTime,
                         armies: [],
-                        lastCoachTime: autoStartTime + 30000, // 시작 후 30초 이내 멘트 차단
+                        lastCoachTime: autoStartTime + 30000,
                         coachCount: 0,
                         lastScores: null,
                         quietSince: Date.now(),
-                        hostTiktokId
+                        hostTiktokId,
+                        hostTiktokUserId
                     };
                     matchStateMap.set(String(userId), matchState);
                     console.log(`⚔️ [${userId}] matchScore로 매치 상태 자동 생성 | 호스트: ${hostTiktokId}`);
@@ -2140,6 +2184,18 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 if (matchState) {
                     const now = Date.now();
                     const armies = tiktokData.armies || [];
+
+                    // myTeam 미확정 상태면 armies.hostUserId로 즉시 확정
+                    if (!matchState.myTeam && armies.length > 0 && matchState.hostTiktokUserId) {
+                        const aFound = armies.find(a => String(a.hostUserId) === String(matchState.hostTiktokUserId));
+                        if (aFound) {
+                            matchState.myTeam = aFound.teamId;
+                            console.log(`✅ [matchScore] armies hostUserId 매칭으로 myTeam 확정: "${matchState.hostTiktokUserId}" → 팀${matchState.myTeam}`);
+                        } else {
+                            console.log(`⚠️ [matchScore] hostUserId="${matchState.hostTiktokUserId}" armies에서 못 찾음 | armies=${JSON.stringify(armies.map(a=>({hid:a.hostUserId,team:a.teamId})))}`);
+                        }
+                    }
+
                     // 팀별 합산 점수 업데이트
                     if (tiktokData.teamAPoints != null) matchState.teamAPoints = tiktokData.teamAPoints;
                     if (tiktokData.teamBPoints != null) matchState.teamBPoints = tiktokData.teamBPoints;

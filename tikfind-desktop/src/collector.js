@@ -85,11 +85,30 @@ class TikTokCollector extends EventEmitter {
 
     setupListeners() {
         // 연결 성공
-        this.client.on('connected', () => {
+        this.client.on('connected', async (state) => {
             console.log('✅ TikTok Live 연결 성공');
             this.isRunning = true;
             this.emit('connected');
             this.broadcastStatus(true);
+            // 호스트 숫자 userId 추출 → 서버 DB에 저장
+            try {
+                const roomInfo = state?.roomInfo || this.client.roomInfo || {};
+                const hostUserId = String(
+                    roomInfo?.host_info?.user_id ||
+                    roomInfo?.owner?.id ||
+                    roomInfo?.owner?.user_id ||
+                    state?.hostUserId || ''
+                );
+                console.log(`🔑 [connected] 호스트 숫자 userId: "${hostUserId}"`);
+                if (hostUserId && hostUserId !== '') {
+                    await this.sendToServer('/api/live/tiktok-user-id', {
+                        userId: this.userId,
+                        tiktokUserId: hostUserId
+                    });
+                }
+            } catch(e) {
+                console.log('⚠️ [connected] roomInfo 파싱 실패:', e.message);
+            }
         });
         
         // 연결 종료
