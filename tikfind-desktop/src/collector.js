@@ -374,25 +374,33 @@ class TikTokCollector extends EventEmitter {
         
         // 매치 시작 (linkMicBattle)
         this.client.on('linkMicBattle', (data) => {
-            console.log(`⚔️ [RAW linkMicBattle]:`, JSON.stringify(data).slice(0, 1000));
+            const rawStr = JSON.stringify(data);
+            console.log(`⚔️ [RAW linkMicBattle FULL]:`, rawStr.slice(0, 2000));
             const users = data.battleUsers || [];
             // 화면 좌측(짝수인덱스)=팀A, 우측(홀수인덱스)=팀B
             // 1:1이면 [0]=팀A, [1]=팀B / 2:2이면 [0][1]=팀A, [2][3]=팀B
             const teamSize = users.length <= 2 ? 1 : 2;
-            const participants = users.map((u, i) => ({
-                uniqueId: u.uniqueId || '',
-                userId: String(u.userId || u.userIdStr || ''),
-                nickname: u.nickname || '',
-                profilePictureUrl: u.profilePictureUrl || '',
-                teamId: i < teamSize ? 'A' : 'B'
-            }));
+            const participants = users.map((u, i) => {
+                // uniqueId가 없을 경우 여러 필드명 시도
+                const uid = u.uniqueId || u.unique_id || u.tiktokId || u.username
+                    || u.user?.uniqueId || u.user?.unique_id || '';
+                const uid2 = String(u.userId || u.userIdStr || u.user_id || u.user?.userId || '');
+                console.log(`⚔️ [battleUser ${i}] uniqueId="${uid}" userId="${uid2}" keys=${Object.keys(u).join(',')}`);
+                return {
+                    uniqueId: uid,
+                    userId: uid2,
+                    nickname: u.nickname || u.user?.nickname || '',
+                    profilePictureUrl: u.profilePictureUrl || u.user?.profilePictureUrl || '',
+                    teamId: i < teamSize ? 'A' : 'B'
+                };
+            });
             const battleData = {
                 battleId: data.battleId || null,
                 participants,
                 teamSize,
                 timestamp: Date.now()
             };
-            console.log(`⚔️ 매치 시작: battleId=${battleData.battleId} | 팀A: ${participants.filter(p=>p.teamId==='A').map(p=>p.uniqueId).join('+')} vs 팀B: ${participants.filter(p=>p.teamId==='B').map(p=>p.uniqueId).join('+')}`);
+            console.log(`⚔️ 매치 시작: 팀A: ${participants.filter(p=>p.teamId==='A').map(p=>p.uniqueId||p.userId).join('+')} vs 팀B: ${participants.filter(p=>p.teamId==='B').map(p=>p.uniqueId||p.userId).join('+')}`);
             this.emit('matchStart', battleData);
             this.sendToServer('/api/live/tiktok-data', {
                 userId: this.userId,
