@@ -959,49 +959,69 @@ async function processMatchCoach(userId, triggerType, matchState) {
         const MATCH_DURATION = 300; // 5분
         const roundLabel = (n) => ['첫째', '둘째', '셋째'][n - 1] || `${n}번째`;
 
-        // participants + hostTiktokId 대조로 호스트 팀 정확히 판별
+        // 호스트 팀 판별 및 점수 계산
         const resolvePoints = (matchState) => {
             const armies = matchState?.armies || [];
             const teamAPoints = matchState?.teamAPoints ?? null;
             const teamBPoints = matchState?.teamBPoints ?? null;
             const hostTiktokId = (matchState?.hostTiktokId || '').toLowerCase().replace(/^@+/, '');
-
-            // 호스트 팀 판별: participants에서 hostTiktokId와 uniqueId 매칭
-            let myTeam = 'A'; // 기본값
             const participants = matchState?.participants || [];
+
+            let myTeam = null;
+
+            // ① participants uniqueId 매칭 (linkMicBattle에서 온 데이터)
             if (hostTiktokId && participants.length > 0) {
-                const hostParticipant = participants.find(p =>
+                const found = participants.find(p =>
                     (p.uniqueId || '').toLowerCase().replace(/^@+/, '') === hostTiktokId
                 );
-                if (hostParticipant) {
-                    myTeam = hostParticipant.teamId || 'A';
-                    console.log(`🔍 [resolvePoints] 호스트 "${hostTiktokId}" → 팀${myTeam} 확인`);
-                } else {
-                    console.log(`🔍 [resolvePoints] 호스트 "${hostTiktokId}" participants에서 못 찾음 → 팀A 기본값. participants: ${JSON.stringify(participants.map(p=>p.uniqueId))}`);
+                if (found) {
+                    myTeam = found.teamId || 'A';
+                    console.log(`✅ [resolvePoints] ①participants 매칭: 호스트="${hostTiktokId}" → 팀${myTeam}`);
                 }
             }
 
-            // teamAPoints/teamBPoints가 있으면 팀 판별 결과로 my/opp 결정
+            // ② armies uniqueId 매칭 (linkMicArmies에 uniqueId 포함된 경우)
+            if (!myTeam && hostTiktokId && armies.length > 0) {
+                const found = armies.find(a =>
+                    (a.uniqueId || '').toLowerCase().replace(/^@+/, '') === hostTiktokId
+                );
+                if (found) {
+                    myTeam = found.teamId || 'A';
+                    console.log(`✅ [resolvePoints] ②armies uniqueId 매칭: 호스트="${hostTiktokId}" → 팀${myTeam}`);
+                }
+            }
+
+            // ③ 매칭 실패 시 팀A 기본값 + 경고
+            if (!myTeam) {
+                myTeam = 'A';
+                console.log(`⚠️ [resolvePoints] 호스트 팀 판별 실패 → 팀A 기본값`);
+                console.log(`   hostTiktokId="${hostTiktokId}"`);
+                console.log(`   participants=${JSON.stringify(participants.map(p => ({ uid: p.uniqueId, team: p.teamId })))}`);
+                console.log(`   armies=${JSON.stringify(armies.map(a => ({ uid: a.uniqueId, hid: a.hostUserId, team: a.teamId })))}`);
+            }
+
+            // 팀별 점수 반환
             if (teamAPoints !== null && teamBPoints !== null) {
                 const my = myTeam === 'A' ? teamAPoints : teamBPoints;
                 const opp = myTeam === 'A' ? teamBPoints : teamAPoints;
-                console.log(`🔍 [resolvePoints] teamA=${teamAPoints} teamB=${teamBPoints} 호스트팀=${myTeam} → my=${my} opp=${opp}`);
-                return { myPoints: my, opponentPoints: opp };
+                console.log(`📊 [resolvePoints] teamA=${teamAPoints} teamB=${teamBPoints} 호스트팀=${myTeam} → my=${my} opp=${opp}`);
+                return { myPoints: my, opponentPoints: opp, myTeam };
             }
-            // fallback: armies 배열에서 myTeam 합산
+
+            // teamAPoints 없으면 armies 합산
             if (armies.length > 0) {
                 const myArmies = armies.filter(a => a.teamId === myTeam);
                 const oppArmies = armies.filter(a => a.teamId !== myTeam);
-                console.log(`🔍 [resolvePoints fallback] armies=${JSON.stringify(armies.map(a=>({id:a.hostUserId,team:a.teamId,pts:a.points})))}`);
                 if (myArmies.length > 0) {
                     const my = myArmies.reduce((s, a) => s + (a.points || 0), 0);
                     const opp = oppArmies.reduce((s, a) => s + (a.points || 0), 0);
-                    return { myPoints: my, opponentPoints: opp };
+                    console.log(`📊 [resolvePoints] armies합산 호스트팀=${myTeam} → my=${my} opp=${opp}`);
+                    return { myPoints: my, opponentPoints: opp, myTeam };
                 }
-                return { myPoints: armies[0]?.points || 0, opponentPoints: armies[1]?.points || 0 };
             }
-            console.log(`🔍 [resolvePoints] 데이터 없음 → 0:0`);
-            return { myPoints: 0, opponentPoints: 0 };
+
+            console.log(`⚠️ [resolvePoints] 점수 데이터 없음 → 0:0`);
+            return { myPoints: 0, opponentPoints: 0, myTeam };
         };
 
         if (triggerType === 'start') {
@@ -2056,16 +2076,26 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                     if (tiktokData.teamAPoints != null) endState.teamAPoints = tiktokData.teamAPoints;
                     if (tiktokData.teamBPoints != null) endState.teamBPoints = tiktokData.teamBPoints;
 
-                    // 이번 판 승패 판별 (resolvePoints 없이 직접 계산)
+                    // 이번 판 승패 판별 - resolvePoints 로직 인라인 적용
+                    const hostId = (endState.hostTiktokId || '').toLowerCase().replace(/^@+/, '');
+                    const hostP = endState.participants || [];
+                    const armiesEnd = endState.armies || [];
+                    let myTeam = null;
+                    // ① participants uniqueId
+                    const pFound = hostP.find(p => (p.uniqueId||'').toLowerCase().replace(/^@+/,'') === hostId);
+                    if (pFound) myTeam = pFound.teamId || 'A';
+                    // ② armies uniqueId
+                    if (!myTeam) {
+                        const aFound = armiesEnd.find(a => (a.uniqueId||'').toLowerCase().replace(/^@+/,'') === hostId);
+                        if (aFound) myTeam = aFound.teamId || 'A';
+                    }
+                    if (!myTeam) myTeam = 'A';
                     const tA = endState.teamAPoints || 0;
                     const tB = endState.teamBPoints || 0;
-                    const hostP = endState.participants || [];
-                    const hostId = (endState.hostTiktokId || '').toLowerCase().replace(/^@+/, '');
-                    const hostPart = hostP.find(p => (p.uniqueId||'').toLowerCase().replace(/^@+/,'') === hostId);
-                    const myTeam = hostPart?.teamId || 'A';
                     const myRoundPts = myTeam === 'A' ? tA : tB;
                     const oppRoundPts = myTeam === 'A' ? tB : tA;
                     const roundWon = myRoundPts > oppRoundPts;
+                    console.log(`🏁 [${userId}] 팀판별: 호스트="${hostId}" → 팀${myTeam} | teamA=${tA} teamB=${tB} → my=${myRoundPts} opp=${oppRoundPts}`);
 
                     const roundWins = endState.roundWins || { my: 0, opp: 0 };
                     if (roundWon) roundWins.my += 1;

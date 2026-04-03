@@ -381,6 +381,7 @@ class TikTokCollector extends EventEmitter {
             const teamSize = users.length <= 2 ? 1 : 2;
             const participants = users.map((u, i) => ({
                 uniqueId: u.uniqueId || '',
+                userId: String(u.userId || u.userIdStr || ''),
                 nickname: u.nickname || '',
                 profilePictureUrl: u.profilePictureUrl || '',
                 teamId: i < teamSize ? 'A' : 'B'
@@ -420,6 +421,7 @@ class TikTokCollector extends EventEmitter {
                 (team.teamUsers || []).forEach(u => {
                     armies.push({
                         hostUserId: String(u.userId || u.userIdStr || ''),
+                        uniqueId: u.uniqueId || '',
                         points: parseInt(u.score || 0, 10),
                         teamId: teamLabel
                     });
