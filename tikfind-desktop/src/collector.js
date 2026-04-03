@@ -90,24 +90,13 @@ class TikTokCollector extends EventEmitter {
             this.isRunning = true;
             this.emit('connected');
             this.broadcastStatus(true);
-            // 호스트 숫자 userId 추출 → 서버 DB에 저장
+            // roomInfo RAW 구조 확인용 로그
             try {
-                const roomInfo = state?.roomInfo || this.client.roomInfo || {};
-                const hostUserId = String(
-                    roomInfo?.host_info?.user_id ||
-                    roomInfo?.owner?.id ||
-                    roomInfo?.owner?.user_id ||
-                    state?.hostUserId || ''
-                );
-                console.log(`🔑 [connected] 호스트 숫자 userId: "${hostUserId}"`);
-                if (hostUserId && hostUserId !== '') {
-                    await this.sendToServer('/api/live/tiktok-user-id', {
-                        userId: this.userId,
-                        tiktokUserId: hostUserId
-                    });
-                }
+                const roomInfo = state?.roomInfo || this.client.roomInfo || null;
+                console.log(`🔑 [connected] state keys: ${Object.keys(state||{}).join(',')}`);
+                console.log(`🔑 [connected] roomInfo RAW: ${JSON.stringify(roomInfo).slice(0, 500)}`);
             } catch(e) {
-                console.log('⚠️ [connected] roomInfo 파싱 실패:', e.message);
+                console.log('⚠️ [connected] roomInfo 로그 실패:', e.message);
             }
         });
         
@@ -420,6 +409,28 @@ class TikTokCollector extends EventEmitter {
                 timestamp: Date.now()
             };
             console.log(`⚔️ 매치 시작: 팀A: ${participants.filter(p=>p.teamId==='A').map(p=>p.uniqueId||p.userId).join('+')} vs 팀B: ${participants.filter(p=>p.teamId==='B').map(p=>p.uniqueId||p.userId).join('+')}`);
+
+            // this.username(호스트 TikTok ID)으로 직접 팀 판별 + hostUserId 추출
+            const hostUsername = (this.username || '').toLowerCase().replace(/^@+/, '');
+            const hostParticipant = participants.find(p =>
+                (p.uniqueId || '').toLowerCase().replace(/^@+/, '') === hostUsername
+            );
+            if (hostParticipant) {
+                battleData.hostTeam = hostParticipant.teamId;
+                battleData.hostUserId = hostParticipant.userId;
+                console.log(`✅ [linkMicBattle] 호스트 팀 직접 판별: "${hostUsername}" → 팀${hostParticipant.teamId} (userId=${hostParticipant.userId})`);
+                // 숫자 userId 서버 DB에 저장
+                if (hostParticipant.userId) {
+                    this.sendToServer('/api/live/tiktok-user-id', {
+                        userId: this.userId,
+                        tiktokUserId: hostParticipant.userId
+                    });
+                }
+            } else {
+                console.log(`⚠️ [linkMicBattle] 호스트 "${hostUsername}" participants에서 못 찾음`);
+                console.log(`   participants uniqueIds: ${participants.map(p=>p.uniqueId).join(', ')}`);
+            }
+
             this.emit('matchStart', battleData);
             this.sendToServer('/api/live/tiktok-data', {
                 userId: this.userId,

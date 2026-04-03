@@ -2049,21 +2049,31 @@ app.post('/api/live/tiktok-data', async (req, res) => {
                 hostTiktokUserId = hostUser?.tiktokUserId || '';
             } catch(e) {}
 
-            // participants에서 hostTiktokId 매칭으로 myTeam 즉시 확정
             const participants = tiktokData.participants || [];
             let myTeam = null;
-            if (hostTiktokId && participants.length > 0) {
+
+            // ① 앱에서 직접 판별한 hostTeam 최우선 사용
+            if (tiktokData.hostTeam) {
+                myTeam = tiktokData.hostTeam;
+                console.log(`✅ [matchStart] 앱 직접 판별 hostTeam=${myTeam}`);
+                // 앱에서 보낸 hostUserId도 저장
+                if (tiktokData.hostUserId) {
+                    hostTiktokUserId = String(tiktokData.hostUserId);
+                }
+            }
+            // ② participants uniqueId 매칭
+            if (!myTeam && hostTiktokId && participants.length > 0) {
                 const found = participants.find(p =>
                     (p.uniqueId || '').toLowerCase().replace(/^@+/, '') === hostTiktokId
                 );
                 if (found) {
                     myTeam = found.teamId;
-                    console.log(`✅ [matchStart] 호스트팀 확정: "${hostTiktokId}" → 팀${myTeam}`);
+                    console.log(`✅ [matchStart] participants 매칭: "${hostTiktokId}" → 팀${myTeam}`);
                 }
             }
             if (!myTeam) {
-                myTeam = null; // armies가 오면 hostUserId로 재확정
-                console.log(`⚠️ [matchStart] 호스트 "${hostTiktokId}" 팀 판별 보류 → armies 수신 시 재확정`);
+                myTeam = null; // armies 수신 시 hostUserId로 재확정
+                console.log(`⚠️ [matchStart] 팀 판별 보류 → armies 수신 시 재확정`);
                 console.log(`   participants: ${JSON.stringify(participants.map(p => ({ uid: p.uniqueId, team: p.teamId })))}`);
             }
 
