@@ -305,6 +305,29 @@ router.post('/change-tiktok', requireAuth, async (req, res) => {
         req.user.set('updatedAt', new Date(), { strict: false });
         
         await req.user.save({ timestamps: false });
+
+        // 숫자 userId 자동 조회 (비동기)
+        ;(async () => {
+            try {
+                const { WebcastPushConnection } = require('tiktok-live-connector');
+                const tempClient = new WebcastPushConnection(cleanTiktokId, { fetchRoomInfoOnConnect: false });
+                const roomData = await tempClient.fetchRoomInfo().catch(() => null);
+                if (roomData) {
+                    const numId = String(
+                        roomData?.data?.owner?.id || roomData?.data?.owner?.user_id ||
+                        roomData?.owner?.id || roomData?.owner?.user_id || ''
+                    );
+                    if (numId && numId !== 'undefined') {
+                        console.log(`🔑 [change-tiktok] "${cleanTiktokId}" → ${numId}`);
+                        await User.findByIdAndUpdate(req.user._id, { tiktokUserId: numId });
+                    } else {
+                        console.log(`⚠️ [change-tiktok] "${cleanTiktokId}" 숫자 userId 못 찾음 | keys=${Object.keys(roomData?.data||roomData||{}).join(',')}`);
+                    }
+                }
+            } catch(e) {
+                console.log(`⚠️ [change-tiktok] fetchRoomInfo 오류: ${e.message}`);
+            }
+        })();
         
         res.json({ success: true, message: 'TikTok ID가 변경되었습니다.' });
     } catch (error) {
