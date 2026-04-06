@@ -435,6 +435,7 @@ app.get('/api/user/:userId', async (req, res) => {
                 id: user._id,
                 nickname: user.nickname,
                 tiktokId: user.tiktokId,
+                tiktokUserId: user.tiktokUserId || '',
                 streamerPersona: user.streamerPersona || '',
                 preferredLanguage: user.preferredLanguage || 'ko',
                 plan: userPlan,
@@ -784,6 +785,7 @@ app.get('/api/user/:userId', async (req, res) => {
             userId: user._id.toString(),
             email: user.email,
             tiktokId: user.tiktokId || '',
+            tiktokUserId: user.tiktokUserId || '',
             nickname: user.nickname || user.email.split('@')[0],
             subscriptionStatus: user.subscriptionStatus || 'free'
         });
@@ -813,6 +815,7 @@ app.get('/api/desktop/user-info', async (req, res) => {
             userId: user._id.toString(),
             email: user.email,
             tiktokId: user.tiktokId || '',
+            tiktokUserId: user.tiktokUserId || '',
             nickname: user.nickname || user.email.split('@')[0],
             subscriptionStatus: user.subscriptionStatus || 'free'
         });
