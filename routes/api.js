@@ -286,6 +286,61 @@ router.post('/setup-tiktok', requireAuth, async (req, res) => {
     }
 });
 
+// TikTok 숫자 userId 자동 조회
+router.post('/fetch-tiktok-userid', requireAuth, async (req, res) => {
+    const { tiktokId } = req.body;
+    if (!tiktokId) return res.json({ success: false, message: 'tiktokId 필요' });
+    const tid = tiktokId.replace(/^@+/, '').trim();
+    try {
+        const https = require('https');
+        const numId = await new Promise((resolve) => {
+            const options = {
+                hostname: 'www.tiktok.com',
+                path: `/@${tid}`,
+                method: 'GET',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                }
+            };
+            const r = https.request(options, (resp) => {
+                let data = '';
+                resp.on('data', c => { data += c; });
+                resp.on('end', () => {
+                    const match = data.match(/"uniqueId":"[^"]*","id":"(\d+)"/) ||
+                                  data.match(/"secUid":"[^"]*","id":"(\d+)"/) ||
+                                  data.match(/"userId":"(\d+)"/) ||
+                                  data.match(/"authorId":"(\d+)"/);
+                    resolve(match ? match[1] : '');
+                });
+            });
+            r.on('error', () => resolve(''));
+            r.setTimeout(8000, () => { r.destroy(); resolve(''); });
+            r.end();
+        });
+        if (numId) {
+            res.json({ success: true, tiktokUserId: numId });
+        } else {
+            res.json({ success: false, message: '자동 조회 실패 - 직접 입력하세요' });
+        }
+    } catch(e) {
+        res.json({ success: false, message: e.message });
+    }
+});
+
+// TikTok 숫자 userId 수동 저장
+router.post('/save-tiktok-userid', requireAuth, async (req, res) => {
+    try {
+        const { tiktokUserId } = req.body;
+        if (!tiktokUserId) return res.status(400).json({ success: false, message: 'tiktokUserId 필요' });
+        await User.findByIdAndUpdate(req.user._id, { tiktokUserId: String(tiktokUserId).trim() }, { runValidators: false });
+        console.log(`🔑 [save-tiktok-userid] ${req.user._id} → ${tiktokUserId}`);
+        res.json({ success: true });
+    } catch(e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 // TikTok ID 변경 (설정 페이지에서 - /api/change-tiktok)
 router.post('/change-tiktok', requireAuth, async (req, res) => {
     try {
