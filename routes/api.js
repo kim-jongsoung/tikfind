@@ -298,23 +298,8 @@ router.post('/change-tiktok', requireAuth, async (req, res) => {
         // @ 기호 제거 (앞에 붙은 @ 모두 제거)
         const cleanTiktokId = tiktokId.replace(/^@+/, '').trim();
         
-        req.user.tiktokId = cleanTiktokId;
-        
-        // tiktokUserGenders가 일반 Object로 저장된 경우 Map으로 변환 (ValidationError 방지)
-        if (req.user.tiktokUserGenders && !(req.user.tiktokUserGenders instanceof Map)) {
-            const obj = req.user.tiktokUserGenders;
-            const m = new Map();
-            if (obj && typeof obj === 'object') {
-                Object.entries(obj).forEach(([k, v]) => { if (v === 'm' || v === 'f') m.set(k, v); });
-            }
-            req.user.tiktokUserGenders = m;
-        }
-
-        // MongoDB 날짜 필드 형식 오류 수정 - timestamps 비활성화
-        req.user.set('createdAt', new Date(), { strict: false });
-        req.user.set('updatedAt', new Date(), { strict: false });
-        
-        await req.user.save({ timestamps: false });
+        // findByIdAndUpdate로 직접 저장 (tiktokUserGenders 등 ValidationError 완전 우회)
+        await User.findByIdAndUpdate(req.user._id, { tiktokId: cleanTiktokId }, { runValidators: false });
 
         // 숫자 userId 자동 조회 (비동기)
         ;(async () => {
