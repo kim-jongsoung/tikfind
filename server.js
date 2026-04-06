@@ -573,31 +573,64 @@ app.post('/api/ai/pronunciation', async (req, res) => {
     }
 });
 
-// tiktokId(문자) → 숫자 userId 자동 조회 헬퍼
+// tiktokId(문자) → 숫자 userId 자동 조회 헬퍼 (라이브 없이도 작동)
 async function fetchTikTokNumericUserId(tiktokId) {
+    const tid = tiktokId.trim().replace(/^@+/, '');
+    // 방법 1: TikTok 프로필 페이지 HTML에서 userId 추출
     try {
-        const { WebcastPushConnection } = require('tiktok-live-connector');
-        const tid = tiktokId.trim().replace(/^@+/, '');
-        const tempClient = new WebcastPushConnection(tid, { fetchRoomInfoOnConnect: false });
-        const roomData = await tempClient.fetchRoomInfo().catch(() => null);
-        if (!roomData) return '';
-        const numId = String(
-            roomData?.data?.owner?.id ||
-            roomData?.data?.owner?.user_id ||
-            roomData?.owner?.id ||
-            roomData?.owner?.user_id ||
-            ''
-        );
-        if (numId && numId !== 'undefined' && numId !== '') {
+        const https = require('https');
+        const numId = await new Promise((resolve) => {
+            const options = {
+                hostname: 'www.tiktok.com',
+                path: `/@${tid}`,
+                method: 'GET',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                }
+            };
+            const req = https.request(options, (res) => {
+                let data = '';
+                res.on('data', chunk => { data += chunk; });
+                res.on('end', () => {
+                    // "authorStats":{"diggCount":...} 패턴 앞에 userId 있음
+                    const match = data.match(/"uniqueId":"[^"]*","id":"(\d+)"/) ||
+                                  data.match(/"secUid":"[^"]*","id":"(\d+)"/) ||
+                                  data.match(/\"user\":\{[^}]*\"id\":\"(\d+)\"/) ||
+                                  data.match(/"userId":"(\d+)"/) ||
+                                  data.match(/"authorId":"(\d+)"/);
+                    resolve(match ? match[1] : '');
+                });
+            });
+            req.on('error', () => resolve(''));
+            req.setTimeout(8000, () => { req.destroy(); resolve(''); });
+            req.end();
+        });
+        if (numId && numId !== '') {
             console.log(`🔑 [fetchTikTokNumericUserId] "${tid}" → ${numId}`);
             return numId;
         }
-        console.log(`⚠️ [fetchTikTokNumericUserId] "${tid}" 숫자 userId 못 찾음 | keys=${Object.keys(roomData?.data||roomData||{}).join(',')}`);
-        return '';
-    } catch(e) {
-        console.log(`⚠️ [fetchTikTokNumericUserId] 오류: ${e.message}`);
-        return '';
-    }
+    } catch(e) {}
+
+    // 방법 2: tiktok-live-connector fetchRoomInfo (라이브 중일 때만 작동)
+    try {
+        const { WebcastPushConnection } = require('tiktok-live-connector');
+        const tempClient = new WebcastPushConnection(tid, { fetchRoomInfoOnConnect: false });
+        const roomData = await tempClient.fetchRoomInfo().catch(() => null);
+        if (roomData) {
+            const numId = String(
+                roomData?.data?.owner?.id || roomData?.data?.owner?.user_id ||
+                roomData?.owner?.id || roomData?.owner?.user_id || ''
+            );
+            if (numId && numId !== 'undefined' && numId !== '') {
+                console.log(`🔑 [fetchTikTokNumericUserId] (roomInfo) "${tid}" → ${numId}`);
+                return numId;
+            }
+        }
+    } catch(e) {}
+
+    console.log(`⚠️ [fetchTikTokNumericUserId] "${tid}" 숫자 userId 못 찾음`);
+    return '';
 }
 
 app.post('/api/update-profile', async (req, res) => {

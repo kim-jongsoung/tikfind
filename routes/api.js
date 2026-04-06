@@ -301,29 +301,43 @@ router.post('/change-tiktok', requireAuth, async (req, res) => {
         // findByIdAndUpdate로 직접 저장 (tiktokUserGenders 등 ValidationError 완전 우회)
         await User.findByIdAndUpdate(req.user._id, { tiktokId: cleanTiktokId }, { runValidators: false });
 
-        // 숫자 userId 자동 조회 (비동기)
+        // 숫자 userId 자동 조회 (비동기 - 프로필 페이지 스크래핑, 라이브 없이도 작동)
         ;(async () => {
             try {
-                const { WebcastPushConnection } = require('tiktok-live-connector');
-                const tempClient = new WebcastPushConnection(cleanTiktokId, { fetchRoomInfoOnConnect: false });
-                const roomData = await tempClient.fetchRoomInfo().catch(() => null);
-                if (roomData) {
-                    console.log(`🔍 [change-tiktok] roomData 전체: ${JSON.stringify(roomData).slice(0, 500)}`);
-                    const numId = String(
-                        roomData?.data?.owner?.id || roomData?.data?.owner?.user_id ||
-                        roomData?.owner?.id || roomData?.owner?.user_id ||
-                        roomData?.message?.owner?.id || roomData?.message?.owner?.user_id ||
-                        ''
-                    );
-                    if (numId && numId !== 'undefined') {
-                        console.log(`🔑 [change-tiktok] "${cleanTiktokId}" → ${numId}`);
-                        await User.findByIdAndUpdate(req.user._id, { tiktokUserId: numId });
-                    } else {
-                        console.log(`⚠️ [change-tiktok] "${cleanTiktokId}" 숫자 userId 못 찾음 | keys=${Object.keys(roomData?.data||roomData||{}).join(',')}`);
-                    }
+                const https = require('https');
+                const numId = await new Promise((resolve) => {
+                    const options = {
+                        hostname: 'www.tiktok.com',
+                        path: `/@${cleanTiktokId}`,
+                        method: 'GET',
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept-Language': 'en-US,en;q=0.9',
+                        }
+                    };
+                    const req2 = https.request(options, (res2) => {
+                        let data = '';
+                        res2.on('data', chunk => { data += chunk; });
+                        res2.on('end', () => {
+                            const match = data.match(/"uniqueId":"[^"]*","id":"(\d+)"/) ||
+                                          data.match(/"secUid":"[^"]*","id":"(\d+)"/) ||
+                                          data.match(/"userId":"(\d+)"/) ||
+                                          data.match(/"authorId":"(\d+)"/);
+                            resolve(match ? match[1] : '');
+                        });
+                    });
+                    req2.on('error', () => resolve(''));
+                    req2.setTimeout(8000, () => { req2.destroy(); resolve(''); });
+                    req2.end();
+                });
+                if (numId && numId !== '') {
+                    console.log(`🔑 [change-tiktok] "${cleanTiktokId}" → ${numId}`);
+                    await User.findByIdAndUpdate(req.user._id, { tiktokUserId: numId });
+                } else {
+                    console.log(`⚠️ [change-tiktok] "${cleanTiktokId}" 숫자 userId 못 찾음`);
                 }
             } catch(e) {
-                console.log(`⚠️ [change-tiktok] fetchRoomInfo 오류: ${e.message}`);
+                console.log(`⚠️ [change-tiktok] 오류: ${e.message}`);
             }
         })();
         
