@@ -300,6 +300,16 @@ router.post('/change-tiktok', requireAuth, async (req, res) => {
         
         req.user.tiktokId = cleanTiktokId;
         
+        // tiktokUserGenders가 일반 Object로 저장된 경우 Map으로 변환 (ValidationError 방지)
+        if (req.user.tiktokUserGenders && !(req.user.tiktokUserGenders instanceof Map)) {
+            const obj = req.user.tiktokUserGenders;
+            const m = new Map();
+            if (obj && typeof obj === 'object') {
+                Object.entries(obj).forEach(([k, v]) => { if (v === 'm' || v === 'f') m.set(k, v); });
+            }
+            req.user.tiktokUserGenders = m;
+        }
+
         // MongoDB 날짜 필드 형식 오류 수정 - timestamps 비활성화
         req.user.set('createdAt', new Date(), { strict: false });
         req.user.set('updatedAt', new Date(), { strict: false });
