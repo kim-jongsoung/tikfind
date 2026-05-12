@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikFind Unified Overlay</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 1890px;
+            height: 980px;
+            background: transparent;
+            overflow: hidden;
+        }
+        .widget-container {
+            position: absolute;
+            border: none;
+            background: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div id="overlay-container">
+        <!-- 위젯들은 JS로 동적 로드 -->
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const userId = '<%= userId %>';
+        const socket = io();
+
+        let positions = {};
+
+        // 초기화
+        async function init() {
+            await loadPositions();
+            renderWidgets();
+            setupSocketListeners();
+        }
+
+        async function loadPositions() {
+            try {
+                const res = await fetch(`/api/overlay-positions-public/${userId}`);
+                const data = await res.json();
+                if (data.success && data.positions) {
+                    positions = data.positions;
+                }
+            } catch (e) {
+                console.error('위치 로드 실패:', e);
+            }
+        }
+
+        function renderWidgets() {
+            const container = document.getElementById('overlay-container');
+            container.innerHTML = '';
+
+            // 위젯 설정 가져오기
+            const overlaySettings = <%- JSON.stringify(overlaySettings || {}) %>;
+            const speechLangs = <%- JSON.stringify(speechLangs || ['en']) %>;
+
+            // 신청곡+공지 위젯
+            if (positions.song && positions.song.visible) {
+                const song = positions.song;
+                const iframe = document.createElement('iframe');
+                iframe.className = 'widget-container';
+                iframe.style.left = `${song.x}px`;
+                iframe.style.top = `${song.y}px`;
+                iframe.style.width = `${song.width}px`;
+                iframe.style.height = `${song.height}px`;
+                const fontSize = overlaySettings?.fontSize || 35;
+                const bgColor = overlaySettings?.bgColor || 'rgba(0,0,0,0.8)';
+                const textColor = overlaySettings?.textColor || '#ffffff';
+                iframe.src = `/overlay/${userId}?fontSize=${fontSize}&bgColor=${encodeURIComponent(bgColor)}&textColor=${encodeURIComponent(textColor)}`;
+                container.appendChild(iframe);
+            }
+
+            // 번역 자막 위젯
+            if (positions.speech && positions.speech.visible) {
+                const speech = positions.speech;
+                const iframe = document.createElement('iframe');
+                iframe.className = 'widget-container';
+                iframe.style.left = `${speech.x}px`;
+                iframe.style.top = `${speech.y}px`;
+                iframe.style.width = `${speech.width}px`;
+                iframe.style.height = `${speech.height}px`;
+                const langs = speechLangs.join(',');
+                iframe.src = `/overlay/${userId}/speech?langs=${langs}`;
+                container.appendChild(iframe);
+            }
+
+            // 선물 알림 위젯
+            if (positions.gift && positions.gift.visible) {
+                const gift = positions.gift;
+                const iframe = document.createElement('iframe');
+                iframe.className = 'widget-container';
+                iframe.style.left = `${gift.x}px`;
+                iframe.style.top = `${gift.y}px`;
+                iframe.style.width = `${gift.width}px`;
+                iframe.style.height = `${gift.height}px`;
+                iframe.src = `/overlay/${userId}/gift`;
+                container.appendChild(iframe);
+            }
+
+            // 모더 위젯
+            if (positions.moderator && positions.moderator.visible) {
+                const moderator = positions.moderator;
+                const iframe = document.createElement('iframe');
+                iframe.className = 'widget-container';
+                iframe.style.left = `${moderator.x}px`;
+                iframe.style.top = `${moderator.y}px`;
+                iframe.style.width = `${moderator.width}px`;
+                iframe.style.height = `${moderator.height}px`;
+                iframe.src = `/overlay/${userId}/moderator`;
+                container.appendChild(iframe);
+            }
+
+            // 룰렛 미션 위젯
+            if (positions.roulette && positions.roulette.visible) {
+                const roulette = positions.roulette;
+                const iframe = document.createElement('iframe');
+                iframe.className = 'widget-container';
+                iframe.style.left = `${roulette.x}px`;
+                iframe.style.top = `${roulette.y}px`;
+                iframe.style.width = `${roulette.width}px`;
+                iframe.style.height = `${roulette.height}px`;
+                iframe.src = `/overlay/${userId}/roulette`;
+                container.appendChild(iframe);
+            }
+        }
+
+        function setupSocketListeners() {
+            // 소켓 연결
+            socket.emit('join-overlay', userId);
+
+            // 실시간 업데이트 이벤트들 (기존 오버레이와 동일)
+            socket.on('new-song', (data) => {
+                // 신청곡 업데이트
+            });
+
+            socket.on('gift-notification', (data) => {
+                // 선물 알림
+            });
+
+            socket.on('moderator-update', (data) => {
+                // 모더 업데이트
+            });
+
+            socket.on('speech-translation', (data) => {
+                // 번역 자막
+            });
+
+            socket.on('roulette-spin', (data) => {
+                // 룰렛 스피너
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

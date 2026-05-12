@@ -40,8 +40,14 @@ function loadSidebar() {
                     </li>
                     <li>
                         <a href="/dashboard/overlay" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="overlay">
-                            <i class="fas fa-layer-group mr-3"></i>
-                            <span data-i18n="overlay">오버레이</span>
+                            <i class="fas fa-cog mr-3"></i>
+                            <span>위젯 설정</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dashboard/overlay-unified" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="overlay-unified">
+                            <i class="fas fa-tv mr-3"></i>
+                            <span>오버레이</span>
                         </a>
                     </li>
                     <li>

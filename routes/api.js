@@ -2052,4 +2052,38 @@ router.post('/speech-settings', requireAuth, async (req, res) => {
     }
 });
 
+// GET /api/overlay/positions (인증 필요)
+router.get('/overlay/positions', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('unifiedOverlayPositions').lean();
+        res.json({ success: true, positions: user?.unifiedOverlayPositions || {} });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/overlay/positions (인증 필요)
+router.post('/overlay/positions', requireAuth, async (req, res) => {
+    try {
+        const { positions } = req.body;
+        if (!positions || typeof positions !== 'object') {
+            return res.status(400).json({ success: false, message: '잘못된 요청' });
+        }
+        await User.findByIdAndUpdate(req.user._id, { unifiedOverlayPositions: positions });
+        res.json({ success: true, positions });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// GET /api/overlay-positions-public/:userId (인증 불필요 - 오버레이 뷰에서 사용)
+router.get('/overlay-positions-public/:userId', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId).select('unifiedOverlayPositions').lean();
+        res.json({ success: true, positions: user?.unifiedOverlayPositions || {} });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 module.exports = router;

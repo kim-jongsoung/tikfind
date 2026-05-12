@@ -29,7 +29,12 @@ router.get('/dashboard/live', requireAuth, (req, res) => {
 });
 
 router.get('/dashboard/overlay', requireAuth, (req, res) => {
-    res.render('dashboard/overlay', { title: '오버레이 설정 - TikFind', user: req.user });
+    res.render('dashboard/overlay', { title: '위젯 설정 - TikFind', user: req.user });
+});
+
+router.get('/dashboard/overlay-unified', requireAuth, async (req, res) => {
+    const user = await req.user.populate('unifiedOverlayPositions');
+    res.render('dashboard/overlay-unified', { title: '오버레이 설정 - TikFind', user: req.user });
 });
 
 // 오버레이 표시 페이지 (인증 불필요 - OBS에서 접근)
@@ -60,6 +65,22 @@ router.get('/overlay/:userId/speech-mic', (req, res) => {
 // 룰렛 미션 위젯 (인증 불필요 - OBS 브라우저 소스)
 router.get('/overlay/:userId/roulette', (req, res) => {
     res.render('overlay-roulette', { title: 'TikFind 룰렛', userId: req.params.userId });
+});
+
+// 통합 오버레이 뷰 (인증 불필요 - OBS 브라우저 소스)
+router.get('/overlay/:userId/unified', async (req, res) => {
+    try {
+        const User = require('../models/User');
+        const user = await User.findById(req.params.userId).select('overlaySettings speechLangs').lean();
+        res.render('overlay-unified', {
+            title: 'TikFind Unified Overlay',
+            userId: req.params.userId,
+            overlaySettings: user?.overlaySettings || {},
+            speechLangs: user?.speechLangs || ['en']
+        });
+    } catch (e) {
+        res.status(500).send('Error loading overlay');
+    }
 });
 
 router.get('/dashboard/billing', requireAuth, (req, res) => {

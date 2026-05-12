@@ -251,6 +251,10 @@ const userSchema = new mongoose.Schema({
     modInactiveAlert: {
         type: Boolean,
         default: false
+    },
+    unifiedOverlayPositions: {
+        type: Object,
+        default: {}
     }
 }, {
     timestamps: true

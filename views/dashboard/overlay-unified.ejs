@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오버레이 설정 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .widget-box {
+            position: absolute;
+            cursor: move;
+            border: 2px dashed rgba(99, 102, 241, 0.5);
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6366f1;
+            user-select: none;
+        }
+        .widget-box:hover {
+            border-color: rgba(99, 102, 241, 0.8);
+            background: rgba(99, 102, 241, 0.2);
+        }
+        .widget-box.hidden-widget {
+            opacity: 0.3;
+            border-color: rgba(156, 163, 175, 0.5);
+            background: rgba(156, 163, 175, 0.1);
+            color: #9ca3af;
+        }
+        #canvas-container {
+            position: relative;
+            background: #1a1a2e;
+            border: 2px solid #374151;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .canvas-grid {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+    
+    <main class="ml-64 p-8" style="margin-top: 88px;">
+        <div class="max-w-6xl mx-auto">
+            <!-- 페이지 헤더 -->
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">📺 오버레이 설정</h2>
+                <p class="text-gray-500 mt-1 text-sm">TikTok Live Studio에서 통합 오버레이를 설정하세요</p>
+            </div>
+
+            <!-- 안내 섹션 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 class="font-semibold text-blue-800 mb-2">📋 TikTok Live Studio 설정 방법</h3>
+                <ol class="text-sm text-blue-700 space-y-1 list-decimal list-inside">
+                    <li>아래 캔버스에서 위젯 위치를 드래그하여 조정하세요</li>
+                    <li><strong>위젯 표시/숨김</strong> 체크박스로 표시할 위젯을 선택하세요</li>
+                    <li><strong>저장</strong> 버튼을 클릭하여 설정을 저장하세요</li>
+                    <li>TikTok Live Studio에서 <strong>브라우저 소스 추가</strong> → URL에 아래 통합 오버레이 URL을 입력하세요</li>
+                    <li>크기를 <strong>1890×980</strong>으로 설정하세요</li>
+                </ol>
+            </div>
+
+            <!-- 위젯 토글 -->
+            <div class="bg-white rounded-xl shadow mb-6 p-4">
+                <h3 class="font-semibold text-gray-800 mb-3">위젯 표시/숨김</h3>
+                <div class="flex flex-wrap gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="toggle-song" checked class="w-5 h-5 text-indigo-600 rounded">
+                        <span class="text-sm">🎵 신청곡+공지</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="toggle-speech" checked class="w-5 h-5 text-indigo-600 rounded">
+                        <span class="text-sm">🎤 번역 자막</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="toggle-gift" checked class="w-5 h-5 text-indigo-600 rounded">
+                        <span class="text-sm">🎁 선물 알림</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="toggle-moderator" checked class="w-5 h-5 text-indigo-600 rounded">
+                        <span class="text-sm">🛡️ 모더 위젯</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="toggle-roulette" checked class="w-5 h-5 text-indigo-600 rounded">
+                        <span class="text-sm">🎰 룰렛 미션</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 캔버스 영역 -->
+            <div class="bg-white rounded-xl shadow mb-6 p-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-semibold text-gray-800">위젯 위치 설정 (1890×980)</h3>
+                    <button onclick="resetPositions()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
+                        <i class="fas fa-undo mr-2"></i>초기화
+                    </button>
+                </div>
+                <div id="canvas-container" class="canvas-grid" style="width: 100%; height: 500px;">
+                    <!-- 위젯들은 JS로 동적 생성 -->
+                </div>
+            </div>
+
+            <!-- 통합 오버레이 URL -->
+            <div class="bg-white rounded-xl shadow mb-6 p-4">
+                <h3 class="font-semibold text-gray-800 mb-3">통합 오버레이 URL</h3>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="overlay-url" readonly class="flex-1 px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-sm">
+                    <button onclick="copyUrl()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-copy mr-2"></i>복사
+                    </button>
+                </div>
+            </div>
+
+            <!-- 저장 버튼 -->
+            <div class="flex justify-end gap-3">
+                <button onclick="savePositions()" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-semibold">
+                    <i class="fas fa-save mr-2"></i>저장
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/i18n.js"></script>
+    <script src="/js/layout.js"></script>
+    <script>
+        const CANVAS_WIDTH = 1890;
+        const CANVAS_HEIGHT = 980;
+
+        // 위젯 초기 위치
+        const defaultPositions = {
+            song: { x: 545, y: 230, width: 800, height: 70, visible: true, label: '🎵 신청곡+공지' },
+            speech: { x: 545, y: 315, width: 800, height: 150, visible: true, label: '🎤 번역 자막' },
+            gift: { x: 545, y: 1100, width: 800, height: 200, visible: true, label: '🎁 선물 알림' },
+            moderator: { x: 1690, y: 490, width: 120, height: 800, visible: true, label: '🛡️ 모더 위젯' },
+            roulette: { x: -400, y: 500, width: 340, height: 520, visible: true, label: '🎰 룰렛 미션' }
+        };
+
+        let positions = {};
+        let scale = 1;
+
+        // 초기화
+        document.addEventListener('DOMContentLoaded', async () => {
+            const canvasContainer = document.getElementById('canvas-container');
+            scale = canvasContainer.clientWidth / CANVAS_WIDTH;
+
+            // 저장된 위치 로드
+            await loadPositions();
+
+            // 위젯 생성
+            renderWidgets();
+
+            // 캔버스 리사이즈 시 스케일 재계산
+            window.addEventListener('resize', () => {
+                scale = canvasContainer.clientWidth / CANVAS_WIDTH;
+                renderWidgets();
+            });
+
+            // 토글 이벤트
+            document.getElementById('toggle-song').addEventListener('change', (e) => toggleWidget('song', e.target.checked));
+            document.getElementById('toggle-speech').addEventListener('change', (e) => toggleWidget('speech', e.target.checked));
+            document.getElementById('toggle-gift').addEventListener('change', (e) => toggleWidget('gift', e.target.checked));
+            document.getElementById('toggle-moderator').addEventListener('change', (e) => toggleWidget('moderator', e.target.checked));
+            document.getElementById('toggle-roulette').addEventListener('change', (e) => toggleWidget('roulette', e.target.checked));
+
+            // URL 설정
+            const userId = '<%= user._id %>';
+            document.getElementById('overlay-url').value = `https://tikfind.kr/overlay/${userId}/unified`;
+        });
+
+        async function loadPositions() {
+            try {
+                const res = await fetch('/api/overlay/positions');
+                const data = await res.json();
+                if (data.success && data.positions) {
+                    positions = { ...defaultPositions, ...data.positions };
+                } else {
+                    positions = { ...defaultPositions };
+                }
+            } catch (e) {
+                positions = { ...defaultPositions };
+            }
+
+            // 토글 체크박스 동기화
+            Object.keys(positions).forEach(key => {
+                const checkbox = document.getElementById(`toggle-${key}`);
+                if (checkbox) {
+                    checkbox.checked = positions[key].visible;
+                }
+            });
+        }
+
+        function renderWidgets() {
+            const canvasContainer = document.getElementById('canvas-container');
+            canvasContainer.innerHTML = '';
+
+            Object.keys(positions).forEach(key => {
+                const widget = positions[key];
+                const div = document.createElement('div');
+                div.className = 'widget-box';
+                if (!widget.visible) {
+                    div.classList.add('hidden-widget');
+                }
+                div.id = `widget-${key}`;
+                div.style.left = `${widget.x * scale}px`;
+                div.style.top = `${widget.y * scale}px`;
+                div.style.width = `${widget.width * scale}px`;
+                div.style.height = `${widget.height * scale}px`;
+                div.textContent = widget.label;
+
+                // 드래그 이벤트
+                div.addEventListener('mousedown', (e) => startDrag(e, key));
+
+                canvasContainer.appendChild(div);
+            });
+        }
+
+        let dragTarget = null;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let widgetStartX = 0;
+        let widgetStartY = 0;
+
+        function startDrag(e, key) {
+            if (!positions[key].visible) return;
+
+            dragTarget = key;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            widgetStartX = positions[key].x;
+            widgetStartY = positions[key].y;
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        function onDrag(e) {
+            if (!dragTarget) return;
+
+            const dx = (e.clientX - dragStartX) / scale;
+            const dy = (e.clientY - dragStartY) / scale;
+
+            positions[dragTarget].x = widgetStartX + dx;
+            positions[dragTarget].y = widgetStartY + dy;
+
+            const widget = document.getElementById(`widget-${dragTarget}`);
+            widget.style.left = `${positions[dragTarget].x * scale}px`;
+            widget.style.top = `${positions[dragTarget].y * scale}px`;
+        }
+
+        function endDrag() {
+            dragTarget = null;
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', endDrag);
+        }
+
+        function toggleWidget(key, visible) {
+            positions[key].visible = visible;
+            renderWidgets();
+        }
+
+        function resetPositions() {
+            if (confirm('위치를 초기화하시겠습니까?')) {
+                positions = { ...defaultPositions };
+                Object.keys(positions).forEach(key => {
+                    const checkbox = document.getElementById(`toggle-${key}`);
+                    if (checkbox) {
+                        checkbox.checked = positions[key].visible;
+                    }
+                });
+                renderWidgets();
+            }
+        }
+
+        async function savePositions() {
+            try {
+                const res = await fetch('/api/overlay/positions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ positions })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('저장되었습니다.');
+                } else {
+                    alert('저장 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (e) {
+                alert('서버 오류가 발생했습니다.');
+            }
+        }
+
+        function copyUrl() {
+            const urlInput = document.getElementById('overlay-url');
+            urlInput.select();
+            document.execCommand('copy');
+            alert('URL이 복사되었습니다.');
+        }
+    </script>
+</body>
+</html>
