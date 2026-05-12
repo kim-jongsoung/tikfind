@@ -105,7 +105,7 @@
                         <i class="fas fa-undo mr-2"></i>초기화
                     </button>
                 </div>
-                <div id="canvas-container" class="canvas-grid" style="width: 100%; height: 500px;">
+                <div id="canvas-container" class="canvas-grid" style="width: 300px; height: 578px; margin: 0 auto;">
                     <!-- 위젯들은 JS로 동적 생성 -->
                 </div>
             </div>
@@ -151,19 +151,13 @@
         // 초기화
         document.addEventListener('DOMContentLoaded', async () => {
             const canvasContainer = document.getElementById('canvas-container');
-            scale = canvasContainer.clientWidth / CANVAS_WIDTH;
+            scale = 300 / CANVAS_WIDTH;
 
             // 저장된 위치 로드
             await loadPositions();
 
             // 위젯 생성
             renderWidgets();
-
-            // 캔버스 리사이즈 시 스케일 재계산
-            window.addEventListener('resize', () => {
-                scale = canvasContainer.clientWidth / CANVAS_WIDTH;
-                renderWidgets();
-            });
 
             // 토글 이벤트
             document.getElementById('toggle-song').addEventListener('change', (e) => toggleWidget('song', e.target.checked));
