@@ -482,8 +482,13 @@
         }
 
         function saveTikTokId() {
-            const tiktokId = document.getElementById('tiktok-id-input').value.trim().replace(/^@+/, '');
-            
+            const input = document.getElementById('tiktok-id-input');
+            if (!input) {
+                alert('TikTok ID 입력창을 찾을 수 없습니다. 페이지를 새로고침하세요.');
+                return;
+            }
+            const tiktokId = input.value.trim().replace(/^@+/, '');
+
             if (!tiktokId) {
                 alert('TikTok ID를 입력하세요.');
                 return;
