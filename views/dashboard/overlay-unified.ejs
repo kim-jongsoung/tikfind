@@ -66,7 +66,7 @@
                     <li><strong>위젯 표시/숨김</strong> 체크박스로 표시할 위젯을 선택하세요</li>
                     <li><strong>저장</strong> 버튼을 클릭하여 설정을 저장하세요</li>
                     <li>TikTok Live Studio에서 <strong>브라우저 소스 추가</strong> → URL에 아래 통합 오버레이 URL을 입력하세요</li>
-                    <li>크기를 <strong>980×1890</strong>으로 설정하세요</li>
+                    <li>크기를 <strong>1080×1920</strong>으로 설정하세요</li>
                 </ol>
             </div>
 
@@ -100,12 +100,12 @@
             <!-- 캔버스 영역 -->
             <div class="bg-white rounded-xl shadow mb-6 p-4">
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-semibold text-gray-800">위젯 위치 설정 (980×1890)</h3>
+                    <h3 class="font-semibold text-gray-800">위젯 위치 설정 (1080×1920)</h3>
                     <button onclick="resetPositions()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
                         <i class="fas fa-undo mr-2"></i>초기화
                     </button>
                 </div>
-                <div id="canvas-container" class="canvas-grid" style="width: 300px; height: 578px; margin: 0 auto;">
+                <div id="canvas-container" class="canvas-grid" style="width: 270px; height: 480px; margin: 0 auto;">
                     <!-- 위젯들은 JS로 동적 생성 -->
                 </div>
             </div>
@@ -133,15 +133,15 @@
     <script src="/js/i18n.js"></script>
     <script src="/js/layout.js"></script>
     <script>
-        const CANVAS_WIDTH = 980;
-        const CANVAS_HEIGHT = 1890;
+        const CANVAS_WIDTH = 1080;
+        const CANVAS_HEIGHT = 1920;
 
         // 위젯 초기 위치
         const defaultPositions = {
-            song: { x: 90, y: 230, width: 800, height: 70, visible: true, label: '🎵 신청곡+공지' },
-            speech: { x: 90, y: 245, width: 800, height: 150, visible: true, label: '🎤 번역 자막' },
-            gift: { x: 90, y: 1100, width: 800, height: 200, visible: true, label: '🎁 선물 알림' },
-            moderator: { x: 780, y: 490, width: 120, height: 800, visible: true, label: '🛡️ 모더 위젯' },
+            song: { x: 54, y: 230, width: 972, height: 70, visible: true, label: '🎵 신청곡+공지' },
+            speech: { x: 54, y: 325, width: 972, height: 150, visible: true, label: '🎤 번역 자막' },
+            gift: { x: 54, y: 1100, width: 972, height: 200, visible: true, label: '🎁 선물 알림' },
+            moderator: { x: 880, y: 490, width: 120, height: 800, visible: true, label: '🛡️ 모더 위젯' },
             roulette: { x: -400, y: 500, width: 340, height: 520, visible: true, label: '🎰 룰렛 미션' }
         };
 
@@ -151,7 +151,7 @@
         // 초기화
         document.addEventListener('DOMContentLoaded', async () => {
             const canvasContainer = document.getElementById('canvas-container');
-            scale = 300 / CANVAS_WIDTH;
+            scale = 270 / CANVAS_WIDTH;
 
             // 저장된 위치 로드
             await loadPositions();
