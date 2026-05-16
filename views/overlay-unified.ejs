@@ -2,18 +2,10 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1080, height=1920, initial-scale=1.0">
     <title>TikFind Unified Overlay</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html {
-            width: 1080px;
-            height: 1920px;
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-        body {
+        html, body {
             width: 1080px;
             height: 1920px;
             background: transparent;
@@ -45,6 +37,12 @@
 
         // 초기화
         async function init() {
+            // 강제로 크기 설정 (틱톡 스튜디오 재시작 시 크기 유지)
+            document.documentElement.style.width = '1080px';
+            document.documentElement.style.height = '1920px';
+            document.body.style.width = '1080px';
+            document.body.style.height = '1920px';
+
             await loadPositions();
             renderWidgets();
             setupSocketListeners();
