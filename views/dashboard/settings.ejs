@@ -6,11 +6,17 @@
     <title>설정 - TikFind</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-btn { transition: all .2s; border-bottom: 3px solid transparent; }
+        .tab-btn.active { border-bottom-color: #6366f1; color: #6366f1; font-weight: 700; }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+    </style>
 </head>
 <body class="bg-gray-50">
     <div id="sidebar-container"></div>
     <div id="header-container"></div>
-    
+
     <main class="ml-64 p-8" style="margin-top: 88px;">
         <div class="max-w-4xl mx-auto">
             <div class="mb-8">
@@ -18,9 +24,34 @@
                 <p class="text-gray-600 mt-2">계정 및 서비스 설정을 관리하세요</p>
             </div>
 
-            <div class="space-y-6">
-                <!-- 프로필 정보 -->
-                <div class="bg-white rounded-lg shadow-md p-6">
+            <!-- 탭 네비게이션 -->
+            <div class="bg-white rounded-xl shadow mb-6">
+                <div class="flex border-b border-gray-200 px-2">
+                    <button onclick="switchTab('profile')" id="tab-profile"
+                        class="tab-btn active px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fas fa-user text-indigo-500"></i> 프로필 & 언어
+                    </button>
+                    <button onclick="switchTab('tiktok')" id="tab-tiktok"
+                        class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fab fa-tiktok text-pink-500"></i> TikTok 설정
+                    </button>
+                    <button onclick="switchTab('youtube')" id="tab-youtube"
+                        class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fab fa-youtube text-red-500"></i> YouTube 설정
+                    </button>
+                    <button onclick="switchTab('tts')" id="tab-tts"
+                        class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fas fa-microphone-alt text-green-500"></i> TTS 설정
+                    </button>
+                </div>
+            </div>
+
+            <!-- 탭 패널들 -->
+            <div>
+                <!-- 탭 1: 프로필 & 언어 -->
+                <div id="panel-profile" class="tab-panel active space-y-6">
+                    <!-- 프로필 정보 -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                         <i class="fas fa-user mr-2 text-indigo-600"></i>
                         프로필 정보
@@ -42,8 +73,34 @@
                     </div>
                 </div>
 
-                <!-- TikTok ID -->
+                <!-- 언어 설정 -->
                 <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <i class="fas fa-language mr-2 text-purple-600"></i>
+                        언어 설정
+                    </h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">모국어 (AI 발음 코치용)</label>
+                            <select id="native-language" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
+                                <option value="ko" <%= user.preferredLanguage === 'ko' ? 'selected' : '' %>>🇰🇷 한국어 (Korean)</option>
+                                <option value="en" <%= user.preferredLanguage === 'en' ? 'selected' : '' %>>🇺🇸 영어 (English)</option>
+                                <option value="ja" <%= user.preferredLanguage === 'ja' ? 'selected' : '' %>>🇯🇵 일본어 (Japanese)</option>
+                                <option value="es" <%= user.preferredLanguage === 'es' ? 'selected' : '' %>>🇪🇸 스페인어 (Spanish)</option>
+                                <option value="zh" <%= user.preferredLanguage === 'zh' ? 'selected' : '' %>>🇨🇳 중국어 (Chinese)</option>
+                                <option value="vi" <%= user.preferredLanguage === 'vi' ? 'selected' : '' %>>🇻🇳 베트남어 (Vietnamese)</option>
+                                <option value="th" <%= user.preferredLanguage === 'th' ? 'selected' : '' %>>🇹🇭 태국어 (Thai)</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-2">AI가 이 언어로 발음을 안내합니다</p>
+                        </div>
+                    </div>
+                </div>
+                </div>
+
+                <!-- 탭 2: TikTok 설정 -->
+                <div id="panel-tiktok" class="tab-panel space-y-6">
+                    <!-- TikTok ID -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                         <i class="fab fa-tiktok mr-2 text-pink-600"></i>
                         TikTok ID
@@ -156,32 +213,12 @@
                     </div>
                     <p id="session-id-msg" class="text-xs mt-2 hidden"></p>
                 </div>
-
-                <!-- 언어 설정 -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                        <i class="fas fa-language mr-2 text-purple-600"></i>
-                        언어 설정
-                    </h3>
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">모국어 (AI 발음 코치용)</label>
-                            <select id="native-language" disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed">
-                                <option value="ko" <%= user.preferredLanguage === 'ko' ? 'selected' : '' %>>🇰🇷 한국어 (Korean)</option>
-                                <option value="en" <%= user.preferredLanguage === 'en' ? 'selected' : '' %>>🇺🇸 영어 (English)</option>
-                                <option value="ja" <%= user.preferredLanguage === 'ja' ? 'selected' : '' %>>🇯🇵 일본어 (Japanese)</option>
-                                <option value="es" <%= user.preferredLanguage === 'es' ? 'selected' : '' %>>🇪🇸 스페인어 (Spanish)</option>
-                                <option value="zh" <%= user.preferredLanguage === 'zh' ? 'selected' : '' %>>🇨🇳 중국어 (Chinese)</option>
-                                <option value="vi" <%= user.preferredLanguage === 'vi' ? 'selected' : '' %>>🇻🇳 베트남어 (Vietnamese)</option>
-                                <option value="th" <%= user.preferredLanguage === 'th' ? 'selected' : '' %>>🇹🇭 태국어 (Thai)</option>
-                            </select>
-                            <p class="text-xs text-gray-500 mt-2">AI가 이 언어로 발음을 안내합니다</p>
-                        </div>
-                    </div>
                 </div>
 
-                <!-- YouTube API 키 설정 -->
-                <div class="bg-white rounded-lg shadow-md p-6">
+                <!-- 탭 3: YouTube 설정 -->
+                <div id="panel-youtube" class="tab-panel space-y-6">
+                    <!-- YouTube API 키 설정 -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-xl font-semibold text-gray-800 mb-1 flex items-center">
                         <i class="fab fa-youtube mr-2 text-red-600"></i>
                         YouTube API 키 설정
@@ -280,9 +317,12 @@
                         </div>
                     </div>
                 </div>
+                </div>
 
-                <!-- Google TTS 설정 -->
-                <div class="bg-white rounded-lg shadow-md p-6">
+                <!-- 탭 4: TTS 설정 -->
+                <div id="panel-tts" class="tab-panel space-y-6">
+                    <!-- Google TTS 설정 -->
+                    <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-xl font-semibold text-gray-800 mb-1 flex items-center">
                         <i class="fas fa-microphone-alt mr-2 text-green-600"></i>
                         Google TTS 설정
@@ -361,15 +401,6 @@
                         <p class="text-sm text-gray-400 text-center py-4" id="voiceSettingsEmpty">설정된 VIP 아이디가 없습니다</p>
                     </div>
                 </div>
-
-                <!-- 저장 버튼 -->
-                <div class="flex justify-end space-x-4">
-                    <button onclick="window.location.reload()" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-                        취소
-                    </button>
-                    <button onclick="saveSettings()" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
-                        <i class="fas fa-save mr-2"></i>저장
-                    </button>
                 </div>
             </div>
         </div>
@@ -378,6 +409,16 @@
     <script src="/js/i18n.js"></script>
     <script src="/js/layout.js"></script>
     <script>
+        function switchTab(name) {
+            // 모든 탭 비활성화
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+
+            // 선택한 탭 활성화
+            document.getElementById('tab-' + name).classList.add('active');
+            document.getElementById('panel-' + name).classList.add('active');
+        }
+
         function showTikTokEdit() {
             document.getElementById('tiktok-id-display').classList.add('hidden');
             document.getElementById('tiktok-edit-form').classList.remove('hidden');
