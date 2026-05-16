@@ -1758,10 +1758,22 @@ router.post('/overlay-notice', requireAuth, async (req, res) => {
     try {
         const { content } = req.body;
         if (!content || !content.trim()) return res.status(400).json({ success: false, message: '내용을 입력해주세요.' });
-        if (content.length > 50) return res.status(400).json({ success: false, message: '50자 이내로 입력해주세요.' });
+
+        // HTML 태그와 스크립트 제거 (이모지는 허용)
+        let sanitizedContent = content.trim()
+            .replace(/<[^>]*>/g, '')  // HTML 태그 제거
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/javascript:/gi, '')
+            .replace(/on\w+\s*=/gi, '');  // 이벤트 핸들러 제거
+
+        if (sanitizedContent.length > 50) return res.status(400).json({ success: false, message: '50자 이내로 입력해주세요.' });
         const count = await OverlayNotice.countDocuments({ userId: req.user._id });
         if (count >= 10) return res.status(400).json({ success: false, message: '공지는 최대 10개까지 저장할 수 있습니다.' });
-        const notice = await OverlayNotice.create({ userId: req.user._id, content: content.trim(), order: count });
+        const notice = await OverlayNotice.create({ userId: req.user._id, content: sanitizedContent, order: count });
         const io = req.app.get('io');
         if (io) io.to('overlay-' + String(req.user._id)).emit('overlay-notice-update');
         res.json({ success: true, notice });
@@ -1776,8 +1788,19 @@ router.patch('/overlay-notice/:id', requireAuth, async (req, res) => {
         const { content, isActive } = req.body;
         const update = {};
         if (content !== undefined) {
-            if (content.length > 50) return res.status(400).json({ success: false, message: '50자 이내로 입력해주세요.' });
-            update.content = content.trim();
+            // HTML 태그와 스크립트 제거 (이모지는 허용)
+            let sanitizedContent = content.trim()
+                .replace(/<[^>]*>/g, '')  // HTML 태그 제거
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&amp;/g, '&')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .replace(/javascript:/gi, '')
+                .replace(/on\w+\s*=/gi, '');  // 이벤트 핸들러 제거
+
+            if (sanitizedContent.length > 50) return res.status(400).json({ success: false, message: '50자 이내로 입력해주세요.' });
+            update.content = sanitizedContent;
         }
         if (isActive !== undefined) update.isActive = isActive;
         const notice = await OverlayNotice.findOneAndUpdate(
