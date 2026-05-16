@@ -300,22 +300,45 @@ router.post('/fetch-tiktok-userid', requireAuth, async (req, res) => {
                 method: 'GET',
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
                     'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Cache-Control': 'max-age=0',
                 }
             };
             const r = https.request(options, (resp) => {
                 let data = '';
                 resp.on('data', c => { data += c; });
                 resp.on('end', () => {
-                    const match = data.match(/"uniqueId":"[^"]*","id":"(\d+)"/) ||
-                                  data.match(/"secUid":"[^"]*","id":"(\d+)"/) ||
-                                  data.match(/"userId":"(\d+)"/) ||
-                                  data.match(/"authorId":"(\d+)"/);
-                    resolve(match ? match[1] : '');
+                    // 다양한 패턴 시도
+                    const patterns = [
+                        /"uniqueId":"[^"]*","id":"(\d+)"/,
+                        /"secUid":"[^"]*","id":"(\d+)"/,
+                        /"userId":"(\d+)"/,
+                        /"authorId":"(\d+)"/,
+                        /"id":"(\d{19})"/,
+                        /"user":{"id":"(\d+)"/,
+                        /"userInfo":{"user":{"id":"(\d+)"/,
+                        /"webapp\.user-detail".*?"id":"(\d+)"/,
+                        /__UNIVERSAL_DATA_FOR_REHYDRATION__.*?"id":"(\d{19})"/,
+                    ];
+                    for (const pattern of patterns) {
+                        const match = data.match(pattern);
+                        if (match && match[1] && match[1].length >= 15) {
+                            resolve(match[1]);
+                            return;
+                        }
+                    }
+                    resolve('');
                 });
             });
             r.on('error', () => resolve(''));
-            r.setTimeout(8000, () => { r.destroy(); resolve(''); });
+            r.setTimeout(10000, () => { r.destroy(); resolve(''); });
             r.end();
         });
         if (numId) {
