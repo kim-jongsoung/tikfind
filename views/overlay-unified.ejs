@@ -2,16 +2,23 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=980, height=1890, initial-scale=1.0">
     <title>TikFind Unified Overlay</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body {
+        html {
             width: 980px;
-            min-height: 1890px;
+            height: 1890px;
+        }
+        body {
+            width: 980px;
+            height: 1890px;
             background: transparent;
             overflow: hidden;
-            aspect-ratio: 980 / 1890;
+        }
+        #overlay-container {
+            width: 980px;
+            height: 1890px;
+            position: relative;
         }
         .widget-container {
             position: absolute;
