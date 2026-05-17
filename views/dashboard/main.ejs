@@ -28,7 +28,32 @@
                     </p>
                 </div>
 
-                <!-- Desktop App -->
+                <!-- TikTok 설정 안내 (TikTok ID 미등록 시) -->
+                <% if (!user.tiktokId) { %>
+                <div class="bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg shadow-md p-6 text-white relative overflow-hidden">
+                    <div class="absolute top-0 left-0 right-0 bottom-0 opacity-10" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+                    <div class="relative z-10">
+                        <div class="flex items-start gap-4">
+                            <div class="flex-shrink-0">
+                                <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                    <i class="fab fa-tiktok text-3xl"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold mb-2">TikTok 설정 먼저 완료하세요</h3>
+                                <p class="mb-4 opacity-90">Desktop App 설치 전에 TikTok ID를 등록해야 합니다. 설정을 완료한 후 데스크탑 앱을 설치하고 연결하세요.</p>
+                                <a href="/dashboard/settings" class="inline-flex items-center gap-2 bg-white text-pink-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition shadow-lg">
+                                    <i class="fas fa-cog"></i>
+                                    TikTok 설정하러 가기
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <% } %>
+
+                <!-- Desktop App (TikTok ID 등록 시) -->
+                <% if (user.tiktokId) { %>
                 <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
                     <div class="flex items-center gap-2 mb-4">
                         <i class="fas fa-desktop text-gray-500"></i>
@@ -98,8 +123,10 @@
                         </div>
                     </div>
                 </div>
+                <% } %>
 
-                <!-- 방송 시작 카드 -->
+                <!-- 방송 시작 카드 (TikTok ID 등록 시) -->
+                <% if (user.tiktokId) { %>
                 <div class="bg-gradient-to-r from-pink-500 to-purple-600 rounded-lg shadow-md p-6 text-white relative overflow-hidden">
                     <div class="absolute top-0 left-0 right-0 bottom-0 opacity-10" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
                     <div class="relative z-10">
@@ -128,6 +155,7 @@
                         </div>
                     </div>
                 </div>
+                <% } %>
 
                 <!-- 플랜 정보 -->
                 <div class="bg-white rounded-lg shadow-md p-6" id="planSection">
