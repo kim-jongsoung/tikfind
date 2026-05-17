@@ -8,6 +8,7 @@ const AlgorithmViewer = require('../models/AlgorithmViewer');
 const MessageTemplate = require('../models/MessageTemplate');
 const OverlayNotice = require('../models/OverlayNotice');
 const Moderator = require('../models/Moderator');
+const Notice = require('../models/Notice');
 const ytdl = require('@distube/ytdl-core');
 const SongRequestService = require('../services/SongRequestService');
 
@@ -2146,6 +2147,16 @@ router.get('/overlay-positions-public/:userId', async (req, res) => {
     try {
         const user = await User.findById(req.params.userId).select('unifiedOverlayPositions').lean();
         res.json({ success: true, positions: user?.unifiedOverlayPositions || {} });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// GET /api/notices (인증 불필요 - 대시보드 공지사항 조회)
+router.get('/notices', async (req, res) => {
+    try {
+        const notices = await Notice.find({ isVisible: true }).sort({ priority: -1, createdAt: -1 });
+        res.json({ success: true, notices });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
     }

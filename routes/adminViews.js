@@ -69,4 +69,9 @@ router.get('/songs-cache', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/admin/songs-cache.html'));
 });
 
+// 공지사항 관리
+router.get('/notices', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/admin/notices.html'));
+});
+
 module.exports = router;

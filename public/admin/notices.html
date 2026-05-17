@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공지사항 관리 - TikFind Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <!-- Admin Header -->
+    <header class="bg-slate-900 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl font-bold">TikFind Admin</h1>
+                <span class="px-3 py-1 bg-red-600 text-xs rounded-full">ADMIN</span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="admin-email" class="text-sm"></span>
+                <a href="/dashboard" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm">
+                    <i class="fas fa-home mr-2"></i>User Dashboard
+                </a>
+                <a href="/auth/logout" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm">
+                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Admin Navigation -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4">
+            <ul class="flex space-x-8 py-4">
+                <li>
+                    <a href="/admin/dashboard" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-chart-line mr-2"></i>Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/users" class="text-gray-600 hover:text-blue-600 pb-2">
+                        <i class="fas fa-users mr-2"></i>Users
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/notices" class="text-blue-600 font-semibold border-b-2 border-blue-600 pb-2">
+                        <i class="fas fa-bullhorn mr-2"></i>공지사항
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">공지사항 관리</h2>
+                <button onclick="openNoticeModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-plus mr-2"></i>공지사항 추가
+                </button>
+            </div>
+
+            <!-- 공지사항 목록 -->
+            <div id="notices-list" class="space-y-4">
+                <p class="text-gray-500 text-center py-8">로딩 중...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- 공지사항 추가/수정 모달 -->
+    <div id="noticeModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h3 class="text-xl font-bold text-gray-800" id="modalTitle">공지사항 추가</h3>
+                <button onclick="closeNoticeModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <input type="hidden" id="noticeId">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">제목</label>
+                    <input type="text" id="noticeTitle" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="공지사항 제목">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">내용</label>
+                    <textarea id="noticeContent" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="공지사항 내용"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="noticeVisible" class="mr-2" checked>
+                        <span class="text-sm text-gray-700">대시보드에 노출</span>
+                    </label>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
+                    <input type="number" id="noticePriority" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" placeholder="0" value="0">
+                    <p class="text-xs text-gray-500 mt-1">높은 숫자가 상단에 표시됩니다</p>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 p-6 border-t">
+                <button onclick="closeNoticeModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">취소</button>
+                <button onclick="saveNotice()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 공지사항 로드
+        async function loadNotices() {
+            try {
+                const res = await fetch('/admin/api/notices');
+                const data = await res.json();
+                if (data.success) {
+                    renderNotices(data.notices);
+                }
+            } catch (error) {
+                console.error('공지사항 로드 오류:', error);
+            }
+        }
+
+        // 공지사항 렌더링
+        function renderNotices(notices) {
+            const container = document.getElementById('notices-list');
+            if (notices.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">등록된 공지사항이 없습니다.</p>';
+                return;
+            }
+
+            container.innerHTML = notices.map(notice => `
+                <div class="border border-gray-200 rounded-lg p-4 ${!notice.isVisible ? 'bg-gray-50 opacity-60' : ''}">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <h4 class="font-semibold text-gray-800">${notice.title}</h4>
+                                <span class="text-xs px-2 py-1 rounded ${notice.isVisible ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}">
+                                    ${notice.isVisible ? '노출' : '숨김'}
+                                </span>
+                                <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700">우선순위: ${notice.priority}</span>
+                            </div>
+                            <p class="text-sm text-gray-600">${notice.content}</p>
+                            <p class="text-xs text-gray-400 mt-2">생성일: ${new Date(notice.createdAt).toLocaleString('ko-KR')}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="toggleNotice('${notice._id}')" class="px-3 py-1 text-sm ${notice.isVisible ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'} rounded transition">
+                                ${notice.isVisible ? '숨기기' : '노출'}
+                            </button>
+                            <button onclick="editNotice('${notice._id}')" class="px-3 py-1 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 rounded transition">
+                                수정
+                            </button>
+                            <button onclick="deleteNotice('${notice._id}')" class="px-3 py-1 text-sm bg-red-100 text-red-700 hover:bg-red-200 rounded transition">
+                                삭제
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 모달 열기
+        function openNoticeModal(notice = null) {
+            document.getElementById('noticeModal').classList.remove('hidden');
+            document.getElementById('noticeModal').classList.add('flex');
+            document.getElementById('modalTitle').textContent = notice ? '공지사항 수정' : '공지사항 추가';
+            
+            if (notice) {
+                document.getElementById('noticeId').value = notice._id;
+                document.getElementById('noticeTitle').value = notice.title;
+                document.getElementById('noticeContent').value = notice.content;
+                document.getElementById('noticeVisible').checked = notice.isVisible;
+                document.getElementById('noticePriority').value = notice.priority;
+            } else {
+                document.getElementById('noticeId').value = '';
+                document.getElementById('noticeTitle').value = '';
+                document.getElementById('noticeContent').value = '';
+                document.getElementById('noticeVisible').checked = true;
+                document.getElementById('noticePriority').value = 0;
+            }
+        }
+
+        // 모달 닫기
+        function closeNoticeModal() {
+            document.getElementById('noticeModal').classList.add('hidden');
+            document.getElementById('noticeModal').classList.remove('flex');
+        }
+
+        // 공지사항 저장
+        async function saveNotice() {
+            const id = document.getElementById('noticeId').value;
+            const title = document.getElementById('noticeTitle').value.trim();
+            const content = document.getElementById('noticeContent').value.trim();
+            const isVisible = document.getElementById('noticeVisible').checked;
+            const priority = parseInt(document.getElementById('noticePriority').value) || 0;
+
+            if (!title || !content) {
+                alert('제목과 내용을 입력하세요.');
+                return;
+            }
+
+            try {
+                const method = id ? 'PUT' : 'POST';
+                const url = id ? `/admin/api/notices/${id}` : '/admin/api/notices';
+                
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, content, isVisible, priority })
+                });
+                
+                const data = await res.json();
+                if (data.success) {
+                    alert('공지사항이 저장되었습니다.');
+                    closeNoticeModal();
+                    loadNotices();
+                } else {
+                    alert('오류: ' + (data.message || '저장 실패'));
+                }
+            } catch (error) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(error);
+            }
+        }
+
+        // 공지사항 수정
+        async function editNotice(id) {
+            try {
+                const res = await fetch('/admin/api/notices');
+                const data = await res.json();
+                if (data.success) {
+                    const notice = data.notices.find(n => n._id === id);
+                    if (notice) {
+                        openNoticeModal(notice);
+                    }
+                }
+            } catch (error) {
+                console.error('공지사항 로드 오류:', error);
+            }
+        }
+
+        // 공지사항 삭제
+        async function deleteNotice(id) {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+
+            try {
+                const res = await fetch(`/admin/api/notices/${id}`, {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('공지사항이 삭제되었습니다.');
+                    loadNotices();
+                } else {
+                    alert('오류: ' + (data.message || '삭제 실패'));
+                }
+            } catch (error) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(error);
+            }
+        }
+
+        // 공지사항 노출 유무 토글
+        async function toggleNotice(id) {
+            try {
+                const res = await fetch(`/admin/api/notices/${id}/toggle`, {
+                    method: 'PATCH'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    loadNotices();
+                } else {
+                    alert('오류: ' + (data.message || '토글 실패'));
+                }
+            } catch (error) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(error);
+            }
+        }
+
+        // 관리자 이메일 표시
+        fetch('/admin/api/admin-info')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.admin) {
+                    document.getElementById('admin-email').textContent = data.admin.email;
+                }
+            })
+            .catch(err => {
+                console.error('관리자 정보 로드 오류:', err);
+            });
+
+        // 페이지 로드 시 공지사항 로드
+        loadNotices();
+    </script>
+</body>
+</html>

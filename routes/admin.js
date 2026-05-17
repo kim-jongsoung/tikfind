@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Subscription = require('../models/Subscription');
 const Payment = require('../models/Payment');
 const AdminLog = require('../models/AdminLog');
+const Notice = require('../models/Notice');
 const { isAuthenticated, isAdmin, logAdminAction } = require('../middleware/adminAuth');
 
 module.exports = function(io) {
@@ -936,6 +937,95 @@ router.post('/songs/cache-setting', (req, res) => {
         res.json({ success: true, useCache });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// ==================== 공지사항 관리 ====================
+
+// 관리자 정보 조회
+router.get('/admin-info', async (req, res) => {
+    try {
+        const admin = await User.findById(req.session.adminId).select('email').lean();
+        res.json({ success: true, admin });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 공지사항 목록 조회
+router.get('/notices', async (req, res) => {
+    try {
+        const notices = await Notice.find().sort({ priority: -1, createdAt: -1 });
+        res.json({ success: true, notices });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 공지사항 생성
+router.post('/notices', logAdminAction('notice_create'), async (req, res) => {
+    try {
+        const { title, content, isVisible, priority } = req.body;
+        if (!title || !content) return res.status(400).json({ success: false, message: '제목과 내용은 필수입니다.' });
+
+        const notice = await Notice.create({
+            title,
+            content,
+            isVisible: isVisible !== undefined ? isVisible : true,
+            priority: priority || 0
+        });
+
+        console.log(`📢 공지사항 생성: ${title}`);
+        res.json({ success: true, notice });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 공지사항 수정
+router.put('/notices/:id', logAdminAction('notice_update'), async (req, res) => {
+    try {
+        const { title, content, isVisible, priority } = req.body;
+        const notice = await Notice.findByIdAndUpdate(
+            req.params.id,
+            { title, content, isVisible, priority },
+            { new: true }
+        );
+        if (!notice) return res.status(404).json({ success: false, message: '공지사항을 찾을 수 없습니다.' });
+
+        console.log(`📢 공지사항 수정: ${title}`);
+        res.json({ success: true, notice });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 공지사항 삭제
+router.delete('/notices/:id', logAdminAction('notice_delete'), async (req, res) => {
+    try {
+        const notice = await Notice.findByIdAndDelete(req.params.id);
+        if (!notice) return res.status(404).json({ success: false, message: '공지사항을 찾을 수 없습니다.' });
+
+        console.log(`📢 공지사항 삭제: ${notice.title}`);
+        res.json({ success: true, message: '공지사항이 삭제되었습니다.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// 공지사항 노출 유무 토글
+router.patch('/notices/:id/toggle', logAdminAction('notice_toggle'), async (req, res) => {
+    try {
+        const notice = await Notice.findById(req.params.id);
+        if (!notice) return res.status(404).json({ success: false, message: '공지사항을 찾을 수 없습니다.' });
+
+        notice.isVisible = !notice.isVisible;
+        await notice.save();
+
+        console.log(`📢 공지사항 노출 상태 변경: ${notice.title} → ${notice.isVisible ? '노출' : '숨김'}`);
+        res.json({ success: true, notice });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 

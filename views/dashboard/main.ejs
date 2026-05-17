@@ -19,14 +19,8 @@
         <div class="max-w-4xl mx-auto">
             <div class="space-y-6">
 
-                <!-- 공지 배너 -->
-                <div class="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-lg px-5 py-4">
-                    <i class="fas fa-bullhorn text-amber-500 mt-0.5 flex-shrink-0"></i>
-                    <p class="text-sm text-amber-800">
-                        <strong>📢 플랜 업그레이드 안내</strong> — 현재 <strong>A리그 호스트</strong>를 대상으로만 업그레이드 신청을 받고 있습니다.
-                        문의는 <a href="mailto:luxfind01@gmail.com" class="font-semibold underline hover:text-amber-900">luxfind01@gmail.com</a>으로 연락해 주세요.
-                    </p>
-                </div>
+                <!-- 공지 배너 (동적 로드) -->
+                <div id="notices-container"></div>
 
                 <!-- TikTok 설정 안내 (TikTok ID 미등록 시) -->
                 <% if (!user.tiktokId) { %>
@@ -407,6 +401,26 @@
                 });
             }
         }
+
+        // 공지사항 로드
+        fetch('/api/notices')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.notices && data.notices.length > 0) {
+                    const container = document.getElementById('notices-container');
+                    container.innerHTML = data.notices.map(notice => `
+                        <div class="flex items-start gap-3 bg-amber-50 border border-amber-300 rounded-lg px-5 py-4">
+                            <i class="fas fa-bullhorn text-amber-500 mt-0.5 flex-shrink-0"></i>
+                            <p class="text-sm text-amber-800">
+                                <strong>📢 ${notice.title}</strong> — ${notice.content}
+                            </p>
+                        </div>
+                    `).join('');
+                }
+            })
+            .catch(err => {
+                console.error('공지사항 로드 오류:', err);
+            });
 
         // 사용자 플랜 로드
         fetch('/api/user/plan')
