@@ -285,6 +285,19 @@ router.post('/users/:id/memo', async (req, res) => {
     }
 });
 
+// TikTok 숫자 User ID 저장
+router.post('/users/:id/tiktok-userid', async (req, res) => {
+    try {
+        const { tiktokUserId } = req.body;
+        const user = await User.findByIdAndUpdate(req.params.id, { tiktokUserId: String(tiktokUserId).trim() }, { new: true });
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+        console.log(`🔑 [admin] TikTok 숫자 User ID 저장: ${user.email} → ${tiktokUserId}`);
+        res.json({ success: true, message: 'TikTok 숫자 User ID가 저장되었습니다.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // 결제 기록 조회
 router.get('/users/:id/payments', async (req, res) => {
     try {

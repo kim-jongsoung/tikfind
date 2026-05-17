@@ -79,6 +79,36 @@
   </div>
 </div>
 
+<!-- TikTok 숫자 User ID 모달 -->
+<div id="tiktokUserIdModal" class="modal-overlay hidden">
+  <div class="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-bold">🔑 TikTok 숫자 User ID</h2>
+      <button onclick="closeTiktokUserIdModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+    </div>
+    <div class="mb-3 p-3 bg-pink-50 rounded-lg">
+      <p class="text-sm font-semibold text-pink-800" id="tiktokUserIdUserName"></p>
+      <p class="text-xs text-pink-600 mt-1">TikTok ID: <span id="tiktokUserIdTiktokId" class="font-bold"></span></p>
+    </div>
+    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+      <p class="text-xs text-yellow-800"><i class="fas fa-info-circle mr-1"></i>AI 매치코치 팀 판별용 숫자 ID입니다. 자동조회 또는 직접 입력하세요.</p>
+    </div>
+    <div class="space-y-3">
+      <div class="flex gap-2">
+        <input type="text" id="tiktokUserIdInput" placeholder="숫자 ID (예: 6711215801733907457)" class="flex-1 px-3 py-2 border rounded-lg text-sm font-mono">
+        <button onclick="autoFetchTiktokUserId()" class="px-3 py-2 bg-pink-600 text-white rounded-lg text-sm hover:bg-pink-700 whitespace-nowrap">
+          <i class="fas fa-search mr-1"></i>자동조회
+        </button>
+      </div>
+      <p id="tiktokUserIdMsg" class="text-xs hidden"></p>
+    </div>
+    <div class="flex gap-3 mt-5">
+      <button onclick="submitTiktokUserId()" class="flex-1 py-2 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700">✅ 저장</button>
+      <button onclick="closeTiktokUserIdModal()" class="flex-1 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm">취소</button>
+    </div>
+  </div>
+</div>
+
     <header class="bg-slate-900 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4 flex justify-between items-center">
             <div class="flex items-center space-x-4">
@@ -325,6 +355,10 @@
                     <td class="px-4 py-3">
                         <div class="flex flex-col gap-1">
                             ${memo}
+                            <button onclick="openTiktokUserIdModal('${user._id}','${escHtml(user.nickname||user.email)}','${user.tiktokId||''}','${user.tiktokUserId||''}')"
+                                class="text-xs px-2 py-1 bg-pink-600 text-white rounded hover:bg-pink-700 whitespace-nowrap">
+                                🔑 숫자ID
+                            </button>
                             <button onclick="openExtendModal('${user._id}','${escHtml(user.nickname||user.email)}','${user.subscriptionEndDate||''}')"
                                 class="text-xs px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 whitespace-nowrap">
                                 💳 연장
@@ -453,6 +487,75 @@
             else { alert('저장 실패: ' + data.message); }
         }
 
+        // ===== TikTok 숫자 User ID 모달 =====
+        function openTiktokUserIdModal(userId, name, tiktokId, currentTiktokUserId) {
+            modalUserId = userId;
+            document.getElementById('tiktokUserIdUserName').textContent = name;
+            document.getElementById('tiktokUserIdTiktokId').textContent = tiktokId || '없음';
+            document.getElementById('tiktokUserIdInput').value = currentTiktokUserId || '';
+            document.getElementById('tiktokUserIdMsg').classList.add('hidden');
+            document.getElementById('tiktokUserIdModal').classList.remove('hidden');
+        }
+        function closeTiktokUserIdModal() { document.getElementById('tiktokUserIdModal').classList.add('hidden'); modalUserId = null; }
+
+        async function autoFetchTiktokUserId() {
+            if (!modalUserId) return;
+            const msg = document.getElementById('tiktokUserIdMsg');
+            const input = document.getElementById('tiktokUserIdInput');
+            const tiktokId = document.getElementById('tiktokUserIdTiktokId').textContent;
+
+            if (!tiktokId || tiktokId === '없음') {
+                msg.textContent = '⚠️ TikTok ID가 없습니다. 먼저 사용자가 TikTok ID를 등록해야 합니다.';
+                msg.className = 'text-xs mt-2 text-red-600';
+                msg.classList.remove('hidden');
+                return;
+            }
+
+            msg.textContent = '조회 중...';
+            msg.className = 'text-xs mt-2 text-blue-600';
+            msg.classList.remove('hidden');
+
+            try {
+                const res = await fetch('/api/fetch-tiktok-userid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tiktokId })
+                });
+                const data = await res.json();
+                if (data.success && data.tiktokUserId) {
+                    input.value = data.tiktokUserId;
+                    msg.textContent = '✅ 자동 조회 성공! 저장 버튼을 눌러 저장하세요.';
+                    msg.className = 'text-xs mt-2 text-green-600';
+                } else {
+                    msg.textContent = '⚠️ 자동 조회 실패. 직접 입력 후 저장하세요.';
+                    msg.className = 'text-xs mt-2 text-red-600';
+                }
+            } catch(e) {
+                msg.textContent = '서버 오류가 발생했습니다.';
+                msg.className = 'text-xs mt-2 text-red-600';
+            }
+        }
+
+        async function submitTiktokUserId() {
+            if (!modalUserId) return;
+            const tiktokUserId = document.getElementById('tiktokUserIdInput').value.trim();
+            if (!tiktokUserId) { alert('숫자 User ID를 입력하세요.'); return; }
+
+            const res = await fetch(`/admin/api/users/${modalUserId}/tiktok-userid`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tiktokUserId })
+            });
+            const data = await res.json();
+            if (data.success) {
+                closeTiktokUserIdModal();
+                showToast('TikTok 숫자 User ID 저장 완료');
+                loadUsers(currentPage);
+            } else {
+                alert('저장 실패: ' + data.message);
+            }
+        }
+
         // ===== 필터 =====
         function applyFilters() {
             currentFilters = {};
@@ -502,7 +605,7 @@
         // ===== ESC 키로 모달 닫기 =====
         document.addEventListener('keydown', e => {
             if (e.key === 'Escape') {
-                closeExtendModal(); closePayHistModal(); closeMemoModal();
+                closeExtendModal(); closePayHistModal(); closeMemoModal(); closeTiktokUserIdModal();
             }
         });
 
