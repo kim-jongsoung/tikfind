@@ -27,6 +27,17 @@ const adminLogSchema = new mongoose.Schema({
             'admin_login',
             'admin_logout',
             'export_data',
+            'stats_view',
+            'users_list',
+            'subscriptions_list',
+            'payments_list',
+            'plan_limits_view',
+            'plan_limits_update',
+            'fix_tiktok_ids',
+            'notice_create',
+            'notice_update',
+            'notice_delete',
+            'notice_toggle',
             'other'
         ]
     },
