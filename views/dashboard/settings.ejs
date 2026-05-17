@@ -179,12 +179,14 @@
                         <p class="text-sm font-semibold text-blue-800 mb-3">📋 숫자 ID 찾는 방법 (3단계)</p>
                         <ol class="text-sm text-blue-700 space-y-3 list-decimal list-inside">
                             <li>
-                                <strong>브라우저에서 TikTok 프로필 페이지 열기</strong><br>
-                                <span class="text-xs text-blue-600">주소창에 <code class="bg-blue-100 px-1 rounded">tiktok.com/@본인아이디</code> 입력</span>
+                                <strong>TikTok 프로필 페이지 열기</strong><br>
+                                <button onclick="openTiktokProfile()" class="mt-1 px-3 py-1 bg-pink-600 text-white rounded text-xs hover:bg-pink-700 transition">
+                                    <i class="fas fa-external-link-alt mr-1"></i>페이지 열기
+                                </button>
                             </li>
                             <li>
                                 <strong>개발자 도구 열기</strong><br>
-                                <span class="text-xs text-blue-600">키보드 <kbd class="bg-blue-100 px-1 rounded">F12</kbd> 키 누르기</span>
+                                <span class="text-xs text-blue-600">열린 페이지에서 키보드 <kbd class="bg-blue-100 px-1 rounded">F12</kbd> 키 누르기</span>
                             </li>
                             <li>
                                 <strong>Console 탭에서 명령어 실행</strong><br>
@@ -477,6 +479,16 @@
         function cancelTikTokEdit() {
             document.getElementById('tiktok-id-display').classList.remove('hidden');
             document.getElementById('tiktok-edit-form').classList.add('hidden');
+        }
+
+        function openTiktokProfile() {
+            const tiktokId = '<%= user.tiktokId %>';
+            if (!tiktokId) {
+                alert('먼저 TikTok ID를 저장하세요.');
+                return;
+            }
+            const url = `https://www.tiktok.com/@${tiktokId}`;
+            window.open(url, '_blank', 'width=1200,height=800');
         }
 
         async function saveTikTokUserId() {
