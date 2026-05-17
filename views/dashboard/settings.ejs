@@ -217,12 +217,23 @@
                     </h3>
                     <p class="text-sm text-gray-500 mb-4">TikTok이 로그인 인증을 요구할 때 Session ID를 입력하면 연결 오류가 해결됩니다.</p>
 
-                    <div class="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                        <p class="text-xs text-orange-800 font-semibold mb-1">📋 Session ID 찾는 방법</p>
-                        <ol class="text-xs text-orange-700 space-y-1 list-decimal list-inside">
-                            <li>Chrome에서 <strong>tiktok.com</strong> 로그인</li>
-                            <li>F12 → <strong>Application</strong> 탭 → Cookies → <strong>https://www.tiktok.com</strong></li>
-                            <li><strong>sessionid</strong> 항목의 Value 복사</li>
+                    <div class="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                        <p class="text-sm font-semibold text-orange-800 mb-3">📋 Session ID 찾는 방법 (3단계)</p>
+                        <ol class="text-sm text-orange-700 space-y-3 list-decimal list-inside">
+                            <li>
+                                <strong>TikTok 로그인 페이지 열기</strong><br>
+                                <button onclick="window.open('https://www.tiktok.com', '_blank', 'width=1200,height=800')" class="mt-1 px-3 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700 transition">
+                                    <i class="fas fa-external-link-alt mr-1"></i>페이지 열기
+                                </button>
+                            </li>
+                            <li>
+                                <strong>개발자 도구 열기</strong><br>
+                                <span class="text-xs text-orange-600">열린 페이지에서 <kbd class="bg-orange-100 px-1 rounded">F12</kbd> → 상단 <strong>Application</strong> 탭 클릭</span>
+                            </li>
+                            <li>
+                                <strong>Session ID 찾기</strong><br>
+                                <span class="text-xs text-orange-600">왼쪽 메뉴에서 <strong>Cookies</strong> → <strong>https://www.tiktok.com</strong> 클릭 → <strong>sessionid</strong> 항목 클릭 → 표시된 값 복사</span>
+                            </li>
                         </ol>
                     </div>
 
