@@ -151,6 +151,22 @@
                 // 선물 알림
             });
 
+            socket.on('overlay-gift', (data) => {
+                // 선물 알림 (overlay-gift와 호환)
+            });
+
+            socket.on('gift-settings-update', (data) => {
+                // 선물 설정 업데이트
+            });
+
+            socket.on('overlay-mod-notice', (data) => {
+                // 모더 공지
+            });
+
+            socket.on('match-coach', (data) => {
+                // AI 매치 코치
+            });
+
             socket.on('moderator-update', (data) => {
                 // 모더 업데이트
             });
