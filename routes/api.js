@@ -541,6 +541,24 @@ router.post('/user/tiktok-session-id', requireAuth, async (req, res) => {
     }
 });
 
+// 프로필 설정 저장 (닉네임, 스트리머 페르소나)
+router.post('/user/profile', requireAuth, async (req, res) => {
+    try {
+        const { nickname, streamerPersona } = req.body;
+        const user = await User.findById(req.user._id);
+        if (!user) return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+
+        if (nickname) user.nickname = nickname.trim();
+        if (streamerPersona !== undefined) user.streamerPersona = streamerPersona.trim();
+        await user.save({ timestamps: false });
+        console.log('✅ 프로필 설정 저장:', req.user._id, nickname);
+        res.json({ success: true, message: '프로필 설정이 저장되었습니다.' });
+    } catch (error) {
+        console.error('❌ 프로필 설정 저장 오류:', error);
+        res.status(500).json({ success: false, message: '서버 오류: ' + error.message });
+    }
+});
+
 // 사용자 설정 저장
 router.post('/user/settings', requireAuth, async (req, res) => {
     try {

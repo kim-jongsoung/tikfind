@@ -95,6 +95,13 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 저장 버튼 -->
+                <div class="flex justify-end">
+                    <button onclick="saveProfileSettings()" class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                        <i class="fas fa-save mr-2"></i>저장하기
+                    </button>
+                </div>
                 </div>
 
                 <!-- 탭 2: TikTok 설정 -->
@@ -417,6 +424,31 @@
             // 선택한 탭 활성화
             document.getElementById('tab-' + name).classList.add('active');
             document.getElementById('panel-' + name).classList.add('active');
+        }
+
+        async function saveProfileSettings() {
+            const nickname = document.getElementById('user-nickname').value.trim();
+            const persona = document.getElementById('user-persona').value.trim();
+
+            if (!nickname) { alert('닉네임을 입력하세요.'); return; }
+
+            try {
+                const res = await fetch('/api/user/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nickname, streamerPersona: persona })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('프로필 설정이 저장되었습니다!');
+                    location.reload();
+                } else {
+                    alert('오류: ' + (data.message || '프로필 설정 저장에 실패했습니다.'));
+                }
+            } catch(err) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(err);
+            }
         }
 
         function showTikTokEdit() {
