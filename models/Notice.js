@@ -18,20 +18,9 @@ const noticeSchema = new mongoose.Schema({
     priority: {
         type: Number,
         default: 0
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
-});
-
-noticeSchema.pre('save', function(next) {
-    this.updatedAt = Date.now();
-    next();
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('Notice', noticeSchema);
