@@ -53,10 +53,10 @@ const isSuperAdmin = (req, res, next) => {
 
 // Log admin actions
 const logAdminAction = (action) => {
-    return async (req, res, next) => {
+    return (req, res, next) => {
         // Store original send function
         const originalSend = res.send;
-        
+
         // Override send function to log after response
         res.send = function(data) {
             // Log admin action
@@ -73,11 +73,11 @@ const logAdminAction = (action) => {
                     userAgent: req.headers['user-agent']
                 }).catch(err => console.error('Failed to log admin action:', err));
             }
-            
+
             // Call original send
             originalSend.call(this, data);
         };
-        
+
         next();
     };
 };
