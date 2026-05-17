@@ -545,12 +545,13 @@ router.post('/user/tiktok-session-id', requireAuth, async (req, res) => {
 router.post('/user/profile', requireAuth, async (req, res) => {
     try {
         const { nickname, streamerPersona } = req.body;
-        const user = await User.findById(req.user._id);
+        const updateData = {};
+        if (nickname) updateData.nickname = nickname.trim();
+        if (streamerPersona !== undefined) updateData.streamerPersona = streamerPersona.trim();
+
+        const user = await User.findByIdAndUpdate(req.user._id, updateData, { new: true });
         if (!user) return res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
 
-        if (nickname) user.nickname = nickname.trim();
-        if (streamerPersona !== undefined) user.streamerPersona = streamerPersona.trim();
-        await user.save({ timestamps: false });
         console.log('✅ 프로필 설정 저장:', req.user._id, nickname);
         res.json({ success: true, message: '프로필 설정이 저장되었습니다.' });
     } catch (error) {
