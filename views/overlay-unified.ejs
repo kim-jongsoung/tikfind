@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>TikFind Unified Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700;900&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -10,6 +12,7 @@
             height: 1920px;
             background: transparent;
             overflow: hidden;
+            font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
         }
         #overlay-container {
             width: 1080px;
@@ -21,11 +24,235 @@
             border: none;
             background: transparent;
         }
+
+        /* ── 모더 공지 배너 ── */
+        @keyframes mod-slide-in  { from { transform: translateX(-860px); } to { transform: translateX(0); } }
+        @keyframes mod-slide-out { from { transform: translateX(0); }      to { transform: translateX(-860px); } }
+        @keyframes mod-marquee   { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        #mod-notice-wrap {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 800px;
+            height: 84px;
+            border-radius: 25px;
+            background: rgba(37, 99, 235, 0.45);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            pointer-events: none;
+            transform: translateX(-860px);
+            animation: none;
+            z-index: 100;
+        }
+        #mod-notice-wrap.slide-in {
+            animation: mod-slide-in 0.55s cubic-bezier(0.22,1,0.36,1) forwards;
+        }
+        #mod-notice-wrap.slide-out {
+            animation: mod-slide-out 0.45s ease-in forwards;
+        }
+        .mod-notice-badge {
+            flex-shrink: 0;
+            background: #2563eb;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            padding: 0 26px 0 30px;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+            border-radius: 25px 0 0 25px;
+            min-width: 108px;
+            justify-content: center;
+        }
+        .mod-notice-scroll {
+            flex: 1;
+            overflow: hidden;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+        }
+        .mod-notice-track {
+            display: inline-block;
+            white-space: nowrap;
+            color: #ffffff;
+            font-size: 37px;
+            font-weight: 900;
+            line-height: 1;
+        }
+
+        /* ── 파티클 ── */
+        #particles { position:absolute; inset:0; pointer-events:none; overflow:hidden; }
+        .pt { position:absolute; border-radius:50%; animation:pt-fly var(--d) ease-out forwards; }
+        .st { position:absolute; animation:st-fly var(--d) ease-out forwards; }
+        @keyframes pt-fly {
+            0%   { transform:translate(0,0) scale(1); opacity:1; }
+            100% { transform:translate(var(--tx),var(--ty)) scale(0); opacity:0; }
+        }
+        @keyframes st-fly {
+            0%   { transform:translate(0,0) rotate(0deg) scale(1); opacity:1; }
+            100% { transform:translate(var(--tx),var(--ty)) rotate(var(--r)) scale(0); opacity:0; }
+        }
+
+        /* ── 선물 카드 ── */
+        #gift-card {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            pointer-events: none;
+            max-width: 600px;
+            min-width: 280px;
+            width: max-content;
+            z-index: 50;
+        }
+        @keyframes pop-mid {
+            0%   { transform:translate(-50%,-50%) scale(0.5);  opacity:0; }
+            65%  { transform:translate(-50%,-50%) scale(1.06); opacity:1; }
+            100% { transform:translate(-50%,-50%) scale(1);    opacity:1; }
+        }
+        @keyframes pop-mega {
+            0%   { transform:translate(-50%,-50%) scale(0.35) rotate(-4deg); opacity:0; }
+            55%  { transform:translate(-50%,-50%) scale(1.08) rotate(1.5deg); opacity:1; }
+            100% { transform:translate(-50%,-50%) scale(1)    rotate(0deg);   opacity:1; }
+        }
+        @keyframes card-out {
+            0%   { opacity:1; transform:translate(-50%,-50%) scale(1) translateY(0); }
+            100% { opacity:0; transform:translate(-50%,-50%) scale(0.9) translateY(-12px); }
+        }
+        .card-inner {
+            display: inline-flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 0;
+            border-radius: 9999px;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .mid-style {
+            background: rgba(14,8,30,0.90);
+            border: 1.5px solid rgba(168,85,247,0.7);
+            box-shadow: 0 0 32px rgba(168,85,247,0.5), 0 8px 28px rgba(0,0,0,0.65);
+        }
+        .mega-style {
+            background: rgba(10,4,22,0.92);
+            border: 2px solid rgba(249,212,35,0.8);
+            box-shadow: 0 0 40px rgba(249,212,35,0.55), 0 8px 28px rgba(0,0,0,0.75);
+        }
+        #card-avatar {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: #1a0a2e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: 900;
+            color: #fff;
+            overflow: hidden;
+            position: relative;
+            margin: 8px 0 8px 8px;
+        }
+        #card-avatar img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+        .mid-style  #card-avatar { box-shadow: 0 0 0 3px rgba(168,85,247,0.85), 0 0 20px rgba(168,85,247,0.55); }
+        .mega-style #card-avatar { box-shadow: 0 0 0 3px rgba(249,212,35,0.95), 0 0 24px rgba(249,212,35,0.65); }
+        #card-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 10px 28px 10px 14px;
+            gap: 5px;
+            min-width: 0;
+        }
+        #card-nickname {
+            font-weight: 900;
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            word-break: keep-all;
+            white-space: nowrap;
+            font-size: 40px;
+        }
+        #card-nickname.len-mid  { font-size: 30px; }
+        #card-nickname.len-long { font-size: 22px; letter-spacing: -0.03em; }
+        .mid-nick {
+            color: #ffffff;
+            text-shadow: 0 0 24px rgba(168,85,247,1), 0 0 48px rgba(168,85,247,0.55), 0 3px 0 rgba(0,0,0,1);
+        }
+        .mega-nick {
+            background: linear-gradient(135deg, #fff9c4 0%, #fde68a 25%, #f9d423 50%, #ff6b35 75%, #ff4e50 100%);
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+            filter: drop-shadow(0 0 16px rgba(249,212,35,0.95)) drop-shadow(0 3px 0 rgba(0,0,0,1));
+        }
+        #card-label {
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 420px;
+            overflow: hidden;
+        }
+        #card-label-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+        }
+        .mid-style  #card-label { color: #e9d5ff; }
+        .mega-style #card-label { color: #fde68a; }
+        #card-score {
+            font-size: 15px;
+            font-weight: 900;
+            padding: 2px 9px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .mid-style  #card-score { background:rgba(168,85,247,0.25); color:#d8b4fe; border:1px solid rgba(168,85,247,0.4); }
+        .mega-style #card-score { background:rgba(249,212,35,0.2);  color:#fde68a; border:1px solid rgba(249,212,35,0.5); }
+        .card-shine {
+            position: absolute; inset: 0;
+            background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
+            animation: shine 2.8s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes shine { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
     </style>
 </head>
 <body>
     <div id="overlay-container">
         <!-- 위젯들은 JS로 동적 로드 -->
+    </div>
+
+    <!-- 선물 위젯 요소 (통합) -->
+    <div id="particles"></div>
+    <div id="mod-notice-wrap">
+        <div class="mod-notice-badge" id="mod-notice-badge">TikFind</div>
+        <div class="mod-notice-scroll">
+            <div class="mod-notice-track" id="mod-notice-track"></div>
+        </div>
+    </div>
+    <div id="gift-card">
+        <div class="card-inner" id="card-inner">
+            <div class="card-shine"></div>
+            <div id="card-avatar"></div>
+            <div id="card-text">
+                <div id="card-nickname"></div>
+                <div id="card-label"><span id="card-label-text"></span><span id="card-score"></span></div>
+            </div>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
@@ -34,6 +261,16 @@
         const socket = io();
 
         let positions = {};
+        let MID_MIN  = 100;
+        let MEGA_MIN = 1000;
+
+        // 선물 큐
+        const giftQueue = [];
+        let giftBusy = false;
+
+        // 모더 공지 타이머
+        let noticeHideTimer = null;
+        const NOTICE_SHOW_MS = 12000;
 
         // 초기화
         async function init() {
@@ -43,9 +280,23 @@
             document.body.style.width = '1080px';
             document.body.style.height = '1920px';
 
+            // 선물 기준 로드
+            try {
+                const res = await fetch('/api/gift-settings');
+                const d = await res.json();
+                if (d.success) {
+                    MID_MIN  = d.midMin  ?? 100;
+                    MEGA_MIN = d.megaMin ?? 1000;
+                }
+            } catch(e) {}
+
             await loadPositions();
             renderWidgets();
             setupSocketListeners();
+
+            // 오디오 컨텍스트 초기화
+            try { getCtx(); } catch(e) {}
+            setTimeout(() => { try { getCtx(); } catch(e) {} }, 500);
         }
 
         async function loadPositions() {
@@ -98,17 +349,23 @@
                 container.appendChild(iframe);
             }
 
-            // 선물 알림 위젯
+            // 선물 위젯 위치 설정 (iframe 대신 직접 렌더링)
             if (positions.gift && positions.gift.visible) {
                 const gift = positions.gift;
-                const iframe = document.createElement('iframe');
-                iframe.className = 'widget-container';
-                iframe.style.left = `${gift.x}px`;
-                iframe.style.top = `${gift.y}px`;
-                iframe.style.width = `${gift.width}px`;
-                iframe.style.height = `${gift.height}px`;
-                iframe.src = `/overlay/${userId}/gift`;
-                container.appendChild(iframe);
+                const modNoticeWrap = document.getElementById('mod-notice-wrap');
+                const giftCard = document.getElementById('gift-card');
+
+                // 모더 공지 배너 위치
+                modNoticeWrap.style.left = `${gift.x}px`;
+                modNoticeWrap.style.top = `${gift.y}px`;
+
+                // 선물 카드 위치 (위젯 중앙)
+                giftCard.style.left = `${gift.x + gift.width / 2}px`;
+                giftCard.style.top = `${gift.y + gift.height / 2}px`;
+            } else {
+                // 선물 위젯 숨김
+                document.getElementById('mod-notice-wrap').style.display = 'none';
+                document.getElementById('gift-card').style.display = 'none';
             }
 
             // 모더 위젯
@@ -142,29 +399,40 @@
             // 소켓 연결
             socket.emit('join-overlay', userId);
 
-            // 실시간 업데이트 이벤트들 (기존 오버레이와 동일)
+            // 선물 알림
+            socket.on('overlay-gift', (data) => {
+                const pts = data.totalDiamonds || data.diamondCount || 0;
+                if (pts < MID_MIN) return;
+                giftQueue.push(data);
+                if (!giftBusy) nextGift();
+            });
+
+            // 선물 설정 업데이트
+            socket.on('gift-settings-update', (data) => {
+                if (data.midMin  != null) MID_MIN  = data.midMin;
+                if (data.megaMin != null) MEGA_MIN = data.megaMin;
+            });
+
+            // 모더 공지
+            socket.on('overlay-mod-notice', (data) => {
+                showModNotice(data);
+            });
+
+            // AI 매치 코치
+            socket.on('match-coach', (data) => {
+                const situationIcon = data.situation === 'start' ? '⚔️' :
+                                      data.situation === 'early' ? '🔥' :
+                                      data.situation === 'mid'   ? '📊' : '🚀';
+                showModNotice({ text: situationIcon + ' ' + data.message });
+            });
+
+            // 기존 이벤트들
             socket.on('new-song', (data) => {
                 // 신청곡 업데이트
             });
 
             socket.on('gift-notification', (data) => {
                 // 선물 알림
-            });
-
-            socket.on('overlay-gift', (data) => {
-                // 선물 알림 (overlay-gift와 호환)
-            });
-
-            socket.on('gift-settings-update', (data) => {
-                // 선물 설정 업데이트
-            });
-
-            socket.on('overlay-mod-notice', (data) => {
-                // 모더 공지
-            });
-
-            socket.on('match-coach', (data) => {
-                // AI 매치 코치
             });
 
             socket.on('moderator-update', (data) => {
@@ -179,6 +447,213 @@
                 // 룰렛 스피너
             });
         }
+
+        // ── 모더 공지 배너 ──
+        function showModNotice(d) {
+            const wrap  = document.getElementById('mod-notice-wrap');
+            const track = document.getElementById('mod-notice-track');
+            const badge = document.getElementById('mod-notice-badge');
+            if (!d.text) return;
+
+            badge.textContent = 'TikFind';
+
+            track.style.animation = 'none';
+            void track.offsetWidth;
+            track.textContent = d.text;
+            void track.offsetWidth;
+            const textW = track.scrollWidth;
+            const scrollW = wrap.querySelector('.mod-notice-scroll').clientWidth || 620;
+
+            if (textW > scrollW) {
+                track.textContent = d.text + '　　　　' + d.text;
+                const spd = Math.max(4, Math.round(textW / 80));
+                track.style.animation = 'mod-marquee ' + spd + 's linear infinite';
+            }
+
+            clearTimeout(noticeHideTimer);
+            wrap.classList.remove('slide-out');
+            void wrap.offsetWidth;
+            wrap.classList.add('slide-in');
+
+            noticeHideTimer = setTimeout(() => {
+                wrap.classList.remove('slide-in');
+                wrap.classList.add('slide-out');
+                setTimeout(() => {
+                    wrap.classList.remove('slide-out');
+                    track.style.animation = 'none';
+                    track.textContent = '';
+                }, 480);
+            }, NOTICE_SHOW_MS);
+        }
+
+        // ── 선물 알림 ──
+        function nextGift() {
+            if (!giftQueue.length) { giftBusy = false; return; }
+            giftBusy = true;
+            showGift(giftQueue.shift());
+        }
+
+        function safeName(d) {
+            const n = (d.nickname || '').trim() || (d.uniqueId || '').trim() || '익명';
+            return n.length > 18 ? n.slice(0, 18) + '…' : n;
+        }
+
+        function applyNameSize(el, name) {
+            el.classList.remove('len-mid', 'len-long');
+            if      (name.length > 10) el.classList.add('len-long');
+            else if (name.length > 6)  el.classList.add('len-mid');
+        }
+
+        const midMsgs  = ['이름을 새기다 ✨','존재감 폭발 💥','빛나는 순간 🌟','화면을 물들이다 🎨','마음을 전하다 💌','이 순간의 주인공 🎬','함께해서 빛난다 🌈','당신이 특별하다 🫶','온기를 나누다 🔥','기억에 남을 이름 📍'];
+        const megaMsgs = ['전설이 되다 👑','방송을 지배하다 💎','오늘의 주인공 🔥','레전드 등극 🏆','하늘을 찌르다 🚀','영원히 기억될 이름 ⚡','이 방송의 신 🌌','모두가 주목한다 👁️','압도적 존재감 💫','역사에 남을 순간 🎆','이 방송을 빛내다 ✨','최고 응원 감사해요 🙏','당신 없인 방송 없다 💖','경의를 표합니다 🫅','온 방송이 당신 덕분 🌠'];
+        function randMsg(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+        function showGift(d) {
+            const pts    = d.totalDiamonds || d.diamondCount || 0;
+            const isMega = pts >= MEGA_MIN;
+            const dur    = isMega ? 8000 : 6500;
+            const name   = safeName(d);
+
+            const card     = document.getElementById('gift-card');
+            const inner    = document.getElementById('card-inner');
+            const nickEl   = document.getElementById('card-nickname');
+            const avatarEl = document.getElementById('card-avatar');
+            const scoreEl  = document.getElementById('card-score');
+
+            card.style.animation = 'none';
+            card.style.opacity   = '0';
+            void card.offsetWidth;
+
+            inner.className  = 'card-inner ' + (isMega ? 'mega-style' : 'mid-style');
+            nickEl.className = isMega ? 'mega-nick' : 'mid-nick';
+            applyNameSize(nickEl, name);
+            nickEl.textContent = name;
+
+            document.getElementById('card-label-text').textContent = randMsg(isMega ? megaMsgs : midMsgs);
+            scoreEl.textContent   = pts > 0 ? '💎 ' + Number(pts).toLocaleString() : '';
+            scoreEl.style.display = pts > 0 ? '' : 'none';
+
+            avatarEl.innerHTML = '';
+            if (d.profilePictureUrl) {
+                const img = document.createElement('img');
+                img.src = d.profilePictureUrl;
+                img.onerror = () => { avatarEl.innerHTML = ''; avatarEl.textContent = name.charAt(0).toUpperCase(); };
+                avatarEl.appendChild(img);
+            } else {
+                avatarEl.textContent = name.charAt(0).toUpperCase();
+            }
+
+            spawnParticles(isMega);
+            playSound(isMega);
+
+            card.style.animation = (isMega ? 'pop-mega' : 'pop-mid') + ' 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards';
+
+            setTimeout(() => {
+                card.style.animation = 'card-out 0.5s ease forwards';
+                setTimeout(() => {
+                    card.style.animation = 'none';
+                    card.style.opacity   = '0';
+                    document.getElementById('particles').innerHTML = '';
+                    nextGift();
+                }, 520);
+            }, dur);
+        }
+
+        // ── 파티클 ──
+        function spawnParticles(isMega) {
+            const cnt = isMega ? 60 : 28;
+            const cx  = 540; // 화면 중앙 x
+            const cy  = 960; // 화면 중앙 y
+            const con = document.getElementById('particles');
+            const cols = isMega
+                ? ['#f9d423','#ff4e50','#a855f7','#3b82f6','#10b981','#fbbf24','#ec4899','#fff']
+                : ['#a855f7','#c084fc','#e879f9','#7c3aed','#ddd6fe','#fff'];
+            const syms = ['✦','★','◆','✸','❋'];
+
+            for (let i = 0; i < cnt; i++) {
+                const ang  = (Math.PI * 2 * i / cnt) + Math.random() * 0.5;
+                const dist = 60 + Math.random() * (isMega ? 160 : 100);
+                const tx   = Math.cos(ang) * dist;
+                const ty   = Math.sin(ang) * dist;
+                const dur  = (0.6 + Math.random() * 1.1).toFixed(2) + 's';
+                const col  = cols[Math.floor(Math.random() * cols.length)];
+                const el   = document.createElement('div');
+
+                if (isMega && Math.random() > 0.45) {
+                    el.className = 'st';
+                    el.textContent = syms[Math.floor(Math.random() * syms.length)];
+                    el.style.cssText = `left:${cx+(Math.random()-0.5)*40}px;top:${cy+(Math.random()-0.5)*40}px;color:${col};font-size:${11+Math.random()*14}px;--tx:${tx}px;--ty:${ty}px;--d:${dur};--r:${Math.random()*360}deg`;
+                } else {
+                    const sz = 4 + Math.random() * (isMega ? 8 : 5);
+                    el.className = 'pt';
+                    el.style.cssText = `width:${sz}px;height:${sz}px;left:${cx+(Math.random()-0.5)*40}px;top:${cy+(Math.random()-0.5)*40}px;background:${col};box-shadow:0 0 ${sz*2}px ${col};--tx:${tx}px;--ty:${ty}px;--d:${dur}`;
+                }
+                con.appendChild(el);
+            }
+        }
+
+        // ── 음향 ──
+        let actx = null;
+        function getCtx() {
+            if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+            return actx;
+        }
+        function playSound(isMega) { try { isMega ? fanfare() : chime(); } catch(e) {} }
+
+        function chime() {
+            const ctx = getCtx();
+            [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+                const o = ctx.createOscillator(), g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.type = 'sine'; o.frequency.value = f;
+                const t = ctx.currentTime + i * 0.13;
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.30, t + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+                o.start(t); o.stop(t + 1.25);
+            });
+        }
+
+        function fanfare() {
+            const ctx = getCtx();
+            const now = ctx.currentTime;
+
+            const mkOsc = (type, freq, vol, start, end) => {
+                const o = ctx.createOscillator(), g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.type = type; o.frequency.value = freq;
+                g.gain.setValueAtTime(0, start);
+                g.gain.linearRampToValueAtTime(vol, start + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.001, end);
+                o.start(start); o.stop(end + 0.05);
+            };
+
+            mkOsc('sine',   55,  0.75, now,       now + 0.5);
+            mkOsc('sine',   82,  0.55, now,       now + 0.45);
+            mkOsc('square', 55,  0.15, now,       now + 0.3);
+
+            [[130.81,0.05],[164.81,0.05],[196,0.05],[261.63,0.08]]
+                .forEach(([f,dt]) => mkOsc('sawtooth', f, 0.18, now+dt, now+dt+0.9));
+
+            [[523.25,0.12],[659.25,0.22],[783.99,0.32],[1046.5,0.44],[1318.51,0.55],[1567.98,0.65]]
+                .forEach(([f,dt]) => mkOsc('triangle', f, 0.30, now+dt, now+dt+0.85));
+
+            [[2093,0.90],[2637,1.02],[3135.96,1.14]]
+                .forEach(([f,dt]) => mkOsc('sine', f, 0.22, now+dt, now+dt+0.75));
+
+            [[1046.5,1.4],[1318.51,1.42],[1567.98,1.44],[2093,1.46]]
+                .forEach(([f,dt]) => mkOsc('sine', f, 0.28, now+dt, now+dt+1.2));
+
+            setTimeout(() => {
+                try {
+                    const c = getCtx();
+                    const t = c.currentTime;
+                    [2093,2637,3135.96,4186].forEach((f,i) => mkOsc('sine',f,0.20,t+i*0.055,t+i*0.055+0.7));
+                } catch(e) {}
+            }, 2000);
+        }
+
+        document.addEventListener('click', () => { try { getCtx().resume(); } catch(e) {} }, { once: true });
 
         init();
     </script>
