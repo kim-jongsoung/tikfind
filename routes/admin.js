@@ -13,6 +13,11 @@ const router = express.Router();
 router.use(isAuthenticated);
 router.use(isAdmin);
 
+// 공지사항 라우터 (미들웨어 적용 제외)
+const noticeRouter = express.Router();
+noticeRouter.use(isAuthenticated);
+noticeRouter.use(isAdmin);
+
 // 플랜 변경 시 해당 유저 소켓에 갱신 이벤트 전송
 function notifyPlanUpdate(userId) {
     if (io && userId) {
@@ -952,8 +957,8 @@ router.get('/admin-info', async (req, res) => {
     }
 });
 
-// 공지사항 목록 조회
-router.get('/notices', async (req, res) => {
+// 공지사항 라우터 엔드포인트
+noticeRouter.get('/', async (req, res) => {
     try {
         const notices = await Notice.find().sort({ priority: -1, createdAt: -1 });
         res.json({ success: true, notices });
@@ -962,8 +967,7 @@ router.get('/notices', async (req, res) => {
     }
 });
 
-// 공지사항 생성
-router.post('/notices', async (req, res) => {
+noticeRouter.post('/', async (req, res) => {
     try {
         const { title, content, isVisible, priority } = req.body;
         if (!title || !content) return res.status(400).json({ success: false, message: '제목과 내용은 필수입니다.' });
@@ -983,8 +987,7 @@ router.post('/notices', async (req, res) => {
     }
 });
 
-// 공지사항 수정
-router.put('/notices/:id', async (req, res) => {
+noticeRouter.put('/:id', async (req, res) => {
     try {
         const { title, content, isVisible, priority } = req.body;
         const notice = await Notice.findByIdAndUpdate(
@@ -1002,8 +1005,7 @@ router.put('/notices/:id', async (req, res) => {
     }
 });
 
-// 공지사항 삭제
-router.delete('/notices/:id', async (req, res) => {
+noticeRouter.delete('/:id', async (req, res) => {
     try {
         const notice = await Notice.findByIdAndDelete(req.params.id);
         if (!notice) return res.status(404).json({ success: false, message: '공지사항을 찾을 수 없습니다.' });
@@ -1016,8 +1018,7 @@ router.delete('/notices/:id', async (req, res) => {
     }
 });
 
-// 공지사항 노출 유무 토글
-router.patch('/notices/:id/toggle', async (req, res) => {
+noticeRouter.patch('/:id/toggle', async (req, res) => {
     try {
         const notice = await Notice.findById(req.params.id);
         if (!notice) return res.status(404).json({ success: false, message: '공지사항을 찾을 수 없습니다.' });
@@ -1032,6 +1033,9 @@ router.patch('/notices/:id/toggle', async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 });
+
+// 공지사항 라우터를 메인 라우터에 마운트
+router.use('/notices', noticeRouter);
 
 return router;
 }; // module.exports = function(io)
