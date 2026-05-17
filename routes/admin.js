@@ -963,7 +963,7 @@ router.get('/notices', async (req, res) => {
 });
 
 // 공지사항 생성
-router.post('/notices', logAdminAction('notice_create'), async (req, res) => {
+router.post('/notices', async (req, res) => {
     try {
         const { title, content, isVisible, priority } = req.body;
         if (!title || !content) return res.status(400).json({ success: false, message: '제목과 내용은 필수입니다.' });
@@ -978,12 +978,13 @@ router.post('/notices', logAdminAction('notice_create'), async (req, res) => {
         console.log(`📢 공지사항 생성: ${title}`);
         res.json({ success: true, notice });
     } catch (error) {
+        console.error('공지사항 생성 오류:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
 
 // 공지사항 수정
-router.put('/notices/:id', logAdminAction('notice_update'), async (req, res) => {
+router.put('/notices/:id', async (req, res) => {
     try {
         const { title, content, isVisible, priority } = req.body;
         const notice = await Notice.findByIdAndUpdate(
@@ -996,12 +997,13 @@ router.put('/notices/:id', logAdminAction('notice_update'), async (req, res) => 
         console.log(`📢 공지사항 수정: ${title}`);
         res.json({ success: true, notice });
     } catch (error) {
+        console.error('공지사항 수정 오류:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
 
 // 공지사항 삭제
-router.delete('/notices/:id', logAdminAction('notice_delete'), async (req, res) => {
+router.delete('/notices/:id', async (req, res) => {
     try {
         const notice = await Notice.findByIdAndDelete(req.params.id);
         if (!notice) return res.status(404).json({ success: false, message: '공지사항을 찾을 수 없습니다.' });
@@ -1009,12 +1011,13 @@ router.delete('/notices/:id', logAdminAction('notice_delete'), async (req, res) 
         console.log(`📢 공지사항 삭제: ${notice.title}`);
         res.json({ success: true, message: '공지사항이 삭제되었습니다.' });
     } catch (error) {
+        console.error('공지사항 삭제 오류:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
 
 // 공지사항 노출 유무 토글
-router.patch('/notices/:id/toggle', logAdminAction('notice_toggle'), async (req, res) => {
+router.patch('/notices/:id/toggle', async (req, res) => {
     try {
         const notice = await Notice.findById(req.params.id);
         if (!notice) return res.status(404).json({ success: false, message: '공지사항을 찾을 수 없습니다.' });
@@ -1025,6 +1028,7 @@ router.patch('/notices/:id/toggle', logAdminAction('notice_toggle'), async (req,
         console.log(`📢 공지사항 노출 상태 변경: ${notice.title} → ${notice.isVisible ? '노출' : '숨김'}`);
         res.json({ success: true, notice });
     } catch (error) {
+        console.error('공지사항 토글 오류:', error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
