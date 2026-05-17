@@ -103,14 +103,6 @@
                         </div>
                     </div>
 
-                    <!-- 고정 사이즈 안내 -->
-                    <div class="mb-5 p-4 bg-purple-50 border border-purple-200 rounded-xl flex items-start gap-3">
-                        <i class="fas fa-ruler-combined text-purple-500 mt-0.5"></i>
-                        <div>
-                            <p class="text-sm font-semibold text-purple-800 mb-1">고정 소스 크기 — <span class="font-mono">800 × 200 px</span></p>
-                            <p class="text-xs text-purple-600 leading-relaxed">선물 알림 위젯은 <strong>너비 800px × 높이 200px</strong> 고정 크기입니다. 배너는 닉네임 길이에 맞게 자동으로 조절되며 최대 600px를 넘지 않습니다.<br>TikTok Live Studio에서 소스를 추가한 뒤 원하는 위치에 드래그해 배치하세요.</p>
-                        </div>
-                    </div>
 
                     <!-- MID / MEGA 다이아 기준 설정 -->
                     <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
@@ -157,41 +149,6 @@
                         </a>
                     </div>
 
-                    <!-- TikTok Live Studio 추가 방법 -->
-                    <div class="border-t border-gray-100 pt-5">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                            <i class="fas fa-tv text-pink-500"></i> TikTok Live Studio 소스 추가 방법
-                        </h4>
-                        <ol class="space-y-3">
-                            <li class="flex gap-3 items-start">
-                                <span class="step-num bg-purple-500">1</span>
-                                <p class="text-sm text-gray-600 pt-0.5">TikTok Live Studio 실행 → <strong>소스 패널</strong> → <strong>+ 추가</strong> 클릭</p>
-                            </li>
-                            <li class="flex gap-3 items-start">
-                                <span class="step-num bg-purple-500">2</span>
-                                <p class="text-sm text-gray-600 pt-0.5"><strong>브라우저(URL)</strong> 소스 선택</p>
-                            </li>
-                            <li class="flex gap-3 items-start">
-                                <span class="step-num bg-purple-500">3</span>
-                                <p class="text-sm text-gray-600 pt-0.5">위 URL 붙여넣기</p>
-                            </li>
-                            <li class="flex gap-3 items-start">
-                                <span class="step-num bg-purple-500">4</span>
-                                <div class="text-sm text-gray-600 pt-0.5">
-                                    <strong>해상도</strong> 입력:
-                                    <span class="size-badge ml-2">너비 <span class="dim">800</span> × 높이 <span class="dim">200</span></span>
-                                </div>
-                            </li>
-                            <li class="flex gap-3 items-start">
-                                <span class="step-num bg-purple-500">5</span>
-                                <p class="text-sm text-gray-600 pt-0.5">소스를 원하는 위치에 드래그해 배치하세요. 평소에는 투명하고 선물이 올 때만 카드가 나타납니다.</p>
-                            </li>
-                        </ol>
-                        <div class="mt-4 p-3 bg-purple-50 border-l-4 border-purple-400 rounded text-xs text-purple-700">
-                            <i class="fas fa-lightbulb mr-1"></i>
-                            <strong>팁:</strong> 미리보기에서 버튼을 누르면 실제 효과를 확인할 수 있습니다. Chrome 자동재생 정책으로 인해 첫 클릭이 필요합니다.
-                        </div>
-                    </div>
                 </div>
 
                 <!-- ══════════════════════════════════
@@ -211,19 +168,17 @@
                         </div>
                     </div>
 
-                    <!-- URL + 사이즈 -->
-                    <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
-                        <i class="fas fa-ruler-combined text-blue-500 mt-0.5"></i>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-blue-800 mb-1">고정 소스 크기 — <span class="font-mono">120 × 800 px</span></p>
-                            <p class="text-xs text-blue-600 leading-relaxed mb-2">세로는 모더 수에 맞게 자동 조절. 배경 투명, 카드 배경 블랙 20%.</p>
-                            <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-blue-200">
-                                <code class="text-xs text-gray-600 flex-1 break-all select-all" id="modUrl">https://tikfind.kr/overlay/<%= user._id %>/moderator</code>
-                                <button onclick="copyModUrl()" id="copyModBtn"
-                                    class="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-xs whitespace-nowrap flex items-center gap-1">
-                                    <i class="fas fa-copy"></i> 복사
-                                </button>
-                            </div>
+                    <!-- URL -->
+                    <div class="mb-5">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-link text-blue-500 mr-1"></i> 위젯 URL
+                        </label>
+                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <code class="text-xs text-gray-600 flex-1 break-all select-all" id="modUrl">https://tikfind.kr/overlay/<%= user._id %>/moderator</code>
+                            <button onclick="copyModUrl()" id="copyModBtn"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm whitespace-nowrap flex items-center gap-1">
+                                <i class="fas fa-copy"></i> 복사
+                            </button>
                         </div>
                     </div>
 
@@ -331,14 +286,6 @@
                         </div>
                     </div>
 
-                    <!-- 고정 사이즈 안내 -->
-                    <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3">
-                        <i class="fas fa-ruler-combined text-blue-500 mt-0.5"></i>
-                        <div>
-                            <p class="text-sm font-semibold text-blue-800 mb-1">고정 소스 크기 — <span class="font-mono">972 × 70 px</span></p>
-                            <p class="text-xs text-blue-600 leading-relaxed">신청곡+공지 자막은 <strong>너비 972px × 높이 70px</strong> 고정 크기입니다. TikTok Live Studio에서 소스를 추가한 뒤 원하는 위치에 자유롭게 드래그해 배치하세요.</p>
-                        </div>
-                    </div>
 
                     <!-- 스타일 설정 -->
                     <div class="mb-5">
@@ -379,7 +326,7 @@
                         </div>
                     </div>
 
-                    <!-- URL + 사이즈 안내 -->
+                    <!-- URL 안내 -->
                     <div class="mb-5">
                         <label class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-link text-indigo-500 mr-1"></i> 위젯 URL (스타일 설정 자동 반영)
@@ -397,13 +344,6 @@
                             <p class="text-xs text-amber-700 leading-relaxed">
                                 <strong>스타일 수정 후에는 URL이 바뀝니다.</strong> 위에서 새 URL을 복사한 뒤, TikTok Live Studio 소스에서 <strong>URL을 교체</strong>해주세요.
                             </p>
-                        </div>
-                        <div class="flex flex-wrap gap-3">
-                            <div class="size-badge">
-                                <i class="fas fa-expand-alt text-indigo-400"></i>
-                                너비 <span class="dim">750</span> × 높이 <span class="dim">75</span> px
-                                <span class="text-gray-400 font-normal text-xs">(고정 크기)</span>
-                            </div>
                         </div>
                     </div>
 
@@ -445,34 +385,6 @@
                         </div>
                     </div>
 
-                    <!-- 추가 방법 -->
-                    <div class="border-t border-gray-100 pt-5">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                            <i class="fas fa-tv text-pink-500"></i> TikTok Live Studio 소스 추가 방법
-                        </h4>
-                        <ol class="space-y-3">
-                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">1</span><p class="text-sm text-gray-600 pt-0.5">TikTok Live Studio 실행 → <strong>소스 패널</strong> → <strong>+ 추가</strong></p></li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">2</span><p class="text-sm text-gray-600 pt-0.5"><strong>브라우저(URL)</strong> 소스 선택</p></li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">3</span><p class="text-sm text-gray-600 pt-0.5">위에서 복사한 URL 붙여넣기</p></li>
-                            <li class="flex gap-3 items-start">
-                                <span class="step-num bg-indigo-500">4</span>
-                                <div class="text-sm text-gray-600 pt-0.5">
-                                    <strong>해상도(너비 × 높이)</strong> 입력:
-                                    <span class="size-badge ml-2"><span class="dim">750</span> × <span class="dim">75</span></span>
-                                </div>
-                            </li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">5</span><p class="text-sm text-gray-600 pt-0.5">원하는 위치에 <strong>드래그해서 배치</strong> — 소스 크기가 750×75으로 딱 맞게 고정됩니다</p></li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-indigo-500">6</span>
-                                <div class="text-sm text-gray-600 pt-0.5">
-                                    <strong>⚠️ 스타일 수정 시</strong>: 설정 저장 후 새 URL을 복사하여 Studio 소스의 URL을 교체해 주세요.
-                                </div>
-                            </li>
-                        </ol>
-                        <div class="mt-4 p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded text-xs text-indigo-700">
-                            <i class="fas fa-lightbulb mr-1"></i>
-                            <strong>팁:</strong> 배경 투명도를 0%로 설정하면 완전 투명 자막으로 사용할 수 있습니다.
-                        </div>
-                    </div>
                 </div>
 
                 <!-- ══════════════════════════════════
@@ -493,21 +405,16 @@
                     </div>
 
                     <!-- 자막 위젯 URL -->
-                    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl flex items-start gap-3">
-                        <i class="fas fa-tv text-green-500 mt-0.5 flex-shrink-0"></i>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-green-800 mb-1">자막 위젯 — TikTok Live Studio에 추가</p>
-                            <div class="mb-2 flex flex-wrap gap-2 text-xs">
-                                <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded font-mono font-semibold">1개 언어: 972 × 70 px</span>
-                                <span class="bg-green-200 text-green-900 px-2 py-0.5 rounded font-mono font-semibold">2개 언어: 972 × 150 px</span>
-                            </div>
-                            <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-green-200">
-                                <code class="text-xs text-gray-600 flex-1 break-all select-all" id="speechUrl">https://tikfind.kr/overlay/<%= user._id %>/speech</code>
-                                <button onclick="copySpeechUrl()" id="copySpeechBtn"
-                                    class="px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-xs whitespace-nowrap flex items-center gap-1">
-                                    <i class="fas fa-copy"></i> 복사
-                                </button>
-                            </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-link text-green-500 mr-1"></i> 위젯 URL
+                        </label>
+                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <code class="text-xs text-gray-600 flex-1 break-all select-all" id="speechUrl">https://tikfind.kr/overlay/<%= user._id %>/speech</code>
+                            <button onclick="copySpeechUrl()" id="copySpeechBtn"
+                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm whitespace-nowrap flex items-center gap-1">
+                                <i class="fas fa-copy"></i> 복사
+                            </button>
                         </div>
                     </div>
 
@@ -552,28 +459,6 @@
                         </a>
                     </div>
 
-                    <!-- 추가 방법 -->
-                    <div class="border-t border-gray-100 pt-5">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                            <i class="fas fa-tv text-pink-500"></i> 설정 방법
-                        </h4>
-                        <ol class="space-y-3">
-                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">1</span><p class="text-sm text-gray-600 pt-0.5">위 <strong>번역 언어</strong>를 선택하고 저장</p></li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">2</span><p class="text-sm text-gray-600 pt-0.5"><strong>자막 위젯 URL</strong> 복사 후 TikTok Live Studio → <strong>소스 추가</strong> → <strong>브라우저(URL)</strong></p></li>
-                            <li class="flex gap-3 items-start">
-                                <span class="step-num bg-green-500">3</span>
-                                <div class="text-sm text-gray-600 pt-0.5">
-                                    소스 <strong>해상도</strong> 입력:
-                                    <span class="size-badge ml-2">너비 <span class="dim">800</span> × 높이 <span class="dim">100</span></span>
-                                </div>
-                            </li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-green-500">4</span><p class="text-sm text-gray-600 pt-0.5">소스를 화면 <strong>하단 중앙</strong>에 배치 → 완료!</p></li>
-                        </ol>
-                        <div class="mt-4 p-3 bg-green-50 border-l-4 border-green-400 rounded text-xs text-green-700">
-                            <i class="fas fa-lightbulb mr-1"></i>
-                            <strong>팁:</strong> 말을 멈추면 자막이 6초 후 자동으로 사라집니다.
-                        </div>
-                    </div>
                 </div>
 
                 <!-- ══════════════════════════════════
@@ -595,18 +480,16 @@
                     </div>
 
                     <!-- URL -->
-                    <div class="mb-5 p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-start gap-3">
-                        <i class="fas fa-ruler-combined text-yellow-500 mt-0.5"></i>
-                        <div class="flex-1 min-w-0">
-                            <p class="text-sm font-semibold text-yellow-800 mb-1">고정 소스 크기 — <span class="font-mono">340 × 520 px</span></p>
-                            <p class="text-xs text-yellow-600 mb-2">화면 왼쪽에 배치 · 평소엔 투명 · 돌릴 때만 반원 등장</p>
-                            <div class="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-yellow-200">
-                                <code class="text-xs text-gray-600 flex-1 break-all select-all" id="rouletteUrl">https://tikfind.kr/overlay/<%= user._id %>/roulette</code>
-                                <button onclick="copyRouletteUrl()" id="copyRouletteBtn"
-                                    class="px-3 py-1.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-xs whitespace-nowrap flex items-center gap-1">
-                                    <i class="fas fa-copy"></i> 복사
-                                </button>
-                            </div>
+                    <div class="mb-5">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-link text-yellow-500 mr-1"></i> 위젯 URL
+                        </label>
+                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                            <code class="text-xs text-gray-600 flex-1 break-all select-all" id="rouletteUrl">https://tikfind.kr/overlay/<%= user._id %>/roulette</code>
+                            <button onclick="copyRouletteUrl()" id="copyRouletteBtn"
+                                class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm whitespace-nowrap flex items-center gap-1">
+                                <i class="fas fa-copy"></i> 복사
+                            </button>
                         </div>
                     </div>
 
@@ -646,27 +529,6 @@
                         </a>
                     </div>
 
-                    <!-- 추가 방법 -->
-                    <div class="border-t border-gray-100 pt-5">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                            <i class="fas fa-tv text-pink-500"></i> TikTok Live Studio 소스 추가 방법
-                        </h4>
-                        <ol class="space-y-3">
-                            <li class="flex gap-3 items-start"><span class="step-num bg-yellow-500">1</span><p class="text-sm text-gray-600 pt-0.5">위 URL 복사 → TikTok Live Studio → <strong>소스 추가</strong> → <strong>브라우저(URL)</strong></p></li>
-                            <li class="flex gap-3 items-start">
-                                <span class="step-num bg-yellow-500">2</span>
-                                <div class="text-sm text-gray-600 pt-0.5">소스 해상도 입력:
-                                    <span class="size-badge ml-2">너비 <span class="dim">340</span> × 높이 <span class="dim">520</span></span>
-                                </div>
-                            </li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-yellow-500">3</span><p class="text-sm text-gray-600 pt-0.5">소스를 <strong>화면 왼쪽 가장자리</strong>에 배치 (반원이 왼쪽에서 나타남)</p></li>
-                            <li class="flex gap-3 items-start"><span class="step-num bg-yellow-500">4</span><p class="text-sm text-gray-600 pt-0.5">매치에서 이겼을 때 대시보드 라이브 페이지의 <strong>🎰 룰렛 돌리기!</strong> 버튼 클릭</p></li>
-                        </ol>
-                        <div class="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded text-xs text-yellow-700">
-                            <i class="fas fa-lightbulb mr-1"></i>
-                            <strong>팁:</strong> 룰렛은 당첨 후 9초 뒤 자동으로 사라집니다. 여러 번 연속으로 돌릴 수도 있어요!
-                        </div>
-                    </div>
                 </div>
 
         </div>
