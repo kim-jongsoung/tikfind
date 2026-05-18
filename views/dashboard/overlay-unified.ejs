@@ -6,45 +6,6 @@
     <title>오버레이 설정 - TikFind</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        .widget-box {
-            position: absolute;
-            cursor: move;
-            border: 2px dashed rgba(99, 102, 241, 0.5);
-            background: rgba(99, 102, 241, 0.1);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 600;
-            color: #6366f1;
-            user-select: none;
-        }
-        .widget-box:hover {
-            border-color: rgba(99, 102, 241, 0.8);
-            background: rgba(99, 102, 241, 0.2);
-        }
-        .widget-box.hidden-widget {
-            opacity: 0.3;
-            border-color: rgba(156, 163, 175, 0.5);
-            background: rgba(156, 163, 175, 0.1);
-            color: #9ca3af;
-        }
-        #canvas-container {
-            position: relative;
-            background: #1a1a2e;
-            border: 2px solid #374151;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        .canvas-grid {
-            background-image: 
-                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-        }
-    </style>
 </head>
 <body class="bg-gray-50">
     <div id="sidebar-container"></div>
@@ -65,45 +26,49 @@
                     <div class="flex items-start gap-3">
                         <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">1</span>
                         <div>
-                            <p class="text-sm text-blue-800 font-semibold mb-1">위젯 위치 조정</p>
-                            <p class="text-sm text-blue-700">아래 캔버스에서 위젯을 드래그하여 원하는 위치로 이동하세요. 위젯 표시/숨김 체크박스로 표시할 위젯을 선택한 후 저장 버튼을 클릭하세요.</p>
+                            <p class="text-sm text-blue-800 font-semibold mb-1">위젯 표시/숨김 설정</p>
+                            <p class="text-sm text-blue-700">아래 체크박스로 표시할 위젯을 선택한 후 <strong>"저장"</strong> 버튼을 클릭하세요.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
                         <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">2</span>
                         <div>
-                            <p class="text-sm text-blue-800 font-semibold mb-1">TikTok Live Studio 실행</p>
-                            <p class="text-sm text-blue-700">TikTok Live Studio를 실행하고 방송 준비 화면으로 이동하세요.</p>
+                            <p class="text-sm text-blue-800 font-semibold mb-1">소스 추가</p>
+                            <p class="text-sm text-blue-700">틱톡 라이브 스튜디오 화면 좌측의 <strong>[소스 추가]</strong> 버튼을 클릭합니다.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
                         <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">3</span>
                         <div>
-                            <p class="text-sm text-blue-800 font-semibold mb-1">브라우저 소스 추가</p>
-                            <p class="text-sm text-blue-700">화면 하단의 <strong>"+"</strong> 버튼을 클릭 → <strong>"브라우저"</strong>를 선택하세요.</p>
+                            <p class="text-sm text-blue-800 font-semibold mb-1">링크 선택</p>
+                            <p class="text-sm text-blue-700">소스 목록 중 <strong>[링크 (Link)]</strong>를 선택합니다.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
                         <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">4</span>
                         <div>
-                            <p class="text-sm text-blue-800 font-semibold mb-1">URL 입력 및 소스 이름 설정</p>
+                            <p class="text-sm text-blue-800 font-semibold mb-1">URL 및 사이즈 입력</p>
                             <p class="text-sm text-blue-700 mb-2">아래 <strong>"통합 오버레이 URL"</strong>을 복사해서 URL 입력창에 붙여넣으세요.</p>
-                            <p class="text-sm text-blue-700">소스 이름을 <strong>"틱파인드"</strong>로 변경한 후 확인 버튼을 클릭하세요.</p>
+                            <p class="text-sm text-blue-700">사이즈 크기 설정에 <strong>가로 1080 × 세로 1920</strong>을 정확히 입력한 뒤 저장합니다.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
                         <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">5</span>
                         <div>
-                            <p class="text-sm text-blue-800 font-semibold mb-1">크기 설정</p>
-                            <p class="text-sm text-blue-700">추가된 브라우저 소스를 선택하고, 오른쪽 설정 패널에서 크기를 <strong>"1080 × 1920"</strong>으로 설정하세요.</p>
+                            <p class="text-sm text-blue-800 font-semibold mb-1"><span class="text-red-600">[중요]</span> 소스 이름 변경</p>
+                            <p class="text-sm text-blue-700">추가된 소스의 이름을 기존 <strong>'링크'</strong>에서 <strong>'틱파인드'</strong>로 꼭 변경해 줍니다.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
                         <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-xs">6</span>
                         <div>
-                            <p class="text-sm text-blue-800 font-semibold mb-1">위치 조정 및 저장</p>
-                            <p class="text-sm text-blue-700">브라우저 소스를 화면 중앙으로 이동하고, 방송을 시작하면 오버레이가 표시됩니다.</p>
+                            <p class="text-sm text-blue-800 font-semibold mb-1">화면 정렬</p>
+                            <p class="text-sm text-blue-700">소스 설정 화면에서 <strong>[중간 정렬]</strong>을 누른 후, 이어서 <strong>[전체 화면]</strong>을 클릭하여 캔버스 크기에 딱 맞게 맞춰줍니다.</p>
                         </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-blue-100 rounded-lg border border-blue-300">
+                        <p class="text-sm text-blue-800 font-semibold">✅ 화면 최적화 완료</p>
+                        <p class="text-sm text-blue-700 mt-1">위 설정대로 세팅하시면 틱톡 라이브 스튜디오의 세로(9:16) 표준 해상도에 맞춰 틱파인드의 미들웨어와 인터랙티브 소스들이 밀림이나 깨짐 현상 없이 가장 안정적이고 깔끔하게 구동됩니다.</p>
                     </div>
                 </div>
             </div>
@@ -135,19 +100,6 @@
                 </div>
             </div>
 
-            <!-- 캔버스 영역 -->
-            <div class="bg-white rounded-xl shadow mb-6 p-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-semibold text-gray-800">위젯 위치 설정 (1080×1920)</h3>
-                    <button onclick="resetPositions()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm">
-                        <i class="fas fa-undo mr-2"></i>초기화
-                    </button>
-                </div>
-                <div id="canvas-container" class="canvas-grid" style="width: 270px; height: 480px; margin: 0 auto;">
-                    <!-- 위젯들은 JS로 동적 생성 -->
-                </div>
-            </div>
-
             <!-- 통합 오버레이 URL -->
             <div class="bg-white rounded-xl shadow mb-6 p-4">
                 <h3 class="font-semibold text-gray-800 mb-3">통합 오버레이 URL</h3>
@@ -171,31 +123,21 @@
     <script src="/js/i18n.js"></script>
     <script src="/js/layout.js"></script>
     <script>
-        const CANVAS_WIDTH = 1080;
-        const CANVAS_HEIGHT = 1920;
-
-        // 위젯 초기 위치
-        const defaultPositions = {
-            song: { x: 90, y: 220, width: 900, height: 70, visible: true, label: '🎵 신청곡+공지' },
-            speech: { x: 90, y: 300, width: 900, height: 150, visible: true, label: '🎤 번역 자막' },
-            gift: { x: 140, y: 1100, width: 800, height: 200, visible: true, label: '🎁 선물 알림' },
-            moderator: { x: 880, y: 490, width: 120, height: 800, visible: true, label: '🛡️ 모더 위젯' },
-            roulette: { x: -400, y: 500, width: 340, height: 520, visible: true, label: '🎰 룰렛 미션' }
+        // 위젯 초기 상태
+        const defaultWidgets = {
+            song: { visible: true, label: '🎵 신청곡+공지' },
+            speech: { visible: true, label: '🎤 번역 자막' },
+            gift: { visible: true, label: '🎁 선물 알림' },
+            moderator: { visible: true, label: '🛡️ 모더 위젯' },
+            roulette: { visible: true, label: '🎰 룰렛 미션' }
         };
 
-        let positions = {};
-        let scale = 1;
+        let widgets = {};
 
         // 초기화
         document.addEventListener('DOMContentLoaded', async () => {
-            const canvasContainer = document.getElementById('canvas-container');
-            scale = 270 / CANVAS_WIDTH;
-
-            // 저장된 위치 로드
-            await loadPositions();
-
-            // 위젯 생성
-            renderWidgets();
+            // 저장된 위젯 상태 로드
+            await loadWidgets();
 
             // 토글 이벤트
             document.getElementById('toggle-song').addEventListener('change', (e) => toggleWidget('song', e.target.checked));
@@ -209,108 +151,36 @@
             document.getElementById('overlay-url').value = `https://tikfind.kr/overlay/${userId}/unified`;
         });
 
-        async function loadPositions() {
+        async function loadWidgets() {
             try {
                 const res = await fetch('/api/overlay/positions');
                 const data = await res.json();
                 if (data.success && data.positions) {
-                    positions = { ...defaultPositions, ...data.positions };
+                    // 표시/숨김 상태만 로드
+                    Object.keys(defaultWidgets).forEach(key => {
+                        widgets[key] = {
+                            visible: data.positions[key] ? data.positions[key].visible : defaultWidgets[key].visible,
+                            label: defaultWidgets[key].label
+                        };
+                    });
                 } else {
-                    positions = { ...defaultPositions };
+                    widgets = { ...defaultWidgets };
                 }
             } catch (e) {
-                positions = { ...defaultPositions };
+                widgets = { ...defaultWidgets };
             }
 
             // 토글 체크박스 동기화
-            Object.keys(positions).forEach(key => {
+            Object.keys(widgets).forEach(key => {
                 const checkbox = document.getElementById(`toggle-${key}`);
                 if (checkbox) {
-                    checkbox.checked = positions[key].visible;
+                    checkbox.checked = widgets[key].visible;
                 }
             });
-        }
-
-        function renderWidgets() {
-            const canvasContainer = document.getElementById('canvas-container');
-            canvasContainer.innerHTML = '';
-
-            Object.keys(positions).forEach(key => {
-                const widget = positions[key];
-                const div = document.createElement('div');
-                div.className = 'widget-box';
-                if (!widget.visible) {
-                    div.classList.add('hidden-widget');
-                }
-                div.id = `widget-${key}`;
-                div.style.left = `${widget.x * scale}px`;
-                div.style.top = `${widget.y * scale}px`;
-                div.style.width = `${widget.width * scale}px`;
-                div.style.height = `${widget.height * scale}px`;
-                div.textContent = widget.label;
-
-                // 드래그 이벤트
-                div.addEventListener('mousedown', (e) => startDrag(e, key));
-
-                canvasContainer.appendChild(div);
-            });
-        }
-
-        let dragTarget = null;
-        let dragStartX = 0;
-        let dragStartY = 0;
-        let widgetStartX = 0;
-        let widgetStartY = 0;
-
-        function startDrag(e, key) {
-            if (!positions[key].visible) return;
-
-            dragTarget = key;
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            widgetStartX = positions[key].x;
-            widgetStartY = positions[key].y;
-
-            document.addEventListener('mousemove', onDrag);
-            document.addEventListener('mouseup', endDrag);
-        }
-
-        function onDrag(e) {
-            if (!dragTarget) return;
-
-            const dx = (e.clientX - dragStartX) / scale;
-            const dy = (e.clientY - dragStartY) / scale;
-
-            positions[dragTarget].x = widgetStartX + dx;
-            positions[dragTarget].y = widgetStartY + dy;
-
-            const widget = document.getElementById(`widget-${dragTarget}`);
-            widget.style.left = `${positions[dragTarget].x * scale}px`;
-            widget.style.top = `${positions[dragTarget].y * scale}px`;
-        }
-
-        function endDrag() {
-            dragTarget = null;
-            document.removeEventListener('mousemove', onDrag);
-            document.removeEventListener('mouseup', endDrag);
         }
 
         function toggleWidget(key, visible) {
-            positions[key].visible = visible;
-            renderWidgets();
-        }
-
-        function resetPositions() {
-            if (confirm('위치를 초기화하시겠습니까?')) {
-                positions = { ...defaultPositions };
-                Object.keys(positions).forEach(key => {
-                    const checkbox = document.getElementById(`toggle-${key}`);
-                    if (checkbox) {
-                        checkbox.checked = positions[key].visible;
-                    }
-                });
-                renderWidgets();
-            }
+            widgets[key].visible = visible;
         }
 
         async function savePositions() {
@@ -318,7 +188,7 @@
                 const res = await fetch('/api/overlay/positions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ positions })
+                    body: JSON.stringify({ positions: widgets })
                 });
                 const data = await res.json();
                 if (data.success) {
