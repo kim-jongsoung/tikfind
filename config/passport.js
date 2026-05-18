@@ -1,6 +1,7 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
+const OverlayNotice = require('../models/OverlayNotice');
 
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
@@ -48,6 +49,19 @@ passport.use(new GoogleStrategy({
             profileImage: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : ''
         });
         console.log('✅ 신규 사용자 생성 완료:', newUser._id);
+
+        // 디폴트 공지 추가
+        try {
+            await OverlayNotice.create({
+                userId: newUser._id,
+                content: '신청곡은 팔로워 팀가입후 #노래제목#가수명 을 채팅창에 입력해주세요.',
+                order: 0,
+                isActive: true
+            });
+            console.log('✅ 디폴트 공지 추가 완료');
+        } catch (noticeError) {
+            console.error('❌ 디폴트 공지 추가 실패:', noticeError);
+        }
 
         return done(null, newUser);
     } catch (error) {
