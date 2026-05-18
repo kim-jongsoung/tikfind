@@ -89,21 +89,6 @@
                         </div>
                     </div>
 
-                    <!-- URL 카드 -->
-                    <div class="mb-5">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-link text-purple-500 mr-1"></i> 위젯 URL
-                        </label>
-                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                            <code class="text-xs text-gray-600 flex-1 break-all select-all" id="giftUrl">https://tikfind.kr/overlay/<%= user._id %>/gift</code>
-                            <button onclick="copyGiftUrl()" id="copyGiftBtn"
-                                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-sm whitespace-nowrap flex items-center gap-1">
-                                <i class="fas fa-copy"></i> 복사
-                            </button>
-                        </div>
-                    </div>
-
-
                     <!-- MID / MEGA 다이아 기준 설정 -->
                     <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
                         <h4 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
@@ -165,20 +150,6 @@
                                 등록된 모더레이터가 방송에 입장하면 화면에 카드가 자동으로 나타납니다.<br>
                                 TikTok ID와 표시할 닉네임을 등록해두면 입장 시 프로필 이미지와 함께 표시됩니다.
                             </p>
-                        </div>
-                    </div>
-
-                    <!-- URL -->
-                    <div class="mb-5">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-link text-blue-500 mr-1"></i> 위젯 URL
-                        </label>
-                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                            <code class="text-xs text-gray-600 flex-1 break-all select-all" id="modUrl">https://tikfind.kr/overlay/<%= user._id %>/moderator</code>
-                            <button onclick="copyModUrl()" id="copyModBtn"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm whitespace-nowrap flex items-center gap-1">
-                                <i class="fas fa-copy"></i> 복사
-                            </button>
                         </div>
                     </div>
 
@@ -336,20 +307,6 @@
                         </div>
                     </div>
 
-                    <!-- 자막 위젯 URL -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-link text-green-500 mr-1"></i> 위젯 URL
-                        </label>
-                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                            <code class="text-xs text-gray-600 flex-1 break-all select-all" id="speechUrl">https://tikfind.kr/overlay/<%= user._id %>/speech</code>
-                            <button onclick="copySpeechUrl()" id="copySpeechBtn"
-                                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm whitespace-nowrap flex items-center gap-1">
-                                <i class="fas fa-copy"></i> 복사
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- 언어 선택 -->
                     <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
                         <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
@@ -411,20 +368,6 @@
                         </div>
                     </div>
 
-                    <!-- URL -->
-                    <div class="mb-5">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">
-                            <i class="fas fa-link text-yellow-500 mr-1"></i> 위젯 URL
-                        </label>
-                        <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3 border border-gray-200">
-                            <code class="text-xs text-gray-600 flex-1 break-all select-all" id="rouletteUrl">https://tikfind.kr/overlay/<%= user._id %>/roulette</code>
-                            <button onclick="copyRouletteUrl()" id="copyRouletteBtn"
-                                class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm whitespace-nowrap flex items-center gap-1">
-                                <i class="fas fa-copy"></i> 복사
-                            </button>
-                        </div>
-                    </div>
-
                     <!-- 미션 목록 (10개 고정, 매번 랜덤 5개 사용) -->
                     <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
                         <h4 class="text-sm font-semibold text-gray-700 mb-1 flex items-center gap-2">
@@ -469,8 +412,6 @@
     <script src="/js/i18n.js"></script>
     <script src="/js/layout.js"></script>
     <script>
-        const BASE_URL = 'https://tikfind.kr/overlay/<%= user._id %>';
-
         // ── 탭 전환 ──
         function switchTab(name) {
             ['gift','song','mod','speech','roulette'].forEach(t => {
@@ -488,15 +429,6 @@
             if (name === 'gift')   loadGiftSettings();
             if (name === 'mod')    loadModerators();
             if (name === 'speech') loadSpeechSettings();
-        }
-
-        function copyRouletteUrl() {
-            const url = document.getElementById('rouletteUrl').textContent.trim();
-            navigator.clipboard.writeText(url).then(() => {
-                const btn = document.getElementById('copyRouletteBtn');
-                btn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
-                setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> 복사'; }, 2000);
-            });
         }
 
         function saveRouletteItems() {
@@ -567,23 +499,6 @@
                     document.getElementById('megaMin').value = data.megaMin ?? 1000;
                 }
             } catch(e) {}
-        }
-
-        // ── 모더 URL 복사 ──
-        function copyModUrl() {
-            const text = document.getElementById('modUrl').textContent.trim();
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('copyModBtn');
-                const orig = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
-                btn.classList.replace('bg-blue-600','bg-green-600');
-                btn.classList.replace('hover:bg-blue-700','hover:bg-green-700');
-                setTimeout(() => {
-                    btn.innerHTML = orig;
-                    btn.classList.replace('bg-green-600','bg-blue-600');
-                    btn.classList.replace('hover:bg-green-700','hover:bg-blue-700');
-                }, 2000);
-            });
         }
 
         // ── 모더 관리 ──
@@ -698,110 +613,6 @@
             await fetch('/api/moderator/' + id, { method: 'DELETE' });
             loadModerators();
         }
-
-        // ── 선물 URL 복사 ──
-        function copyGiftUrl() {
-            const text = document.getElementById('giftUrl').textContent.trim();
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById('copyGiftBtn');
-                const orig = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check"></i> 복사됨!';
-                btn.classList.replace('bg-purple-600','bg-green-600');
-                btn.classList.replace('hover:bg-purple-700','hover:bg-green-700');
-                setTimeout(() => {
-                    btn.innerHTML = orig;
-                    btn.classList.replace('bg-green-600','bg-purple-600');
-                    btn.classList.replace('hover:bg-green-700','hover:bg-purple-700');
-                }, 2000);
-            });
-        }
-
-        function hexToRgba(hex, alpha) {
-            const r = parseInt(hex.slice(1,3), 16);
-            const g = parseInt(hex.slice(3,5), 16);
-            const b = parseInt(hex.slice(5,7), 16);
-            return `rgba(${r},${g},${b},${alpha})`;
-        }
-
-        function copyUrl(elId, btnId) {
-            const text = document.getElementById(elId).textContent.trim();
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.getElementById(btnId);
-                const orig = btn.innerHTML;
-                btn.innerHTML = '<i class="fas fa-check mr-1"></i>복사됨!';
-                btn.classList.replace('bg-indigo-600','bg-green-600');
-                btn.classList.replace('hover:bg-indigo-700','hover:bg-green-700');
-                setTimeout(() => {
-                    btn.innerHTML = orig;
-                    btn.classList.replace('bg-green-600','bg-indigo-600');
-                    btn.classList.replace('hover:bg-green-700','hover:bg-indigo-700');
-                }, 2000);
-            });
-        }
-
-        const STORAGE_KEY = 'overlaySettings_<%= user._id %>';
-
-        function saveSettings() {
-            const s = {
-                bgColor:   document.getElementById('bgColor').value,
-                bgOpacity: document.getElementById('bgOpacity').value,
-                txtColor:  document.getElementById('txtColor').value,
-                fontSize:  document.getElementById('fontSize').value
-            };
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
-            const btn = event.currentTarget;
-            const orig = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> 저장됨!';
-            btn.classList.replace('bg-indigo-600','bg-green-600');
-            btn.classList.replace('hover:bg-indigo-700','hover:bg-green-700');
-            setTimeout(() => {
-                btn.innerHTML = orig;
-                btn.classList.replace('bg-green-600','bg-indigo-600');
-                btn.classList.replace('hover:bg-green-700','hover:bg-indigo-700');
-            }, 2000);
-        }
-
-        function loadSettings() {
-            try {
-                const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
-                if (!s) return;
-                if (s.bgColor)   document.getElementById('bgColor').value   = s.bgColor;
-                if (s.bgOpacity) {
-                    document.getElementById('bgOpacity').value = s.bgOpacity;
-                    document.getElementById('opacityLabel').textContent = s.bgOpacity + '%';
-                }
-                if (s.txtColor)  document.getElementById('txtColor').value  = s.txtColor;
-                if (s.fontSize) {
-                    document.getElementById('fontSize').value = s.fontSize;
-                    document.getElementById('sizeLabel').textContent = s.fontSize;
-                }
-            } catch(e) {}
-        }
-
-        function updateAll() {
-            const hex     = document.getElementById('bgColor').value;
-            const opacity = parseInt(document.getElementById('bgOpacity').value);
-            const color   = document.getElementById('txtColor').value;
-            const size    = parseInt(document.getElementById('fontSize').value);
-
-            document.getElementById('opacityLabel').textContent = opacity + '%';
-
-            const alpha = (opacity / 100).toFixed(2);
-            const bg    = hexToRgba(hex, alpha);
-
-            const p = new URLSearchParams();
-            p.set('bg',    encodeURIComponent(bg));
-            p.set('color', color);
-            p.set('size',  size);
-            const finalUrl = BASE_URL + '?' + p.toString();
-
-            document.getElementById('finalUrl').textContent = finalUrl;
-            document.getElementById('previewLink').href = '/overlay/<%= user._id %>?' + p.toString();
-        }
-
-        // 초기 실행
-        loadSettings();
-        updateAll();
 
         // ── 공지사항 관리 ──
         document.getElementById('noticeInput').addEventListener('input', function() {
