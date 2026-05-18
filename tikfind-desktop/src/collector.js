@@ -64,6 +64,33 @@ class TikTokCollector extends EventEmitter {
     
     // 공통 유저 정보 추출 헬퍼
     extractUser(data) {
+        // 국가 코드 추출 (여러 소스에서 시도)
+        let countryCode = '';
+        // 1. userDetails.bioDescription에서 국가 플래그 이모지 감지
+        // 2. followInfo.region에서 국가 코드 추출
+        // 3. userBadges에서 국가 배지 추출
+        if (data.followInfo?.region) {
+            countryCode = data.followInfo.region.toUpperCase();
+        }
+        if (!countryCode && data.userDetails?.bioDescription) {
+            const flagMatch = data.userDetails.bioDescription.match(/[\u{1F1E6}-\u{1F1FF}]{2}/u);
+            if (flagMatch) {
+                // 국기 이모지를 국가 코드로 변환
+                const chars = [...flagMatch[0]];
+                countryCode = String.fromCharCode(chars[0].codePointAt(0) - 0x1F1E6 + 65) +
+                              String.fromCharCode(chars[1].codePointAt(0) - 0x1F1E6 + 65);
+            }
+        }
+        // userBadges에서 국가 배지 확인
+        if (!countryCode && Array.isArray(data.userBadges)) {
+            for (const badge of data.userBadges) {
+                if (badge.type === 'country' || badge.badgeSceneType === 1) {
+                    countryCode = badge.name?.toUpperCase() || badge.displayType?.toUpperCase() || '';
+                    break;
+                }
+            }
+        }
+
         return {
             uniqueId: data.uniqueId || '',
             nickname: data.nickname || data.uniqueId || '',
@@ -79,7 +106,8 @@ class TikTokCollector extends EventEmitter {
             gifterLevel: data.gifterLevel || 0,
             teamMemberLevel: data.teamMemberLevel || null,
             msgId: data.msgId || null,
-            createTime: data.createTime || null
+            createTime: data.createTime || null,
+            countryCode: countryCode || ''
         };
     }
 
@@ -90,13 +118,29 @@ class TikTokCollector extends EventEmitter {
             this.isRunning = true;
             this.emit('connected');
             this.broadcastStatus(true);
-            // roomInfo RAW 구조 확인용 로그
+            // roomInfo에서 호스트 숫자 userId 추출 → 서버 전송
             try {
                 const roomInfo = state?.roomInfo || this.client.roomInfo || null;
                 console.log(`🔑 [connected] state keys: ${Object.keys(state||{}).join(',')}`);
                 console.log(`🔑 [connected] roomInfo RAW: ${JSON.stringify(roomInfo).slice(0, 500)}`);
+                const hostUserId = String(
+                    roomInfo?.owner?.id ||
+                    roomInfo?.owner?.user_id ||
+                    roomInfo?.host_info?.user_id ||
+                    state?.hostUserId ||
+                    ''
+                );
+                if (hostUserId && hostUserId !== 'undefined' && hostUserId !== '') {
+                    console.log(`🔑 [connected] hostUserId 발견: ${hostUserId} → 서버 전송`);
+                    await this.sendToServer('/api/live/tiktok-user-id', {
+                        userId: this.userId,
+                        tiktokUserId: hostUserId
+                    });
+                } else {
+                    console.log(`⚠️ [connected] roomInfo에서 hostUserId 못 찾음`);
+                }
             } catch(e) {
-                console.log('⚠️ [connected] roomInfo 로그 실패:', e.message);
+                console.log('⚠️ [connected] roomInfo 처리 실패:', e.message);
             }
         });
         

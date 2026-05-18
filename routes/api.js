@@ -1468,18 +1468,53 @@ router.post('/report/ai-analysis', requireAuth, async (req, res) => {
         const avgDuration = sessions.length ? Math.round(sessions.reduce((a,s) => a + (s.durationMinutes||0), 0) / sessions.length) : 0;
         const foreignRate = totalChats ? Math.round(totalForeign / totalChats * 100) : 0;
 
+        // 추가 통계 계산
+        const totalViewers = sessions.reduce((a, s) => a + (s.peakViewers || 0), 0);
+        const avgViewers = sessions.length ? Math.round(totalViewers / sessions.length) : 0;
+        const totalGifts = sessions.reduce((a, s) => a + (s.totalGifts || 0), 0);
+        const totalDiamonds = sessions.reduce((a, s) => a + (s.totalDiamonds || 0), 0);
+        const totalLikes = sessions.reduce((a, s) => a + (s.totalLikes || 0), 0);
+        const totalFollows = sessions.reduce((a, s) => a + (s.totalFollows || 0), 0);
+        const totalShares = sessions.reduce((a, s) => a + (s.totalShares || 0), 0);
+        
+        // 방송 성장 추세 계산 (최근 5회 vs 이전 5회)
+        const recentSessions = sessions.slice(0, 5);
+        const olderSessions = sessions.slice(5, 10);
+        const recentAvgViewers = recentSessions.length ? Math.round(recentSessions.reduce((a, s) => a + (s.peakViewers || 0), 0) / recentSessions.length) : 0;
+        const olderAvgViewers = olderSessions.length ? Math.round(olderSessions.reduce((a, s) => a + (s.peakViewers || 0), 0) / olderSessions.length) : 0;
+        const viewerGrowth = olderAvgViewers > 0 ? Math.round((recentAvgViewers - olderAvgViewers) / olderAvgViewers * 100) : 0;
+        
+        // 참여율 계산 (채팅 + 좋아요 / 시청자)
+        const engagementRate = avgViewers > 0 ? Math.round((totalChats + totalLikes) / (avgViewers * sessions.length) * 100) : 0;
+
         const prompt = `당신은 틱톡 라이브 알고리즘 전문가입니다. 아래 데이터를 분석하여 한국어로 답변해주세요.
 
 [방송 데이터 (최근 ${sessions.length}회)]
 - 평균 방송 시간: ${avgDuration}분
+- 평균 최고 시청자: ${avgViewers}명
 - 상위 해외 시청자 국가: ${topCountries || '데이터 없음'}
 - 시청자 최다 시간대: ${bestHours || '데이터 없음'}
 - 해외 채팅 비율: ${foreignRate}%
+- 총 선물: ${totalGifts}개 (${totalDiamonds}💎)
+- 총 좋아요: ${totalLikes.toLocaleString()}개
+- 총 팔로우: ${totalFollows}명
+- 총 공유: ${totalShares}회
+- 시청자 성장률: ${viewerGrowth > 0 ? '+' : ''}${viewerGrowth}% (최근 5회 vs 이전 5회)
+- 참여율: ${engagementRate}%
 
 다음 형식으로 정확히 답변해주세요:
 
 [알고리즘 분석]
 (2-3줄로 현재 방송 패턴 분석)
+
+[시청자 성장 진단]
+(현재 성장 추세 분석과 성장을 위해 개선해야 할 핵심 포인트 2-3가지)
+
+[참여율 개선 전략]
+(채팅, 좋아요, 공유를 늘리기 위한 구체적인 방법 2-3가지)
+
+[수익화 최적화]
+(선물 수익을 높이기 위한 전략과 팁 2-3가지)
 
 [집중 추천 시간대]
 (다음 방송에서 집중할 최적 시간대 1-2개와 이유)
@@ -1499,11 +1534,26 @@ router.post('/report/ai-analysis', requireAuth, async (req, res) => {
             model: 'gpt-4o-mini',
             messages: [{ role: 'user', content: prompt }],
             temperature: 0.7,
-            max_tokens: 800
+            max_tokens: 1500
         });
 
         const analysis = response.choices[0].message.content.trim();
-        res.json({ success: true, analysis, dataUsed: { sessions: sessions.length, topCountries, bestHours, avgDuration, foreignRate } });
+        res.json({ 
+            success: true, 
+            analysis, 
+            dataUsed: { 
+                sessions: sessions.length, 
+                topCountries, 
+                bestHours, 
+                avgDuration, 
+                foreignRate,
+                avgViewers,
+                totalGifts,
+                totalDiamonds,
+                viewerGrowth,
+                engagementRate
+            } 
+        });
     } catch (e) {
         console.error('AI 분석 오류:', e);
         res.status(500).json({ success: false, message: e.message });

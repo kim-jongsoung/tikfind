@@ -3325,11 +3325,22 @@ io.on('connection', (socket) => {
                     const hr = new Date().getHours();
                     if (!sessChat.hourlyMap[hr]) sessChat.hourlyMap[hr] = { viewerCount: 0, chatCount: 0 };
                     sessChat.hourlyMap[hr].chatCount++;
-                    const cc = tiktokData.userCountry || tiktokData.countryCode || '';
-                    if (cc) sessChat.countryMap[cc] = (sessChat.countryMap[cc] || 0) + 1;
+                    // 국가 코드 추출 (여러 소스에서 시도)
+                    let cc = tiktokData.countryCode || tiktokData.userCountry || '';
+                    if (!cc && tiktokData.followInfo?.region) {
+                        cc = tiktokData.followInfo.region.toUpperCase();
+                    }
+                    if (cc && cc.length === 2) {
+                        sessChat.countryMap[cc] = (sessChat.countryMap[cc] || 0) + 1;
+                    }
+                    // 해외 채팅 감지: 언어 기반 또는 국가 기반
+                    const isKorean = cc === 'KR' || cc === '';
                     if (messageLanguage && messageLanguage !== 'unknown' && messageLanguage !== streamerLanguage) {
                         sessChat.foreignChatCount++;
                         sessChat.languages.add(messageLanguage);
+                    } else if (cc && cc !== 'KR' && cc.length === 2) {
+                        // 언어 감지 실패해도 국가 코드가 한국이 아니면 해외로 카운트
+                        sessChat.foreignChatCount++;
                     }
                 }
             } catch (err) {
@@ -3408,8 +3419,14 @@ io.on('connection', (socket) => {
             const sessMember = liveSessionMap.get(String(userId));
             if (sessMember) {
                 sessMember.totalJoins = (sessMember.totalJoins || 0) + 1;
-                const cc = tiktokData.userCountry || tiktokData.countryCode || '';
-                if (cc) sessMember.countryMap[cc] = (sessMember.countryMap[cc] || 0) + 1;
+                // 국가 코드 추출 (여러 소스에서 시도)
+                let cc = tiktokData.countryCode || tiktokData.userCountry || '';
+                if (!cc && tiktokData.followInfo?.region) {
+                    cc = tiktokData.followInfo.region.toUpperCase();
+                }
+                if (cc && cc.length === 2) {
+                    sessMember.countryMap[cc] = (sessMember.countryMap[cc] || 0) + 1;
+                }
             }
             // 시청자 DB 저장 (팔로워 포함 전체)
             upsertAlgorithmViewer(userId, tiktokData, 'member').catch(() => {});

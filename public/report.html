@@ -272,6 +272,9 @@
                         if (!title || !content) continue;
                         const iconMap = {
                             '알고리즘 분석': { icon: 'fas fa-chart-bar', color: 'text-blue-400', bg: 'bg-blue-900/20 border-blue-800' },
+                            '시청자 성장 진단': { icon: 'fas fa-chart-line', color: 'text-cyan-400', bg: 'bg-cyan-900/20 border-cyan-800' },
+                            '참여율 개선 전략': { icon: 'fas fa-comments', color: 'text-orange-400', bg: 'bg-orange-900/20 border-orange-800' },
+                            '수익화 최적화': { icon: 'fas fa-coins', color: 'text-amber-400', bg: 'bg-amber-900/20 border-amber-800' },
                             '집중 추천 시간대': { icon: 'fas fa-clock', color: 'text-yellow-400', bg: 'bg-yellow-900/20 border-yellow-800' },
                             '집중 추천 국가': { icon: 'fas fa-globe', color: 'text-green-400', bg: 'bg-green-900/20 border-green-800' },
                             '방송 전 공지 문구': { icon: 'fas fa-bullhorn', color: 'text-pink-400', bg: 'bg-pink-900/20 border-pink-800' },
@@ -292,7 +295,7 @@
                     if (data.dataUsed) {
                         const d = data.dataUsed;
                         result.innerHTML += `<div class="mt-3 text-xs text-slate-500 border-t border-slate-700 pt-3">
-                            📊 분석 기반: 최근 ${d.sessions}회 방송 | 주요 국가: ${d.topCountries||'없음'} | 피크 시간대: ${d.bestHours||'없음'} | 평균 방송 ${d.avgDuration}분 | 해외채팅 ${d.foreignRate}%
+                            📊 분석 기반: 최근 ${d.sessions}회 방송 | 평균 시청자 ${d.avgViewers||0}명 | 주요 국가: ${d.topCountries||'없음'} | 피크 시간대: ${d.bestHours||'없음'} | 평균 방송 ${d.avgDuration}분 | 해외채팅 ${d.foreignRate}% | 성장률 ${d.viewerGrowth>0?'+':''}${d.viewerGrowth||0}% | 참여율 ${d.engagementRate||0}%
                         </div>`;
                     }
                 } else {
