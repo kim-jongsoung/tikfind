@@ -350,22 +350,24 @@
             }
 
             // 선물 위젯 위치 설정 (iframe 대신 직접 렌더링)
+            // 모더 공지 배너와 선물 카드는 항상 표시 (매치코칭, ##공지, ??GPT 등)
+            const modNoticeWrap = document.getElementById('mod-notice-wrap');
+            const giftCard = document.getElementById('gift-card');
+
             if (positions.gift && positions.gift.visible) {
                 const gift = positions.gift;
-                const modNoticeWrap = document.getElementById('mod-notice-wrap');
-                const giftCard = document.getElementById('gift-card');
-
                 // 모더 공지 배너 위치
                 modNoticeWrap.style.left = `${gift.x}px`;
                 modNoticeWrap.style.top = `${gift.y}px`;
-
                 // 선물 카드 위치 (위젯 중앙)
                 giftCard.style.left = `${gift.x + gift.width / 2}px`;
                 giftCard.style.top = `${gift.y + gift.height / 2}px`;
             } else {
-                // 선물 위젯 숨김
-                document.getElementById('mod-notice-wrap').style.display = 'none';
-                document.getElementById('gift-card').style.display = 'none';
+                // 선물 위젯 숨김이어도 기본 위치에 표시 (매치코칭, 공지 등은 작동)
+                modNoticeWrap.style.left = '0px';
+                modNoticeWrap.style.top = '15px';
+                giftCard.style.left = '540px';
+                giftCard.style.top = '960px';
             }
 
             // 모더 위젯
@@ -396,11 +398,18 @@
         }
 
         function setupSocketListeners() {
-            // 소켓 연결
-            socket.emit('join-overlay', userId);
+            // 소켓 연결 시 오버레이 룸 참가
+            function joinOverlay() {
+                socket.emit('join-overlay', userId);
+                console.log('🎬 오버레이 룸 참가:', userId);
+            }
+            socket.on('connect', joinOverlay);
+            if (socket.connected) joinOverlay();
 
             // 선물 알림
             socket.on('overlay-gift', (data) => {
+                console.log('🎁 선물 수신:', data);
+
                 const pts = data.totalDiamonds || data.diamondCount || 0;
                 if (pts < MID_MIN) return;
                 giftQueue.push(data);
@@ -413,13 +422,15 @@
                 if (data.megaMin != null) MEGA_MIN = data.megaMin;
             });
 
-            // 모더 공지
+            // 모더 공지 (##문구, ??GPT질문 포함)
             socket.on('overlay-mod-notice', (data) => {
+                console.log('📢 모더 공지 수신:', data);
                 showModNotice(data);
             });
 
             // AI 매치 코치
             socket.on('match-coach', (data) => {
+                console.log('🤖 매치 코치 수신:', data);
                 const situationIcon = data.situation === 'start' ? '⚔️' :
                                       data.situation === 'early' ? '🔥' :
                                       data.situation === 'mid'   ? '📊' : '🚀';
