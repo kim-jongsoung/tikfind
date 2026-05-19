@@ -5,6 +5,10 @@ const io = require('socket.io-client');
 const TikTokCollector = require('./src/collector');
 const TTSService = require('./src/tts');
 const log = require('electron-log');
+const { initUpdater, checkForUpdates, installUpdate, isUpdateReady, getUpdateInfo } = require('./src/updater');
+
+// 앱 버전
+const APP_VERSION = require('./package.json').version;
 
 let tray = null;
 let socket = null;
@@ -103,7 +107,11 @@ function createTray() {
 
 // 트레이 메뉴 업데이트
 function updateTrayMenu(status, tiktokId = '') {
-    const contextMenu = Menu.buildFromTemplate([
+    const menuItems = [
+        { 
+            label: `TikFind v${APP_VERSION}`, 
+            enabled: false 
+        },
         { 
             label: `상태: ${status}`, 
             enabled: false 
@@ -120,16 +128,30 @@ function updateTrayMenu(status, tiktokId = '') {
         { 
             label: socket && socket.connected ? '✅ 연결됨' : '❌ 연결 끊김', 
             enabled: false 
-        },
-        { type: 'separator' },
-        { 
-            label: '종료', 
-            click: () => {
-                app.quit();
-            }
         }
-    ]);
-    
+    ];
+
+    // 업데이트 준비 완료 시 설치 메뉴 추가
+    if (isUpdateReady()) {
+        const info = getUpdateInfo();
+        menuItems.push({ type: 'separator' });
+        menuItems.push({
+            label: `🔄 TikFind v${info.version} 업데이트 설치`,
+            click: () => {
+                installUpdate();
+            }
+        });
+    }
+
+    menuItems.push({ type: 'separator' });
+    menuItems.push({ 
+        label: '종료', 
+        click: () => {
+            app.quit();
+        }
+    });
+
+    const contextMenu = Menu.buildFromTemplate(menuItems);
     tray.setContextMenu(contextMenu);
 }
 
@@ -147,7 +169,8 @@ function connectToServer() {
     socket = io(serverUrl, {
         auth: {
             userId: userConfig.userId,
-            type: 'desktop-app'
+            type: 'desktop-app',
+            appVersion: APP_VERSION
         },
         reconnection: true,
         reconnectionDelay: 1000,
@@ -448,7 +471,16 @@ async function fetchUserIdFromSession() {
 
 // 앱 시작
 app.whenReady().then(async () => {
-    log.info('🚀 TikFind Desktop App (Background Service) 시작');
+    log.info(`🚀 TikFind Desktop App v${APP_VERSION} 시작`);
+    
+    // 자동 업데이트 초기화 (업데이트 준비 완료 시 트레이 메뉴 갱신)
+    initUpdater((info) => {
+        log.info(`🔄 업데이트 준비 완료: v${info.version}`);
+        // 현재 상태로 트레이 메뉴 갱신 (업데이트 설치 메뉴 추가됨)
+        const currentStatus = collector ? '방송 중' : '대기 중';
+        const currentTiktokId = userConfig?.tiktokId || '';
+        updateTrayMenu(currentStatus, currentTiktokId);
+    });
     
     // User 설정 로드
     userConfig = loadUserConfig();
@@ -458,6 +490,9 @@ app.whenReady().then(async () => {
     
     // Windows 시작 프로그램 등록
     setAutoLaunch();
+    
+    // 자동 업데이트 확인 (앱 시작 시 1회)
+    checkForUpdates();
     
     // user-config 없으면 웹 세션에서 자동 조회
     if (!userConfig || !userConfig.userId) {

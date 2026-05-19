@@ -3024,8 +3024,11 @@ io.on('connection', (socket) => {
             } else {
                 console.log(`📱 주 Desktop App 등록: ${targetUserId} → ${socket.id}`);
             }
-            io.to(targetUserId).emit('desktop-app-connected', { userId: targetUserId });
-            console.log(`📱 Desktop App 연결 알림 전송: ${targetUserId}`);
+            // 앱 버전 정보 포함하여 전송
+            const appVersion = socket.handshake.auth.appVersion || 'unknown';
+            io.to(targetUserId).emit('desktop-app-connected', { userId: targetUserId, version: appVersion });
+            io.to(targetUserId).emit('desktop-app-status', { connected: true, version: appVersion });
+            console.log(`📱 Desktop App 연결 알림 전송: ${targetUserId} (v${appVersion})`);
         }
         
         // 웹 클라이언트가 룸에 참가할 때
@@ -3037,14 +3040,16 @@ io.on('connection', (socket) => {
                 console.log(`📤 저장된 라이브 상태 전달: ${targetUserId}, isLive: ${savedStatus.isLive}`);
             }
             
-            // 2. Desktop App이 이미 연결되어 있으면 알림
+            // 2. Desktop App이 이미 연결되어 있으면 알림 (버전 정보 포함)
             const roomSockets = io.sockets.adapter.rooms.get(targetUserId);
             if (roomSockets) {
                 for (const socketId of roomSockets) {
                     const clientSocket = io.sockets.sockets.get(socketId);
                     if (clientSocket && clientSocket.handshake.auth.type === 'desktop-app') {
-                        socket.emit('desktop-app-connected', { userId: targetUserId });
-                        console.log(`📱 기존 Desktop App 연결 알림: ${targetUserId}`);
+                        const appVersion = clientSocket.handshake.auth.appVersion || 'unknown';
+                        socket.emit('desktop-app-connected', { userId: targetUserId, version: appVersion });
+                        socket.emit('desktop-app-status', { connected: true, version: appVersion });
+                        console.log(`📱 기존 Desktop App 연결 알림: ${targetUserId} (v${appVersion})`);
                         break;
                     }
                 }

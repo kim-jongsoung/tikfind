@@ -89,10 +89,10 @@ router.get('/desktop/token/:token', (req, res) => {
     res.json({ success: true, userId: data.userId, tiktokId: data.tiktokId });
 });
 
-// Desktop App 다운로드 - GitHub Releases로 리다이렉트 (신뢰도 높음)
+// Desktop App 다운로드 - GitHub Releases 최신 버전으로 리다이렉트
 router.get('/download-app', (req, res) => {
-    // GitHub Releases는 브라우저 신뢰도가 높아 SmartScreen 차단 최소화
-    res.redirect('https://github.com/kim-jongsoung/tikfind/releases/download/v1.3.17/TikFind.Setup.1.3.17.exe');
+    // tikfind-desktop 레포의 최신 릴리즈로 리다이렉트
+    res.redirect('https://github.com/kim-jongsoung/tikfind-desktop/releases/latest/download/TikFind-Setup-1.3.18.exe');
 });
 
 // 현재 로그인 유저 정보 (Desktop App 연결용)
