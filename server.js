@@ -1023,6 +1023,13 @@ async function globalEmitModeratorActivity(userId, uniqueId, type) {
 // ===== AI 매치 코치 함수 =====
 async function processMatchCoach(userId, triggerType, matchState) {
     try {
+        // 사용자 매치 코치 설정 체크
+        const User = require('./models/User');
+        const user = await User.findById(userId).select('matchCoachEnabled').lean();
+        if (user && user.matchCoachEnabled === false) {
+            return; // 매치 코치 비활성화 시 종료
+        }
+
         const OpenAI = require('openai');
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 

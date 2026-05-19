@@ -255,6 +255,10 @@ const userSchema = new mongoose.Schema({
     unifiedOverlayPositions: {
         type: Object,
         default: {}
+    },
+    matchCoachEnabled: {
+        type: Boolean,
+        default: true
     }
 }, {
     timestamps: true

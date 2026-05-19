@@ -2168,6 +2168,27 @@ router.post('/speech-settings', requireAuth, async (req, res) => {
     }
 });
 
+// GET /api/match-coach-settings (인증 필요)
+router.get('/match-coach-settings', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('matchCoachEnabled').lean();
+        res.json({ success: true, enabled: user?.matchCoachEnabled !== false }); // 기본값 true
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/match-coach-settings (인증 필요)
+router.post('/match-coach-settings', requireAuth, async (req, res) => {
+    try {
+        const { enabled } = req.body;
+        await User.findByIdAndUpdate(req.user._id, { matchCoachEnabled: !!enabled });
+        res.json({ success: true, enabled: !!enabled });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 // GET /api/overlay/positions (인증 필요)
 router.get('/overlay/positions', requireAuth, async (req, res) => {
     try {
