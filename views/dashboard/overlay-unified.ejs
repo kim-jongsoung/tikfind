@@ -49,7 +49,7 @@
                         <div>
                             <p class="text-sm text-blue-800 font-semibold mb-1">URL 및 사이즈 입력</p>
                             <p class="text-sm text-blue-700 mb-2">아래 <strong>"통합 오버레이 URL"</strong>을 복사해서 URL 입력창에 붙여넣으세요.</p>
-                            <p class="text-sm text-blue-700">사이즈 크기 설정에 <strong>가로 1080 × 세로 1920</strong>을 정확히 입력한 뒤 저장합니다.</p>
+                            <p class="text-sm text-blue-700">사이즈 크기 설정에 <strong>가로 1080 × 세로 1080</strong>을 정확히 입력한 뒤 저장합니다.</p>
                         </div>
                     </div>
                     <div class="flex items-start gap-3">
@@ -86,10 +86,6 @@
                         <span class="text-sm">🎤 번역 자막</span>
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" id="toggle-gift" checked class="w-5 h-5 text-indigo-600 rounded">
-                        <span class="text-sm">🎁 선물 알림</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="toggle-moderator" checked class="w-5 h-5 text-indigo-600 rounded">
                         <span class="text-sm">🛡️ 모더 위젯</span>
                     </label>
@@ -109,6 +105,61 @@
                         <i class="fas fa-copy mr-2"></i>복사
                     </button>
                 </div>
+                <p class="text-xs text-gray-500 mt-2">위젯: 신청곡+공지, 번역 자막, 모더 위젯, 룰렛 미션</p>
+            </div>
+
+            <!-- 선물 알림 위젯 URL -->
+            <div class="bg-green-50 border border-green-200 rounded-xl shadow mb-6 p-4">
+                <h3 class="font-semibold text-green-800 mb-3">🎁 선물 알림 위젯 URL</h3>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="gift-url" readonly class="flex-1 px-4 py-2 bg-white border border-green-300 rounded-lg text-sm">
+                    <button onclick="copyGiftUrl()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                        <i class="fas fa-copy mr-2"></i>복사
+                    </button>
+                </div>
+                <p class="text-xs text-green-700 mt-2">기능: 선물 알림, 매치 코치, 모더 공지, ##공지, ??질문 | 사이즈: 가로 800 × 세로 200</p>
+            </div>
+
+            <!-- 배치 방법 안내 -->
+            <div class="bg-purple-50 border border-purple-200 rounded-xl shadow mb-6 p-4">
+                <h3 class="font-semibold text-purple-800 mb-3">📍 TikTok Live Studio 배치 방법</h3>
+                <div class="space-y-3">
+                    <div class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xs">1</span>
+                        <div>
+                            <p class="text-sm text-purple-800 font-semibold mb-1">통합 오버레이 추가</p>
+                            <p class="text-sm text-purple-700">"통합 오버레이 URL"을 복사해서 TikTok Live Studio에 브라우저 소스로 추가합니다.</p>
+                            <p class="text-sm text-purple-700">사이즈: <strong>가로 1080 × 세로 1080</strong></p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xs">2</span>
+                        <div>
+                            <p class="text-sm text-purple-800 font-semibold mb-1">선물 알림 위젯 추가</p>
+                            <p class="text-sm text-purple-700">"선물 알림 위젯 URL"을 복사해서 별도 브라우저 소스로 추가합니다.</p>
+                            <p class="text-sm text-purple-700">사이즈: <strong>가로 800 × 세로 200</strong></p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xs">3</span>
+                        <div>
+                            <p class="text-sm text-purple-800 font-semibold mb-1">위치 배치</p>
+                            <p class="text-sm text-purple-700"><strong>통합 오버레이</strong>는 화면 상단 또는 중앙에 배치합니다.</p>
+                            <p class="text-sm text-purple-700"><strong>선물 알림 위젯</strong>은 통합 오버레이 하단 또는 원하는 위치에 배치합니다.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <span class="flex-shrink-0 w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-xs">4</span>
+                        <div>
+                            <p class="text-sm text-purple-800 font-semibold mb-1">소스 이름 변경</p>
+                            <p class="text-sm text-purple-700">각 소스의 이름을 알기 쉽게 변경합니다 (예: "틱파인드 통합", "틱파인드 선물").</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-purple-100 rounded-lg border border-purple-300">
+                    <p class="text-sm text-purple-800 font-semibold">✅ 배치 완료</p>
+                    <p class="text-sm text-purple-700 mt-1">두 소스를 모두 추가하면 신청곡, 번역 자막, 모더 위젯, 룰렛 미션, 선물 알림, 매치 코치, 모더 공지가 모두 작동합니다.</p>
+                </div>
             </div>
 
             <!-- 저장 버튼 -->
@@ -127,7 +178,6 @@
         const defaultWidgets = {
             song: { visible: true, label: '🎵 신청곡+공지' },
             speech: { visible: true, label: '🎤 번역 자막' },
-            gift: { visible: true, label: '🎁 선물 알림' },
             moderator: { visible: true, label: '🛡️ 모더 위젯' },
             roulette: { visible: true, label: '🎰 룰렛 미션' }
         };
@@ -142,13 +192,13 @@
             // 토글 이벤트
             document.getElementById('toggle-song').addEventListener('change', (e) => toggleWidget('song', e.target.checked));
             document.getElementById('toggle-speech').addEventListener('change', (e) => toggleWidget('speech', e.target.checked));
-            document.getElementById('toggle-gift').addEventListener('change', (e) => toggleWidget('gift', e.target.checked));
             document.getElementById('toggle-moderator').addEventListener('change', (e) => toggleWidget('moderator', e.target.checked));
             document.getElementById('toggle-roulette').addEventListener('change', (e) => toggleWidget('roulette', e.target.checked));
 
             // URL 설정
             const userId = '<%= user._id %>';
             document.getElementById('overlay-url').value = `https://tikfind.kr/overlay/${userId}/unified`;
+            document.getElementById('gift-url').value = `https://tikfind.kr/overlay/${userId}/gift`;
         });
 
         async function loadWidgets() {
@@ -205,7 +255,14 @@
             const urlInput = document.getElementById('overlay-url');
             urlInput.select();
             document.execCommand('copy');
-            alert('URL이 복사되었습니다.');
+            alert('통합 오버레이 URL이 복사되었습니다.');
+        }
+
+        function copyGiftUrl() {
+            const urlInput = document.getElementById('gift-url');
+            urlInput.select();
+            document.execCommand('copy');
+            alert('선물 알림 위젯 URL이 복사되었습니다.');
         }
     </script>
 </body>

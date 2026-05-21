@@ -272,8 +272,13 @@
         let noticeHideTimer = null;
         const NOTICE_SHOW_MS = 12000;
 
+        // 테스트 모드 체크
+        const testMode = new URLSearchParams(location.search).get('test') === '1';
+
         // 초기화
         async function init() {
+            console.log('🎬 통합오버레이 초기화 시작');
+            
             // 강제로 크기 설정 (틱톡 스튜디오 재시작 시 크기 유지)
             document.documentElement.style.width = '1080px';
             document.documentElement.style.height = '1920px';
@@ -287,16 +292,24 @@
                 if (d.success) {
                     MID_MIN  = d.midMin  ?? 100;
                     MEGA_MIN = d.megaMin ?? 1000;
+                    console.log('✅ 선물 기준 로드:', { MID_MIN, MEGA_MIN });
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error('❌ 선물 기준 로드 실패:', e);
+            }
 
             await loadPositions();
             renderWidgets();
-            setupSocketListeners();
 
             // 오디오 컨텍스트 초기화
             try { getCtx(); } catch(e) {}
             setTimeout(() => { try { getCtx(); } catch(e) {} }, 500);
+            
+            // 테스트 모드
+            if (testMode) {
+                console.log('🧪 테스트 모드 활성화');
+                runTestMode();
+            }
         }
 
         async function loadPositions() {
@@ -305,9 +318,12 @@
                 const data = await res.json();
                 if (data.success && data.positions) {
                     positions = data.positions;
+                    console.log('✅ 위젯 위치 로드:', positions);
+                } else {
+                    console.log('⚠️ 위젯 위치 없음, 기본값 사용');
                 }
             } catch (e) {
-                console.error('위치 로드 실패:', e);
+                console.error('❌ 위치 로드 실패:', e);
             }
         }
 
@@ -354,7 +370,8 @@
             const modNoticeWrap = document.getElementById('mod-notice-wrap');
             const giftCard = document.getElementById('gift-card');
 
-            if (positions.gift && positions.gift.visible) {
+            // 선물 위젯은 visible 체크 없이 항상 표시 (매치코칭, 모더공지 포함)
+            if (positions.gift) {
                 const gift = positions.gift;
                 // 모더 공지 배너 위치
                 modNoticeWrap.style.left = `${gift.x}px`;
@@ -362,12 +379,14 @@
                 // 선물 카드 위치 (위젯 중앙)
                 giftCard.style.left = `${gift.x + gift.width / 2}px`;
                 giftCard.style.top = `${gift.y + gift.height / 2}px`;
+                console.log('✅ 선물 위젯 위치 설정:', gift);
             } else {
-                // 선물 위젯 숨김이어도 기본 위치에 표시 (매치코칭, 공지 등은 작동)
+                // 위치 정보 없으면 기본 위치 사용
                 modNoticeWrap.style.left = '0px';
                 modNoticeWrap.style.top = '15px';
                 giftCard.style.left = '540px';
                 giftCard.style.top = '960px';
+                console.log('⚠️ 선물 위젯 기본 위치 사용');
             }
 
             // 모더 위젯
@@ -398,12 +417,29 @@
         }
 
         function setupSocketListeners() {
+            console.log('🔌 Socket.io 리스너 등록 시작');
+            console.log('✅ Socket.io 연결 상태:', socket.connected);
+            
             // 소켓 연결 시 오버레이 룸 참가
             function joinOverlay() {
                 socket.emit('join-overlay', userId);
-                console.log('🎬 오버레이 룸 참가:', userId);
+                console.log('🎬 오버레이 룸 참가:', `overlay-${userId}`);
             }
-            socket.on('connect', joinOverlay);
+            
+            socket.on('connect', () => {
+                console.log('✅ Socket.io 연결됨');
+                joinOverlay();
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('❌ Socket.io 연결 끊김');
+            });
+            
+            socket.on('reconnect', () => {
+                console.log('🔄 Socket.io 재연결됨');
+                joinOverlay();
+            });
+            
             if (socket.connected) joinOverlay();
 
             // 선물 알림
@@ -411,7 +447,10 @@
                 console.log('🎁 선물 수신:', data);
 
                 const pts = data.totalDiamonds || data.diamondCount || 0;
-                if (pts < MID_MIN) return;
+                if (pts < MID_MIN) {
+                    console.log('⚠️ 선물 기준 미달:', pts, '<', MID_MIN);
+                    return;
+                }
                 giftQueue.push(data);
                 if (!giftBusy) nextGift();
             });
@@ -420,6 +459,7 @@
             socket.on('gift-settings-update', (data) => {
                 if (data.midMin  != null) MID_MIN  = data.midMin;
                 if (data.megaMin != null) MEGA_MIN = data.megaMin;
+                console.log('⚙️ 선물 기준 업데이트:', { MID_MIN, MEGA_MIN });
             });
 
             // 모더 공지 (##문구, ??GPT질문 포함)
@@ -436,6 +476,8 @@
                                       data.situation === 'mid'   ? '📊' : '🚀';
                 showModNotice({ text: situationIcon + ' ' + data.message });
             });
+            
+            console.log('✅ Socket.io 리스너 등록 완료');
 
             // 기존 이벤트들
             socket.on('new-song', (data) => {
@@ -666,6 +708,42 @@
 
         document.addEventListener('click', () => { try { getCtx().resume(); } catch(e) {} }, { once: true });
 
+        // 테스트 모드 함수
+        function runTestMode() {
+            const testLabel = document.createElement('div');
+            testLabel.textContent = '🧪 테스트 모드 활성화';
+            testLabel.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(255,0,0,0.8);color:#fff;padding:8px 16px;border-radius:8px;font-size:14px;font-weight:700;z-index:9999;';
+            document.body.appendChild(testLabel);
+            
+            // 3초 후 선물 테스트
+            setTimeout(() => {
+                console.log('🧪 테스트: 선물 알림');
+                giftQueue.push({
+                    nickname: '테스트유저',
+                    uniqueId: 'testuser',
+                    profilePictureUrl: '',
+                    totalDiamonds: 500
+                });
+                if (!giftBusy) nextGift();
+            }, 3000);
+            
+            // 6초 후 매치 코치 테스트
+            setTimeout(() => {
+                console.log('🧪 테스트: 매치 코치');
+                showModNotice({ text: '🔥 테스트: 지금이 역전의 기회입니다!' });
+            }, 6000);
+            
+            // 9초 후 모더 공지 테스트
+            setTimeout(() => {
+                console.log('🧪 테스트: 모더 공지');
+                showModNotice({ text: '📢 테스트: 공지사항입니다' });
+            }, 9000);
+        }
+
+        // Socket.io 리스너 즉시 등록 (init 전에!)
+        setupSocketListeners();
+        
+        // 나머지 초기화
         init();
     </script>
 </body>

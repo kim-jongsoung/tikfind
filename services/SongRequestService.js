@@ -13,8 +13,8 @@ class SongRequestService {
         this.songQueue = new Map(); // userId -> 신청곡 배열
         this.settings = new Map(); // userId -> { isAccepting, cooldownMinutes }
         this.lastRequestTime = new Map(); // `${userId}:${uniqueId}` -> timestamp
-        // 캐시 사용 여부 (어드민에서 제어 가능)
-        this.useCache = process.env.SONG_CACHE_ENABLED !== 'false';
+        // 캐시 사용 여부 (어드민에서 제어 가능, 기본값: 미사용)
+        this.useCache = process.env.SONG_CACHE_ENABLED === 'true';
     }
 
     getSettings(userId) {
