@@ -298,6 +298,20 @@
     function joinOverlay() { socket.emit('join-overlay', userId); }
     socket.on('connect', joinOverlay);
     joinOverlay();
+
+    // 자동 재연결 기능
+    socket.on('disconnect', () => {
+        console.log('🔌 Socket 연결 끊김, 재연결 시도...');
+    });
+
+    socket.on('reconnect', () => {
+        console.log('🔌 Socket 재연결 성공');
+        joinOverlay();
+    });
+
+    socket.on('reconnect_attempt', () => {
+        console.log('🔌 Socket 재연결 시도 중...');
+    });
     socket.on('overlay-gift', d => {
         const pts = d.totalDiamonds || d.diamondCount || 0;
         if (pts < MID_MIN) return; // 기준 미달 무시

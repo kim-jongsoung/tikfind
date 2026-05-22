@@ -430,16 +430,21 @@
                 console.log('✅ Socket.io 연결됨');
                 joinOverlay();
             });
-            
+
+            // 자동 재연결 기능
             socket.on('disconnect', () => {
-                console.log('❌ Socket.io 연결 끊김');
+                console.log('🔌 Socket 연결 끊김, 재연결 시도...');
             });
-            
+
             socket.on('reconnect', () => {
-                console.log('🔄 Socket.io 재연결됨');
+                console.log('🔌 Socket 재연결 성공');
                 joinOverlay();
             });
-            
+
+            socket.on('reconnect_attempt', () => {
+                console.log('🔌 Socket 재연결 시도 중...');
+            });
+
             if (socket.connected) joinOverlay();
 
             // 선물 알림
