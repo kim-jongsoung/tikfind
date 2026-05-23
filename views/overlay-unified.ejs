@@ -403,18 +403,20 @@
                 container.appendChild(iframe);
             }
 
-            // 룰렛 미션 위젯 (기본값: 왼쪽 상단, 상단 450px 여백)
+            // 룰렛 미션 위젯 (기본값: 왼쪽에서 반만 나오게)
             if (positions.roulette && positions.roulette.visible) {
                 const roulette = positions.roulette;
                 const iframe = document.createElement('iframe');
                 iframe.className = 'widget-container';
-                iframe.style.left = `${roulette.x ?? 0}px`;
-                iframe.style.top = `${roulette.y ?? 450}px`;
+                iframe.id = 'roulette-iframe';
+                iframe.style.left = `${roulette.x ?? -311}px`;
+                iframe.style.top = `${roulette.y ?? 650}px`;
                 iframe.style.width = `${roulette.width ?? 622}px`;
                 iframe.style.height = `${roulette.height ?? 622}px`;
-                iframe.style.overflow = 'visible';
+                iframe.style.zIndex = '50';
                 iframe.src = `/overlay/${userId}/roulette`;
                 container.appendChild(iframe);
+                console.log('✅ 룰렛 iframe 추가:', iframe.src);
             }
         }
 
