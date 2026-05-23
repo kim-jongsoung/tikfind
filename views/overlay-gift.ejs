@@ -312,6 +312,17 @@
     socket.on('reconnect_attempt', () => {
         console.log('🔌 Socket 재연결 시도 중...');
     });
+
+    // 화면 크기 변화 감지 (합방 시 오버레이 새로고침)
+    let lastWidth = window.innerWidth;
+    window.addEventListener('resize', () => {
+        const currentWidth = window.innerWidth;
+        if (Math.abs(currentWidth - lastWidth) > 100) {
+            console.log('📺 화면 크기 변화 감지, 오버레이 새로고침');
+            location.reload();
+        }
+        lastWidth = currentWidth;
+    });
     socket.on('overlay-gift', d => {
         const pts = d.totalDiamonds || d.diamondCount || 0;
         if (pts < MID_MIN) return; // 기준 미달 무시
