@@ -19,6 +19,7 @@
         .tab-btn.active { border-bottom-color: #6366f1; color: #6366f1; font-weight: 700; }
         .tab-btn.active-purple { border-bottom-color: #a855f7; color: #a855f7; font-weight: 700; }
         .tab-btn.active-blue   { border-bottom-color: #3b82f6; color: #3b82f6; font-weight: 700; }
+        .tab-btn.active-cyan   { border-bottom-color: #06b6d4; color: #06b6d4; font-weight: 700; }
         .tab-btn.active-green  { border-bottom-color: #22c55e; color: #22c55e; font-weight: 700; }
         .tab-btn.active-orange { border-bottom-color: #f97316; color: #f97316; font-weight: 700; }
         .tab-panel { display: none; }
@@ -622,13 +623,14 @@
     <script>
         // ── 탭 전환 ──
         function switchTab(name) {
-            ['gift','song','mod','speech','roulette','match'].forEach(t => {
+            ['gift','song','mod','level50','speech','roulette','match'].forEach(t => {
                 document.getElementById('panel-' + t).classList.toggle('active', t === name);
                 const btn = document.getElementById('tab-' + t);
-                btn.classList.remove('active', 'active-purple', 'active-blue', 'active-green', 'active-orange');
+                btn.classList.remove('active', 'active-purple', 'active-blue', 'active-cyan', 'active-green', 'active-orange');
                 if (t === name) {
                     if (name === 'gift')     btn.classList.add('active-purple');
                     else if (name === 'mod')      btn.classList.add('active-blue');
+                    else if (name === 'level50')  btn.classList.add('active-cyan');
                     else if (name === 'speech')   btn.classList.add('active-green');
                     else if (name === 'match')    btn.classList.add('active-orange');
                     else btn.classList.add('active');
