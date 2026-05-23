@@ -411,6 +411,7 @@
                 iframe.style.top = `${roulette.y ?? 450}px`;
                 iframe.style.width = `${roulette.width ?? 622}px`;
                 iframe.style.height = `${roulette.height ?? 622}px`;
+                iframe.style.overflow = 'visible';
                 iframe.src = `/overlay/${userId}/roulette`;
                 container.appendChild(iframe);
             }
