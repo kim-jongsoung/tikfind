@@ -8,6 +8,7 @@ const AlgorithmViewer = require('../models/AlgorithmViewer');
 const MessageTemplate = require('../models/MessageTemplate');
 const OverlayNotice = require('../models/OverlayNotice');
 const Moderator = require('../models/Moderator');
+const Level50Viewer = require('../models/Level50Viewer');
 const Notice = require('../models/Notice');
 const ytdl = require('@distube/ytdl-core');
 const SongRequestService = require('../services/SongRequestService');
@@ -2062,6 +2063,95 @@ router.delete('/moderator/:id', requireAuth, async (req, res) => {
         await Moderator.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
         const io = req.app.get('io');
         if (io) io.to('overlay-' + req.user._id.toString()).emit('moderator-update');
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// ── 50레벨 시청자 위젯 ─────────────────────────────────────────────────
+// GET /api/level50?userId=xxx  (오버레이 공개 조회)
+router.get('/level50', async (req, res) => {
+    try {
+        const uid = req.query.userId || (req.user && req.user._id);
+        if (!uid) return res.json({ success: true, level50Viewers: [], inactiveAlert: false });
+        const viewers = await Level50Viewer.find({ userId: uid }).sort({ order: 1, createdAt: 1 });
+        const user = await User.findById(uid).select('level50InactiveAlert').lean();
+        res.json({ success: true, level50Viewers: viewers, inactiveAlert: user?.level50InactiveAlert === true });
+    } catch (e) {
+        res.json({ success: true, level50Viewers: [], inactiveAlert: false });
+    }
+});
+
+// GET /api/level50/list  (인증 - 대시보드)
+router.get('/level50/list', requireAuth, async (req, res) => {
+    try {
+        const viewers = await Level50Viewer.find({ userId: req.user._id }).sort({ order: 1, createdAt: 1 });
+        res.json({ success: true, level50Viewers: viewers });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/level50  (추가)
+router.post('/level50', requireAuth, async (req, res) => {
+    try {
+        const { tiktokUniqueId, displayName, profileImg } = req.body;
+        if (!tiktokUniqueId || !displayName)
+            return res.status(400).json({ success: false, message: 'ID와 닉네임을 입력해주세요.' });
+        const count = await Level50Viewer.countDocuments({ userId: req.user._id });
+        if (count >= 20)
+            return res.status(400).json({ success: false, message: '최대 20명까지 등록 가능합니다.' });
+        const viewer = await Level50Viewer.create({
+            userId: req.user._id,
+            tiktokUniqueId: tiktokUniqueId.trim(),
+            displayName: displayName.trim().slice(0, 20),
+            profileImg: profileImg || ''
+        });
+        // 실시간 반영
+        const io = req.app.get('io');
+        if (io) io.to('overlay-' + req.user._id.toString()).emit('level50-update');
+        res.json({ success: true, level50Viewer: viewer });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// PATCH /api/level50/:id  (수정)
+router.patch('/level50/:id', requireAuth, async (req, res) => {
+    try {
+        const { displayName, profileImg } = req.body;
+        const update = {};
+        if (displayName) update.displayName = displayName.trim().slice(0, 20);
+        if (profileImg !== undefined) update.profileImg = profileImg;
+        await Level50Viewer.findOneAndUpdate({ _id: req.params.id, userId: req.user._id }, { $set: update });
+        const io = req.app.get('io');
+        if (io) io.to('overlay-' + req.user._id.toString()).emit('level50-update');
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// PATCH /api/level50/inactive-alert  (비활동 색상 변경 설정 저장)
+router.patch('/level50/inactive-alert', requireAuth, async (req, res) => {
+    try {
+        const { inactiveAlert } = req.body;
+        await User.findByIdAndUpdate(req.user._id, { level50InactiveAlert: !!inactiveAlert });
+        const io = req.app.get('io');
+        if (io) io.to('overlay-' + req.user._id.toString()).emit('level50-inactive-alert', { inactiveAlert: !!inactiveAlert });
+        res.json({ success: true, inactiveAlert: !!inactiveAlert });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// DELETE /api/level50/:id
+router.delete('/level50/:id', requireAuth, async (req, res) => {
+    try {
+        await Level50Viewer.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        const io = req.app.get('io');
+        if (io) io.to('overlay-' + req.user._id.toString()).emit('level50-update');
         res.json({ success: true });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });

@@ -1020,6 +1020,29 @@ async function globalEmitModeratorActivity(userId, uniqueId, type) {
     } catch(e) {}
 }
 
+async function globalEmitLevel50Activity(userId, uniqueId, type) {
+    if (!uniqueId) return;
+    try {
+        const Level50Viewer = require('./models/Level50Viewer');
+        const mongoose  = require('mongoose');
+        const uid = uniqueId.trim().toLowerCase();
+        const viewerUserId = mongoose.Types.ObjectId.isValid(userId)
+            ? new mongoose.Types.ObjectId(userId) : userId;
+        const viewer = await Level50Viewer.findOne({
+            userId: viewerUserId,
+            tiktokUniqueId: { $regex: new RegExp(`^${uid}$`, 'i') }
+        });
+        if (viewer) {
+            io.to('overlay-' + String(userId)).emit('overlay-level50-activity', {
+                uniqueId,
+                displayName: viewer.displayName,
+                profileImg:  viewer.profileImg,
+                type:        type || 'activity'
+            });
+        }
+    } catch(e) {}
+}
+
 // ===== AI 매치 코치 함수 =====
 async function processMatchCoach(userId, triggerType, matchState) {
     try {
@@ -1567,6 +1590,9 @@ async function processChatMessage(chatData) {
     // 5. 모더 활동 emit
     globalEmitModeratorActivity(userId, uniqueId || username, 'chat').catch(() => {}); // 채팅 → type:'chat'
 
+    // 5-1. 50레벨 시청자 활동 emit
+    globalEmitLevel50Activity(userId, uniqueId || username, 'chat').catch(() => {});
+
     // 5-1. 모더/호스트 ## 공지 감지 → 선물 오버레이에 마퀴 표시
     if (message && message.startsWith('##')) {
         try {
@@ -2063,12 +2089,14 @@ app.post('/api/live/tiktok-data', async (req, res) => {
         } else if (type === 'like') {
             io.to(userId).emit('like-received', tiktokData);
             globalEmitModeratorActivity(userId, tiktokData.uniqueId, 'like').catch(() => {});
+            globalEmitLevel50Activity(userId, tiktokData.uniqueId, 'like').catch(() => {});
             const sessLike = liveSessionMap.get(String(userId));
             if (sessLike) sessLike.totalLikes += (tiktokData.likeCount || 1);
 
         } else if (type === 'gift') {
             io.to(userId).emit('gift-received', tiktokData);
             globalEmitModeratorActivity(userId, tiktokData.uniqueId, 'gift').catch(() => {});
+            globalEmitLevel50Activity(userId, tiktokData.uniqueId, 'gift').catch(() => {});
             if (tiktokData.giftType !== 1 && tiktokData.isFinal !== false) {
                 const totalDiamonds = (tiktokData.diamondCount || 0) * (tiktokData.repeatCount || 1);
                 io.to(`overlay-${userId}`).emit('overlay-gift', {

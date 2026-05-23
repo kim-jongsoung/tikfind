@@ -499,6 +499,20 @@
                 container.appendChild(iframe);
             }
 
+            // 50레벨 시청자 위젯 (왼쪽 위치)
+            if (positions.level50 && positions.level50.visible) {
+                const level50 = positions.level50;
+                const iframe = document.createElement('iframe');
+                iframe.className = 'widget-container';
+                iframe.style.left = `${level50.x ?? 0}px`;
+                iframe.style.top = `${level50.y ?? 650}px`;
+                iframe.style.width = `${level50.width ?? 120}px`;
+                iframe.style.height = `${level50.height ?? 100}px`;
+                iframe.src = `/overlay/${userId}/level50`;
+                container.appendChild(iframe);
+                console.log('✅ 50레벨 위젯 iframe 추가:', iframe.src);
+            }
+
             // 룰렛 미션 위젯 위치 설정 (직접 통합됨)
             if (positions.roulette && positions.roulette.visible) {
                 const roulette = positions.roulette;

@@ -61,6 +61,11 @@
                         class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
                         <i class="fas fa-shield-alt text-blue-500"></i> 모더 위젯
                     </button>
+                    <button onclick="switchTab('level50')" id="tab-level50"
+                        class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fas fa-trophy text-cyan-500"></i> 50레벨 위젯
+                        <span class="px-1.5 py-0.5 bg-cyan-100 text-cyan-600 text-xs rounded-full font-bold">NEW</span>
+                    </button>
                     <button onclick="switchTab('speech')" id="tab-speech"
                         class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
                         <i class="fas fa-language text-green-500"></i> 번역 자막
@@ -242,6 +247,88 @@
                         </h4>
                         <div id="modList" class="space-y-2">
                             <div class="text-center py-4 text-gray-400 text-sm">등록된 모더가 없습니다.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ══════════════════════════════════
+                     탭 3: 50레벨 시청자 위젯
+                ══════════════════════════════════ -->
+                <div id="panel-level50" class="tab-panel p-6">
+
+                    <!-- 설명 -->
+                    <div class="flex items-start gap-4 mb-5 p-4 bg-cyan-50 rounded-xl border border-cyan-200">
+                        <div class="text-3xl">🏆</div>
+                        <div>
+                            <p class="font-semibold text-cyan-800 text-sm">50레벨 시청자 위젯이란?</p>
+                            <p class="text-xs text-cyan-700 mt-1 leading-relaxed">
+                                레벨 50 이상의 시청자가 입장하거나 활동(채팅/좋아요/선물)할 때 화면에 표시됩니다.<br>
+                                <strong>청록색 뱃지</strong>로 구분되며, 모더 위젯과 동일한 기능을 제공합니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 50레벨 시청자 추가 -->
+                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-user-plus text-cyan-500"></i> 50레벨 시청자 등록
+                        </h4>
+                        <div class="grid grid-cols-2 gap-3 mb-3">
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">TikTok ID (@ 제외)</label>
+                                <input type="text" id="level50TiktokId" placeholder="예: tiktokuser"
+                                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">닉네임</label>
+                                <input type="text" id="level50DisplayName" placeholder="표시할 이름"
+                                    class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-400">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="text-xs text-gray-500 mb-1 block">아이콘 선택</label>
+                            <div class="flex gap-2 flex-wrap">
+                                <input type="hidden" id="level50Emoji" value="🏆">
+                                <% ['🏆','👑','💎','⭐','🌟'].forEach(function(em) { %>
+                                <button type="button" onclick="selectLevel50Emoji(this, '<%= em %>')" data-emoji="<%= em %>"
+                                    class="level50-emoji-btn w-12 h-12 text-2xl rounded-xl border-2 border-gray-200 hover:border-cyan-400 transition flex items-center justify-center bg-gray-50 hover:bg-cyan-50"
+                                    style="<%= em === '🏆' ? 'border-color:#06b6d4;background:#ecfeff;' : '' %>">
+                                    <%= em %>
+                                </button>
+                                <% }); %>
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button onclick="addLevel50Viewer()"
+                                class="px-5 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition text-sm flex items-center gap-2">
+                                <i class="fas fa-plus"></i> 등록
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 비활동 색상 변경 설정 -->
+                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm font-semibold text-gray-700">3분 미활동 시 색상 변경</p>
+                                <p class="text-xs text-gray-400 mt-0.5">켜면 50레벨 시청자가 3분 이상 활동 없을 때 뱃지가 빨간색으로 바뀝니다</p>
+                            </div>
+                            <button onclick="toggleLevel50InactiveAlert()" id="level50InactiveAlertBtn"
+                                class="relative inline-flex items-center w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none bg-gray-200"
+                                data-enabled="false">
+                                <span id="level50InactiveAlertThumb"
+                                    class="inline-block w-5 h-5 bg-white rounded-full shadow transform transition-transform duration-200 translate-x-0.5"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 50레벨 시청자 목록 -->
+                    <div class="bg-white border border-gray-200 rounded-xl p-4">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-list text-cyan-500"></i> 등록된 50레벨 시청자
+                        </h4>
+                        <div id="level50List" class="space-y-2">
+                            <div class="text-center py-4 text-gray-400 text-sm">등록된 50레벨 시청자가 없습니다.</div>
                         </div>
                     </div>
                 </div>
@@ -550,6 +637,7 @@
             if (name === 'song')   loadNotices();
             if (name === 'gift')   loadGiftSettings();
             if (name === 'mod')    loadModerators();
+            if (name === 'level50') loadLevel50Viewers();
             if (name === 'speech') loadSpeechSettings();
             if (name === 'match')  loadMatchCoachSettings();
         }
@@ -705,6 +793,16 @@
             document.getElementById('modEmoji').value = emoji;
         }
 
+        function selectLevel50Emoji(btn, emoji) {
+            document.querySelectorAll('.level50-emoji-btn').forEach(b => {
+                b.style.borderColor = '';
+                b.style.background  = '';
+            });
+            btn.style.borderColor = '#06b6d4';
+            btn.style.background  = '#ecfeff';
+            document.getElementById('level50Emoji').value = emoji;
+        }
+
         async function addModerator() {
             const tiktokUniqueId = document.getElementById('modTiktokId').value.trim().replace(/^@/, '');
             const displayName    = document.getElementById('modDisplayName').value.trim();
@@ -735,6 +833,98 @@
             if (!confirm('이 모더를 삭제하시겠습니까?')) return;
             await fetch('/api/moderator/' + id, { method: 'DELETE' });
             loadModerators();
+        }
+
+        // ── 50레벨 시청자 관리 ──
+        async function loadLevel50Viewers() {
+            const res  = await fetch('/api/level50');
+            const data = await res.json();
+            if (!data.success) return;
+            renderLevel50Viewers(data.level50Viewers);
+            // 비활동 색상 토글 상태 반영
+            const enabled = data.inactiveAlert === true;
+            const btn   = document.getElementById('level50InactiveAlertBtn');
+            const thumb = document.getElementById('level50InactiveAlertThumb');
+            if (btn && thumb) {
+                btn.dataset.enabled = enabled ? 'true' : 'false';
+                btn.classList.toggle('bg-cyan-500', enabled);
+                btn.classList.toggle('bg-gray-200', !enabled);
+                thumb.classList.toggle('translate-x-6', enabled);
+                thumb.classList.toggle('translate-x-0.5', !enabled);
+            }
+        }
+
+        async function toggleLevel50InactiveAlert() {
+            const btn     = document.getElementById('level50InactiveAlertBtn');
+            const thumb   = document.getElementById('level50InactiveAlertThumb');
+            const current = btn.dataset.enabled === 'true';
+            const next    = !current;
+            btn.dataset.enabled = next ? 'true' : 'false';
+            btn.classList.toggle('bg-cyan-500', next);
+            btn.classList.toggle('bg-gray-200', !next);
+            thumb.classList.toggle('translate-x-6', next);
+            thumb.classList.toggle('translate-x-0.5', !next);
+            await fetch('/api/level50/inactive-alert', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ inactiveAlert: next })
+            });
+        }
+
+        async function addLevel50Viewer() {
+            const tiktokUniqueId = document.getElementById('level50TiktokId').value.trim().replace(/^@/, '');
+            const displayName    = document.getElementById('level50DisplayName').value.trim();
+            const profileImg     = document.getElementById('level50Emoji').value || '🏆';
+            if (!tiktokUniqueId || !displayName) { alert('TikTok ID와 닉네임을 입력해주세요.'); return; }
+            const res = await fetch('/api/level50', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tiktokUniqueId, displayName, profileImg })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('level50TiktokId').value = '';
+                document.getElementById('level50DisplayName').value = '';
+                loadLevel50Viewers();
+            } else {
+                alert(data.message || '등록 실패');
+            }
+        }
+
+        async function deleteLevel50Viewer(id) {
+            if (!confirm('이 50레벨 시청자를 삭제하시겠습니까?')) return;
+            await fetch('/api/level50/' + id, { method: 'DELETE' });
+            loadLevel50Viewers();
+        }
+
+        function renderLevel50Viewers(viewers) {
+            var el = document.getElementById('level50List');
+            if (!viewers.length) {
+                el.innerHTML = '<div class="text-center py-4 text-gray-400 text-sm">등록된 50레벨 시청자가 없습니다.</div>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < viewers.length; i++) {
+                var v = viewers[i];
+                var isUrl = (v.profileImg || '').startsWith('http');
+                var avatarHtml;
+                if (isUrl) {
+                    avatarHtml = '<img src="' + escHtmlMod(v.profileImg) + '" class="w-full h-full object-cover">';
+                } else if (v.profileImg) {
+                    avatarHtml = '<span style="font-size:18px">' + escHtmlMod(v.profileImg) + '</span>';
+                } else {
+                    avatarHtml = escHtmlMod(v.displayName.charAt(0).toUpperCase());
+                }
+                html += '<div class="flex items-center gap-2 p-2.5 bg-white border border-gray-200 rounded-lg">';
+                html += '<div class="w-8 h-8 rounded-full bg-cyan-50 flex items-center justify-center font-bold text-cyan-600 flex-shrink-0 overflow-hidden border border-cyan-100">' + avatarHtml + '</div>';
+                html += '<div class="flex-1 min-w-0">';
+                html += '<div class="text-sm font-semibold text-gray-700 truncate">' + escHtmlMod(v.displayName) + '</div>';
+                html += '<div class="text-xs text-gray-400 truncate">@' + escHtmlMod(v.tiktokUniqueId) + '</div>';
+                html += '</div>';
+                html += '<button onclick="deleteLevel50Viewer(\'' + v._id + '\')" class="px-2 py-1 text-xs border border-gray-200 rounded hover:bg-red-50 transition text-red-400 flex-shrink-0"><i class="fas fa-trash"></i></button>';
+                html += '</div>';
+            }
+            el.innerHTML = html;
         }
 
         // ── 공지사항 관리 ──

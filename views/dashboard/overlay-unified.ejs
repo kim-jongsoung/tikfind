@@ -90,6 +90,10 @@
                         <span class="text-sm">🛡️ 모더 위젯</span>
                     </label>
                     <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="toggle-level50" checked class="w-5 h-5 text-indigo-600 rounded">
+                        <span class="text-sm">🏆 50레벨 위젯</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" id="toggle-roulette" checked class="w-5 h-5 text-indigo-600 rounded">
                         <span class="text-sm">🎰 룰렛 미션</span>
                     </label>
@@ -193,6 +197,7 @@
             document.getElementById('toggle-song').addEventListener('change', (e) => toggleWidget('song', e.target.checked));
             document.getElementById('toggle-speech').addEventListener('change', (e) => toggleWidget('speech', e.target.checked));
             document.getElementById('toggle-moderator').addEventListener('change', (e) => toggleWidget('moderator', e.target.checked));
+            document.getElementById('toggle-level50').addEventListener('change', (e) => toggleWidget('level50', e.target.checked));
             document.getElementById('toggle-roulette').addEventListener('change', (e) => toggleWidget('roulette', e.target.checked));
 
             // URL 설정

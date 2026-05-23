@@ -52,6 +52,11 @@ router.get('/overlay/:userId/moderator', (req, res) => {
     res.render('overlay-moderator', { title: 'TikFind Moderator Overlay', userId: req.params.userId });
 });
 
+// 50레벨 시청자 위젯 (인증 불필요 - OBS 브라우저 소스)
+router.get('/overlay/:userId/level50', (req, res) => {
+    res.render('overlay-level50', { title: 'TikFind Level 50 Viewer Overlay', userId: req.params.userId });
+});
+
 // 번역 자막 위젯 (인증 불필요 - OBS 브라우저 소스)
 router.get('/overlay/:userId/speech', (req, res) => {
     res.render('overlay-speech', { title: 'TikFind Speech Overlay', userId: req.params.userId });
