@@ -18,6 +18,7 @@
             width: 1080px;
             height: 1920px;
             position: relative;
+            overflow: visible;
         }
         .widget-container {
             position: absolute;
@@ -402,12 +403,12 @@
                 container.appendChild(iframe);
             }
 
-            // 룰렛 미션 위젯 (기본값: 왼쪽에서 원의 반이 나타나게, 상단 450px 여백)
+            // 룰렛 미션 위젯 (기본값: 왼쪽 상단, 상단 450px 여백)
             if (positions.roulette && positions.roulette.visible) {
                 const roulette = positions.roulette;
                 const iframe = document.createElement('iframe');
                 iframe.className = 'widget-container';
-                iframe.style.left = `${roulette.x ?? -311}px`;
+                iframe.style.left = `${roulette.x ?? 0}px`;
                 iframe.style.top = `${roulette.y ?? 450}px`;
                 iframe.style.width = `${roulette.width ?? 622}px`;
                 iframe.style.height = `${roulette.height ?? 622}px`;
