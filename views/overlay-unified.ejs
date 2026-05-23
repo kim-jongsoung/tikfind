@@ -230,6 +230,88 @@
             pointer-events: none;
         }
         @keyframes shine { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+
+        /* ── 룰렛 위젯 ── */
+        #roulette-wrap {
+            position: absolute;
+            left: 0;
+            top: 650px;
+            width: 622px; height: 622px;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            z-index: 60;
+        }
+        #roulette-wrap.spinning { opacity: 1; }
+        #roulette-ring {
+            position: absolute;
+            width: 622px; height: 622px;
+            border-radius: 50%;
+            background: conic-gradient(#ffd700, #ff6b6b, #a855f7, #3b82f6, #22c55e, #ffd700);
+            animation: ringGlow 1.8s ease-in-out infinite alternate;
+        }
+        @keyframes ringGlow {
+            from { box-shadow: 0 0 30px #ffd70099, 0 0 60px #ff6b6b44; }
+            to   { box-shadow: 0 0 60px #ffd700cc, 0 0 100px #a855f766; }
+        }
+        #roulette-canvas-wrap {
+            position: absolute;
+            left: 8px; top: 8px;
+            width: 606px; height: 606px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        #roulette-pointer {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0; height: 0;
+            border-top: 18px solid transparent;
+            border-bottom: 18px solid transparent;
+            border-right: 48px solid #ffd700;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.8));
+            z-index: 20;
+        }
+        #roulette-center-badge {
+            position: absolute;
+            left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            width: 76px; height: 76px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 20px rgba(124,58,237,0.8), 0 4px 16px rgba(0,0,0,0.6);
+            z-index: 21;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 1px;
+        }
+        #roulette-center-badge .cb-icon { font-size: 18px; line-height: 1; }
+        #roulette-center-badge .cb-text {
+            font-size: 9px; font-weight: 900; color: #ffd700;
+            letter-spacing: 0.5px; text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+        }
+        #roulette-flash-overlay {
+            position: absolute;
+            left: 8px; top: 8px;
+            width: 606px; height: 606px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 19;
+            opacity: 0;
+        }
+        @keyframes rouletteWinFlash {
+            0%   { opacity: 0; }
+            15%  { opacity: 0.82; }
+            30%  { opacity: 0.1; }
+            45%  { opacity: 0.75; }
+            60%  { opacity: 0.1; }
+            75%  { opacity: 0.65; }
+            88%  { opacity: 0.1; }
+            100% { opacity: 0; }
+        }
+        .roulette-spark { position: absolute; width: 8px; height: 8px; border-radius: 50%; pointer-events: none; animation: rouletteSparkFly 1.2s ease-out forwards; }
+        @keyframes rouletteSparkFly { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(0)} }
     </style>
 </head>
 <body>
@@ -253,6 +335,20 @@
                 <div id="card-nickname"></div>
                 <div id="card-label"><span id="card-label-text"></span><span id="card-score"></span></div>
             </div>
+        </div>
+    </div>
+
+    <!-- 룰렛 위젯 요소 (통합) -->
+    <div id="roulette-wrap">
+        <div id="roulette-ring"></div>
+        <div id="roulette-canvas-wrap">
+            <canvas id="roulette-canvas" width="606" height="606"></canvas>
+        </div>
+        <div id="roulette-pointer"></div>
+        <div id="roulette-flash-overlay"></div>
+        <div id="roulette-center-badge">
+            <span class="cb-icon">🎯</span>
+            <span class="cb-text">TIKFIND</span>
         </div>
     </div>
 
@@ -403,20 +499,15 @@
                 container.appendChild(iframe);
             }
 
-            // 룰렛 미션 위젯 (기본값: 왼쪽에서 반만 나오게)
+            // 룰렛 미션 위젯 위치 설정 (직접 통합됨)
             if (positions.roulette && positions.roulette.visible) {
                 const roulette = positions.roulette;
-                const iframe = document.createElement('iframe');
-                iframe.className = 'widget-container';
-                iframe.id = 'roulette-iframe';
-                iframe.style.left = `${roulette.x ?? -311}px`;
-                iframe.style.top = `${roulette.y ?? 650}px`;
-                iframe.style.width = `${roulette.width ?? 622}px`;
-                iframe.style.height = `${roulette.height ?? 622}px`;
-                iframe.style.zIndex = '50';
-                iframe.src = `/overlay/${userId}/roulette`;
-                container.appendChild(iframe);
-                console.log('✅ 룰렛 iframe 추가:', iframe.src);
+                const rouletteEl = document.getElementById('roulette-wrap');
+                if (rouletteEl) {
+                    rouletteEl.style.left = `${roulette.x ?? 0}px`;
+                    rouletteEl.style.top = `${roulette.y ?? 650}px`;
+                    console.log('✅ 룰렛 위치 설정:', roulette);
+                }
             }
         }
 
@@ -501,7 +592,16 @@
             });
 
             socket.on('roulette-spin', (data) => {
-                // 룰렛 스피너
+                console.log('🎰 룰렛 스핀 수신:', data);
+                if (rouletteAudioCtx && rouletteAudioCtx.state === 'suspended') rouletteAudioCtx.resume();
+                spinRoulette(data.items || null, data.winIndex);
+            });
+
+            socket.on('roulette-items-update', (data) => {
+                if (data.items && data.items.length) {
+                    rouletteItems = data.items;
+                    drawRoulette(rouletteCurrentAngle);
+                }
             });
         }
 
@@ -711,6 +811,241 @@
         }
 
         document.addEventListener('click', () => { try { getCtx().resume(); } catch(e) {} }, { once: true });
+
+        // ── 룰렛 위젯 ──
+        const ROULETTE_MISSION_POOL = [
+            { label: '🎤 강제 삼행시',         color: '#e74c3c' },
+            { label: '🎭 복불복 성대모사',      color: '#9b59b6' },
+            { label: '🤣 웃긴 필터 방송',       color: '#2980b9' },
+            { label: '🎵 한 소절 라이브',       color: '#27ae60' },
+            { label: '👆 손가락 댄스',          color: '#e67e22' },
+            { label: '👁️ 강철 눈싸움',          color: '#c0392b' },
+            { label: '💕 치명적 애교 3종',      color: '#e91e8c' },
+            { label: '🔮 신비로운 타로',        color: '#8e44ad' },
+            { label: '🎙️ 초밀착 ASMR',          color: '#16a085' },
+            { label: '🎵 오늘의 엔딩곡 선곡',   color: '#d35400' },
+        ];
+
+        function pickRandomRoulette(pool, count) {
+            return [...pool].sort(() => Math.random() - 0.5).slice(0, count);
+        }
+
+        let rouletteItems = pickRandomRoulette(ROULETTE_MISSION_POOL, 5);
+        let rouletteCurrentAngle = 0;
+        let rouletteSpinning = false;
+        let rouletteTickTimer = null;
+
+        const rouletteCanvas = document.getElementById('roulette-canvas');
+        const rouletteCtx = rouletteCanvas ? rouletteCanvas.getContext('2d') : null;
+        const rouletteWrap = document.getElementById('roulette-wrap');
+
+        let rouletteAudioCtx = null;
+        try { rouletteAudioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+
+        function playRouletteSpinTick() {
+            if (!rouletteAudioCtx) return;
+            const osc = rouletteAudioCtx.createOscillator();
+            const gain = rouletteAudioCtx.createGain();
+            osc.connect(gain); gain.connect(rouletteAudioCtx.destination);
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(600, rouletteAudioCtx.currentTime);
+            gain.gain.setValueAtTime(0.18, rouletteAudioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, rouletteAudioCtx.currentTime + 0.07);
+            osc.start(); osc.stop(rouletteAudioCtx.currentTime + 0.07);
+        }
+
+        function playRouletteWinSound() {
+            if (!rouletteAudioCtx) return;
+            const notes = [523, 659, 784, 1047];
+            notes.forEach((freq, i) => {
+                const osc = rouletteAudioCtx.createOscillator();
+                const gain = rouletteAudioCtx.createGain();
+                osc.connect(gain); gain.connect(rouletteAudioCtx.destination);
+                osc.type = 'sine';
+                const t = rouletteAudioCtx.currentTime + i * 0.13;
+                osc.frequency.setValueAtTime(freq, t);
+                gain.gain.setValueAtTime(0.35, t);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                osc.start(t); osc.stop(t + 0.35);
+            });
+        }
+
+        function lightenColor(hex, amount) {
+            const num = parseInt(hex.replace('#',''), 16);
+            const r = Math.min(255, (num >> 16) + amount);
+            const g = Math.min(255, ((num >> 8) & 0xff) + amount);
+            const b = Math.min(255, (num & 0xff) + amount);
+            return `rgb(${r},${g},${b})`;
+        }
+
+        function drawRoulette(angle) {
+            if (!rouletteCtx) return;
+            const cx = 303, cy = 303, r = 299;
+            const n = rouletteItems.length;
+            const slice = (2 * Math.PI) / n;
+            rouletteCtx.clearRect(0, 0, 606, 606);
+
+            rouletteItems.forEach((item, i) => {
+                const start = angle + i * slice - Math.PI / 2;
+                const end = start + slice;
+
+                rouletteCtx.beginPath();
+                rouletteCtx.moveTo(cx, cy);
+                rouletteCtx.arc(cx, cy, r, start, end);
+                rouletteCtx.closePath();
+
+                const grad = rouletteCtx.createRadialGradient(cx, cy, 0, cx, cy, r);
+                grad.addColorStop(0, lightenColor(item.color, 45));
+                grad.addColorStop(1, item.color);
+                rouletteCtx.fillStyle = grad;
+                rouletteCtx.fill();
+                rouletteCtx.strokeStyle = 'rgba(255,255,255,0.22)';
+                rouletteCtx.lineWidth = 2;
+                rouletteCtx.stroke();
+
+                rouletteCtx.save();
+                rouletteCtx.translate(cx, cy);
+                rouletteCtx.rotate(start + slice / 2);
+                rouletteCtx.textAlign = 'right';
+                rouletteCtx.fillStyle = '#fff';
+                rouletteCtx.shadowColor = 'rgba(0,0,0,0.8)';
+                rouletteCtx.shadowBlur = 8;
+                rouletteCtx.font = 'bold 34px "Noto Sans KR", sans-serif';
+                rouletteCtx.fillText(item.label, r - 16, 12);
+                rouletteCtx.restore();
+            });
+
+            rouletteCtx.beginPath();
+            rouletteCtx.arc(cx, cy, 40, 0, 2 * Math.PI);
+            rouletteCtx.fillStyle = '#1a1a2e';
+            rouletteCtx.fill();
+            rouletteCtx.strokeStyle = '#ffd700';
+            rouletteCtx.lineWidth = 3;
+            rouletteCtx.stroke();
+        }
+
+        function setRouletteTickInterval(ms) {
+            clearInterval(rouletteTickTimer);
+            rouletteTickTimer = setInterval(() => playRouletteSpinTick(), ms);
+        }
+
+        function rouletteEaseOut(t) { return 1 - Math.pow(1 - t, 5); }
+        function rouletteEaseInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2; }
+
+        function spinRoulette(targetItems, winIndex) {
+            if (rouletteSpinning || !rouletteWrap) return;
+            rouletteSpinning = true;
+            rouletteItems = (targetItems && targetItems.length) ? targetItems : pickRandomRoulette(ROULETTE_MISSION_POOL, 5);
+
+            rouletteWrap.classList.add('spinning');
+
+            const n = rouletteItems.length;
+            const slice = (2 * Math.PI) / n;
+
+            const PREVIEW_DURATION = 10000;
+            const PREVIEW_DELTA = 1.5 * 2 * Math.PI;
+            const SPIN_DURATION = 14400;
+            const SPIN_EXTRA = (15 + Math.floor(Math.random() * 4)) * 2 * Math.PI;
+
+            const edgeOffset = slice * (0.08 + Math.random() * 0.07);
+            const side = Math.random() < 0.5 ? 1 : -1;
+            const targetAngle = Math.PI / 2 - (winIndex + 0.5) * slice + side * (slice / 2 - edgeOffset);
+
+            setRouletteTickInterval(300);
+
+            const previewStartAngle = rouletteCurrentAngle;
+            const previewStartTime = performance.now();
+
+            function previewFrame(now) {
+                const t = Math.min((now - previewStartTime) / PREVIEW_DURATION, 1);
+                const angle = previewStartAngle + PREVIEW_DELTA * rouletteEaseInOut(t);
+                drawRoulette(angle);
+
+                const speed = Math.abs(rouletteEaseInOut(Math.min(t + 0.01, 1)) - rouletteEaseInOut(t)) / 0.01;
+                const interval = Math.max(120, Math.min(500, Math.round(180 / (speed * 50 + 0.1))));
+                clearInterval(rouletteTickTimer);
+                rouletteTickTimer = setInterval(() => playRouletteSpinTick(), interval);
+
+                if (t < 1) {
+                    requestAnimationFrame(previewFrame);
+                } else {
+                    rouletteCurrentAngle = angle;
+                    startMainRouletteSpin();
+                }
+            }
+            requestAnimationFrame(previewFrame);
+
+            function startMainRouletteSpin() {
+                let delta = ((targetAngle - rouletteCurrentAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+                if (delta < 0.1) delta += 2 * Math.PI;
+                const totalDelta = SPIN_EXTRA + delta;
+                const spinStart = rouletteCurrentAngle;
+                const spinStartT = performance.now();
+                let tickInterval = 80;
+                setRouletteTickInterval(tickInterval);
+
+                function spinFrame(now) {
+                    const t = Math.min((now - spinStartT) / SPIN_DURATION, 1);
+                    const angle = spinStart + totalDelta * rouletteEaseOut(t);
+                    drawRoulette(angle);
+
+                    const newInterval = Math.max(80, Math.floor(80 + 500 * rouletteEaseOut(t)));
+                    if (newInterval !== tickInterval) {
+                        tickInterval = newInterval;
+                        setRouletteTickInterval(tickInterval);
+                    }
+
+                    if (t < 1) {
+                        requestAnimationFrame(spinFrame);
+                    } else {
+                        rouletteCurrentAngle = angle;
+                        rouletteSpinning = false;
+                        clearInterval(rouletteTickTimer);
+                        rouletteTickTimer = null;
+                        showRouletteResult(rouletteItems[winIndex]);
+                    }
+                }
+                requestAnimationFrame(spinFrame);
+            }
+        }
+
+        function showRouletteResult(item) {
+            playRouletteWinSound();
+            spawnRouletteSparks();
+            flashRouletteWinSlice(item);
+            setTimeout(() => {
+                if (rouletteWrap) rouletteWrap.classList.remove('spinning');
+            }, 9000);
+        }
+
+        function flashRouletteWinSlice(item) {
+            const overlay = document.getElementById('roulette-flash-overlay');
+            if (!overlay) return;
+            overlay.style.background = `radial-gradient(circle at center, ${item.color}dd 0%, ${item.color}55 45%, transparent 70%)`;
+            overlay.style.animation = 'none';
+            void overlay.offsetWidth;
+            overlay.style.animation = 'rouletteWinFlash 2.4s ease-out forwards';
+        }
+
+        function spawnRouletteSparks() {
+            if (!rouletteWrap) return;
+            const colors = ['#ffd700','#ff6b6b','#a855f7','#22c55e','#3b82f6'];
+            for (let i = 0; i < 28; i++) {
+                const s = document.createElement('div');
+                s.className = 'roulette-spark';
+                s.style.background = colors[i % colors.length];
+                s.style.left = '311px'; s.style.top = '311px';
+                const ang = Math.random() * 2 * Math.PI;
+                const dist = 80 + Math.random() * 180;
+                s.style.setProperty('--tx', Math.cos(ang) * dist + 'px');
+                s.style.setProperty('--ty', Math.sin(ang) * dist + 'px');
+                rouletteWrap.appendChild(s);
+                setTimeout(() => s.remove(), 1300);
+            }
+        }
+
+        // 룰렛 초기화
+        if (rouletteCanvas) drawRoulette(0);
 
         // 테스트 모드 함수
         function runTestMode() {
