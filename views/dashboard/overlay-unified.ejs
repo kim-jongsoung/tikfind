@@ -334,10 +334,19 @@
         async function saveGradientColor() {
             try {
                 const color = document.getElementById('chat-gradient-color').value;
+                // 기존 positions 로드
+                const loadRes = await fetch('/api/overlay/positions');
+                const loadData = await loadRes.json();
+                const existingPositions = loadData.success ? loadData.positions : {};
+                // chatGradient만 업데이트
+                const updatedPositions = {
+                    ...existingPositions,
+                    chatGradient: { ...existingPositions.chatGradient, color }
+                };
                 const res = await fetch('/api/overlay/positions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ positions: { chatGradient: { color } } })
+                    body: JSON.stringify({ positions: updatedPositions })
                 });
                 const data = await res.json();
                 if (data.success) {
