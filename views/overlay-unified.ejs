@@ -500,8 +500,8 @@
             }
 
             // 50레벨 시청자 위젯 (왼쪽 위치)
-            if (positions.level50 && positions.level50.visible) {
-                const level50 = positions.level50;
+            const level50 = positions.level50 || { visible: true, x: 0, y: 650, width: 120, height: 100 };
+            if (level50.visible) {
                 const iframe = document.createElement('iframe');
                 iframe.className = 'widget-container';
                 iframe.style.left = `${level50.x ?? 0}px`;
