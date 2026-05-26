@@ -22,6 +22,7 @@
         .tab-btn.active-cyan   { border-bottom-color: #06b6d4; color: #06b6d4; font-weight: 700; }
         .tab-btn.active-green  { border-bottom-color: #22c55e; color: #22c55e; font-weight: 700; }
         .tab-btn.active-orange { border-bottom-color: #f97316; color: #f97316; font-weight: 700; }
+        .tab-btn.active-pink { border-bottom-color: #ec4899; color: #ec4899; font-weight: 700; }
         .tab-panel { display: none; }
         .tab-panel.active { display: block; }
 
@@ -48,7 +49,7 @@
 
             <!-- 탭 네비게이션 -->
             <div class="bg-white rounded-xl shadow mb-6">
-                <div class="flex border-b border-gray-200 px-2">
+                <div class="flex flex-wrap border-b border-gray-200 px-2">
                     <button onclick="switchTab('gift')" id="tab-gift"
                         class="tab-btn active-purple px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
                         <i class="fas fa-gift text-purple-500"></i> 선물 알림
@@ -81,6 +82,11 @@
                         class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
                         <i class="fas fa-trophy text-orange-500"></i> 매치 코치
                         <span class="px-1.5 py-0.5 bg-orange-100 text-orange-600 text-xs rounded-full font-bold">AI</span>
+                    </button>
+                    <button onclick="switchTab('chatGradient')" id="tab-chatGradient"
+                        class="tab-btn px-5 py-4 text-sm text-gray-500 flex items-center gap-2">
+                        <i class="fas fa-palette text-pink-500"></i> 채팅 배경
+                        <span class="px-1.5 py-0.5 bg-pink-100 text-pink-600 text-xs rounded-full font-bold">NEW</span>
                     </button>
                 </div>
 
@@ -615,6 +621,72 @@
 
                 </div>
 
+                <!-- ══════════════════════════════════
+                     탭 8: 채팅 배경 위젯
+                ══════════════════════════════════ -->
+                <div id="panel-chatGradient" class="tab-panel p-6">
+
+                    <!-- 설명 -->
+                    <div class="flex items-start gap-4 mb-5 p-4 bg-pink-50 rounded-xl border border-pink-100">
+                        <div class="text-3xl">🌈</div>
+                        <div>
+                            <p class="font-semibold text-pink-800 text-sm">채팅 배경 위젯이란?</p>
+                            <p class="text-xs text-pink-600 mt-1 leading-relaxed">
+                                채팅 영역에 위에서 아래로 진해지는 그라데이션 배경을 추가하여 채팅 글자를 더 잘 보이게 합니다.<br>
+                                <strong>8가지 색상</strong>을 선택할 수 있으며, 투명도 최대 40%입니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 색상 설정 -->
+                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-palette text-pink-500"></i> 그라데이션 색상
+                        </h4>
+                        <div class="flex items-center gap-3 mb-4">
+                            <select id="chat-gradient-color" class="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm">
+                                <option value="black">검정</option>
+                                <option value="blue">파랑</option>
+                                <option value="purple">보라</option>
+                                <option value="red">빨강</option>
+                                <option value="green">초록</option>
+                                <option value="orange">주황</option>
+                                <option value="pink">핑크</option>
+                                <option value="cyan">청록</option>
+                            </select>
+                            <button onclick="saveChatGradientColor()" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm">
+                                색상 저장
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- URL -->
+                    <div class="mb-5 p-4 bg-white border border-gray-200 rounded-xl">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                            <i class="fas fa-link text-pink-500"></i> 위젯 URL
+                        </h4>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="chat-gradient-url" readonly class="flex-1 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm">
+                            <button onclick="copyChatGradientUrl()" class="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition text-sm">
+                                복사
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-2">사이즈: 가로 1080 × 세로 640</p>
+                    </div>
+
+                    <!-- 미리보기 -->
+                    <div class="flex flex-wrap gap-3 mb-5">
+                        <a href="/overlay/<%= user._id %>/chat-gradient?color=black" target="_blank"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-100 transition text-sm font-semibold">
+                            <i class="fas fa-eye"></i> 검정 미리보기
+                        </a>
+                        <a href="/overlay/<%= user._id %>/chat-gradient?color=blue" target="_blank"
+                            class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 transition text-sm font-semibold">
+                            <i class="fas fa-eye"></i> 파랑 미리보기
+                        </a>
+                    </div>
+                </div>
+
         </div>
     </main>
 
@@ -623,16 +695,17 @@
     <script>
         // ── 탭 전환 ──
         function switchTab(name) {
-            ['gift','song','mod','level50','speech','roulette','match'].forEach(t => {
+            ['gift','song','mod','level50','speech','roulette','match','chatGradient'].forEach(t => {
                 document.getElementById('panel-' + t).classList.toggle('active', t === name);
                 const btn = document.getElementById('tab-' + t);
-                btn.classList.remove('active', 'active-purple', 'active-blue', 'active-cyan', 'active-green', 'active-orange');
+                btn.classList.remove('active', 'active-purple', 'active-blue', 'active-cyan', 'active-green', 'active-orange', 'active-pink');
                 if (t === name) {
                     if (name === 'gift')     btn.classList.add('active-purple');
                     else if (name === 'mod')      btn.classList.add('active-blue');
                     else if (name === 'level50')  btn.classList.add('active-cyan');
                     else if (name === 'speech')   btn.classList.add('active-green');
                     else if (name === 'match')    btn.classList.add('active-orange');
+                    else if (name === 'chatGradient') btn.classList.add('active-pink');
                     else btn.classList.add('active');
                 }
             });
@@ -642,6 +715,7 @@
             if (name === 'level50') loadLevel50Viewers();
             if (name === 'speech') loadSpeechSettings();
             if (name === 'match')  loadMatchCoachSettings();
+            if (name === 'chatGradient') loadChatGradientSettings();
         }
 
         function saveRouletteItems() {
@@ -1097,6 +1171,54 @@
                 btn.classList.replace('bg-green-600','bg-emerald-600');
                 setTimeout(() => { btn.innerHTML = orig; btn.classList.replace('bg-emerald-600','bg-green-600'); }, 2000);
             });
+        }
+
+
+        // ── 채팅 배경 위젯 설정 ──
+        async function loadChatGradientSettings() {
+            try {
+                const res = await fetch('/api/overlay/positions');
+                const data = await res.json();
+                if (data.success && data.positions && data.positions.chatGradient) {
+                    const color = data.positions.chatGradient.color || 'black';
+                    document.getElementById('chat-gradient-color').value = color;
+                }
+                const userId = '<%= user._id %>';
+                document.getElementById('chat-gradient-url').value = `https://tikfind.kr/overlay/${userId}/chat-gradient`;
+            } catch (e) {}
+        }
+
+        async function saveChatGradientColor() {
+            try {
+                const color = document.getElementById('chat-gradient-color').value;
+                const loadRes = await fetch('/api/overlay/positions');
+                const loadData = await loadRes.json();
+                const existingPositions = loadData.success ? loadData.positions : {};
+                const updatedPositions = {
+                    ...existingPositions,
+                    chatGradient: { ...existingPositions.chatGradient, color }
+                };
+                const res = await fetch('/api/overlay/positions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ positions: updatedPositions })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert('색상이 저장되었습니다.');
+                } else {
+                    alert('저장 실패: ' + (data.message || '알 수 없는 오류'));
+                }
+            } catch (e) {
+                alert('서버 오류가 발생했습니다.');
+            }
+        }
+
+        function copyChatGradientUrl() {
+            const urlInput = document.getElementById('chat-gradient-url');
+            urlInput.select();
+            document.execCommand('copy');
+            alert('채팅 배경 위젯 URL이 복사되었습니다.');
         }
 
 

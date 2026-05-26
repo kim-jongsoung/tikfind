@@ -104,26 +104,6 @@
                 </div>
             </div>
 
-            <!-- 채팅 그라데이션 색상 설정 -->
-            <div class="bg-white rounded-xl shadow mb-6 p-4">
-                <h3 class="font-semibold text-gray-800 mb-3">채팅 그라데이션 색상</h3>
-                <div class="flex items-center gap-3">
-                    <select id="chat-gradient-color" class="px-4 py-2 border border-gray-300 rounded-lg text-sm">
-                        <option value="black">검정</option>
-                        <option value="blue">파랑</option>
-                        <option value="purple">보라</option>
-                        <option value="red">빨강</option>
-                        <option value="green">초록</option>
-                        <option value="orange">주황</option>
-                        <option value="pink">핑크</option>
-                        <option value="cyan">청록</option>
-                    </select>
-                    <button onclick="saveGradientColor()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm">
-                        색상 저장
-                    </button>
-                </div>
-            </div>
-
             <!-- 통합 오버레이 URL -->
             <div class="bg-white rounded-xl shadow mb-6 p-4">
                 <h3 class="font-semibold text-gray-800 mb-3">통합 오버레이 URL</h3>
@@ -146,18 +126,6 @@
                     </button>
                 </div>
                 <p class="text-xs text-green-700 mt-2">기능: 선물 알림, 매치 코치, 모더 공지, ##공지, ??질문 | 사이즈: 가로 800 × 세로 200</p>
-            </div>
-
-            <!-- 채팅 그라데이션 위젯 URL -->
-            <div class="bg-orange-50 border border-orange-200 rounded-xl shadow mb-6 p-4">
-                <h3 class="font-semibold text-orange-800 mb-3">🌈 채팅 그라데이션 위젯 URL</h3>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="chat-gradient-url" readonly class="flex-1 px-4 py-2 bg-white border border-orange-300 rounded-lg text-sm">
-                    <button onclick="copyChatGradientUrl()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
-                        <i class="fas fa-copy mr-2"></i>복사
-                    </button>
-                </div>
-                <p class="text-xs text-orange-700 mt-2">기능: 채팅 영역 그라데이션 배경 | 사이즈: 가로 1080 × 세로 640</p>
             </div>
 
             <!-- 배치 방법 안내 -->
@@ -243,10 +211,6 @@
             const userId = '<%= user._id %>';
             document.getElementById('overlay-url').value = `https://tikfind.kr/overlay/${userId}/unified`;
             document.getElementById('gift-url').value = `https://tikfind.kr/overlay/${userId}/gift`;
-            document.getElementById('chat-gradient-url').value = `https://tikfind.kr/overlay/${userId}/chat-gradient`;
-
-            // 채팅 그라데이션 색상 로드
-            loadGradientColor();
         });
 
         async function loadWidgets() {
@@ -311,52 +275,6 @@
             urlInput.select();
             document.execCommand('copy');
             alert('선물 알림 위젯 URL이 복사되었습니다.');
-        }
-
-        function copyChatGradientUrl() {
-            const urlInput = document.getElementById('chat-gradient-url');
-            urlInput.select();
-            document.execCommand('copy');
-            alert('채팅 그라데이션 위젯 URL이 복사되었습니다.');
-        }
-
-        async function loadGradientColor() {
-            try {
-                const res = await fetch('/api/overlay/positions');
-                const data = await res.json();
-                if (data.success && data.positions && data.positions.chatGradient) {
-                    const color = data.positions.chatGradient.color || 'black';
-                    document.getElementById('chat-gradient-color').value = color;
-                }
-            } catch (e) {}
-        }
-
-        async function saveGradientColor() {
-            try {
-                const color = document.getElementById('chat-gradient-color').value;
-                // 기존 positions 로드
-                const loadRes = await fetch('/api/overlay/positions');
-                const loadData = await loadRes.json();
-                const existingPositions = loadData.success ? loadData.positions : {};
-                // chatGradient만 업데이트
-                const updatedPositions = {
-                    ...existingPositions,
-                    chatGradient: { ...existingPositions.chatGradient, color }
-                };
-                const res = await fetch('/api/overlay/positions', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ positions: updatedPositions })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    alert('색상이 저장되었습니다.');
-                } else {
-                    alert('저장 실패: ' + (data.message || '알 수 없는 오류'));
-                }
-            } catch (e) {
-                alert('서버 오류가 발생했습니다.');
-            }
         }
     </script>
 </body>
