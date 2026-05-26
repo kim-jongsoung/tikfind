@@ -488,8 +488,13 @@
             }
 
             // 모더 위젯
+            let moderatorX = 910, moderatorY = 650, moderatorWidth = 120, moderatorHeight = 100;
             if (positions.moderator && positions.moderator.visible) {
                 const moderator = positions.moderator;
+                moderatorX = moderator.x;
+                moderatorY = moderator.y;
+                moderatorWidth = moderator.width;
+                moderatorHeight = moderator.height;
                 const iframe = document.createElement('iframe');
                 iframe.className = 'widget-container';
                 iframe.style.left = `${moderator.x}px`;
@@ -498,20 +503,28 @@
                 iframe.style.height = `${moderator.height}px`;
                 iframe.src = `/overlay/${userId}/moderator`;
                 container.appendChild(iframe);
+                console.log('✅ 모더 위젯 위치:', { x: moderator.x, y: moderator.y, width: moderator.width, height: moderator.height });
             }
 
-            // 50레벨 시청자 위젯 (왼쪽 위치)
-            const level50 = positions.level50 || { visible: true, x: 0, y: 650, width: 120, height: 100 };
+            // 50레벨 시청자 위젯 (왼쪽 위치 - 모더 위젯과 데칼코마니)
+            const level50 = positions.level50 || { visible: true };
             if (level50.visible) {
+                // 모더 위젯과 데칼코마니 배치: 왼쪽 여백 = 오른쪽 여백
+                const rightMargin = 1080 - (moderatorX + moderatorWidth);
+                const level50X = level50.x ?? rightMargin;
+                const level50Y = level50.y ?? moderatorY;
+                const level50Width = level50.width ?? moderatorWidth;
+                const level50Height = level50.height ?? moderatorHeight;
+
                 const iframe = document.createElement('iframe');
                 iframe.className = 'widget-container';
-                iframe.style.left = `${level50.x ?? 0}px`;
-                iframe.style.top = `${level50.y ?? 650}px`;
-                iframe.style.width = `${level50.width ?? 120}px`;
-                iframe.style.height = `${level50.height ?? 100}px`;
+                iframe.style.left = `${level50X}px`;
+                iframe.style.top = `${level50Y}px`;
+                iframe.style.width = `${level50Width}px`;
+                iframe.style.height = `${level50Height}px`;
                 iframe.src = `/overlay/${userId}/level50`;
                 container.appendChild(iframe);
-                console.log('✅ 50레벨 위젯 iframe 추가:', iframe.src);
+                console.log('✅ 50레벨 위젯 iframe 추가:', { x: level50X, y: level50Y, width: level50Width, height: level50Height });
             }
 
             // 룰렛 미션 위젯 위치 설정 (직접 통합됨)
