@@ -529,6 +529,7 @@
 
             // 채팅 그라데이션 위젯
             const chatGradient = positions.chatGradient || { visible: true, x: 0, y: 1280, width: 1080, height: 640, color: 'black' };
+            let chatGradientIframe = null;
             if (chatGradient.visible) {
                 const iframe = document.createElement('iframe');
                 iframe.className = 'widget-container';
@@ -537,9 +538,20 @@
                 iframe.style.width = `${chatGradient.width ?? 1080}px`;
                 iframe.style.height = `${chatGradient.height ?? 640}px`;
                 iframe.src = `/overlay/${userId}/chat-gradient?color=${chatGradient.color || 'black'}`;
+                iframe.id = 'chat-gradient-iframe';
                 container.appendChild(iframe);
+                chatGradientIframe = iframe;
                 console.log('✅ 채팅 그라데이션 위젯 iframe 추가:', { x: chatGradient.x ?? 0, y: chatGradient.y ?? 1280, width: chatGradient.width ?? 1080, height: chatGradient.height ?? 640, color: chatGradient.color || 'black' });
             }
+
+            // 채팅 그라데이션 색상 변경 감지
+            socket.on('chat-gradient-color-update', (data) => {
+                if (chatGradientIframe && data.color) {
+                    const newSrc = `/overlay/${userId}/chat-gradient?color=${data.color}`;
+                    chatGradientIframe.src = newSrc;
+                    console.log('✅ 채팅 그라데이션 색상 업데이트:', data.color);
+                }
+            });
 
             // 룰렛 미션 위젯 위치 설정 (직접 통합됨)
             if (positions.roulette && positions.roulette.visible) {

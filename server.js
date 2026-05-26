@@ -2988,6 +2988,16 @@ io.on('connection', (socket) => {
         })));
     });
 
+    // 채팅 그라데이션 색상 변경
+    socket.on('chat-gradient-color-update', (data) => {
+        const userId = socket.handshake.auth.userId;
+        if (userId) {
+            const overlayRoom = `overlay-${userId}`;
+            io.to(overlayRoom).emit('chat-gradient-color-update', data);
+            console.log(`🌈 채팅 그라데이션 색상 변경: ${userId}, color: ${data.color}`);
+        }
+    });
+
     // speech-mic 페이지 → overlay 위젯: 음성 인식 중간 결과 전달
     socket.on('speech-interim-send', (data) => {
         const room = `overlay-${data.userId}`;

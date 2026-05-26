@@ -692,6 +692,7 @@
 
     <script src="/js/i18n.js"></script>
     <script src="/js/layout.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
         // ── 탭 전환 ──
         function switchTab(name) {
@@ -1206,6 +1207,9 @@
                 const data = await res.json();
                 if (data.success) {
                     alert('색상이 저장되었습니다.');
+                    // 소켓으로 색상 변경 전송
+                    const socket = io({ auth: { type: 'web', userId: '<%= user._id %>' } });
+                    socket.emit('chat-gradient-color-update', { color });
                 } else {
                     alert('저장 실패: ' + (data.message || '알 수 없는 오류'));
                 }
