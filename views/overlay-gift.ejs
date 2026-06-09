@@ -91,6 +91,29 @@
             /* 마퀴 활성 시 JS가 animation 세팅 */
         }
 
+        /* ── AI 시청자 전용 스타일 ── */
+        #mod-notice-wrap.ai-companion {
+            background: rgba(20, 184, 166, 0.35);
+            height: 60px;
+            border-radius: 18px;
+        }
+        #mod-notice-wrap.ai-companion .mod-notice-badge {
+            background: #14b8a6;
+            font-size: 16px;
+            padding: 0 20px 0 24px;
+            min-width: 90px;
+            border-radius: 18px 0 0 18px;
+        }
+        #mod-notice-wrap.ai-companion .mod-notice-track {
+            font-size: 25px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        #mod-notice-wrap.ai-companion .mod-notice-scroll {
+            padding: 0 24px 0 0;
+        }
+
         /* ── 파티클 (소스 내 범위만) ── */
         #particles { position:fixed; inset:0; pointer-events:none; overflow:hidden; }
         .pt { position:absolute; border-radius:50%; animation:pt-fly var(--d) ease-out forwards; }
@@ -320,8 +343,14 @@
         const badge = document.getElementById('mod-notice-badge');
         if (!d.text) return;
 
-        // 뱃지
-        badge.textContent = 'TikFind';
+        // AI 시청자 스타일 적용
+        if (d.isAiCompanion) {
+            wrap.classList.add('ai-companion');
+            badge.textContent = 'AI';
+        } else {
+            wrap.classList.remove('ai-companion');
+            badge.textContent = 'TikFind';
+        }
 
         // 텍스트가 박스 너비(~620px)를 넘으면 마퀴, 짧으면 고정
         track.style.animation = 'none';
@@ -345,17 +374,19 @@
         void wrap.offsetWidth;
         wrap.classList.add('slide-in');
 
-        // 6초 후 슬라이드아웃
+        // duration 적용 (AI 시청자는 커스텀 duration, 기본은 12초)
+        const showDuration = d.duration || NOTICE_SHOW_MS;
         noticeHideTimer = setTimeout(() => {
             wrap.classList.remove('slide-in');
             wrap.classList.add('slide-out');
             // 아웃 애니메이션 끝나면 텍스트 초기화
             setTimeout(() => {
                 wrap.classList.remove('slide-out');
+                wrap.classList.remove('ai-companion');
                 track.style.animation = 'none';
                 track.textContent = '';
             }, 480);
-        }, NOTICE_SHOW_MS);
+        }, showDuration);
     }
 
     socket.on('overlay-mod-notice', showModNotice);
@@ -375,7 +406,8 @@
         const displayText = `🤖 ${data.aiName}: ${data.message}`;
         showModNotice({ 
             text: displayText,
-            duration: data.duration || 7000
+            duration: data.duration || 7000,
+            isAiCompanion: true
         });
     });
 

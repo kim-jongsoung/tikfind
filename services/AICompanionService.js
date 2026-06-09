@@ -42,25 +42,25 @@ class AICompanionService {
 
         switch (triggerType) {
             case 'newViewer':
-                baseProbability = 0.3;
+                baseProbability = 0.6;  // 30% → 60%
                 break;
             case 'hostQuestion':
-                baseProbability = 0.5;
+                baseProbability = 0.8;  // 50% → 80%
                 break;
             case 'emotion':
-                baseProbability = 0.4;
+                baseProbability = 0.7;  // 40% → 70%
                 break;
             case 'hostSpeech':
-                baseProbability = 0.15;
+                baseProbability = 0.35; // 15% → 35%
                 break;
             case 'viewerQuestion':
-                baseProbability = 0.3;
+                baseProbability = 0.6;  // 30% → 60%
                 break;
             case 'keyword':
-                baseProbability = 0.35;
+                baseProbability = 0.65; // 35% → 65%
                 break;
             case 'continue':
-                baseProbability = 0.2;
+                baseProbability = 0.45; // 20% → 45%
                 break;
             default:
                 return false;
