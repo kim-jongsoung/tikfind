@@ -93,7 +93,10 @@
 
         /* ── AI 시청자 전용 스타일 ── */
         @keyframes ai-fade-in  { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes ai-fade-out { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes ai-slide-out {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(-100%); opacity: 0; }
+        }
 
         #mod-notice-wrap.ai-companion {
             background: rgba(0, 0, 0, 0.15);
@@ -107,7 +110,7 @@
             animation: ai-fade-in 0.3s ease-out forwards;
         }
         #mod-notice-wrap.ai-companion.slide-out {
-            animation: ai-fade-out 0.3s ease-in forwards;
+            animation: ai-slide-out 0.4s ease-in forwards;
         }
         #mod-notice-wrap.ai-companion .mod-notice-badge {
             display: none; /* AI 배지 완전 제거 */

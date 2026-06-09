@@ -41,6 +41,9 @@ class AICompanionService {
         let baseProbability = 0;
 
         switch (triggerType) {
+            case 'firstChat':
+                baseProbability = 0.85; // 첫 채팅 시청자에게 적극 반응
+                break;
             case 'newViewer':
                 baseProbability = 0.6;  // 30% → 60%
                 break;
@@ -154,6 +157,9 @@ class AICompanionService {
             // 트리거 타입별 힌트
             let triggerHint = '';
             switch (triggerType) {
+                case 'firstChat':
+                    triggerHint = '조용히 있다가 처음 채팅하는 시청자입니다. 따뜻하게 환영하고 적극적으로 반응하세요. 호스트에게 궁금한 점을 질문해도 좋습니다.';
+                    break;
                 case 'newViewer':
                     triggerHint = '새로운 시청자가 입장했습니다. 환영 인사를 해주세요.';
                     break;
@@ -161,16 +167,16 @@ class AICompanionService {
                     triggerHint = '호스트가 질문을 했습니다. 시청자 입장에서 답변하거나 함께 궁금해하세요.';
                     break;
                 case 'emotion':
-                    triggerHint = '감정 표현이 감지되었습니다. 공감하거나 위로해주세요.';
+                    triggerHint = '감정 표현이 감지되었습니다. 공감하거나 위로해주세요. 호스트에게 관련 질문을 해도 좋습니다.';
                     break;
                 case 'hostSpeech':
-                    triggerHint = '호스트가 말했습니다. 자연스럽게 반응하세요.';
+                    triggerHint = '호스트가 말했습니다. 자연스럽게 반응하거나 궁금한 점을 질문하세요.';
                     break;
                 case 'viewerQuestion':
                     triggerHint = '시청자가 질문했습니다. 함께 궁금해하거나 알고 있다면 답변하세요.';
                     break;
                 case 'keyword':
-                    triggerHint = '특정 주제가 언급되었습니다. 관련된 이야기로 대화에 참여하세요.';
+                    triggerHint = '특정 주제가 언급되었습니다. 관련된 이야기로 대화에 참여하거나 호스트에게 질문하세요.';
                     break;
                 case 'continue':
                     triggerHint = '대화가 이어지고 있습니다. 자연스럽게 참여하세요.';

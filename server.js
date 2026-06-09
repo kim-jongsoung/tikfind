@@ -39,6 +39,9 @@ const chatHistoryMap = new Map();
 // AI 시청자를 위한 호스트 음성 데이터 저장 (userId → [{ text, timestamp }])
 const hostSpeechMap = new Map();
 
+// 조용한 시청자 추적 (userId → Set<uniqueId>) - 처음 채팅하는 시청자 감지
+const firstTimeChattersMap = new Map();
+
 // AI 발음 코치 캐시 시스템
 const pronunciationCache = new Map();
 const MAX_CACHE_SIZE = 10000; // 최대 10,000개 캐시
@@ -1539,28 +1542,42 @@ async function processChatMessage(chatData) {
     }
     chatHistoryMap.set(String(userId), chatHistory);
 
-    // AI 시청자 트리거 체크
-    // 호스트 질문 감지
-    if (/뭐야|어떻게|왜|언제|무엇|어디/.test(message)) {
-        processAICompanion(userId, 'hostQuestion', { message }).catch(() => {});
+    // 조용한 시청자의 첫 채팅 감지
+    const viewerUniqueId = uniqueId || username;
+    let firstTimeChatters = firstTimeChattersMap.get(String(userId)) || new Set();
+    const isFirstTimeChatter = !firstTimeChatters.has(viewerUniqueId);
+    
+    if (isFirstTimeChatter && viewerUniqueId) {
+        firstTimeChatters.add(viewerUniqueId);
+        firstTimeChattersMap.set(String(userId), firstTimeChatters);
+        // 첫 채팅 시청자에게 AI가 적극적으로 반응
+        processAICompanion(userId, 'firstChat', { message, nickname: nickname || username }).catch(() => {});
     }
-    // 감정 표현 감지
-    else if (/기쁘|행복|슬프|힘들|화나|짜증|우울|외로|좋아|사랑|감사|고마/.test(message)) {
-        processAICompanion(userId, 'emotion', { message }).catch(() => {});
-    }
-    // 시청자 질문 감지
-    else if (message.includes('?') || message.includes('？')) {
-        processAICompanion(userId, 'viewerQuestion', { message }).catch(() => {});
-    }
-    // 특정 주제 키워드 감지
-    else if (/게임|음식|날씨|추천|어디|맛집|영화|드라마|노래|운동/.test(message)) {
-        processAICompanion(userId, 'keyword', { message }).catch(() => {});
-    }
-    // 대화 이어가기 (최근 3개 이상 채팅 + 2분 경과)
-    else if (chatHistory.length >= 3) {
-        const timeSinceLastAI = AICompanionService.getTimeSinceLastMessage(userId);
-        if (timeSinceLastAI >= 120) {
-            processAICompanion(userId, 'continue', { message }).catch(() => {});
+
+    // AI 시청자 트리거 체크 (첫 채팅 시청자는 이미 처리됨)
+    if (!isFirstTimeChatter) {
+        // 호스트 질문 감지
+        if (/뭐야|어떻게|왜|언제|무엇|어디/.test(message)) {
+            processAICompanion(userId, 'hostQuestion', { message }).catch(() => {});
+        }
+        // 감정 표현 감지
+        else if (/기빠|행복|슬프|힘들|화나|짜증|우울|외로|좋아|사랑|감사|고마/.test(message)) {
+            processAICompanion(userId, 'emotion', { message }).catch(() => {});
+        }
+        // 시청자 질문 감지
+        else if (message.includes('?') || message.includes('？')) {
+            processAICompanion(userId, 'viewerQuestion', { message }).catch(() => {});
+        }
+        // 특정 주제 키워드 감지
+        else if (/게임|음식|날씨|추천|어디|맛집|영화|드라마|노래|운동/.test(message)) {
+            processAICompanion(userId, 'keyword', { message }).catch(() => {});
+        }
+        // 대화 이어가기 (최근 3개 이상 채팅 + 2분 경과)
+        else if (chatHistory.length >= 3) {
+            const timeSinceLastAI = AICompanionService.getTimeSinceLastMessage(userId);
+            if (timeSinceLastAI >= 120) {
+                processAICompanion(userId, 'continue', { message }).catch(() => {});
+            }
         }
     }
 
