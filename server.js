@@ -10,6 +10,7 @@ const http = require('http');
 const socketIO = require('socket.io');
 const cors = require('cors');
 const TikTokLiveService = require('./services/TikTokLiveService');
+const AICompanionService = require('./services/AICompanionService');
 const AlgorithmViewer = require('./models/AlgorithmViewer');
 const authRoutes = require('./routes/auth');
 const viewRoutes = require('./routes/viewRoutes');
@@ -31,6 +32,12 @@ const liveStatusMap = new Map();
 // 매치 상태 저장 (userId → { battleId, participants, startTime, armies, lastCoachTime, coachCount, roundNumber, roundWins })
 // roundWins: { my: 0, opp: 0 } - 3판 2승제 시리즈 스코어
 let matchStateMap = new Map();
+
+// AI 시청자를 위한 채팅 히스토리 저장 (userId → [{ uniqueId, nickname, message, timestamp }])
+const chatHistoryMap = new Map();
+
+// AI 시청자를 위한 호스트 음성 데이터 저장 (userId → [{ text, timestamp }])
+const hostSpeechMap = new Map();
 
 // AI 발음 코치 캐시 시스템
 const pronunciationCache = new Map();
@@ -1422,6 +1429,82 @@ async function processMatchCoach(userId, triggerType, matchState) {
     }
 }
 
+// ===== AI 시청자 트리거 함수 =====
+async function processAICompanion(userId, triggerType, triggerData = {}) {
+    try {
+        const User = require('./models/User');
+        const user = await User.findById(userId).select('aiCompanionEnabled aiCompanionPersonality aiCompanionFrequency aiCompanionName aiCompanionTtsEnabled aiCompanionTtsVoice').lean();
+        
+        if (!user || user.aiCompanionEnabled === false) {
+            return;
+        }
+
+        // 맥락 수집
+        const recentChats = chatHistoryMap.get(String(userId)) || [];
+        const hostSpeech = hostSpeechMap.get(String(userId)) || [];
+        const viewerCount = triggerData.viewerCount || 0;
+        const isMatchActive = matchStateMap.has(String(userId));
+
+        const context = AICompanionService.collectContext(userId, recentChats, hostSpeech, {
+            viewerCount,
+            isMatchActive
+        });
+
+        // 최근 30초 내 채팅이 없으면 참여하지 않음 (조용할 때는 참여 안 함)
+        if (!context.hasRecentActivity && triggerType !== 'newViewer') {
+            return;
+        }
+
+        // 트리거 확률 체크
+        const settings = {
+            aiCompanionFrequency: user.aiCompanionFrequency,
+            aiCompanionPersonality: user.aiCompanionPersonality,
+            aiCompanionName: user.aiCompanionName
+        };
+
+        if (!AICompanionService.shouldTrigger(triggerType, context, settings)) {
+            return;
+        }
+
+        // 마지막 메시지 이후 최소 시간 체크 (너무 자주 나오지 않게)
+        const timeSinceLastMessage = AICompanionService.getTimeSinceLastMessage(userId);
+        if (timeSinceLastMessage < 30) { // 최소 30초 간격
+            return;
+        }
+
+        // AI 응답 생성
+        const response = await AICompanionService.generateResponse(context, triggerType, settings);
+        if (!response) return;
+
+        console.log(`🤖 [${userId}] AI 시청자 응답: ${response.message}`);
+
+        // 마지막 메시지 시간 업데이트
+        AICompanionService.updateLastMessageTime(userId);
+
+        // 오버레이에 메시지 전송
+        io.to(`overlay-${userId}`).emit('ai-companion', {
+            aiName: response.aiName,
+            message: response.message,
+            lengthType: response.lengthType,
+            duration: response.duration,
+            timestamp: Date.now()
+        });
+
+        // TTS 발송 (설정이 켜져 있으면)
+        if (user.aiCompanionTtsEnabled) {
+            io.to(userId).emit('tts-speak', {
+                text: response.message,
+                uniqueId: 'AI_COMPANION',
+                voice: user.aiCompanionTtsVoice || 'female',
+                volume: 1.0
+            });
+        }
+
+    } catch (e) {
+        console.error('❌ AI 시청자 오류:', e.message);
+    }
+}
+
 // ===== 채팅 메시지 공통 처리 함수 (TikTokLiveService + /api/live/chat 공유) =====
 async function processChatMessage(chatData) {
     const { userId, username, message, uniqueId, nickname, badges, userBadges,
@@ -1435,6 +1518,45 @@ async function processChatMessage(chatData) {
 
     const user = await User.findById(userId);
     const streamerLanguage = user?.preferredLanguage || 'ko';
+
+    // AI 시청자를 위한 채팅 히스토리 저장
+    let chatHistory = chatHistoryMap.get(String(userId)) || [];
+    chatHistory.push({
+        uniqueId: uniqueId || username,
+        nickname: nickname || username,
+        message,
+        timestamp: timestamp || Date.now()
+    });
+    // 최근 20개만 유지
+    if (chatHistory.length > 20) {
+        chatHistory = chatHistory.slice(-20);
+    }
+    chatHistoryMap.set(String(userId), chatHistory);
+
+    // AI 시청자 트리거 체크
+    // 호스트 질문 감지
+    if (/뭐야|어떻게|왜|언제|무엇|어디/.test(message)) {
+        processAICompanion(userId, 'hostQuestion', { message }).catch(() => {});
+    }
+    // 감정 표현 감지
+    else if (/기쁘|행복|슬프|힘들|화나|짜증|우울|외로|좋아|사랑|감사|고마/.test(message)) {
+        processAICompanion(userId, 'emotion', { message }).catch(() => {});
+    }
+    // 시청자 질문 감지
+    else if (message.includes('?') || message.includes('？')) {
+        processAICompanion(userId, 'viewerQuestion', { message }).catch(() => {});
+    }
+    // 특정 주제 키워드 감지
+    else if (/게임|음식|날씨|추천|어디|맛집|영화|드라마|노래|운동/.test(message)) {
+        processAICompanion(userId, 'keyword', { message }).catch(() => {});
+    }
+    // 대화 이어가기 (최근 3개 이상 채팅 + 2분 경과)
+    else if (chatHistory.length >= 3) {
+        const timeSinceLastAI = AICompanionService.getTimeSinceLastMessage(userId);
+        if (timeSinceLastAI >= 120) {
+            processAICompanion(userId, 'continue', { message }).catch(() => {});
+        }
+    }
 
     // 1. 언어 감지 + AI 발음코치
     const messageLanguage = await pronunciationCoach.detectLanguage(message);
@@ -3012,6 +3134,29 @@ io.on('connection', (socket) => {
             priority: data.priority === true
         });
         console.log(`🗣️ speech-translated → ${room} (${(data.translations||[]).length}개 언어, priority:${data.priority})`);
+        
+        // AI 시청자를 위한 호스트 음성 데이터 저장
+        if (data.translations && data.translations.length > 0) {
+            const koreanTranslation = data.translations.find(t => t.lang === 'ko');
+            if (koreanTranslation && koreanTranslation.text) {
+                let hostSpeech = hostSpeechMap.get(String(data.userId)) || [];
+                hostSpeech.push({
+                    text: koreanTranslation.text,
+                    timestamp: Date.now()
+                });
+                // 최근 5개만 유지
+                if (hostSpeech.length > 5) {
+                    hostSpeech = hostSpeech.slice(-5);
+                }
+                hostSpeechMap.set(String(data.userId), hostSpeech);
+                
+                // 호스트 발화 후 트리거 (3~10초 후 랜덤)
+                const delay = 3000 + Math.random() * 7000;
+                setTimeout(() => {
+                    processAICompanion(data.userId, 'hostSpeech', { text: koreanTranslation.text }).catch(() => {});
+                }, delay);
+            }
+        }
     });
 
     // 대시보드 → 오버레이: 룰렛 돌리기

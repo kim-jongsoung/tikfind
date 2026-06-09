@@ -1,0 +1,223 @@
+const OpenAI = require('openai');
+
+class AICompanionService {
+    constructor() {
+        this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        this.conversationHistory = new Map(); // userId -> 최근 대화 내역
+        this.lastMessageTime = new Map(); // userId -> 마지막 AI 메시지 시간
+    }
+
+    /**
+     * 맥락 수집 및 분석
+     */
+    collectContext(userId, recentChats = [], hostSpeech = [], currentSituation = {}) {
+        // 최근 30초 내 채팅만 필터링
+        const now = Date.now();
+        const recentChatsFiltered = recentChats.filter(chat => 
+            now - chat.timestamp < 30000
+        );
+
+        // 대화 히스토리 업데이트 (최근 20개만 유지)
+        let history = this.conversationHistory.get(userId) || [];
+        history = [...history, ...recentChatsFiltered].slice(-20);
+        this.conversationHistory.set(userId, history);
+
+        return {
+            recentChats: recentChatsFiltered,
+            hostSpeech: hostSpeech.slice(-5), // 최근 5개 발화
+            hasRecentActivity: recentChatsFiltered.length > 0,
+            viewerCount: currentSituation.viewerCount || 0,
+            isMatchActive: currentSituation.isMatchActive || false
+        };
+    }
+
+    /**
+     * 트리거 확률 체크
+     */
+    shouldTrigger(triggerType, context, settings) {
+        const frequency = settings.aiCompanionFrequency || '보통';
+        const multiplier = frequency === '자주' ? 1.5 : frequency === '가끔' ? 0.5 : 1.0;
+
+        let baseProbability = 0;
+
+        switch (triggerType) {
+            case 'newViewer':
+                baseProbability = 0.3;
+                break;
+            case 'hostQuestion':
+                baseProbability = 0.5;
+                break;
+            case 'emotion':
+                baseProbability = 0.4;
+                break;
+            case 'hostSpeech':
+                baseProbability = 0.15;
+                break;
+            case 'viewerQuestion':
+                baseProbability = 0.3;
+                break;
+            case 'keyword':
+                baseProbability = 0.35;
+                break;
+            case 'continue':
+                baseProbability = 0.2;
+                break;
+            default:
+                return false;
+        }
+
+        const finalProbability = baseProbability * multiplier;
+        return Math.random() < finalProbability;
+    }
+
+    /**
+     * 응답 길이 결정
+     */
+    determineResponseLength(message) {
+        const length = message.replace(/[\s\uD800-\uDFFF]/g, '').length;
+        if (length <= 15) return { type: 'short', duration: 5000 };
+        if (length <= 35) return { type: 'normal', duration: 7000 };
+        return { type: 'long', duration: 10000 };
+    }
+
+    /**
+     * AI 응답 생성
+     */
+    async generateResponse(context, triggerType, settings) {
+        try {
+            const personality = settings.aiCompanionPersonality || '친근한';
+            const aiName = settings.aiCompanionName || 'TikFind AI';
+
+            // 성격별 시스템 프롬프트
+            const personalityPrompts = {
+                '친근한': '당신은 감정이 풍부하고 친근한 시청자입니다. 따뜻하고 공감적으로 대화하세요.',
+                '장난스러운': '당신은 유쾌하고 장난스러운 시청자입니다. 재미있고 밝은 분위기로 대화하세요.',
+                '진지한': '당신은 진지하고 사려 깊은 시청자입니다. 신중하고 정중하게 대화하세요.',
+                '4차원': '당신은 독특하고 엉뚱한 시청자입니다. 예상치 못한 재미있는 반응으로 대화하세요.'
+            };
+
+            const systemPrompt = `${personalityPrompts[personality] || personalityPrompts['친근한']}
+당신의 이름은 "${aiName}"입니다.
+
+참여 방식:
+- 호스트가 말한 내용에 공감하고 반응
+- 다른 시청자들의 분위기를 읽고 어울리기
+- 궁금한 것이 있으면 호스트나 다른 시청자에게 질문
+- 정보를 알고 있으면 공유
+- 이모지로 감정 표현
+
+응답 길이 가이드:
+- 단답형: 5~10자 (예: "완전 공감!", "저도요 ㅋㅋ")
+- 일반형: 15~30자 (예: "그거 어떻게 하는 거예요?", "저도 그렇게 생각해요!")
+- 장문형: 35~50자 (예: "힘내세요! 힘든 시간이지만 다들 응원하고 있어요. 함께 이겨내요 💪")
+
+상황별 길이 선택:
+- 단답형: 간단한 공감, 맞장구, 짧은 반응
+- 일반형: 일반적인 대화 참여, 질문
+- 장문형: 위로, 감성적 표현, 상세한 설명
+
+중요: 자연스럽고 짧게 반응하세요. 너무 길거나 형식적이지 않게 하세요.`;
+
+            // 대화 맥락 구성
+            const contextMessages = [];
+            
+            // 최근 채팅 추가
+            if (context.recentChats && context.recentChats.length > 0) {
+                const chatContext = context.recentChats
+                    .map(chat => `${chat.nickname || chat.uniqueId}: ${chat.message}`)
+                    .join('\n');
+                contextMessages.push(`최근 채팅:\n${chatContext}`);
+            }
+
+            // 호스트 발화 추가
+            if (context.hostSpeech && context.hostSpeech.length > 0) {
+                const speechContext = context.hostSpeech
+                    .map(speech => `호스트: ${speech.text}`)
+                    .join('\n');
+                contextMessages.push(`호스트 발화:\n${speechContext}`);
+            }
+
+            // 트리거 타입별 힌트
+            let triggerHint = '';
+            switch (triggerType) {
+                case 'newViewer':
+                    triggerHint = '새로운 시청자가 입장했습니다. 환영 인사를 해주세요.';
+                    break;
+                case 'hostQuestion':
+                    triggerHint = '호스트가 질문을 했습니다. 시청자 입장에서 답변하거나 함께 궁금해하세요.';
+                    break;
+                case 'emotion':
+                    triggerHint = '감정 표현이 감지되었습니다. 공감하거나 위로해주세요.';
+                    break;
+                case 'hostSpeech':
+                    triggerHint = '호스트가 말했습니다. 자연스럽게 반응하세요.';
+                    break;
+                case 'viewerQuestion':
+                    triggerHint = '시청자가 질문했습니다. 함께 궁금해하거나 알고 있다면 답변하세요.';
+                    break;
+                case 'keyword':
+                    triggerHint = '특정 주제가 언급되었습니다. 관련된 이야기로 대화에 참여하세요.';
+                    break;
+                case 'continue':
+                    triggerHint = '대화가 이어지고 있습니다. 자연스럽게 참여하세요.';
+                    break;
+            }
+
+            const userPrompt = `${contextMessages.join('\n\n')}
+
+${triggerHint}
+
+위 대화 맥락을 보고 자연스럽게 한 문장으로 반응하세요. 시청자처럼 편하게 말하세요.`;
+
+            const completion = await this.openai.chat.completions.create({
+                model: 'gpt-3.5-turbo',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                max_tokens: 100,
+                temperature: 0.8
+            });
+
+            const message = completion.choices[0].message.content.trim();
+            const lengthInfo = this.determineResponseLength(message);
+
+            return {
+                message,
+                lengthType: lengthInfo.type,
+                duration: lengthInfo.duration,
+                aiName
+            };
+
+        } catch (error) {
+            console.error('❌ AI 응답 생성 오류:', error);
+            return null;
+        }
+    }
+
+    /**
+     * 마지막 메시지 시간 업데이트
+     */
+    updateLastMessageTime(userId) {
+        this.lastMessageTime.set(userId, Date.now());
+    }
+
+    /**
+     * 마지막 메시지 이후 경과 시간 (초)
+     */
+    getTimeSinceLastMessage(userId) {
+        const lastTime = this.lastMessageTime.get(userId);
+        if (!lastTime) return Infinity;
+        return (Date.now() - lastTime) / 1000;
+    }
+
+    /**
+     * 대화 히스토리 초기화
+     */
+    clearHistory(userId) {
+        this.conversationHistory.delete(userId);
+        this.lastMessageTime.delete(userId);
+    }
+}
+
+module.exports = new AICompanionService();

@@ -369,6 +369,16 @@
         showModNotice({ text: situationIcon + ' ' + data.message });
     });
 
+    // ── AI 시청자 (선물 위젯 배너에 표시) ──
+    socket.on('ai-companion', (data) => {
+        console.log('🤖 ai-companion 수신:', data.aiName, data.message);
+        const displayText = `🤖 ${data.aiName}: ${data.message}`;
+        showModNotice({ 
+            text: displayText,
+            duration: data.duration || 7000
+        });
+    });
+
     function next() {
         if (!queue.length) { busy = false; return; }
         busy = true;

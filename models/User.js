@@ -259,6 +259,33 @@ const userSchema = new mongoose.Schema({
     matchCoachEnabled: {
         type: Boolean,
         default: true
+    },
+    aiCompanionEnabled: {
+        type: Boolean,
+        default: true
+    },
+    aiCompanionPersonality: {
+        type: String,
+        enum: ['친근한', '장난스러운', '진지한', '4차원'],
+        default: '친근한'
+    },
+    aiCompanionFrequency: {
+        type: String,
+        enum: ['자주', '보통', '가끔'],
+        default: '보통'
+    },
+    aiCompanionName: {
+        type: String,
+        default: 'TikFind AI'
+    },
+    aiCompanionTtsEnabled: {
+        type: Boolean,
+        default: true
+    },
+    aiCompanionTtsVoice: {
+        type: String,
+        enum: ['female', 'male'],
+        default: 'female'
     }
 }, {
     timestamps: true

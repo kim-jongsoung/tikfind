@@ -2279,6 +2279,47 @@ router.post('/match-coach-settings', requireAuth, async (req, res) => {
     }
 });
 
+// GET /api/ai-companion-settings (인증 필요)
+router.get('/ai-companion-settings', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id)
+            .select('aiCompanionEnabled aiCompanionPersonality aiCompanionFrequency aiCompanionName aiCompanionTtsEnabled aiCompanionTtsVoice')
+            .lean();
+        res.json({
+            success: true,
+            aiCompanionEnabled: user?.aiCompanionEnabled !== false,
+            aiCompanionPersonality: user?.aiCompanionPersonality || '친근한',
+            aiCompanionFrequency: user?.aiCompanionFrequency || '보통',
+            aiCompanionName: user?.aiCompanionName || 'TikFind AI',
+            aiCompanionTtsEnabled: user?.aiCompanionTtsEnabled !== false,
+            aiCompanionTtsVoice: user?.aiCompanionTtsVoice || 'female'
+        });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/ai-companion-settings (인증 필요)
+router.post('/ai-companion-settings', requireAuth, async (req, res) => {
+    try {
+        const { aiCompanionEnabled, aiCompanionPersonality, aiCompanionFrequency, 
+                aiCompanionName, aiCompanionTtsEnabled, aiCompanionTtsVoice } = req.body;
+        
+        const updateData = {};
+        if (typeof aiCompanionEnabled === 'boolean') updateData.aiCompanionEnabled = aiCompanionEnabled;
+        if (aiCompanionPersonality) updateData.aiCompanionPersonality = aiCompanionPersonality;
+        if (aiCompanionFrequency) updateData.aiCompanionFrequency = aiCompanionFrequency;
+        if (aiCompanionName) updateData.aiCompanionName = aiCompanionName;
+        if (typeof aiCompanionTtsEnabled === 'boolean') updateData.aiCompanionTtsEnabled = aiCompanionTtsEnabled;
+        if (aiCompanionTtsVoice) updateData.aiCompanionTtsVoice = aiCompanionTtsVoice;
+
+        await User.findByIdAndUpdate(req.user._id, updateData);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
 // GET /api/overlay/positions (인증 필요)
 router.get('/overlay/positions', requireAuth, async (req, res) => {
     try {
