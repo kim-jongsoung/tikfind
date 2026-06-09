@@ -92,26 +92,40 @@
         }
 
         /* ── AI 시청자 전용 스타일 ── */
+        @keyframes ai-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes ai-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
         #mod-notice-wrap.ai-companion {
-            background: rgba(20, 184, 166, 0.35);
-            height: 60px;
-            border-radius: 18px;
+            background: rgba(0, 0, 0, 0.3);
+            height: 40px;
+            border-radius: 12px;
+            top: 95px; /* 기존 15px + 80px = 95px */
+            transform: translateX(0); /* 슬라이드 없이 제자리 */
+            opacity: 0;
+        }
+        #mod-notice-wrap.ai-companion.slide-in {
+            animation: ai-fade-in 0.3s ease-out forwards;
+        }
+        #mod-notice-wrap.ai-companion.slide-out {
+            animation: ai-fade-out 0.3s ease-in forwards;
         }
         #mod-notice-wrap.ai-companion .mod-notice-badge {
-            background: #14b8a6;
-            font-size: 16px;
-            padding: 0 20px 0 24px;
-            min-width: 90px;
-            border-radius: 18px 0 0 18px;
+            background: rgba(0, 0, 0, 0.5);
+            font-size: 12px;
+            padding: 0 12px;
+            min-width: 50px;
+            border-radius: 12px 0 0 12px;
+            color: #ffffff;
         }
         #mod-notice-wrap.ai-companion .mod-notice-track {
-            font-size: 25px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            font-size: 15px;
+            font-weight: 400;
+            letter-spacing: 0;
+            text-shadow: none;
+            color: #ffffff;
         }
         #mod-notice-wrap.ai-companion .mod-notice-scroll {
-            padding: 0 24px 0 0;
+            padding: 0 16px 0 0;
         }
 
         /* ── 파티클 (소스 내 범위만) ── */
@@ -406,7 +420,7 @@
         const displayText = `🤖 ${data.aiName}: ${data.message}`;
         showModNotice({ 
             text: displayText,
-            duration: data.duration || 7000,
+            duration: 10000, // 기본 10초 노출
             isAiCompanion: true
         });
     });
