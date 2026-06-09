@@ -1494,9 +1494,12 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
         });
 
         // TTS 발송 (설정이 켜져 있으면)
+        console.log(`🎵 AI TTS 체크: enabled=${user.aiCompanionTtsEnabled}`);
         if (user.aiCompanionTtsEnabled) {
             const desktopSocketId = desktopSocketMap.get(String(userId));
             const liveStatus = liveStatusMap.get(String(userId));
+            
+            console.log(`🎵 Desktop Socket: ${desktopSocketId}, Live: ${liveStatus?.isLive}`);
             
             if (desktopSocketId && liveStatus?.isLive === true) {
                 io.to(desktopSocketId).emit('tts-speak', {
@@ -1506,6 +1509,8 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
                     volume: 1.0
                 });
                 console.log(`🔊 AI 시청자 TTS 전송: ${response.message}`);
+            } else {
+                console.log(`❌ AI TTS 전송 실패: Desktop 연결 또는 라이브 상태 확인 필요`);
             }
         }
 

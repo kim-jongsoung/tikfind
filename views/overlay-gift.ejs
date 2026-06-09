@@ -414,11 +414,11 @@
 
     // ── AI 시청자 (선물 위젯 배너에 표시) ──
     socket.on('ai-companion', (data) => {
-        console.log('🤖 ai-companion 수신:', data.aiName, data.message);
+        console.log('🤖 ai-companion 수신:', data.aiName, data.message, 'duration:', data.duration);
         const displayText = `🤖 ${data.aiName}: ${data.message}`;
         showModNotice({ 
             text: displayText,
-            duration: 10000, // 기본 10초 노출
+            duration: data.duration || 10000, // 서버에서 받은 duration 사용
             isAiCompanion: true
         });
     });
