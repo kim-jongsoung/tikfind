@@ -1492,12 +1492,18 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
 
         // TTS 발송 (설정이 켜져 있으면)
         if (user.aiCompanionTtsEnabled) {
-            io.to(userId).emit('tts-speak', {
-                text: response.message,
-                uniqueId: 'AI_COMPANION',
-                voice: user.aiCompanionTtsVoice || 'female',
-                volume: 1.0
-            });
+            const desktopSocketId = desktopSocketMap.get(String(userId));
+            const liveStatus = liveStatusMap.get(String(userId));
+            
+            if (desktopSocketId && liveStatus?.isLive === true) {
+                io.to(desktopSocketId).emit('tts-speak', {
+                    text: response.message,
+                    uniqueId: 'AI_COMPANION',
+                    voice: user.aiCompanionTtsVoice || 'female',
+                    volume: 1.0
+                });
+                console.log(`🔊 AI 시청자 TTS 전송: ${response.message}`);
+            }
         }
 
     } catch (e) {
