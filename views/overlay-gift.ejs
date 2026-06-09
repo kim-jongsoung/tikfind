@@ -110,12 +110,7 @@
             animation: ai-fade-out 0.3s ease-in forwards;
         }
         #mod-notice-wrap.ai-companion .mod-notice-badge {
-            background: rgba(0, 0, 0, 0.5);
-            font-size: 12px;
-            padding: 0 12px;
-            min-width: 50px;
-            border-radius: 12px 0 0 12px;
-            color: #ffffff;
+            display: none; /* AI 배지 완전 제거 */
         }
         #mod-notice-wrap.ai-companion .mod-notice-track {
             font-size: 15px;
@@ -125,7 +120,7 @@
             color: #ffffff;
         }
         #mod-notice-wrap.ai-companion .mod-notice-scroll {
-            padding: 0 16px 0 0;
+            padding: 0 16px 0 16px; /* 왼쪽 패딩도 추가 */
         }
 
         /* ── 파티클 (소스 내 범위만) ── */
