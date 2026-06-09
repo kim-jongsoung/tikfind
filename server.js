@@ -1471,7 +1471,7 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
 
         // 마지막 메시지 이후 최소 시간 체크 (너무 자주 나오지 않게)
         const timeSinceLastMessage = AICompanionService.getTimeSinceLastMessage(userId);
-        if (timeSinceLastMessage < 15) { // 최소 15초 간격 (30초 → 15초로 단축)
+        if (timeSinceLastMessage < 10) { // 최소 10초 간격 (15초 → 10초로 단축)
             return;
         }
 

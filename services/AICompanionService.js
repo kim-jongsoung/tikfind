@@ -42,28 +42,28 @@ class AICompanionService {
 
         switch (triggerType) {
             case 'firstChat':
-                baseProbability = 0.85; // 첫 채팅 시청자에게 적극 반응
+                baseProbability = 0.95; // 첫 채팅 시청자에게 적극 반응
                 break;
             case 'newViewer':
-                baseProbability = 0.6;  // 30% → 60%
+                baseProbability = 0.75; // 60% → 75%
                 break;
             case 'hostQuestion':
-                baseProbability = 0.8;  // 50% → 80%
+                baseProbability = 0.9;  // 80% → 90%
                 break;
             case 'emotion':
-                baseProbability = 0.7;  // 40% → 70%
+                baseProbability = 0.85; // 70% → 85%
                 break;
             case 'hostSpeech':
-                baseProbability = 0.35; // 15% → 35%
+                baseProbability = 0.5;  // 35% → 50%
                 break;
             case 'viewerQuestion':
-                baseProbability = 0.6;  // 30% → 60%
+                baseProbability = 0.75; // 60% → 75%
                 break;
             case 'keyword':
-                baseProbability = 0.65; // 35% → 65%
+                baseProbability = 0.8;  // 65% → 80%
                 break;
             case 'continue':
-                baseProbability = 0.45; // 20% → 45%
+                baseProbability = 0.6;  // 45% → 60%
                 break;
             default:
                 return false;
@@ -78,8 +78,8 @@ class AICompanionService {
      */
     determineResponseLength(message) {
         const length = message.replace(/[\s\uD800-\uDFFF]/g, '').length;
-        if (length <= 20) return { type: 'short', duration: 7000 };  // 15 → 20
-        if (length <= 40) return { type: 'normal', duration: 10000 }; // 35 → 40
+        if (length <= 15) return { type: 'short', duration: 7000 };  // 20 → 15
+        if (length <= 25) return { type: 'normal', duration: 10000 }; // 40 → 25
         return { type: 'long', duration: 10000 };
     }
 
@@ -124,7 +124,10 @@ class AICompanionService {
 4. 이모지로 감정을 더하세요
    - 😊 💕 🤔 😮 👍 ㅋㅋ ㅠㅠ 등 자연스럽게 사용
 
-응답 길이: 15~40자 (짧고 자연스럽게)
+중요: 짧고 간결하게!
+- 응답 길이: 10~25자 (최대 25자 엄수)
+- 한 문장으로 간결하게
+- 길게 설명하지 말고 핵심만
 
 절대 금지:
 - "호스트님", "방송", "시청자분들" 같은 3인칭 표현 사용 금지
@@ -188,10 +191,11 @@ ${triggerHint}
 - "호스트님", "방송", "시청자분들" 같은 말 절대 사용 금지
 - 관찰자나 해설자처럼 말하지 마세요
 - 시청자 입장에서 자연스럽게 반응하세요
-- 15~40자로 짧고 자연스럽게
+- **10~25자로 짧고 간결하게 (최대 25자)**
+- 한 문장으로 핵심만 말하기
 
 예시:
-좋은 반응: "ㅋㅋㅋ 완전 웃겨요", "저도 그거 해봤는데 어려워요", "오 그거 좋은데요!"
+좋은 반응: "ㅋㅋㅋ 완전 웃겨요", "저도 그러는데요", "오 좋네요!"
 나쁜 반응: "호스트님 잘하시네요", "방송 재미있어요", "시청자분들 반응 좋네요"`;
 
             const completion = await this.openai.chat.completions.create({
