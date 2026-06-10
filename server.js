@@ -1507,6 +1507,41 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
     }
 }
 
+// ===== AI 닉네임 호출 감지 함수 =====
+function checkIfNameCalled(message, aiName) {
+    if (!aiName || !message) return false;
+    
+    const cleanedMessage = message.toLowerCase().replace(/\s+/g, '');
+    const cleanedName = aiName.toLowerCase().replace(/\s+/g, '');
+    
+    // 1. 전체 이름 일치
+    if (cleanedMessage.includes(cleanedName)) return true;
+    
+    // 2. 줄임말 감지 (예: 아정당무무 -> 무무)
+    const nameParts = cleanedName.split('');
+    for (let i = 0; i < nameParts.length; i++) {
+        for (let j = i + 2; j <= nameParts.length; j++) {
+            const nickname = nameParts.slice(i, j).join('');
+            if (cleanedMessage.includes(nickname)) return true;
+        }
+    }
+    
+    // 3. ~님, ~ya 형태 감지
+    const nameVariations = [
+        cleanedName + '님',
+        cleanedName + '야',
+        cleanedName + '아',
+        cleanedName + '이',
+        cleanedName + '은'
+    ];
+    
+    for (const variation of nameVariations) {
+        if (cleanedMessage.includes(variation)) return true;
+    }
+    
+    return false;
+}
+
 // ===== 채팅 메시지 공통 처리 함수 (TikTokLiveService + /api/live/chat 공유) =====
 async function processChatMessage(chatData) {
     const { userId, username, message, uniqueId, nickname, badges, userBadges,
@@ -1549,8 +1584,14 @@ async function processChatMessage(chatData) {
 
     // AI 시청자 트리거 체크 (첫 채팅 시청자는 이미 처리됨)
     if (!isFirstTimeChatter) {
+        // AI 닉네임 호출 감지 (가장 높은 우선순위)
+        const aiName = user?.aiCompanionName || 'TikFind AI';
+        const isNameCalled = checkIfNameCalled(message, aiName);
+        if (isNameCalled) {
+            processAICompanion(userId, 'nameCalled', { message, aiName, caller: nickname || username }).catch(() => {});
+        }
         // 호스트 질문 감지
-        if (/뭐야|어떻게|왜|언제|무엇|어디/.test(message)) {
+        else if (/뭐야|어떻게|왜|언제|무엇|어디/.test(message)) {
             processAICompanion(userId, 'hostQuestion', { message }).catch(() => {});
         }
         // 감정 표현 감지

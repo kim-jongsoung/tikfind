@@ -47,6 +47,9 @@ class AICompanionService {
             case 'newViewer':
                 baseProbability = 0.75; // 60% → 75%
                 break;
+            case 'nameCalled':
+                baseProbability = 1.0; // 닉네임 호출되면 100% 응답
+                break;
             case 'hostQuestion':
                 baseProbability = 0.9;  // 80% → 90%
                 break;
@@ -164,6 +167,9 @@ class AICompanionService {
                     break;
                 case 'newViewer':
                     triggerHint = '새로운 시청자가 입장했습니다. 같은 시청자 입장에서 환영하세요. 예: "@철수님 어서오세요~"';
+                    break;
+                case 'nameCalled':
+                    triggerHint = '누군가 당신의 이름을 불렀습니다. 바로 대답하세요. 예: "네 저예요!", "왜 부르셨어요?", "저 여기 있어요!"';
                     break;
                 case 'hostQuestion':
                     triggerHint = '질문이 나왔습니다. 시청자 입장에서 답변하거나 함께 궁금해하세요. 예: "저도 궁금해요!", "@영희님 아 그거요? 저는 이렇게 했어요"';
