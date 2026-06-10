@@ -1634,15 +1634,20 @@ async function processChatMessage(chatData) {
     let firstTimeChatters = firstTimeChattersMap.get(String(userId)) || new Set();
     const isFirstTimeChatter = !firstTimeChatters.has(viewerUniqueId);
     
-    if (isFirstTimeChatter && viewerUniqueId) {
+    // 호스트 본인 여부 확인
+    const hostTiktokId = (user?.tiktokId || '').trim().toLowerCase();
+    const uid = (uniqueId || username || '').trim().toLowerCase();
+    const isHost = hostTiktokId && uid === hostTiktokId;
+    
+    if (isFirstTimeChatter && viewerUniqueId && !isHost) {
         firstTimeChatters.add(viewerUniqueId);
         firstTimeChattersMap.set(String(userId), firstTimeChatters);
         // 첫 채팅 시청자에게 AI가 적극적으로 반응
         processAICompanion(userId, 'firstChat', { message, nickname: nickname || username }).catch(() => {});
     }
 
-    // AI 시청자 트리거 체크 (첫 채팅 시청자는 이미 처리됨)
-    if (!isFirstTimeChatter) {
+    // AI 시청자 트리거 체크 (호스트 채팅이거나 첫 채팅 시청자가 아닐 때)
+    if (isHost || !isFirstTimeChatter) {
         // AI 닉네임 호출 감지 (가장 높은 우선순위)
         const aiName = user?.aiCompanionName || 'TikFind AI';
         const isNameCalled = checkIfNameCalled(message, aiName);
