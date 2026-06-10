@@ -99,12 +99,15 @@
         }
 
         #mod-notice-wrap.ai-companion {
-            background: rgba(0, 0, 0, 0.15);
-            height: 40px;
-            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.6); /* 틱톡 채팅처럼 어두운 반투명 */
+            height: 50px; /* 틱톡 채팅과 비슷한 높이 */
+            border-radius: 8px; /* 틱톡 채팅처럼 약간 둥글게 */
             top: 95px; /* 기존 15px + 80px = 95px */
             transform: translateX(0); /* 슬라이드 없이 제자리 */
             opacity: 0;
+            flex-direction: column; /* 세로 방향으로 변경 */
+            justify-content: center;
+            align-items: flex-start;
         }
         #mod-notice-wrap.ai-companion.slide-in {
             animation: ai-fade-in 0.3s ease-out forwards;
@@ -115,15 +118,41 @@
         #mod-notice-wrap.ai-companion .mod-notice-badge {
             display: none; /* AI 배지 완전 제거 */
         }
-        #mod-notice-wrap.ai-companion .mod-notice-track {
-            font-size: 23px;
-            font-weight: 400;
-            letter-spacing: 0;
-            text-shadow: none;
+        #mod-notice-wrap.ai-companion .mod-notice-scroll {
+            padding: 6px 12px; /* 틱톡 채팅처럼 패딩 */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        #mod-notice-wrap.ai-companion .ai-companion-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        #mod-notice-wrap.ai-companion .ai-diamond-badge {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+        #mod-notice-wrap.ai-companion .ai-nickname {
+            font-size: 14px; /* 틱톡 채팅처럼 작은 닉네임 */
+            font-weight: 500;
             color: #ffffff;
         }
-        #mod-notice-wrap.ai-companion .mod-notice-scroll {
-            padding: 0 16px 0 16px; /* 왼쪽 패딩도 추가 */
+        #mod-notice-wrap.ai-companion .ai-message {
+            font-size: 20px; /* 틱톡 채팅처럼 큰 채팅 내용 */
+            font-weight: 400;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* ── 파티클 (소스 내 범위만) ── */
@@ -359,25 +388,37 @@
         if (d.isAiCompanion) {
             wrap.classList.add('ai-companion');
             badge.textContent = 'AI';
+            
+            // AI 시청자 2줄 구조로 표시
+            const aiName = d.aiName || 'TikFind AI';
+            const message = d.message || d.text.replace(/🤖\s*[^:]+:\s*/, '');
+            
+            track.innerHTML = `
+                <div class="ai-companion-header">
+                    <div class="ai-diamond-badge">💎</div>
+                    <div class="ai-nickname">${aiName}</div>
+                </div>
+                <div class="ai-message">${message}</div>
+            `;
         } else {
             wrap.classList.remove('ai-companion');
             badge.textContent = 'TikFind';
-        }
+            
+            // 일반 모더 공지 - 기존 방식
+            track.style.animation = 'none';
+            void track.offsetWidth;
+            track.textContent = d.text;
+            // 강제 리플로우 후 실제 너비 측정
+            void track.offsetWidth;
+            const textW = track.scrollWidth;
+            const scrollW = wrap.querySelector('.mod-notice-scroll').clientWidth || 620;
 
-        // 텍스트가 박스 너비(~620px)를 넘으면 마퀴, 짧으면 고정
-        track.style.animation = 'none';
-        void track.offsetWidth;
-        track.textContent = d.text;
-        // 강제 리플로우 후 실제 너비 측정
-        void track.offsetWidth;
-        const textW = track.scrollWidth;
-        const scrollW = wrap.querySelector('.mod-notice-scroll').clientWidth || 620;
-
-        if (textW > scrollW) {
-            // 마퀴: 텍스트 2배 연결 후 무한 스크롤
-            track.textContent = d.text + '　　　　' + d.text;
-            const spd = Math.max(4, Math.round(textW / 80)); // px/s 기준 속도
-            track.style.animation = 'mod-marquee ' + spd + 's linear infinite';
+            if (textW > scrollW) {
+                // 마퀴: 텍스트 2배 연결 후 무한 스크롤
+                track.textContent = d.text + '　　　　' + d.text;
+                const spd = Math.max(4, Math.round(textW / 80)); // px/s 기준 속도
+                track.style.animation = 'mod-marquee ' + spd + 's linear infinite';
+            }
         }
 
         // 슬라이드인
@@ -415,12 +456,52 @@
     // ── AI 시청자 (선물 위젯 배너에 표시) ──
     socket.on('ai-companion', (data) => {
         console.log('🤖 ai-companion 수신:', data.aiName, data.message, 'duration:', data.duration);
-        const displayText = `🤖 ${data.aiName}: ${data.message}`;
         showModNotice({ 
-            text: displayText,
+            text: `🤖 ${data.aiName}: ${data.message}`, // fallback
+            aiName: data.aiName,
+            message: data.message,
             duration: data.duration || 10000, // 서버에서 받은 duration 사용
             isAiCompanion: true
         });
+    });
+
+    // ── AI 시청자 TTS 재생 ──
+    socket.on('ai-companion-tts', (data) => {
+        console.log('🔊 ai-companion-tts 수신:', data.text, 'voice:', data.voice);
+        
+        // Web Speech API로 TTS 재생
+        if ('speechSynthesis' in window) {
+            // 이전 음성 중지
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(data.text);
+            utterance.lang = 'ko-KR'; // 한국어
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            
+            // 음성 선택 (여성/남성)
+            const voices = window.speechSynthesis.getVoices();
+            const koreanVoices = voices.filter(v => v.lang.includes('ko'));
+            
+            if (koreanVoices.length > 0) {
+                // 여성 음성 우선
+                const femaleVoice = koreanVoices.find(v => v.name.includes('Female') || v.name.includes('Yumi') || v.name.includes('Nari'));
+                const maleVoice = koreanVoices.find(v => v.name.includes('Male') || v.name.includes('Heami'));
+                
+                if (data.voice === 'female' && femaleVoice) {
+                    utterance.voice = femaleVoice;
+                } else if (data.voice === 'male' && maleVoice) {
+                    utterance.voice = maleVoice;
+                } else {
+                    utterance.voice = koreanVoices[0]; // 기본 한국어 음성
+                }
+            }
+            
+            window.speechSynthesis.speak(utterance);
+            console.log('🔊 AI 시청자 TTS 재생 시작:', data.text);
+        } else {
+            console.log('❌ Web Speech API 지원하지 않음');
+        }
     });
 
     function next() {

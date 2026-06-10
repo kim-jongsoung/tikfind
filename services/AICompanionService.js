@@ -78,8 +78,9 @@ class AICompanionService {
      */
     determineResponseLength(message) {
         const length = message.replace(/[\s\uD800-\uDFFF]/g, '').length;
-        if (length <= 15) return { type: 'short', duration: 7000 };  // 20 → 15
-        if (length <= 25) return { type: 'normal', duration: 10000 }; // 40 → 25
+        // 모든 메시지 10초로 통일
+        if (length <= 15) return { type: 'short', duration: 10000 };
+        if (length <= 25) return { type: 'normal', duration: 10000 };
         return { type: 'long', duration: 10000 };
     }
 
