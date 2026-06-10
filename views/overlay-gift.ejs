@@ -100,13 +100,16 @@
 
         #mod-notice-wrap.ai-companion {
             background: transparent !important; /* 배경 투명 강제 적용 */
-            height: 80px; /* 높이 80px */
-            border-radius: 8px; /* 틱톡 채팅처럼 약간 둥글게 */
-            top: 80px; /* 15px 위로 이동 */
-            transform: translateX(0); /* 슬라이드 없이 제자리 */
+            height: 80px !important; /* 높이 80px */
+            border-radius: 8px !important; /* 틱톡 채팅처럼 약간 둥글게 */
+            top: 80px !important; /* 15px 위로 이동 */
+            left: 0 !important; /* 왼쪽 정렬 */
+            width: 800px !important; /* 전체 너비 */
+            transform: translateX(0) !important; /* 슬라이드 없이 제자리 */
             opacity: 0;
-            flex-direction: column; /* 세로 방향으로 변경 */
-            justify-content: center;
+            display: flex !important; /* flex 강제 적용 */
+            flex-direction: column !important; /* 세로 방향으로 변경 */
+            justify-content: center !important;
             align-items: flex-start !important; /* 왼쪽 정렬 강제 적용 */
             padding-left: 40px !important; /* 왼쪽 여백 40px */
         }
@@ -120,11 +123,12 @@
             display: none; /* AI 배지 완전 제거 */
         }
         #mod-notice-wrap.ai-companion .mod-notice-scroll {
-            padding: 6px 12px; /* 틱톡 채팅처럼 패딩 */
-            width: 100%;
-            display: flex;
-            flex-direction: column;
+            padding: 6px 12px !important; /* 틱톡 채팅처럼 패딩 */
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
             gap: 2px;
+            align-items: flex-start !important; /* 왼쪽 정렬 */
         }
         #mod-notice-wrap.ai-companion .ai-companion-header {
             display: flex;
@@ -171,6 +175,15 @@
             max-width: 600px; /* 25글자 정도 너비 제한 */
             line-height: 1.4; /* 줄 간격 */
             text-align: left !important; /* 왼쪽 정렬 강제 적용 */
+        }
+        #mod-notice-wrap.ai-companion .mod-notice-track {
+            display: block !important;
+            white-space: normal !important;
+            color: #ffffff !important;
+            font-size: 23px !important; /* AI 시청자 채팅 크기 */
+            font-weight: 400 !important; /* 볼드 제거 */
+            line-height: 1.4 !important;
+            text-align: left !important; /* 왼쪽 정렬 */
         }
 
         /* ── 파티클 (소스 내 범위만) ── */
