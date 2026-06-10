@@ -465,45 +465,6 @@
         });
     });
 
-    // ── AI 시청자 TTS 재생 ──
-    socket.on('ai-companion-tts', (data) => {
-        console.log('🔊 ai-companion-tts 수신:', data.text, 'voice:', data.voice);
-        
-        // Web Speech API로 TTS 재생
-        if ('speechSynthesis' in window) {
-            // 이전 음성 중지
-            window.speechSynthesis.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(data.text);
-            utterance.lang = 'ko-KR'; // 한국어
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-            
-            // 음성 선택 (여성/남성)
-            const voices = window.speechSynthesis.getVoices();
-            const koreanVoices = voices.filter(v => v.lang.includes('ko'));
-            
-            if (koreanVoices.length > 0) {
-                // 여성 음성 우선
-                const femaleVoice = koreanVoices.find(v => v.name.includes('Female') || v.name.includes('Yumi') || v.name.includes('Nari'));
-                const maleVoice = koreanVoices.find(v => v.name.includes('Male') || v.name.includes('Heami'));
-                
-                if (data.voice === 'female' && femaleVoice) {
-                    utterance.voice = femaleVoice;
-                } else if (data.voice === 'male' && maleVoice) {
-                    utterance.voice = maleVoice;
-                } else {
-                    utterance.voice = koreanVoices[0]; // 기본 한국어 음성
-                }
-            }
-            
-            window.speechSynthesis.speak(utterance);
-            console.log('🔊 AI 시청자 TTS 재생 시작:', data.text);
-        } else {
-            console.log('❌ Web Speech API 지원하지 않음');
-        }
-    });
-
     function next() {
         if (!queue.length) { busy = false; return; }
         busy = true;

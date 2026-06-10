@@ -1493,15 +1493,6 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
             timestamp: Date.now()
         });
 
-        // TTS 발송 (설정이 켜져 있으면) - 오버레이에서 직접 재생
-        if (user.aiCompanionTtsEnabled) {
-            io.to(`overlay-${userId}`).emit('ai-companion-tts', {
-                text: response.message,
-                voice: user.aiCompanionTtsVoice || 'female'
-            });
-            console.log(`🔊 AI 시청자 TTS 전송 (오버레이): ${response.message}`);
-        }
-
     } catch (e) {
         console.error('❌ AI 시청자 오류:', e.message);
     }
