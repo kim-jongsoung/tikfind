@@ -100,7 +100,7 @@
 
         #mod-notice-wrap.ai-companion {
             background: transparent !important; /* 배경 투명 강제 적용 */
-            height: 50px; /* 틱톡 채팅과 비슷한 높이 */
+            height: 80px; /* 높이 80px */
             border-radius: 8px; /* 틱톡 채팅처럼 약간 둥글게 */
             top: 80px; /* 15px 위로 이동 */
             transform: translateX(0); /* 슬라이드 없이 제자리 */
@@ -165,9 +165,11 @@
             font-size: 23px !important; /* 채팅 내용 글자 크기 */
             font-weight: 400 !important; /* 볼드 제거 */
             color: #ffffff;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal; /* 줄바꿈 허용 */
+            word-wrap: break-word; /* 단어 단위 줄바꿈 */
+            word-break: keep-all; /* 한글 단어 유지 */
+            max-width: 600px; /* 25글자 정도 너비 제한 */
+            line-height: 1.4; /* 줄 간격 */
             text-align: left !important; /* 왼쪽 정렬 강제 적용 */
         }
 
