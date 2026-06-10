@@ -5,6 +5,7 @@ class AICompanionService {
         this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
         this.conversationHistory = new Map(); // userId -> 최근 대화 내역
         this.lastMessageTime = new Map(); // userId -> 마지막 AI 메시지 시간
+        this.lastNameCallTime = new Map(); // userId -> 마지막 닉네임 호출 시간
     }
 
     /**
@@ -50,6 +51,9 @@ class AICompanionService {
             case 'nameCalled':
                 baseProbability = 1.0; // 닉네임 호출되면 100% 응답
                 break;
+            case 'nameCalledQuestion':
+                baseProbability = 1.0; // 닉네임 호출 후 질문이면 100% 응답
+                break;
             case 'hostQuestion':
                 baseProbability = 0.9;  // 80% → 90%
                 break;
@@ -85,6 +89,22 @@ class AICompanionService {
         if (length <= 15) return { type: 'short', duration: 10000 };
         if (length <= 25) return { type: 'normal', duration: 10000 };
         return { type: 'long', duration: 10000 };
+    }
+
+    /**
+     * 닉네임 호출 시간 업데이트
+     */
+    updateNameCallTime(userId) {
+        this.lastNameCallTime.set(String(userId), Date.now());
+    }
+
+    /**
+     * 최근 닉네임 호출 여부 확인 (30초 이내)
+     */
+    wasNameCalledRecently(userId) {
+        const lastCall = this.lastNameCallTime.get(String(userId));
+        if (!lastCall) return false;
+        return Date.now() - lastCall < 30000; // 30초 이내
     }
 
     /**
@@ -170,6 +190,9 @@ class AICompanionService {
                     break;
                 case 'nameCalled':
                     triggerHint = '누군가 당신의 이름을 불렀습니다. 바로 대답하세요. 예: "네 저예요!", "왜 부르셨어요?", "저 여기 있어요!"';
+                    break;
+                case 'nameCalledQuestion':
+                    triggerHint = '당신의 이름을 부르고 질문했습니다. 바로 답변하세요. 예: "밥 먹었어요!", "잘 지내고 있어요", "괜찮아요!"';
                     break;
                 case 'hostQuestion':
                     triggerHint = '질문이 나왔습니다. 시청자 입장에서 답변하거나 함께 궁금해하세요. 예: "저도 궁금해요!", "@영희님 아 그거요? 저는 이렇게 했어요"';

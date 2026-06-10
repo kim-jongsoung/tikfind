@@ -1588,19 +1588,24 @@ async function processChatMessage(chatData) {
         const aiName = user?.aiCompanionName || 'TikFind AI';
         const isNameCalled = checkIfNameCalled(message, aiName);
         if (isNameCalled) {
+            AICompanionService.updateNameCallTime(userId); // 닉네임 호출 시간 업데이트
             processAICompanion(userId, 'nameCalled', { message, aiName, caller: nickname || username }).catch(() => {});
         }
-        // 호스트 질문 감지
+        // 호스트 질문 감지 (최근 닉네임 호출 후면 확률 상향)
         else if (/뭐야|어떻게|왜|언제|무엇|어디/.test(message)) {
-            processAICompanion(userId, 'hostQuestion', { message }).catch(() => {});
+            const wasNameCalled = AICompanionService.wasNameCalledRecently(userId);
+            const triggerType = wasNameCalled ? 'nameCalledQuestion' : 'hostQuestion';
+            processAICompanion(userId, triggerType, { message, wasNameCalled }).catch(() => {});
         }
         // 감정 표현 감지
         else if (/기빠|행복|슬프|힘들|화나|짜증|우울|외로|좋아|사랑|감사|고마/.test(message)) {
             processAICompanion(userId, 'emotion', { message }).catch(() => {});
         }
-        // 시청자 질문 감지
+        // 시청자 질문 감지 (최근 닉네임 호출 후면 확률 상향)
         else if (message.includes('?') || message.includes('？')) {
-            processAICompanion(userId, 'viewerQuestion', { message }).catch(() => {});
+            const wasNameCalled = AICompanionService.wasNameCalledRecently(userId);
+            const triggerType = wasNameCalled ? 'nameCalledQuestion' : 'viewerQuestion';
+            processAICompanion(userId, triggerType, { message, wasNameCalled }).catch(() => {});
         }
         // 특정 주제 키워드 감지
         else if (/게임|음식|날씨|추천|어디|맛집|영화|드라마|노래|운동/.test(message)) {
