@@ -1533,6 +1533,74 @@ function checkIfNameCalled(message, aiName) {
     return false;
 }
 
+// ===== 번역된 영어가 한국어 닉네임과 비슷한지 확인 =====
+function isTranslatedEnglishSimilarToNickname(message, nickname) {
+    if (!nickname || !message) return false;
+    
+    // 번역된 영어 단어와 한국어 닉네임의 발음 유사성 확인
+    // 예: "minji" vs "민지", "jisu" vs "지수"
+    const koreanToEnglishMap = {
+        '민지': ['minji', 'min-ji'],
+        '지수': ['jisu', 'ji-su', 'jisoo'],
+        '수진': ['sujin', 'su-jin'],
+        '영희': ['younghee', 'young-hee'],
+        '철수': ['cheolsu', 'cheol-su'],
+        '민호': ['minho', 'min-ho'],
+        '지민': ['jimin', 'ji-min'],
+        '정국': ['jungkook', 'jung-kook'],
+        '태형': ['taehyung', 'tae-hyung'],
+        '호석': ['hoseok', 'ho-seok'],
+        '남준': ['namjoon', 'nam-joon'],
+        '석진': ['seokjin', 'seok-jin'],
+        '윤기': ['yoongi', 'yoon-gi']
+    };
+    
+    const cleanedMessage = message.toLowerCase().replace(/\s+/g, '');
+    const cleanedNickname = nickname.toLowerCase().replace(/\s+/g, '');
+    
+    // 직접 매칭
+    if (koreanToEnglishMap[cleanedNickname]) {
+        for (const englishVariant of koreanToEnglishMap[cleanedNickname]) {
+            if (cleanedMessage.includes(englishVariant)) return true;
+        }
+    }
+    
+    // 발음 유사성 (간단한 레벤슈타인 거리)
+    const englishVariants = koreanToEnglishMap[cleanedNickname] || [];
+    for (const englishVariant of englishVariants) {
+        if (levenshteinDistance(cleanedMessage, englishVariant) <= 2) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+// ===== 레벤슈타인 거리 계산 =====
+function levenshteinDistance(a, b) {
+    const matrix = [];
+    for (let i = 0; i <= b.length; i++) {
+        matrix[i] = [i];
+    }
+    for (let j = 0; j <= a.length; j++) {
+        matrix[0][j] = j;
+    }
+    for (let i = 1; i <= b.length; i++) {
+        for (let j = 1; j <= a.length; j++) {
+            if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                matrix[i][j] = matrix[i - 1][j - 1];
+            } else {
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j - 1] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j] + 1
+                );
+            }
+        }
+    }
+    return matrix[b.length][a.length];
+}
+
 // ===== 채팅 메시지 공통 처리 함수 (TikTokLiveService + /api/live/chat 공유) =====
 async function processChatMessage(chatData) {
     const { userId, username, message, uniqueId, nickname, badges, userBadges,
@@ -1582,14 +1650,18 @@ async function processChatMessage(chatData) {
             AICompanionService.updateNameCallTime(userId); // 닉네임 호출 시간 업데이트
             processAICompanion(userId, 'nameCalled', { message, aiName, caller: nickname || username }).catch(() => {});
         }
+        // 번역된 영어가 한국어 닉네임과 비슷할 때도 반응
+        else if (isTranslatedEnglishSimilarToNickname(message, nickname || username)) {
+            processAICompanion(userId, 'nameCalled', { message, aiName, caller: nickname || username }).catch(() => {});
+        }
         // 호스트 질문 감지 (최근 닉네임 호출 후면 확률 상향)
         else if (/뭐야|어떻게|왜|언제|무엇|어디/.test(message)) {
             const wasNameCalled = AICompanionService.wasNameCalledRecently(userId);
             const triggerType = wasNameCalled ? 'nameCalledQuestion' : 'hostQuestion';
             processAICompanion(userId, triggerType, { message, wasNameCalled }).catch(() => {});
         }
-        // 감정 표현 감지
-        else if (/기빠|행복|슬프|힘들|화나|짜증|우울|외로|좋아|사랑|감사|고마/.test(message)) {
+        // 감정 표현 감지 (기호 포함)
+        else if (/기빠|행복|슬프|힘들|화나|짜증|우울|외로|좋아|사랑|감사|고마|ㅋㅋ|ㅎㅎ|ㅠㅠ|ㅜㅜ|ㅇㅇ|ㅇㅈ|헐|대박|와우|오/.test(message)) {
             processAICompanion(userId, 'emotion', { message }).catch(() => {});
         }
         // 시청자 질문 감지 (최근 닉네임 호출 후면 확률 상향)
@@ -1607,6 +1679,12 @@ async function processChatMessage(chatData) {
             const timeSinceLastAI = AICompanionService.getTimeSinceLastMessage(userId);
             if (timeSinceLastAI >= 120) {
                 processAICompanion(userId, 'continue', { message }).catch(() => {});
+            }
+        }
+        // 랜덤 참여 (다른 트리거 없을 때 10% 확률로 자연스럽게 참여)
+        else {
+            if (Math.random() < 0.1) {
+                processAICompanion(userId, 'random', { message }).catch(() => {});
             }
         }
     }
