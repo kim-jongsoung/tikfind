@@ -3287,7 +3287,7 @@ io.on('connection', (socket) => {
     });
 
     // speech-mic 페이지 → overlay 위젯: 번역 결과 전달
-    socket.on('speech-translated-send', (data) => {
+    socket.on('speech-translated-send', async (data) => {
         const room = `overlay-${data.userId}`;
         io.to(room).emit('speech-translated', {
             translations: data.translations || [],
