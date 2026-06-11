@@ -278,6 +278,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: 'TikFind AI'
     },
+    aiCompanionNameVariations: {
+        type: Object,
+        default: {
+            ko: 'TikFind AI',
+            en: 'TikFind AI',
+            ja: 'TikFind AI'
+        }
+    },
     aiCompanionTtsEnabled: {
         type: Boolean,
         default: true

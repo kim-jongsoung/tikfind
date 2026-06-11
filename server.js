@@ -1499,7 +1499,7 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
 }
 
 // ===== AI 닉네임 호출 감지 함수 =====
-function checkIfNameCalled(message, aiName) {
+function checkIfNameCalled(message, aiName, nameVariations = null) {
     if (!aiName || !message) return false;
     
     const cleanedMessage = message.toLowerCase().replace(/\s+/g, '');
@@ -1518,7 +1518,7 @@ function checkIfNameCalled(message, aiName) {
     }
     
     // 3. ~님, ~ya 형태 감지
-    const nameVariations = [
+    const nameVariationsList = [
         cleanedName + '님',
         cleanedName + '야',
         cleanedName + '아',
@@ -1526,8 +1526,31 @@ function checkIfNameCalled(message, aiName) {
         cleanedName + '은'
     ];
     
-    for (const variation of nameVariations) {
+    for (const variation of nameVariationsList) {
         if (cleanedMessage.includes(variation)) return true;
+    }
+    
+    // 4. 다국어 닉네임 확인 (nameVariations가 있는 경우)
+    if (nameVariations && typeof nameVariations === 'object') {
+        for (const [lang, variation] of Object.entries(nameVariations)) {
+            if (!variation) continue;
+            const cleanedVariation = variation.toLowerCase().replace(/\s+/g, '');
+            
+            // 직접 일치
+            if (cleanedMessage.includes(cleanedVariation)) return true;
+            
+            // 발음 유사성 (레벤슈타인 거리 ≤ 2)
+            if (levenshteinDistance(cleanedMessage, cleanedVariation) <= 2) return true;
+            
+            // 줄임말 감지
+            const variationParts = cleanedVariation.split('');
+            for (let i = 0; i < variationParts.length; i++) {
+                for (let j = i + 2; j <= variationParts.length; j++) {
+                    const nickname = variationParts.slice(i, j).join('');
+                    if (cleanedMessage.includes(nickname)) return true;
+                }
+            }
+        }
     }
     
     return false;
@@ -1650,7 +1673,8 @@ async function processChatMessage(chatData) {
     if (isHost || !isFirstTimeChatter) {
         // AI 닉네임 호출 감지 (가장 높은 우선순위)
         const aiName = user?.aiCompanionName || 'TikFind AI';
-        const isNameCalled = checkIfNameCalled(message, aiName);
+        const nameVariations = user?.aiCompanionNameVariations || null;
+        const isNameCalled = checkIfNameCalled(message, aiName, nameVariations);
         if (isNameCalled) {
             AICompanionService.updateNameCallTime(userId); // 닉네임 호출 시간 업데이트
             processAICompanion(userId, 'nameCalled', { message, aiName, caller: nickname || username }).catch(() => {});
@@ -3273,11 +3297,17 @@ io.on('connection', (socket) => {
         
         // AI 시청자를 위한 호스트 음성 데이터 저장
         if (data.translations && data.translations.length > 0) {
-            const koreanTranslation = data.translations.find(t => t.lang === 'ko');
-            if (koreanTranslation && koreanTranslation.text) {
+            const User = require('./models/User');
+            const user = await User.findById(data.userId).select('preferredLanguage aiCompanionName aiCompanionNameVariations').lean();
+            const streamerLanguage = user?.preferredLanguage || 'ko';
+            
+            // 스트리머 언어에 맞는 번역 텍스트 찾기
+            const translation = data.translations.find(t => t.lang === streamerLanguage) || data.translations[0];
+            
+            if (translation && translation.text) {
                 let hostSpeech = hostSpeechMap.get(String(data.userId)) || [];
                 hostSpeech.push({
-                    text: koreanTranslation.text,
+                    text: translation.text,
                     timestamp: Date.now()
                 });
                 // 최근 5개만 유지
@@ -3286,11 +3316,22 @@ io.on('connection', (socket) => {
                 }
                 hostSpeechMap.set(String(data.userId), hostSpeech);
                 
-                // 호스트 발화 후 트리거 (3~10초 후 랜덤)
-                const delay = 3000 + Math.random() * 7000;
-                setTimeout(() => {
-                    processAICompanion(data.userId, 'hostSpeech', { text: koreanTranslation.text }).catch(() => {});
-                }, delay);
+                // AI 닉네임 호출 감지 (호스트 음성에서)
+                const aiName = user?.aiCompanionName || 'TikFind AI';
+                const nameVariations = user?.aiCompanionNameVariations || null;
+                const isNameCalled = checkIfNameCalled(translation.text, aiName, nameVariations);
+                
+                if (isNameCalled) {
+                    AICompanionService.updateNameCallTime(data.userId);
+                    // 닉네임 호출되면 즉시 응답
+                    processAICompanion(data.userId, 'nameCalled', { message: translation.text, aiName, caller: '호스트' }).catch(() => {});
+                } else {
+                    // 호스트 발화 후 트리거 (3~10초 후 랜덤)
+                    const delay = 3000 + Math.random() * 7000;
+                    setTimeout(() => {
+                        processAICompanion(data.userId, 'hostSpeech', { text: translation.text }).catch(() => {});
+                    }, delay);
+                }
             }
         }
     });

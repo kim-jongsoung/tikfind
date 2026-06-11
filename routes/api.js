@@ -2283,7 +2283,7 @@ router.post('/match-coach-settings', requireAuth, async (req, res) => {
 router.get('/ai-companion-settings', requireAuth, async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
-            .select('aiCompanionEnabled aiCompanionPersonality aiCompanionFrequency aiCompanionName aiCompanionTtsEnabled aiCompanionTtsVoice')
+            .select('aiCompanionEnabled aiCompanionPersonality aiCompanionFrequency aiCompanionName aiCompanionNameVariations aiCompanionTtsEnabled aiCompanionTtsVoice')
             .lean();
         res.json({
             success: true,
@@ -2291,6 +2291,7 @@ router.get('/ai-companion-settings', requireAuth, async (req, res) => {
             aiCompanionPersonality: user?.aiCompanionPersonality || '친근한',
             aiCompanionFrequency: user?.aiCompanionFrequency || '보통',
             aiCompanionName: user?.aiCompanionName || 'TikFind AI',
+            aiCompanionNameVariations: user?.aiCompanionNameVariations || { ko: 'TikFind AI', en: 'TikFind AI', ja: 'TikFind AI' },
             aiCompanionTtsEnabled: user?.aiCompanionTtsEnabled !== false,
             aiCompanionTtsVoice: user?.aiCompanionTtsVoice || 'female'
         });
@@ -2309,7 +2310,49 @@ router.post('/ai-companion-settings', requireAuth, async (req, res) => {
         if (typeof aiCompanionEnabled === 'boolean') updateData.aiCompanionEnabled = aiCompanionEnabled;
         if (aiCompanionPersonality) updateData.aiCompanionPersonality = aiCompanionPersonality;
         if (aiCompanionFrequency) updateData.aiCompanionFrequency = aiCompanionFrequency;
-        if (aiCompanionName) updateData.aiCompanionName = aiCompanionName;
+        
+        // AI 닉네임이 변경되면 다국어 번역 생성
+        if (aiCompanionName) {
+            updateData.aiCompanionName = aiCompanionName;
+            
+            // OpenAI로 다국어 번역
+            try {
+                const OpenAI = require('openai');
+                const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+                
+                const translation = await openai.chat.completions.create({
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: 'Translate the following name to English and Japanese. Return only JSON format: {"ko": "original", "en": "english", "ja": "japanese"}'
+                        },
+                        {
+                            role: 'user',
+                            content: aiCompanionName
+                        }
+                    ],
+                    temperature: 0.3
+                });
+                
+                const translationText = translation.choices[0].message.content.trim();
+                const translationData = JSON.parse(translationText);
+                updateData.aiCompanionNameVariations = {
+                    ko: aiCompanionName,
+                    en: translationData.en || aiCompanionName,
+                    ja: translationData.ja || aiCompanionName
+                };
+            } catch (e) {
+                console.error('AI 닉네임 다국어 번역 실패:', e.message);
+                // 번역 실패시 기본값 사용
+                updateData.aiCompanionNameVariations = {
+                    ko: aiCompanionName,
+                    en: aiCompanionName,
+                    ja: aiCompanionName
+                };
+            }
+        }
+        
         if (typeof aiCompanionTtsEnabled === 'boolean') updateData.aiCompanionTtsEnabled = aiCompanionTtsEnabled;
         if (aiCompanionTtsVoice) updateData.aiCompanionTtsVoice = aiCompanionTtsVoice;
 
