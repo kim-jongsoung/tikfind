@@ -2342,8 +2342,7 @@ router.post('/ai-companion-settings', requireAuth, async (req, res) => {
                             content: aiCompanionName
                         }
                     ],
-                    temperature: 0.3,
-                    timeout: 5000 // 5초 타임아웃
+                    temperature: 0.3
                 });
                 
                 const translationText = translation.choices[0].message.content.trim();
@@ -2369,7 +2368,13 @@ router.post('/ai-companion-settings', requireAuth, async (req, res) => {
         if (aiCompanionTtsVoice) updateData.aiCompanionTtsVoice = aiCompanionTtsVoice;
 
         console.log('💾 AI 시청자 설정 저장:', updateData);
-        await User.findByIdAndUpdate(req.user._id, updateData);
+        const updatedUser = await User.findByIdAndUpdate(req.user._id, updateData, { new: true });
+        console.log('✅ AI 시청자 설정 저장 완료:', {
+            aiCompanionEnabled: updatedUser.aiCompanionEnabled,
+            aiCompanionPersonality: updatedUser.aiCompanionPersonality,
+            aiCompanionFrequency: updatedUser.aiCompanionFrequency,
+            aiCompanionName: updatedUser.aiCompanionName
+        });
         res.json({ success: true });
     } catch (e) {
         console.error('❌ AI 시청자 설정 저장 실패:', e.message);
