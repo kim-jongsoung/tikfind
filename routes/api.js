@@ -2285,6 +2285,15 @@ router.get('/ai-companion-settings', requireAuth, async (req, res) => {
         const user = await User.findById(req.user._id)
             .select('aiCompanionEnabled aiCompanionPersonality aiCompanionFrequency aiCompanionName aiCompanionNameVariations aiCompanionTtsEnabled aiCompanionTtsVoice')
             .lean();
+        
+        console.log('📖 AI 시청자 설정 조회:', {
+            userId: req.user._id,
+            aiCompanionEnabled: user?.aiCompanionEnabled,
+            aiCompanionPersonality: user?.aiCompanionPersonality,
+            aiCompanionFrequency: user?.aiCompanionFrequency,
+            aiCompanionName: user?.aiCompanionName
+        });
+        
         res.json({
             success: true,
             aiCompanionEnabled: user?.aiCompanionEnabled !== false,
@@ -2296,6 +2305,7 @@ router.get('/ai-companion-settings', requireAuth, async (req, res) => {
             aiCompanionTtsVoice: user?.aiCompanionTtsVoice || 'female'
         });
     } catch (e) {
+        console.error('❌ AI 시청자 설정 조회 실패:', e.message);
         res.status(500).json({ success: false, message: e.message });
     }
 });
@@ -2315,7 +2325,7 @@ router.post('/ai-companion-settings', requireAuth, async (req, res) => {
         if (aiCompanionName) {
             updateData.aiCompanionName = aiCompanionName;
             
-            // OpenAI로 다국어 번역
+            // OpenAI로 다국어 번역 (비동기로 처리, 실패해도 설정은 저장)
             try {
                 const OpenAI = require('openai');
                 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -2332,7 +2342,8 @@ router.post('/ai-companion-settings', requireAuth, async (req, res) => {
                             content: aiCompanionName
                         }
                     ],
-                    temperature: 0.3
+                    temperature: 0.3,
+                    timeout: 5000 // 5초 타임아웃
                 });
                 
                 const translationText = translation.choices[0].message.content.trim();
@@ -2342,8 +2353,9 @@ router.post('/ai-companion-settings', requireAuth, async (req, res) => {
                     en: translationData.en || aiCompanionName,
                     ja: translationData.ja || aiCompanionName
                 };
+                console.log('✅ AI 닉네임 다국어 번역 성공:', updateData.aiCompanionNameVariations);
             } catch (e) {
-                console.error('AI 닉네임 다국어 번역 실패:', e.message);
+                console.error('⚠️ AI 닉네임 다국어 번역 실패 (기본값 사용):', e.message);
                 // 번역 실패시 기본값 사용
                 updateData.aiCompanionNameVariations = {
                     ko: aiCompanionName,
@@ -2356,9 +2368,11 @@ router.post('/ai-companion-settings', requireAuth, async (req, res) => {
         if (typeof aiCompanionTtsEnabled === 'boolean') updateData.aiCompanionTtsEnabled = aiCompanionTtsEnabled;
         if (aiCompanionTtsVoice) updateData.aiCompanionTtsVoice = aiCompanionTtsVoice;
 
+        console.log('💾 AI 시청자 설정 저장:', updateData);
         await User.findByIdAndUpdate(req.user._id, updateData);
         res.json({ success: true });
     } catch (e) {
+        console.error('❌ AI 시청자 설정 저장 실패:', e.message);
         res.status(500).json({ success: false, message: e.message });
     }
 });

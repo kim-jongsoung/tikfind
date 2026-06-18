@@ -1438,7 +1438,10 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
         const User = require('./models/User');
         const user = await User.findById(userId).select('aiCompanionEnabled aiCompanionPersonality aiCompanionFrequency aiCompanionName aiCompanionTtsEnabled aiCompanionTtsVoice').lean();
         
+        console.log(`🔍 [AI 시청자] 트리거 체크 - userId: ${userId}, triggerType: ${triggerType}, enabled: ${user?.aiCompanionEnabled}`);
+        
         if (!user || user.aiCompanionEnabled === false) {
+            console.log(`⏸️ [AI 시청자] 비활성화 상태 - userId: ${userId}`);
             return;
         }
 
@@ -1455,6 +1458,7 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
 
         // 최근 30초 내 채팅이 없으면 참여하지 않음 (조용할 때는 참여 안 함)
         if (!context.hasRecentActivity && triggerType !== 'newViewer') {
+            console.log(`⏸️ [AI 시청자] 최근 활동 없음 - userId: ${userId}`);
             return;
         }
 
@@ -1465,21 +1469,32 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
             aiCompanionName: user.aiCompanionName
         };
 
-        if (!AICompanionService.shouldTrigger(triggerType, context, settings)) {
+        const shouldTrigger = AICompanionService.shouldTrigger(triggerType, context, settings);
+        console.log(`🎲 [AI 시청자] 트리거 확률 체크 - shouldTrigger: ${shouldTrigger}, triggerType: ${triggerType}`);
+        
+        if (!shouldTrigger) {
             return;
         }
 
         // 마지막 메시지 이후 최소 시간 체크 (너무 자주 나오지 않게)
         const timeSinceLastMessage = AICompanionService.getTimeSinceLastMessage(userId);
+        console.log(`⏱️ [AI 시청자] 마지막 메시지 이후 시간: ${timeSinceLastMessage}초`);
+        
         if (timeSinceLastMessage < 10) { // 최소 10초 간격 (15초 → 10초로 단축)
+            console.log(`⏸️ [AI 시청자] 쿨다운 중 - ${timeSinceLastMessage}초 < 10초`);
             return;
         }
 
         // AI 응답 생성
+        console.log(`🤖 [AI 시청자] 응답 생성 시작 - triggerType: ${triggerType}`);
         const response = await AICompanionService.generateResponse(context, triggerType, settings);
-        if (!response) return;
+        
+        if (!response) {
+            console.log(`⚠️ [AI 시청자] 응답 생성 실패 - userId: ${userId}`);
+            return;
+        }
 
-        console.log(`🤖 [${userId}] AI 시청자 응답: ${response.message}`);
+        console.log(`✅ [AI 시청자] 응답: ${response.message}`);
 
         // 마지막 메시지 시간 업데이트
         AICompanionService.updateLastMessageTime(userId);
