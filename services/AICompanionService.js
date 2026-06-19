@@ -37,16 +37,16 @@ class AICompanionService {
      */
     shouldTrigger(triggerType, context, settings) {
         const frequency = settings.aiCompanionFrequency || '보통';
-        const multiplier = frequency === '자주' ? 1.5 : frequency === '가끔' ? 0.5 : 1.0;
+        const multiplier = frequency === '자주' ? 2.0 : frequency === '가끔' ? 0.5 : 1.0;
 
         let baseProbability = 0;
 
         switch (triggerType) {
             case 'firstChat':
-                baseProbability = 0.95; // 첫 채팅 시청자에게 적극 반응
+                baseProbability = 1.0; // 첫 채팅 시청자에게 100% 반응
                 break;
             case 'newViewer':
-                baseProbability = 0.75; // 60% → 75%
+                baseProbability = 0.9; // 60% → 90%
                 break;
             case 'nameCalled':
                 baseProbability = 1.0; // 닉네임 호출되면 100% 응답
@@ -55,32 +55,36 @@ class AICompanionService {
                 baseProbability = 1.0; // 닉네임 호출 후 질문이면 100% 응답
                 break;
             case 'hostQuestion':
-                baseProbability = 0.9;  // 80% → 90%
+                baseProbability = 0.95;  // 80% → 95%
                 break;
             case 'emotion':
-                baseProbability = 0.85; // 70% → 85%
+                baseProbability = 0.9; // 70% → 90%
                 break;
             case 'hostSpeech':
-                baseProbability = 0.5;  // 35% → 50%
+                baseProbability = 0.6;  // 35% → 60%
                 break;
             case 'viewerQuestion':
-                baseProbability = 0.75; // 60% → 75%
+                baseProbability = 0.85; // 60% → 85%
                 break;
             case 'keyword':
-                baseProbability = 0.8;  // 65% → 80%
+                baseProbability = 0.85;  // 65% → 85%
                 break;
             case 'continue':
-                baseProbability = 0.6;  // 45% → 60%
+                baseProbability = 0.7;  // 45% → 70%
                 break;
             case 'random':
-                baseProbability = 0.8;  // 랜덤 참여 확률
+                baseProbability = 0.9;  // 랜덤 참여 확률 상향
                 break;
             default:
                 return false;
         }
 
-        const finalProbability = baseProbability * multiplier;
-        return Math.random() < finalProbability;
+        const finalProbability = Math.min(baseProbability * multiplier, 1.0); // 최대 100%
+        const shouldTrigger = Math.random() < finalProbability;
+        
+        console.log(`🎲 [트리거 확률] ${triggerType}: ${(finalProbability * 100).toFixed(0)}% (frequency: ${frequency}) → ${shouldTrigger ? '발동' : '미발동'}`);
+        
+        return shouldTrigger;
     }
 
     /**

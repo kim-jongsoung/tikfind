@@ -1480,8 +1480,8 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
         const timeSinceLastMessage = AICompanionService.getTimeSinceLastMessage(userId);
         console.log(`⏱️ [AI 시청자] 마지막 메시지 이후 시간: ${timeSinceLastMessage}초`);
         
-        if (timeSinceLastMessage < 10) { // 최소 10초 간격 (15초 → 10초로 단축)
-            console.log(`⏸️ [AI 시청자] 쿨다운 중 - ${timeSinceLastMessage}초 < 10초`);
+        if (timeSinceLastMessage < 5) { // 최소 5초 간격 (10초 → 5초로 단축)
+            console.log(`⏸️ [AI 시청자] 쿨다운 중 - ${timeSinceLastMessage}초 < 5초`);
             return;
         }
 
