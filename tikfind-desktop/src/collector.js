@@ -191,6 +191,23 @@ class TikTokCollector extends EventEmitter {
             
             this.emit('chat', chatData);
             this.emit('stats', this.stats);
+            
+            // 서버로 채팅 메시지 전송 (AI 시청자 트리거용)
+            this.sendToServer('/api/live/chat', {
+                userId: this.userId,
+                username: chatData.username,
+                message: chatData.message,
+                uniqueId: chatData.uniqueId,
+                nickname: chatData.nickname,
+                badges: chatData.badges,
+                userBadges: chatData.userBadges,
+                followRole: chatData.followRole,
+                isModerator: chatData.isModerator,
+                isSubscriber: chatData.isSubscriber,
+                topGifterRank: chatData.topGifterRank,
+                teamMemberLevel: chatData.teamMemberLevel,
+                timestamp: chatData.timestamp
+            });
         });
         
         // 시청자 수 + 상위 선물 랭킹
