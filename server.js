@@ -1457,7 +1457,8 @@ async function processAICompanion(userId, triggerType, triggerData = {}) {
         });
 
         // 최근 30초 내 채팅이 없으면 참여하지 않음 (조용할 때는 참여 안 함)
-        if (!context.hasRecentActivity && triggerType !== 'newViewer') {
+        // 단, hostSpeech와 newViewer는 예외
+        if (!context.hasRecentActivity && triggerType !== 'newViewer' && triggerType !== 'hostSpeech') {
             console.log(`⏸️ [AI 시청자] 최근 활동 없음 - userId: ${userId}`);
             return;
         }
