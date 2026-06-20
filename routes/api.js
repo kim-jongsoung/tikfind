@@ -92,8 +92,8 @@ router.get('/desktop/token/:token', (req, res) => {
 
 // Desktop App 다운로드 - GitHub Releases 최신 버전으로 리다이렉트
 router.get('/download-app', (req, res) => {
-    // tikfind-desktop 레포의 최신 릴리즈로 리다이렉트
-    res.redirect('https://github.com/kim-jongsoung/tikfind-desktop/releases/latest/download/TikFind-Setup-1.3.18.exe');
+    // tikfind 레포의 최신 릴리즈로 리다이렉트
+    res.redirect('https://github.com/kim-jongsoung/tikfind/releases/latest/download/TikFind Setup 1.3.19.exe');
 });
 
 // 현재 로그인 유저 정보 (Desktop App 연결용)
