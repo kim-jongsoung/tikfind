@@ -12,10 +12,39 @@ const Level50Viewer = require('../models/Level50Viewer');
 const Notice = require('../models/Notice');
 const ytdl = require('@distube/ytdl-core');
 const SongRequestService = require('../services/SongRequestService');
+const { WebcastPushConnection } = require('tiktok-live-connector');
 
 // 사용자별 신청곡 쿨다운 맵 (메모리 기반)
 // { userId: { lastRequestTime: Date, cooldownMinutes: Number } }
 const userSongCooldowns = new Map();
+
+// TikTok 숫자 User ID 자동 조회 헬퍼 (tiktok-live-connector 사용)
+async function autoFetchTikTokUserId(tiktokId, userId) {
+    try {
+        const client = new WebcastPushConnection(tiktokId, { fetchRoomInfoOnConnect: true });
+        const roomId = await client.fetchRoomId();
+        // 연결 시도 (실패해도 roomInfo에 owner 데이터 채워짐)
+        try {
+            await client.connect(roomId);
+            await new Promise(r => setTimeout(r, 1500));
+            await client.disconnect();
+        } catch (e) {
+            // 방송 중 아니어도 roomInfo는 채워짐 - 정상
+        }
+        const info = client.roomInfo;
+        const str = JSON.stringify(info || {});
+        const match = str.match(/"owner_user_id"\s*:\s*(\d+)/);
+        if (match && match[1]) {
+            const numId = match[1];
+            console.log(`🔑 [autoFetch] "${tiktokId}" → ${numId}`);
+            await User.findByIdAndUpdate(userId, { tiktokUserId: numId });
+        } else {
+            console.log(`⚠️ [autoFetch] "${tiktokId}" owner_user_id 못 찾음`);
+        }
+    } catch (e) {
+        console.log(`⚠️ [autoFetch] "${tiktokId}" 오류: ${e.message}`);
+    }
+}
 
 // 인증 체크 미들웨어
 const requireAuth = (req, res, next) => {
@@ -281,6 +310,9 @@ router.post('/setup-tiktok', requireAuth, async (req, res) => {
         req.user.tiktokId = cleanTiktokId;
         await req.user.save();
         
+        // 숫자 userId 자동 조회
+        autoFetchTikTokUserId(cleanTiktokId, req.user._id);
+        
         res.json({ success: true, message: 'TikTok ID가 설정되었습니다.' });
     } catch (error) {
         console.error('TikTok ID 설정 오류:', error);
@@ -381,45 +413,8 @@ router.post('/change-tiktok', requireAuth, async (req, res) => {
         // findByIdAndUpdate로 직접 저장 (tiktokUserGenders 등 ValidationError 완전 우회)
         await User.findByIdAndUpdate(req.user._id, { tiktokId: cleanTiktokId }, { runValidators: false });
 
-        // 숫자 userId 자동 조회 (비동기 - 프로필 페이지 스크래핑, 라이브 없이도 작동)
-        ;(async () => {
-            try {
-                const https = require('https');
-                const numId = await new Promise((resolve) => {
-                    const options = {
-                        hostname: 'www.tiktok.com',
-                        path: `/@${cleanTiktokId}`,
-                        method: 'GET',
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                            'Accept-Language': 'en-US,en;q=0.9',
-                        }
-                    };
-                    const req2 = https.request(options, (res2) => {
-                        let data = '';
-                        res2.on('data', chunk => { data += chunk; });
-                        res2.on('end', () => {
-                            const match = data.match(/"uniqueId":"[^"]*","id":"(\d+)"/) ||
-                                          data.match(/"secUid":"[^"]*","id":"(\d+)"/) ||
-                                          data.match(/"userId":"(\d+)"/) ||
-                                          data.match(/"authorId":"(\d+)"/);
-                            resolve(match ? match[1] : '');
-                        });
-                    });
-                    req2.on('error', () => resolve(''));
-                    req2.setTimeout(8000, () => { req2.destroy(); resolve(''); });
-                    req2.end();
-                });
-                if (numId && numId !== '') {
-                    console.log(`🔑 [change-tiktok] "${cleanTiktokId}" → ${numId}`);
-                    await User.findByIdAndUpdate(req.user._id, { tiktokUserId: numId });
-                } else {
-                    console.log(`⚠️ [change-tiktok] "${cleanTiktokId}" 숫자 userId 못 찾음`);
-                }
-            } catch(e) {
-                console.log(`⚠️ [change-tiktok] 오류: ${e.message}`);
-            }
-        })();
+        // 숫자 userId 자동 조회 (tiktok-live-connector 사용)
+        autoFetchTikTokUserId(cleanTiktokId, req.user._id);
         
         res.json({ success: true, message: 'TikTok ID가 변경되었습니다.' });
     } catch (error) {
