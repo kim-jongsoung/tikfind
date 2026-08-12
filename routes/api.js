@@ -316,6 +316,9 @@ router.post('/setup-tiktok', requireAuth, async (req, res) => {
         res.json({ success: true, message: 'TikTok ID가 설정되었습니다.' });
     } catch (error) {
         console.error('TikTok ID 설정 오류:', error);
+        if (error.code === 11000) {
+            return res.status(400).json({ success: false, message: '이미 등록된 TikTok ID입니다.' });
+        }
         res.status(500).json({ success: false, message: 'TikTok ID 설정 중 오류가 발생했습니다.' });
     }
 });
@@ -422,6 +425,9 @@ router.post('/change-tiktok', requireAuth, async (req, res) => {
         res.json({ success: true, message: 'TikTok ID가 변경되었습니다.' });
     } catch (error) {
         console.error('TikTok ID 변경 오류:', error);
+        if (error.code === 11000) {
+            return res.status(400).json({ success: false, message: '이미 등록된 TikTok ID입니다.' });
+        }
         res.status(500).json({ success: false, message: 'TikTok ID 변경 중 오류가 발생했습니다.' });
     }
 });
