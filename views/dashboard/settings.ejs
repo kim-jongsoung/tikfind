@@ -504,10 +504,10 @@
                 alert('TikTok ID 입력창을 찾을 수 없습니다. 페이지를 새로고침하세요.');
                 return;
             }
-            const tiktokId = input.value.trim().replace(/^@+/, '');
+            let tiktokId = input.value.trim().replace(/^@+/, '').replace(/[^a-zA-Z0-9_.]/g, '');
 
             if (!tiktokId) {
-                alert('TikTok ID를 입력하세요.');
+                alert('올바른 TikTok ID를 입력하세요. (영문, 숫자, _, . 만 가능)');
                 return;
             }
 

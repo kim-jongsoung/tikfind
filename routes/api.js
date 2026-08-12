@@ -407,8 +407,11 @@ router.post('/change-tiktok', requireAuth, async (req, res) => {
             return res.status(400).json({ success: false, message: 'TikTok ID를 입력하세요.' });
         }
         
-        // @ 기호 제거 (앞에 붙은 @ 모두 제거)
-        const cleanTiktokId = tiktokId.replace(/^@+/, '').trim();
+        // @ 기호 제거 + 특수문자 검증 (TikTok ID: 영문/숫자/_/. 만 허용)
+        const cleanTiktokId = tiktokId.replace(/^@+/, '').replace(/[^a-zA-Z0-9_.]/g, '').trim();
+        if (!cleanTiktokId) {
+            return res.status(400).json({ success: false, message: '올바른 TikTok ID를 입력하세요. (영문, 숫자, _, . 만 가능)' });
+        }
         
         // findByIdAndUpdate로 직접 저장 (tiktokUserGenders 등 ValidationError 완전 우회)
         await User.findByIdAndUpdate(req.user._id, { tiktokId: cleanTiktokId }, { runValidators: false });
