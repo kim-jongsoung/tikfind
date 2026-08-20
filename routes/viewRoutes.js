@@ -118,6 +118,28 @@ router.get('/dashboard/growth', requireAuth, (req, res) => {
     res.render('dashboard/growth', { title: '알고리즘 확장 - TikFind', user: req.user });
 });
 
+// 라이브 커머스 몰 라우트 (인증 필요)
+router.get('/dashboard/mall/setup', requireAuth, (req, res) => {
+    res.render('dashboard/mall/setup', { title: '몰 설정 - TikFind', user: req.user });
+});
+
+router.get('/dashboard/mall/products', requireAuth, (req, res) => {
+    res.render('dashboard/mall/products', { title: '상품 관리 - TikFind', user: req.user });
+});
+
+router.get('/dashboard/mall/livesale', requireAuth, (req, res) => {
+    res.render('dashboard/mall/livesale', { title: '라이브 판매 설정 - TikFind', user: req.user });
+});
+
+router.get('/dashboard/mall/orders', requireAuth, (req, res) => {
+    res.render('dashboard/mall/orders', { title: '주문 관리 - TikFind', user: req.user });
+});
+
+// 시청자용 주문서 페이지 (인증 불필요)
+router.get('/buy', (req, res) => {
+    res.render('buy', { title: '주문서 - TikFind' });
+});
+
 // 마이페이지 라우트 (인증 필요)
 router.get('/mypage', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, '../public/mypage.html'));

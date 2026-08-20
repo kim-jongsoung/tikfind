@@ -329,6 +329,23 @@
 
             </div>
             <!-- 메인 레이아웃 끝 -->
+
+            <!-- 🛒 구매 신청 알림 위젯 -->
+            <div id="purchaseAlertWidget" style="display: none; margin-top: 16px; background: #1a1a1a; padding: 16px; border-radius: 8px; border: 2px solid #10b981;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="font-size: 14px; font-weight: bold; color: #10b981; margin: 0;">
+                        🛒 실시간 구매 신청 대기열
+                    </h3>
+                    <a href="/dashboard/mall/products" style="padding: 4px 12px; background: #10b981; color: white; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: bold;">
+                        상품 관리
+                    </a>
+                </div>
+                <div id="purchaseRequestsList" style="max-height: 300px; overflow-y: auto;">
+                    <p style="color: #666; font-size: 12px; text-align: center; padding: 20px;">구매 신청이 없습니다</p>
+                </div>
+            </div>
+
+            </div>
             </div>
         </div>
     </main>
@@ -667,6 +684,14 @@
             document.getElementById('messageCount').textContent = messageCount;
             console.log(`👤 [${data.uniqueId}] followRole:`, data.followRole, '| type:', typeof data.followRole);
             addChatMessage(data);
+            
+            // 구매 키워드 감지
+            if (data.message && detectPurchaseKeyword(data.message)) {
+                const buyerId = data.uniqueId || data.username;
+                if (buyerId) {
+                    addPurchaseRequest(buyerId, data.message);
+                }
+            }
             
             // 시청자 재실 여부 추적
             if (data.username) {
@@ -2515,6 +2540,125 @@ function mhToast(msg,isError=false){
     t.style.background=isError?'#ef4444':'#22c55e';t.style.color='white';t.textContent=msg;t.style.opacity='1';
     clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';},2200);
 }
+
+// ── 라이브 커머스 구매 신청 감지 ──────────────────────────────────
+let purchaseRequests = [];
+let liveSaleProducts = [];
+
+// 라이브 판매 상품 로드
+async function loadLiveSaleProducts() {
+    try {
+        const res = await fetch('/api/mall/livesale/current');
+        const data = await res.json();
+        if (data.success && data.liveSale && data.liveSale.productIds) {
+            liveSaleProducts = data.liveSale.productIds;
+            if (liveSaleProducts.length > 0) {
+                document.getElementById('purchaseAlertWidget').style.display = 'block';
+            }
+        }
+    } catch (e) {
+        console.error('라이브 판매 상품 로드 실패:', e);
+    }
+}
+
+// 구매 키워드 감지 (#구매, #구매합니다, #구매원해요 등)
+function detectPurchaseKeyword(message) {
+    const keywords = ['#구매', '#구매합니다', '#구매원해요', '#구매할게요', '#구매하고싶어요'];
+    return keywords.some(keyword => message.includes(keyword));
+}
+
+// 구매 신청 추가
+async function addPurchaseRequest(buyerTiktokId, keyword) {
+    if (!currentUser || liveSaleProducts.length === 0) return;
+    
+    try {
+        const res = await fetch('/api/mall/purchase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                buyerTiktokId,
+                keyword,
+                productId: liveSaleProducts[0]._id
+            })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            purchaseRequests.push(data.purchaseRequest);
+            renderPurchaseRequests();
+            mhToast(`🛒 @${buyerTiktokId}님의 구매 신청!`);
+        }
+    } catch (e) {
+        console.error('구매 신청 생성 실패:', e);
+    }
+}
+
+// 구매 신청 목록 렌더링
+function renderPurchaseRequests() {
+    const container = document.getElementById('purchaseRequestsList');
+    
+    if (purchaseRequests.length === 0) {
+        container.innerHTML = '<p style="color: #666; font-size: 12px; text-align: center; padding: 20px;">구매 신청이 없습니다</p>';
+        return;
+    }
+    
+    container.innerHTML = purchaseRequests.map((req, idx) => {
+        const product = liveSaleProducts.find(p => p._id === req.productId);
+        const productName = product ? product.name : '상품';
+        const time = new Date(req.createdAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        const userId = currentUser ? String(currentUser._id || currentUser.id) : '';
+        const orderLink = `https://tikfind.kr/buy?id=${userId}&buyer=${req.buyerTiktokId}`;
+        const copyText = `@${req.buyerTiktokId}님, ${productName} 주문서입니다!\n${orderLink}\n위 링크에서 주문서를 작성해주세요 😊`;
+        
+        return `
+            <div style="background: #0a0a0a; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #333;">
+                <div style="display: flex; justify-content: between; align-items: start; gap: 12px;">
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                            <span style="font-size: 11px; color: #666;">${time}</span>
+                            <span style="font-size: 12px; font-weight: bold; color: #10b981;">@${req.buyerTiktokId}</span>
+                        </div>
+                        <div style="font-size: 11px; color: #999; margin-bottom: 8px;">
+                            상품: ${productName}
+                        </div>
+                        <div style="display: flex; gap: 4px;">
+                            <button onclick="copyOrderLink('${req.buyerTiktokId}', '${productName}', '${orderLink}')" 
+                                style="flex: 1; padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold;">
+                                📋 링크 복사
+                            </button>
+                            <button onclick="openTikTokProfile('${req.buyerTiktokId}')" 
+                                style="flex: 1; padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold;">
+                                💬 틱톡 프로필
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// 주문 링크 복사 (상품명 + 안내 문구 포함)
+function copyOrderLink(buyerTiktokId, productName, orderLink) {
+    const copyText = `@${buyerTiktokId}님, ${productName} 주문서입니다!\n${orderLink}\n위 링크에서 주문서를 작성해주세요 😊`;
+    
+    navigator.clipboard.writeText(copyText).then(() => {
+        mhToast('📋 주문 링크가 복사되었습니다! 틱톡 DM에 붙여넣기 하세요');
+    }).catch(err => {
+        console.error('복사 실패:', err);
+        mhToast('복사 실패', true);
+    });
+}
+
+// 틱톡 프로필 열기
+function openTikTokProfile(tiktokId) {
+    window.open(`https://www.tiktok.com/@${tiktokId}`, '_blank');
+}
+
+// 페이지 로드 시 라이브 판매 상품 확인
+document.addEventListener('DOMContentLoaded', () => {
+    loadLiveSaleProducts();
+});
 </script>
 </body>
 </html>

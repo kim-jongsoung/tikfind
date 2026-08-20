@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>몰 설정 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+
+    <main class="ml-64 p-8" style="margin-top: 88px;">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">라이브 커머스 몰 설정</h2>
+                <p class="text-gray-600 mt-2">사업자 정보 및 계좌 정보를 등록하세요</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <form id="mall-setup-form">
+                    <!-- 사업자 정보 -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-building mr-2 text-indigo-600"></i>
+                            사업자 정보
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">사업자등록번호</label>
+                                <input type="text" id="businessNumber" name="businessNumber" placeholder="123-45-67890" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">상호명</label>
+                                <input type="text" id="businessName" name="businessName" placeholder="상호명 입력" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">대표자명</label>
+                                <input type="text" id="ownerName" name="ownerName" placeholder="대표자명 입력" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">연락처</label>
+                                <input type="tel" id="contact" name="contact" placeholder="010-1234-5678" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 계좌 정보 -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-credit-card mr-2 text-green-600"></i>
+                            입금 계좌 정보
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">은행명</label>
+                                <input type="text" id="bankName" name="bankName" placeholder="예: 국민은행" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">계좌번호</label>
+                                <input type="text" id="accountNumber" name="accountNumber" placeholder="123456-12-123456" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">예금주</label>
+                                <input type="text" id="accountHolder" name="accountHolder" placeholder="예금주명 (사업자명과 일치 권장)" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 세무 동의 -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                            <i class="fas fa-file-contract mr-2 text-red-600"></i>
+                            세무 동의 (필수)
+                        </h3>
+                        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                            <div class="flex items-start">
+                                <input type="checkbox" id="taxConsent" name="taxConsent" required
+                                    class="mt-1 mr-3 w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                                <label for="taxConsent" class="text-sm text-gray-700">
+                                    <strong class="text-red-600">필수 동의:</strong> 
+                                    시청자가 계좌로 입금한 대금은 호스트 본인의 매출로 집계되며, 
+                                    현금영수증 발급 및 부가가치세·종합소득세 신고 의무는 호스트(사업자) 본인에게 있음을 확인합니다.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 저장 버튼 -->
+                    <div class="flex justify-end gap-3">
+                        <a href="/dashboard/mall/products" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                            취소
+                        </a>
+                        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                            <i class="fas fa-save mr-2"></i>저장
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const res = await fetch('/api/mall/setup');
+                const data = await res.json();
+                
+                if (data.success && data.setup) {
+                    const setup = data.setup;
+                    document.getElementById('businessNumber').value = setup.businessNumber || '';
+                    document.getElementById('businessName').value = setup.businessName || '';
+                    document.getElementById('ownerName').value = setup.ownerName || '';
+                    document.getElementById('contact').value = setup.contact || '';
+                    document.getElementById('bankName').value = setup.bankName || '';
+                    document.getElementById('accountNumber').value = setup.accountNumber || '';
+                    document.getElementById('accountHolder').value = setup.accountHolder || '';
+                    document.getElementById('taxConsent').checked = setup.taxConsent || false;
+                }
+            } catch (e) {
+                console.error('설정 로드 실패:', e);
+            }
+        });
+
+        document.getElementById('mall-setup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                businessNumber: document.getElementById('businessNumber').value.trim(),
+                businessName: document.getElementById('businessName').value.trim(),
+                ownerName: document.getElementById('ownerName').value.trim(),
+                contact: document.getElementById('contact').value.trim(),
+                bankName: document.getElementById('bankName').value.trim(),
+                accountNumber: document.getElementById('accountNumber').value.trim(),
+                accountHolder: document.getElementById('accountHolder').value.trim(),
+                taxConsent: document.getElementById('taxConsent').checked
+            };
+
+            if (!formData.taxConsent) {
+                alert('세무 동의는 필수입니다.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/mall/setup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert('몰 설정이 저장되었습니다!');
+                    window.location.href = '/dashboard/mall/products';
+                } else {
+                    alert('오류: ' + (data.message || '저장 실패'));
+                }
+            } catch (e) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(e);
+            }
+        });
+    </script>
+</body>
+</html>

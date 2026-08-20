@@ -10,6 +10,11 @@ const OverlayNotice = require('../models/OverlayNotice');
 const Moderator = require('../models/Moderator');
 const Level50Viewer = require('../models/Level50Viewer');
 const Notice = require('../models/Notice');
+const MallSetup = require('../models/MallSetup');
+const Product = require('../models/Product');
+const LiveSale = require('../models/LiveSale');
+const PurchaseRequest = require('../models/PurchaseRequest');
+const Order = require('../models/Order');
 const ytdl = require('@distube/ytdl-core');
 const SongRequestService = require('../services/SongRequestService');
 const { WebcastPushConnection } = require('tiktok-live-connector');
@@ -2425,6 +2430,260 @@ router.get('/notices', async (req, res) => {
     try {
         const notices = await Notice.find({ isVisible: true }).sort({ priority: -1, createdAt: -1 });
         res.json({ success: true, notices });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// ========== MALL API ENDPOINTS ==========
+
+// GET /api/mall/setup - 호스트 몰 설정 조회
+router.get('/mall/setup', requireAuth, async (req, res) => {
+    try {
+        const setup = await MallSetup.findOne({ userId: req.user._id });
+        res.json({ success: true, setup });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/mall/setup - 호스트 몰 설정 저장
+router.post('/mall/setup', requireAuth, async (req, res) => {
+    try {
+        const { businessNumber, businessName, ownerName, contact, bankName, accountNumber, accountHolder, taxConsent } = req.body;
+        
+        if (!taxConsent) {
+            return res.status(400).json({ success: false, message: '세무 동의는 필수입니다.' });
+        }
+
+        const setup = await MallSetup.findOneAndUpdate(
+            { userId: req.user._id },
+            { businessNumber, businessName, ownerName, contact, bankName, accountNumber, accountHolder, taxConsent },
+            { upsert: true, new: true }
+        );
+
+        res.json({ success: true, setup });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// GET /api/mall/products - 상품 목록 조회
+router.get('/mall/products', requireAuth, async (req, res) => {
+    try {
+        const products = await Product.find({ userId: req.user._id }).sort({ createdAt: -1 });
+        res.json({ success: true, products });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/mall/products - 상품 등록
+router.post('/mall/products', requireAuth, async (req, res) => {
+    try {
+        const { name, options, requiresDelivery, imageUrl, description } = req.body;
+        
+        if (!name || !options || options.length === 0) {
+            return res.status(400).json({ success: false, message: '상품명과 옵션은 필수입니다.' });
+        }
+
+        const product = await Product.create({
+            userId: req.user._id,
+            name,
+            options,
+            requiresDelivery: requiresDelivery !== false,
+            imageUrl: imageUrl || '',
+            description: description || ''
+        });
+
+        res.json({ success: true, product });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// PUT /api/mall/products/:id - 상품 수정
+router.put('/mall/products/:id', requireAuth, async (req, res) => {
+    try {
+        const { name, options, requiresDelivery, imageUrl, description, isActive } = req.body;
+        
+        const product = await Product.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user._id },
+            { name, options, requiresDelivery, imageUrl, description, isActive },
+            { new: true }
+        );
+
+        if (!product) {
+            return res.status(404).json({ success: false, message: '상품을 찾을 수 없습니다.' });
+        }
+
+        res.json({ success: true, product });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// DELETE /api/mall/products/:id - 상품 삭제
+router.delete('/mall/products/:id', requireAuth, async (req, res) => {
+    try {
+        const product = await Product.findOneAndDelete({ _id: req.params.id, userId: req.user._id });
+        
+        if (!product) {
+            return res.status(404).json({ success: false, message: '상품을 찾을 수 없습니다.' });
+        }
+
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/mall/livesale - 오늘의 라이브 판매 상품 설정
+router.post('/mall/livesale', requireAuth, async (req, res) => {
+    try {
+        const { productIds } = req.body;
+        
+        const liveSale = await LiveSale.create({
+            userId: req.user._id,
+            productIds: productIds || [],
+            liveDate: new Date()
+        });
+
+        res.json({ success: true, liveSale });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// GET /api/mall/livesale/current - 현재 라이브 판매 상품 조회
+router.get('/mall/livesale/current', requireAuth, async (req, res) => {
+    try {
+        const liveSale = await LiveSale.findOne({ userId: req.user._id })
+            .sort({ liveDate: -1 })
+            .populate('productIds');
+        
+        res.json({ success: true, liveSale });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/mall/purchase - 구매 신청 생성
+router.post('/mall/purchase', requireAuth, async (req, res) => {
+    try {
+        const { buyerTiktokId, keyword, productId } = req.body;
+        
+        if (!buyerTiktokId) {
+            return res.status(400).json({ success: false, message: '시청자 ID가 필요합니다.' });
+        }
+
+        const purchaseRequest = await PurchaseRequest.create({
+            userId: req.user._id,
+            buyerTiktokId,
+            keyword: keyword || '',
+            productId: productId || null
+        });
+
+        res.json({ success: true, purchaseRequest });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// GET /api/mall/purchase-requests - 구매 신청 목록 조회
+router.get('/mall/purchase-requests', requireAuth, async (req, res) => {
+    try {
+        const requests = await PurchaseRequest.find({ userId: req.user._id })
+            .sort({ createdAt: -1 })
+            .populate('productId');
+        
+        res.json({ success: true, requests });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// GET /api/mall/orders - 주문 목록 조회
+router.get('/mall/orders', requireAuth, async (req, res) => {
+    try {
+        const orders = await Order.find({ userId: req.user._id })
+            .sort({ createdAt: -1 })
+            .populate('productId');
+        
+        res.json({ success: true, orders });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// PUT /api/mall/orders/:id - 주문 상태 변경
+router.put('/mall/orders/:id', requireAuth, async (req, res) => {
+    try {
+        const { paymentStatus, shippingStatus } = req.body;
+        
+        const order = await Order.findOneAndUpdate(
+            { _id: req.params.id, userId: req.user._id },
+            { paymentStatus, shippingStatus },
+            { new: true }
+        ).populate('productId');
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: '주문을 찾을 수 없습니다.' });
+        }
+
+        res.json({ success: true, order });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// GET /api/buy/info - 시청자용 주문서 정보 조회 (인증 불필요)
+router.get('/buy/info', async (req, res) => {
+    try {
+        const { hostId } = req.query;
+        
+        if (!hostId) {
+            return res.status(400).json({ success: false, message: '호스트 ID가 필요합니다.' });
+        }
+
+        const setup = await MallSetup.findOne({ userId: hostId });
+        const liveSale = await LiveSale.findOne({ userId: hostId })
+            .sort({ liveDate: -1 })
+            .populate('productIds');
+
+        let product = null;
+        if (liveSale && liveSale.productIds && liveSale.productIds.length > 0) {
+            product = liveSale.productIds[0];
+        }
+
+        res.json({ success: true, setup, product });
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
+
+// POST /api/buy/submit - 시청자 주문 접수 (인증 불필요)
+router.post('/buy/submit', async (req, res) => {
+    try {
+        const { hostId, buyerTiktokId, productId, optionName, quantity, totalAmount, recipientName, recipientPhone, recipientAddress } = req.body;
+        
+        if (!hostId || !buyerTiktokId || !productId || !optionName || !quantity || !totalAmount) {
+            return res.status(400).json({ success: false, message: '필수 정보가 누락되었습니다.' });
+        }
+
+        const order = await Order.create({
+            userId: hostId,
+            buyerTiktokId,
+            productId,
+            optionName,
+            quantity,
+            totalAmount,
+            recipientName: recipientName || '',
+            recipientPhone: recipientPhone || '',
+            recipientAddress: recipientAddress || ''
+        });
+
+        res.json({ success: true, order });
     } catch (e) {
         res.status(500).json({ success: false, message: e.message });
     }

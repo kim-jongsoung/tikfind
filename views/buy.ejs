@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문서 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-2xl mx-auto">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <!-- 헤더 -->
+                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6">
+                    <h1 class="text-2xl font-bold mb-2">주문서</h1>
+                    <p class="text-indigo-100">TikFind 라이브 커머스</p>
+                </div>
+
+                <div class="p-6">
+                    <!-- 호스트 정보 -->
+                    <div id="host-info" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                            <i class="fas fa-store mr-2 text-blue-600"></i>
+                            판매자 정보
+                        </h3>
+                        <div class="text-sm text-gray-700 space-y-1">
+                            <p><strong>상호명:</strong> <span id="business-name">-</span></p>
+                            <p><strong>대표자:</strong> <span id="owner-name">-</span></p>
+                            <p><strong>연락처:</strong> <span id="contact">-</span></p>
+                        </div>
+                    </div>
+
+                    <!-- 주문자 정보 -->
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-user mr-2 text-indigo-600"></i>
+                            주문자 정보
+                        </h3>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">틱톡 ID</label>
+                            <input type="text" id="buyer-id" readonly 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                        </div>
+                    </div>
+
+                    <!-- 상품 선택 -->
+                    <div id="product-section" class="mb-6">
+                        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-box mr-2 text-green-600"></i>
+                            상품 선택
+                        </h3>
+                        <div id="product-info" class="p-4 border border-gray-200 rounded-lg mb-4">
+                            <h4 id="product-name" class="font-semibold text-lg text-gray-800 mb-3">-</h4>
+                            <div id="product-description" class="text-sm text-gray-600 mb-4"></div>
+                            
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">옵션 선택</label>
+                                <select id="option-select" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                                    <option value="">옵션을 선택하세요</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">수량</label>
+                                <div class="flex items-center gap-3">
+                                    <button onclick="changeQuantity(-1)" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="number" id="quantity" value="1" min="1" readonly
+                                        class="w-20 text-center px-4 py-2 border border-gray-300 rounded-lg">
+                                    <button onclick="changeQuantity(1)" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center p-4 bg-indigo-50 rounded-lg">
+                                <span class="font-semibold text-gray-800">총 금액</span>
+                                <span id="total-amount" class="text-2xl font-bold text-indigo-600">0원</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 배송 정보 -->
+                    <div id="delivery-section" class="mb-6">
+                        <h3 class="font-semibold text-gray-800 mb-3 flex items-center">
+                            <i class="fas fa-truck mr-2 text-orange-600"></i>
+                            배송 정보
+                        </h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">수령인 이름</label>
+                                <input type="text" id="recipient-name" placeholder="이름 입력" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">연락처</label>
+                                <input type="tel" id="recipient-phone" placeholder="010-1234-5678" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">배송지 주소</label>
+                                <textarea id="recipient-address" rows="3" placeholder="배송받을 주소를 입력하세요" 
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 입금 안내 -->
+                    <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <h3 class="font-semibold text-gray-800 mb-2 flex items-center">
+                            <i class="fas fa-credit-card mr-2 text-yellow-600"></i>
+                            입금 계좌 안내
+                        </h3>
+                        <div class="text-sm text-gray-700 space-y-1">
+                            <p><strong>은행:</strong> <span id="bank-name">-</span></p>
+                            <p><strong>계좌번호:</strong> <span id="account-number">-</span></p>
+                            <p><strong>예금주:</strong> <span id="account-holder">-</span></p>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-3">
+                            ※ 주문 후 위 계좌로 입금해주시면 호스트가 확인 후 발송합니다.
+                        </p>
+                    </div>
+
+                    <!-- 주문 버튼 -->
+                    <button onclick="submitOrder()" class="w-full py-4 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition text-lg">
+                        <i class="fas fa-check-circle mr-2"></i>주문 접수
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let hostId = '';
+        let buyerId = '';
+        let product = null;
+        let hostSetup = null;
+        let selectedOption = null;
+
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        async function loadOrderPage() {
+            hostId = getQueryParam('id');
+            buyerId = getQueryParam('buyer');
+
+            if (!hostId || !buyerId) {
+                alert('잘못된 접근입니다.');
+                return;
+            }
+
+            document.getElementById('buyer-id').value = '@' + buyerId;
+
+            try {
+                const res = await fetch(`/api/buy/info?hostId=${hostId}`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert('주문서를 불러올 수 없습니다.');
+                    return;
+                }
+
+                hostSetup = data.setup;
+                product = data.product;
+
+                if (hostSetup) {
+                    document.getElementById('business-name').textContent = hostSetup.businessName || '-';
+                    document.getElementById('owner-name').textContent = hostSetup.ownerName || '-';
+                    document.getElementById('contact').textContent = hostSetup.contact || '-';
+                    document.getElementById('bank-name').textContent = hostSetup.bankName || '-';
+                    document.getElementById('account-number').textContent = hostSetup.accountNumber || '-';
+                    document.getElementById('account-holder').textContent = hostSetup.accountHolder || '-';
+                }
+
+                if (product) {
+                    document.getElementById('product-name').textContent = product.name;
+                    document.getElementById('product-description').textContent = product.description || '';
+                    
+                    const optionSelect = document.getElementById('option-select');
+                    optionSelect.innerHTML = '<option value="">옵션을 선택하세요</option>' +
+                        product.options.map((opt, idx) => 
+                            `<option value="${idx}">${opt.name} - ${opt.price.toLocaleString()}원</option>`
+                        ).join('');
+
+                    if (!product.requiresDelivery) {
+                        document.getElementById('delivery-section').style.display = 'none';
+                    }
+                }
+            } catch (e) {
+                console.error('주문서 로드 실패:', e);
+                alert('주문서를 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+
+        document.getElementById('option-select').addEventListener('change', function() {
+            const idx = parseInt(this.value);
+            if (!isNaN(idx) && product && product.options[idx]) {
+                selectedOption = product.options[idx];
+                updateTotalAmount();
+            } else {
+                selectedOption = null;
+                document.getElementById('total-amount').textContent = '0원';
+            }
+        });
+
+        function changeQuantity(delta) {
+            const quantityInput = document.getElementById('quantity');
+            let quantity = parseInt(quantityInput.value) || 1;
+            quantity = Math.max(1, quantity + delta);
+            quantityInput.value = quantity;
+            updateTotalAmount();
+        }
+
+        function updateTotalAmount() {
+            if (!selectedOption) {
+                document.getElementById('total-amount').textContent = '0원';
+                return;
+            }
+
+            const quantity = parseInt(document.getElementById('quantity').value) || 1;
+            const total = selectedOption.price * quantity;
+            document.getElementById('total-amount').textContent = total.toLocaleString() + '원';
+        }
+
+        async function submitOrder() {
+            if (!selectedOption) {
+                alert('옵션을 선택해주세요.');
+                return;
+            }
+
+            const quantity = parseInt(document.getElementById('quantity').value) || 1;
+            const totalAmount = selectedOption.price * quantity;
+
+            const orderData = {
+                hostId,
+                buyerTiktokId: buyerId,
+                productId: product._id,
+                optionName: selectedOption.name,
+                quantity,
+                totalAmount
+            };
+
+            if (product.requiresDelivery) {
+                const recipientName = document.getElementById('recipient-name').value.trim();
+                const recipientPhone = document.getElementById('recipient-phone').value.trim();
+                const recipientAddress = document.getElementById('recipient-address').value.trim();
+
+                if (!recipientName || !recipientPhone || !recipientAddress) {
+                    alert('배송 정보를 모두 입력해주세요.');
+                    return;
+                }
+
+                orderData.recipientName = recipientName;
+                orderData.recipientPhone = recipientPhone;
+                orderData.recipientAddress = recipientAddress;
+            }
+
+            try {
+                const res = await fetch('/api/buy/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(orderData)
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert(`주문이 접수되었습니다!\n\n입금 계좌:\n${hostSetup.bankName} ${hostSetup.accountNumber}\n예금주: ${hostSetup.accountHolder}\n\n총 금액: ${totalAmount.toLocaleString()}원`);
+                    window.location.href = 'https://www.tiktok.com';
+                } else {
+                    alert('오류: ' + (data.message || '주문 접수 실패'));
+                }
+            } catch (e) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadOrderPage);
+    </script>
+</body>
+</html>

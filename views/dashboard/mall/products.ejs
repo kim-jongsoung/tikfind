@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상품 관리 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+
+    <main class="ml-64 p-8" style="margin-top: 88px;">
+        <div class="max-w-6xl mx-auto">
+            <div class="mb-8 flex justify-between items-center">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-800">상품 관리</h2>
+                    <p class="text-gray-600 mt-2">라이브 커머스에서 판매할 상품을 등록하고 관리하세요</p>
+                </div>
+                <button onclick="openProductModal()" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                    <i class="fas fa-plus mr-2"></i>상품 등록
+                </button>
+            </div>
+
+            <div id="products-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+
+            <div id="no-products" class="hidden bg-white rounded-xl shadow-lg p-12 text-center">
+                <i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500 text-lg">등록된 상품이 없습니다</p>
+                <button onclick="openProductModal()" class="mt-4 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                    첫 상품 등록하기
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- 상품 등록/수정 모달 -->
+    <div id="product-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold text-gray-800" id="modal-title">상품 등록</h3>
+                <button onclick="closeProductModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-2xl"></i>
+                </button>
+            </div>
+
+            <form id="product-form">
+                <input type="hidden" id="product-id">
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">상품명 *</label>
+                        <input type="text" id="product-name" required placeholder="예: [울진 산지직송] A급 대게" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">상품 설명</label>
+                        <textarea id="product-description" rows="3" placeholder="상품에 대한 설명을 입력하세요" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">상품 이미지 URL</label>
+                        <input type="url" id="product-image" placeholder="https://example.com/image.jpg" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2 flex justify-between items-center">
+                            <span>옵션 및 가격 *</span>
+                            <button type="button" onclick="addOption()" class="text-indigo-600 hover:text-indigo-700 text-sm">
+                                <i class="fas fa-plus mr-1"></i>옵션 추가
+                            </button>
+                        </label>
+                        <div id="options-container" class="space-y-2">
+                            <div class="flex gap-2 option-row">
+                                <input type="text" placeholder="옵션명 (예: 소짜)" 
+                                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg option-name">
+                                <input type="number" placeholder="가격" min="0" 
+                                    class="w-32 px-4 py-2 border border-gray-300 rounded-lg option-price">
+                                <button type="button" onclick="removeOption(this)" class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center">
+                        <input type="checkbox" id="requires-delivery" checked class="w-5 h-5 text-indigo-600 border-gray-300 rounded">
+                        <label for="requires-delivery" class="ml-2 text-sm text-gray-700">배송 정보 수집 필요</label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <button type="button" onclick="closeProductModal()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                        취소
+                    </button>
+                    <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-save mr-2"></i>저장
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script>
+        let products = [];
+
+        async function loadProducts() {
+            try {
+                const res = await fetch('/api/mall/products');
+                const data = await res.json();
+                
+                if (data.success) {
+                    products = data.products;
+                    renderProducts();
+                }
+            } catch (e) {
+                console.error('상품 로드 실패:', e);
+            }
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('products-container');
+            const noProducts = document.getElementById('no-products');
+            
+            if (products.length === 0) {
+                container.innerHTML = '';
+                noProducts.classList.remove('hidden');
+                return;
+            }
+            
+            noProducts.classList.add('hidden');
+            container.innerHTML = products.map(p => `
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition">
+                    ${p.imageUrl ? `<img src="${p.imageUrl}" alt="${p.name}" class="w-full h-48 object-cover">` : 
+                    `<div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                        <i class="fas fa-image text-gray-400 text-4xl"></i>
+                    </div>`}
+                    <div class="p-6">
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">${p.name}</h3>
+                        ${p.description ? `<p class="text-sm text-gray-600 mb-4">${p.description}</p>` : ''}
+                        <div class="mb-4">
+                            <p class="text-xs text-gray-500 mb-2">옵션:</p>
+                            ${p.options.map(opt => `
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-700">${opt.name}</span>
+                                    <span class="font-semibold text-indigo-600">${opt.price.toLocaleString()}원</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="editProduct('${p._id}')" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm">
+                                <i class="fas fa-edit mr-1"></i>수정
+                            </button>
+                            <button onclick="deleteProduct('${p._id}')" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm">
+                                <i class="fas fa-trash mr-1"></i>삭제
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openProductModal(productId = null) {
+            document.getElementById('product-modal').classList.remove('hidden');
+            document.getElementById('product-form').reset();
+            document.getElementById('product-id').value = '';
+            document.getElementById('modal-title').textContent = '상품 등록';
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = `
+                <div class="flex gap-2 option-row">
+                    <input type="text" placeholder="옵션명 (예: 소짜)" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg option-name">
+                    <input type="number" placeholder="가격" min="0" class="w-32 px-4 py-2 border border-gray-300 rounded-lg option-price">
+                    <button type="button" onclick="removeOption(this)" class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.add('hidden');
+        }
+
+        function addOption() {
+            const container = document.getElementById('options-container');
+            const newRow = document.createElement('div');
+            newRow.className = 'flex gap-2 option-row';
+            newRow.innerHTML = `
+                <input type="text" placeholder="옵션명" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg option-name">
+                <input type="number" placeholder="가격" min="0" class="w-32 px-4 py-2 border border-gray-300 rounded-lg option-price">
+                <button type="button" onclick="removeOption(this)" class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                    <i class="fas fa-trash"></i>
+                </button>
+            `;
+            container.appendChild(newRow);
+        }
+
+        function removeOption(btn) {
+            const container = document.getElementById('options-container');
+            if (container.children.length > 1) {
+                btn.closest('.option-row').remove();
+            } else {
+                alert('최소 1개의 옵션이 필요합니다.');
+            }
+        }
+
+        async function editProduct(id) {
+            const product = products.find(p => p._id === id);
+            if (!product) return;
+
+            document.getElementById('product-modal').classList.remove('hidden');
+            document.getElementById('modal-title').textContent = '상품 수정';
+            document.getElementById('product-id').value = product._id;
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-description').value = product.description || '';
+            document.getElementById('product-image').value = product.imageUrl || '';
+            document.getElementById('requires-delivery').checked = product.requiresDelivery;
+
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = product.options.map(opt => `
+                <div class="flex gap-2 option-row">
+                    <input type="text" placeholder="옵션명" value="${opt.name}" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg option-name">
+                    <input type="number" placeholder="가격" min="0" value="${opt.price}" class="w-32 px-4 py-2 border border-gray-300 rounded-lg option-price">
+                    <button type="button" onclick="removeOption(this)" class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        async function deleteProduct(id) {
+            if (!confirm('정말 이 상품을 삭제하시겠습니까?')) return;
+
+            try {
+                const res = await fetch(`/api/mall/products/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (data.success) {
+                    alert('상품이 삭제되었습니다.');
+                    loadProducts();
+                } else {
+                    alert('오류: ' + (data.message || '삭제 실패'));
+                }
+            } catch (e) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(e);
+            }
+        }
+
+        document.getElementById('product-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const optionRows = document.querySelectorAll('.option-row');
+            const options = [];
+            
+            for (const row of optionRows) {
+                const name = row.querySelector('.option-name').value.trim();
+                const price = parseInt(row.querySelector('.option-price').value);
+                
+                if (name && price >= 0) {
+                    options.push({ name, price });
+                }
+            }
+
+            if (options.length === 0) {
+                alert('최소 1개의 옵션을 입력하세요.');
+                return;
+            }
+
+            const formData = {
+                name: document.getElementById('product-name').value.trim(),
+                description: document.getElementById('product-description').value.trim(),
+                imageUrl: document.getElementById('product-image').value.trim(),
+                options,
+                requiresDelivery: document.getElementById('requires-delivery').checked
+            };
+
+            const productId = document.getElementById('product-id').value;
+            const method = productId ? 'PUT' : 'POST';
+            const url = productId ? `/api/mall/products/${productId}` : '/api/mall/products';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert(productId ? '상품이 수정되었습니다!' : '상품이 등록되었습니다!');
+                    closeProductModal();
+                    loadProducts();
+                } else {
+                    alert('오류: ' + (data.message || '저장 실패'));
+                }
+            } catch (e) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(e);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadProducts);
+    </script>
+</body>
+</html>

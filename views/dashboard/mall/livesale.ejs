@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>라이브 판매 설정 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+
+    <main class="ml-64 p-8" style="margin-top: 88px;">
+        <div class="max-w-4xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">오늘의 라이브 판매 상품 설정</h2>
+                <p class="text-gray-600 mt-2">오늘 라이브에서 판매할 상품을 선택하세요</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg p-8">
+                <div id="products-list" class="space-y-3">
+                </div>
+
+                <div id="no-products" class="hidden text-center py-12">
+                    <i class="fas fa-box-open text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg mb-4">등록된 상품이 없습니다</p>
+                    <a href="/dashboard/mall/products" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition inline-block">
+                        상품 등록하러 가기
+                    </a>
+                </div>
+
+                <div class="flex justify-end gap-3 mt-6">
+                    <a href="/dashboard/mall/products" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                        취소
+                    </a>
+                    <button onclick="saveLiveSale()" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition">
+                        <i class="fas fa-save mr-2"></i>저장
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script>
+        let products = [];
+        let selectedProductIds = [];
+
+        async function loadProducts() {
+            try {
+                const res = await fetch('/api/mall/products');
+                const data = await res.json();
+                
+                if (data.success) {
+                    products = data.products.filter(p => p.isActive);
+                    await loadCurrentLiveSale();
+                    renderProducts();
+                }
+            } catch (e) {
+                console.error('상품 로드 실패:', e);
+            }
+        }
+
+        async function loadCurrentLiveSale() {
+            try {
+                const res = await fetch('/api/mall/livesale/current');
+                const data = await res.json();
+                
+                if (data.success && data.liveSale) {
+                    selectedProductIds = data.liveSale.productIds.map(p => p._id || p);
+                }
+            } catch (e) {
+                console.error('라이브 판매 설정 로드 실패:', e);
+            }
+        }
+
+        function renderProducts() {
+            const container = document.getElementById('products-list');
+            const noProducts = document.getElementById('no-products');
+            
+            if (products.length === 0) {
+                container.innerHTML = '';
+                noProducts.classList.remove('hidden');
+                return;
+            }
+            
+            noProducts.classList.add('hidden');
+            container.innerHTML = products.map(p => {
+                const isSelected = selectedProductIds.includes(p._id);
+                return `
+                    <div class="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                        <input type="checkbox" id="product-${p._id}" 
+                            ${isSelected ? 'checked' : ''}
+                            onchange="toggleProduct('${p._id}')"
+                            class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                        <label for="product-${p._id}" class="ml-4 flex-1 cursor-pointer">
+                            <div class="flex items-center gap-4">
+                                ${p.imageUrl ? 
+                                    `<img src="${p.imageUrl}" alt="${p.name}" class="w-16 h-16 object-cover rounded">` : 
+                                    `<div class="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                                        <i class="fas fa-image text-gray-400"></i>
+                                    </div>`
+                                }
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-800">${p.name}</h4>
+                                    <p class="text-sm text-gray-600">
+                                        ${p.options.length}개 옵션 · ${Math.min(...p.options.map(o => o.price)).toLocaleString()}원 ~
+                                    </p>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleProduct(productId) {
+            const index = selectedProductIds.indexOf(productId);
+            if (index > -1) {
+                selectedProductIds.splice(index, 1);
+            } else {
+                selectedProductIds.push(productId);
+            }
+        }
+
+        async function saveLiveSale() {
+            try {
+                const res = await fetch('/api/mall/livesale', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ productIds: selectedProductIds })
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    alert('라이브 판매 상품이 설정되었습니다!');
+                    window.location.href = '/dashboard/live';
+                } else {
+                    alert('오류: ' + (data.message || '저장 실패'));
+                }
+            } catch (e) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(e);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadProducts);
+    </script>
+</body>
+</html>

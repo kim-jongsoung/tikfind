@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주문 관리 - TikFind</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <div id="sidebar-container"></div>
+    <div id="header-container"></div>
+
+    <main class="ml-64 p-8" style="margin-top: 88px;">
+        <div class="max-w-7xl mx-auto">
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-gray-800">주문 관리</h2>
+                <p class="text-gray-600 mt-2">들어온 주문을 확인하고 상태를 관리하세요</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 border-b border-gray-200">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">주문일시</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">틱톡 ID</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상품/옵션</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수량</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">총금액</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수령인</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">연락처</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">배송지</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">입금상태</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">발송상태</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-tbody" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="no-orders" class="hidden text-center py-12">
+                    <i class="fas fa-shopping-cart text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-gray-500 text-lg">주문 내역이 없습니다</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script>
+        let orders = [];
+
+        async function loadOrders() {
+            try {
+                const res = await fetch('/api/mall/orders');
+                const data = await res.json();
+                
+                if (data.success) {
+                    orders = data.orders;
+                    renderOrders();
+                }
+            } catch (e) {
+                console.error('주문 로드 실패:', e);
+            }
+        }
+
+        function renderOrders() {
+            const tbody = document.getElementById('orders-tbody');
+            const noOrders = document.getElementById('no-orders');
+            
+            if (orders.length === 0) {
+                tbody.innerHTML = '';
+                noOrders.classList.remove('hidden');
+                return;
+            }
+            
+            noOrders.classList.add('hidden');
+            tbody.innerHTML = orders.map(order => {
+                const date = new Date(order.createdAt);
+                const productName = order.productId?.name || '상품 정보 없음';
+                
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${date.toLocaleDateString('ko-KR')}<br>
+                            <span class="text-xs text-gray-500">${date.toLocaleTimeString('ko-KR')}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            @${order.buyerTiktokId}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">
+                            <div class="font-medium">${productName}</div>
+                            <div class="text-xs text-gray-500">${order.optionName}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${order.quantity}개
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">
+                            ${order.totalAmount.toLocaleString()}원
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${order.recipientName || '-'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            ${order.recipientPhone || '-'}
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                            ${order.recipientAddress || '-'}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <select onchange="updateOrderStatus('${order._id}', 'payment', this.value)" 
+                                class="px-3 py-1 rounded-lg border ${order.paymentStatus === 'confirmed' ? 'bg-green-100 text-green-800 border-green-300' : 'bg-yellow-100 text-yellow-800 border-yellow-300'}">
+                                <option value="pending" ${order.paymentStatus === 'pending' ? 'selected' : ''}>입금 대기</option>
+                                <option value="confirmed" ${order.paymentStatus === 'confirmed' ? 'selected' : ''}>입금 확인</option>
+                            </select>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <select onchange="updateOrderStatus('${order._id}', 'shipping', this.value)" 
+                                class="px-3 py-1 rounded-lg border ${order.shippingStatus === 'shipped' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-gray-100 text-gray-800 border-gray-300'}">
+                                <option value="pending" ${order.shippingStatus === 'pending' ? 'selected' : ''}>발송 대기</option>
+                                <option value="shipped" ${order.shippingStatus === 'shipped' ? 'selected' : ''}>발송 완료</option>
+                            </select>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function updateOrderStatus(orderId, type, value) {
+            try {
+                const updateData = type === 'payment' 
+                    ? { paymentStatus: value, shippingStatus: orders.find(o => o._id === orderId).shippingStatus }
+                    : { paymentStatus: orders.find(o => o._id === orderId).paymentStatus, shippingStatus: value };
+
+                const res = await fetch(`/api/mall/orders/${orderId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updateData)
+                });
+
+                const data = await res.json();
+
+                if (data.success) {
+                    loadOrders();
+                } else {
+                    alert('오류: ' + (data.message || '상태 변경 실패'));
+                    loadOrders();
+                }
+            } catch (e) {
+                alert('서버 오류가 발생했습니다.');
+                console.error(e);
+                loadOrders();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadOrders);
+    </script>
+</body>
+</html>
