@@ -262,7 +262,7 @@ const userSchema = new mongoose.Schema({
     },
     aiCompanionEnabled: {
         type: Boolean,
-        default: true
+        default: false
     },
     aiCompanionPersonality: {
         type: String,
