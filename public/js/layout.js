@@ -57,6 +57,42 @@ function loadSidebar() {
                         </a>
                     </li>
 
+                    <!-- MALL 메뉴 섹션 -->
+                    <li class="pt-4 pb-2">
+                        <div class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            라이브 커머스
+                        </div>
+                    </li>
+                    <li>
+                        <a href="/dashboard/mall/setup" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="mall-setup">
+                            <i class="fas fa-store mr-3 text-green-400"></i>
+                            <span>몰 설정</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dashboard/mall/products" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="mall-products">
+                            <i class="fas fa-box mr-3 text-blue-400"></i>
+                            <span>상품 관리</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dashboard/mall/livesale" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="mall-livesale">
+                            <i class="fas fa-broadcast-tower mr-3 text-red-400"></i>
+                            <span>라이브 판매</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/dashboard/mall/orders" class="nav-link flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="mall-orders">
+                            <i class="fas fa-shopping-cart mr-3 text-yellow-400"></i>
+                            <span>주문 관리</span>
+                        </a>
+                    </li>
+
+                    <li class="pt-4 pb-2">
+                        <div class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                            고급 기능
+                        </div>
+                    </li>
                     <li>
                         <a href="/dashboard/report" class="nav-link unlimited-menu flex items-center p-3 rounded-lg hover:bg-slate-800 transition" data-page="report">
                             <i class="fas fa-chart-line mr-3 text-purple-400"></i>
